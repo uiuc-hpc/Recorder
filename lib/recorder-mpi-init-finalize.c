@@ -210,7 +210,6 @@ void overload_mpi_symbols(void) {
 
     return;
 }
-
 #endif
 
 extern char *__progname;
@@ -242,15 +241,15 @@ void recorder_mpi_initialize(int *argc, char ***argv) {
         printf(" metafile_name %s\n", metafile_name);
 
         fprintf(__recordermeta, "enabled_layers:");
-#ifndef DISABLE_HDF5_TRACE
+        #ifndef DISABLE_HDF5_TRACE
         fprintf(__recordermeta, " HDF5");
-#endif
-#ifndef DISABLE_MPIO_TRACE
+        #endif
+        #ifndef DISABLE_MPIO_TRACE
         fprintf(__recordermeta, " MPI");
-#endif
-#ifndef DISABLE_POSIX_TRACE
+        #endif
+        #ifndef DISABLE_POSIX_TRACE
         fprintf(__recordermeta, " POSIX");
-#endif
+        #endif
         fprintf(__recordermeta, "\n");
         fprintf(__recordermeta, "workload_start_time:");
         fprintf(__recordermeta, " %.5f\n",recorder_wtime());
@@ -275,9 +274,9 @@ void recorder_shutdown(int timing_flag) {
 }
 
 int PMPI_Init(int *argc, char ***argv) {
-#ifdef RECORDER_PRELOAD
+    #ifdef RECORDER_PRELOAD
     overload_mpi_symbols();
-#endif
+    #endif
 
     int ret = RECORDER_MPI_CALL(PMPI_Init)(argc, argv);
     if (ret != MPI_SUCCESS)
@@ -288,9 +287,9 @@ int PMPI_Init(int *argc, char ***argv) {
 }
 
 int MPI_Init(int *argc, char ***argv) {
-#ifdef RECORDER_PRELOAD
+    #ifdef RECORDER_PRELOAD
     overload_mpi_symbols();
-#endif
+    #endif
 
     int ret = RECORDER_MPI_CALL(PMPI_Init)(argc, argv);
     if (ret != MPI_SUCCESS)
@@ -301,9 +300,9 @@ int MPI_Init(int *argc, char ***argv) {
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
-#ifdef RECORDER_PRELOAD
+    #ifdef RECORDER_PRELOAD
     overload_mpi_symbols();
-#endif
+    #endif
 
     int ret = RECORDER_MPI_CALL(PMPI_Init_thread)(argc, argv, required, provided);
     if (ret != MPI_SUCCESS)

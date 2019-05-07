@@ -74,29 +74,26 @@
 FILE *__recorderfh;
 int depth;
 
+#define TRACE_LEN 256
+#define RECORDER_IMP_CHEN(func, ret, args, log)       \
+    depth++;                                                    \
+    double tm1 = recorder_wtime();                              \
+    ret res = RECORDER_MPI_CALL(func) args ;                    \
+    double tm2 = recorder_wtime();                              \
+    write_trace(tm1, tm2, log);                                 \
+    return res;
+
+static void inline write_trace(double tstart, double tend, const char* text) {
+    #ifndef DISABLE_POSIX_TRACE
+    if (__recorderfh != NULL && depth == 1)
+        fprintf(__recorderfh, "%.5f %s %.5f\n", tstart, text, tend-tstart);
+    #endif
+}
+
 int MPI_Comm_size(MPI_Comm comm, int *size) {
-  int ret;
-  double tm1, tm2;
-
-#ifndef DISABLE_MPIO_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  char *comm_name = comm2name(comm);
-  if (__recorderfh != NULL && depth == 1)
-    fprintf(__recorderfh, "%.5f MPI_Comm_size (%s,%p)", tm1, comm_name, size);
-  free(comm_name);
-#endif
-
-  ret = RECORDER_MPI_CALL(PMPI_Comm_size)(comm, size);
-
-#ifndef DISABLE_MPIO_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1)
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  depth--;
-#endif
-
-  return (ret);
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "MPI_Comm_size (%s, %d)", comm2name(comm), *size);
+  RECORDER_IMP_CHEN(PMPI_Comm_size, int, (comm, size), log_text)
 }
 
 int MPI_Comm_rank(MPI_Comm comm, int *rank) {
