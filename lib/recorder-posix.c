@@ -157,8 +157,6 @@ static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
                              "/boot/", "/lib/",  "/opt/", "/sbin/",
                              "/sys/",  "/proc/", NULL};
 
-static double posix_wtime(void);
-
 char *fd2name(int fd) {
   size_t len = 256;
   struct stat sb;
@@ -430,8 +428,6 @@ int fseek(FILE *stream, long offset, int whence) {
     sprintf(log_text, "fseek (%p, %ld, %d)", stream, offset, whence);
     RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), log_text)
 }
-
-static double posix_wtime(void) { return RECORDER_MPI_CALL(PMPI_Wtime)(); }
 
 double recorder_wtime(void) {
   struct timeval time;
