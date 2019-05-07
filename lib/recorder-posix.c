@@ -414,7 +414,7 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
 off64_t lseek64(int fd, off64_t offset, int whence) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "lseek64 (%s, %ld, %d)", fd2name(fd), offset, whence);
-    RECORDER_IMP_CHEN(lseek, off64_t, __real_lseek64(fd, offset, whence), log_text)
+    RECORDER_IMP_CHEN(lseek64, off64_t, __real_lseek64(fd, offset, whence), log_text)
 }
 
 off_t lseek(int fd, off_t offset, int whence) {
