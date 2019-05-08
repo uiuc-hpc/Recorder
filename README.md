@@ -37,9 +37,7 @@ Figure below. Once Recorder is specified as the preloading library, it
 intercepts HDF5 function calls issued by the application and reroutes them to
 the tracing implementation where the timestamp, function name, and function
 parameters are recorded. The original HDF5 function is called after this
-recording process. The mechanism is the same for the MPI and POSIX layers. ![alt
-text](http://web.engr.illinois.edu/~bbehza2/files/H5Tuner-Design.png "Dynamic
-instrumentation of I/O stack by Recorder")
+recording process. The mechanism is the same for the MPI and POSIX layers.
 
 Installation
 ------------
