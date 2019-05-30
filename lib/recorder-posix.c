@@ -158,7 +158,6 @@ static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
                              "/sys/",  "/proc/", NULL};
 
 char *fd2name(int fd) {
-    //printf("1. Here %d\n", fd);
     size_t len = 256;
     struct stat sb;
     char fdname[len];
@@ -167,11 +166,11 @@ char *fd2name(int fd) {
         return "null";
     }
 
-    //printf("2. Here %d\n", fd);
-    char *linkname = malloc(sb.st_size + 1);
-    int r = readlink(fdname, linkname, sb.st_size + 1);
+    //char *linkname = malloc(sb.st_size + 1);
+    char *linkname = malloc(len);
+    //int r = readlink(fdname, linkname, sb.st_size + 1);
+    int r = readlink(fdname, linkname, len);
     linkname[r] = '\x00';
-    //printf("3. Here %s\n", linkname);
     return linkname;
 }
 
