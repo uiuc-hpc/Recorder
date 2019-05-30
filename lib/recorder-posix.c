@@ -158,18 +158,21 @@ static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
                              "/sys/",  "/proc/", NULL};
 
 char *fd2name(int fd) {
-  size_t len = 256;
-  struct stat sb;
-  char fdname[len];
-  sprintf(fdname, "/proc/self/fd/%d", fd);
-  if (lstat(fdname, &sb) == -1) {
-    return "null";
-  }
+    //printf("1. Here %d\n", fd);
+    size_t len = 256;
+    struct stat sb;
+    char fdname[len];
+    sprintf(fdname, "/proc/self/fd/%d", fd);
+    if (lstat(fdname, &sb) == -1) {
+        return "null";
+    }
 
-  char *linkname = malloc(sb.st_size + 1);
-  int r = readlink(fdname, linkname, sb.st_size + 1);
-  linkname[r] = '\x00';
-  return linkname;
+    //printf("2. Here %d\n", fd);
+    char *linkname = malloc(sb.st_size + 1);
+    int r = readlink(fdname, linkname, sb.st_size + 1);
+    linkname[r] = '\x00';
+    //printf("3. Here %s\n", linkname);
+    return linkname;
 }
 
 static void inline write_trace(double tstart, double tend, const char* text) {
@@ -385,7 +388,7 @@ ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fread (%p, %ld, %ld, %d)", ptr, size, nmemb, fileno(stream));
+    sprintf(log_text, "fread (%p, %ld, %ld, %s)", ptr, size, nmemb, fd2name(fileno(stream)));
     RECORDER_IMP_CHEN(fread, size_t, __real_fread(ptr, size, nmemb, stream), log_text)
 }
 
@@ -407,7 +410,7 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fwrite (%p, %ld, %ld, %d)", ptr, size, nmemb, fileno(stream));
+    sprintf(log_text, "fwrite (%p, %ld, %ld, %s)", ptr, size, nmemb, fd2name(fileno(stream)));
     RECORDER_IMP_CHEN(fwrite, size_t, __real_fwrite(ptr, size, nmemb, stream), log_text)
 }
 
@@ -425,7 +428,7 @@ off_t lseek(int fd, off_t offset, int whence) {
 
 int fseek(FILE *stream, long offset, int whence) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fseek (%p, %ld, %d)", stream, offset, whence);
+    sprintf(log_text, "fseek (%s, %ld, %d)", fd2name(fileno(stream)), offset, whence);
     RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), log_text)
 }
 
