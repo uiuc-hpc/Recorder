@@ -189,7 +189,7 @@ int close(int fd) {
 
 int fclose(FILE *fp) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fclose (fp=%p)", fp);
+    sprintf(log_text, "fclose (%s)", fd2name(fileno(fp)));
     RECORDER_IMP_CHEN(fclose, int, __real_fclose(fp), log_text)
 }
 
