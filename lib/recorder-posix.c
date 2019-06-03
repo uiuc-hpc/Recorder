@@ -375,13 +375,21 @@ ssize_t pwrite64(int fd, const void *buf, size_t count, off64_t offset) {
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "readv (%s, iov, %d)", fd2name(fd), iovcnt);
+    char iov_str[100];
+    int n = 0; int i = 0;
+    for (i = 0; i < iovcnt; i++)
+        n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
+    sprintf(log_text, "readv (%s, iov_len:[%s], %d)", fd2name(fd), iov_str, iovcnt);
     RECORDER_IMP_CHEN(readv, ssize_t, __real_readv(fd, iov, iovcnt), log_text)
 }
 
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "writev (%s, iov, %d)", fd2name(fd), iovcnt);
+    char iov_str[100];
+    int n = 0; int i = 0;
+    for (i = 0; i < iovcnt; i++)
+        n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
+    sprintf(log_text, "writev (%s, iov_len:[%s], %d)", fd2name(fd), iov_str, iovcnt);
     RECORDER_IMP_CHEN(writev, ssize_t, __real_writev(fd, iov, iovcnt), log_text)
 }
 
