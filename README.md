@@ -39,11 +39,14 @@ the tracing implementation where the timestamp, function name, and function
 parameters are recorded. The original HDF5 function is called after this
 recording process. The mechanism is the same for the MPI and POSIX layers.
 
-Installation
+Installation & Usage
 ------------
 
-    ./config.sh /opt/hdf5-1.8.9 /opt/mpich2-1.4.1p1/ -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
+    ./config.sh PATH_TO_HDF5 PATH_TO_MPI options
+    // Options can be used to disable one ore more level of traces.
+    // Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
     make
     make install prefix=${HOME}/librecorder
+    LD_PRELOAD=/path/to/librecorder.so ./your_app
 
 
