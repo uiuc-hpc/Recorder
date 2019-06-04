@@ -166,9 +166,7 @@ char *fd2name(int fd) {
         return "null";
     }
 
-    //char *linkname = malloc(sb.st_size + 1);
     char *linkname = malloc(len);
-    //int r = readlink(fdname, linkname, sb.st_size + 1);
     int r = readlink(fdname, linkname, len);
     linkname[r] = '\x00';
     return linkname;

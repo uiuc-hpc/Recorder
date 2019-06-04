@@ -52,9 +52,10 @@
 extern FILE* __recorderfh;
 extern int depth;
 
-char * comm2name(MPI_Comm comm);
-char * type2name(MPI_Datatype type);
-char * makename(MPI_Datatype *type);
+char* comm2name(MPI_Comm comm);
+char* type2name(MPI_Datatype type);
+char* makename(MPI_Datatype *type);
 double recorder_wtime(void);
+char* fd2name(int fd);
 
 #endif /* __RECORDER_H */
