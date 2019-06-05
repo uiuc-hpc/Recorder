@@ -262,11 +262,19 @@ int MPI_Type_commit(MPI_Datatype *datatype) {
   return (ret);
 }
 
-int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info,
-                  MPI_File *fh) {
+int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info, MPI_File *fh) {
+    depth++;
+    double tm1 = recorder_wtime();
+    int res = RECORDER_MPI_CALL(PMPI_File_open) (comm, filename, amode, info, fh) ;
+    double tm2 = recorder_wtime();
+
+    // Have to print log after the function call bacause only when the *fh is allocated
     char log_text[TRACE_LEN];
-    sprintf(log_text, "MPI_File_open (%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, fh);
-    RECORDER_IMP_CHEN(PMPI_File_open, int, (comm, filename, amode, info, fh), log_text)
+    sprintf(log_text, "MPI_File_open (%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, *fh);
+    write_trace(tm1, tm2, log_text);
+    depth--;
+
+    return res;
 }
 
 int MPI_File_close(MPI_File *fh) {
