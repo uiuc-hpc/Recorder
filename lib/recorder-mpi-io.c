@@ -87,7 +87,7 @@ int depth;
 static void inline write_trace(double tstart, double tend, const char* text) {
     #ifndef DISABLE_MPIO_TRACE
     if (__recorderfh != NULL && depth == 1)
-        fprintf(__recorderfh, "%.5f %s %.5f\n", tstart, text, tend-tstart);
+        fprintf(__recorderfh, "%.6f %s %.6f\n", tstart, text, tend-tstart);
     #endif
 }
 
@@ -265,8 +265,7 @@ int MPI_Type_commit(MPI_Datatype *datatype) {
 int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info,
                   MPI_File *fh) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "MPI_File_open (%s, %s, %d, %d, %p)", comm2name(comm), filename,
-            amode, info, fh);
+    sprintf(log_text, "MPI_File_open (%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, fh);
     RECORDER_IMP_CHEN(PMPI_File_open, int, (comm, filename, amode, info, fh), log_text)
 }
 

@@ -175,7 +175,7 @@ char *fd2name(int fd) {
 static void inline write_trace(double tstart, double tend, const char* text) {
     #ifndef DISABLE_POSIX_TRACE
     if (__recorderfh != NULL)
-        fprintf(__recorderfh, "%.5f %s %.5f\n", tstart, text, tend-tstart);
+        fprintf(__recorderfh, "%.6f %s %.6f\n", tstart, text, tend-tstart);
     #endif
 }
 
