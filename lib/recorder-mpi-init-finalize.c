@@ -187,6 +187,10 @@ void overload_mpi_symbols(void) {
     MAP_OR_FAIL(PMPI_Init);
     MAP_OR_FAIL(PMPI_Init_thread);
 
+    MAP_OR_FAIL(PMPI_Gather);
+    MAP_OR_FAIL(PMPI_Gatherv);
+
+
     /*
      * These function are not intercepted but are used
      * by recorder itself.
