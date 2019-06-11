@@ -32,3 +32,7 @@
 config.inc
 .DS_Store
 .vscode/
+
+
+# Configuration file
+*.inc
