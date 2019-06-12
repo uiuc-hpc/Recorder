@@ -89,9 +89,13 @@ RECORDER_EXTERN_DECL(PMPI_Finalize, int, ());
 RECORDER_EXTERN_DECL(PMPI_Init, int, (int *argc, char ***argv));
 RECORDER_EXTERN_DECL(PMPI_Init_thread, int, (int *argc, char ***argv, int required, int *provided));
 
+// Added by Chen
 RECORDER_EXTERN_DECL(PMPI_Gather, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm));
 RECORDER_EXTERN_DECL(PMPI_Gatherv, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcounts[], int displs[], MPI_Datatype recvtype, int root, MPI_Comm comm));
 RECORDER_EXTERN_DECL(PMPI_Alltoall, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm));
+RECORDER_EXTERN_DECL(PMPI_Allgather, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm));
+RECORDER_EXTERN_DECL(PMPI_Allgatherv, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int *recvcounts, int *displs, MPI_Datatype recvtype, MPI_Comm comm));
+
 
 
 RECORDER_EXTERN_DECL(PMPI_Wtime, double, ());

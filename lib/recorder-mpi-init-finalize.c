@@ -187,9 +187,12 @@ void overload_mpi_symbols(void) {
     MAP_OR_FAIL(PMPI_Init);
     MAP_OR_FAIL(PMPI_Init_thread);
 
+
+    // Added by Chen
     MAP_OR_FAIL(PMPI_Gather);
     MAP_OR_FAIL(PMPI_Gatherv);
     MAP_OR_FAIL(PMPI_Alltoall);
+    MAP_OR_FAIL(PMPI_Allgatherv);
 
 
     /*
