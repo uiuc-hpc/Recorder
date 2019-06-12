@@ -189,6 +189,7 @@ void overload_mpi_symbols(void) {
 
     MAP_OR_FAIL(PMPI_Gather);
     MAP_OR_FAIL(PMPI_Gatherv);
+    MAP_OR_FAIL(PMPI_Alltoall);
 
 
     /*
