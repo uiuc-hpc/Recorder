@@ -147,7 +147,7 @@ unsigned long crc32(const unsigned char *s, unsigned int len)
 /*
  * Hashing function for a string
  */
-unsigned int hashmap_hash_int(hashmap_map * m, char* keystring){
+unsigned int hashmap_hash_int(hashmap_map * m, const char* keystring){
 
     unsigned long key = crc32((unsigned char*)(keystring), strlen(keystring));
 
@@ -171,7 +171,7 @@ unsigned int hashmap_hash_int(hashmap_map * m, char* keystring){
  * Return the integer of the location in data
  * to store the point to the item, or MAP_FULL.
  */
-int hashmap_hash(hashmap_map *m, char* key){
+int hashmap_hash(hashmap_map *m, const char* key){
 	int curr;
 	int i;
 
@@ -237,7 +237,7 @@ int hashmap_rehash(hashmap_map * m){
 /*
  * Add a pointer to the hashmap with some key
  */
-int hashmap_put(hashmap_map *m, char* key, int value){
+int hashmap_put(hashmap_map *m, const char* key, int value){
 	int index;
 
 	/* Find a place to put our value */
@@ -261,7 +261,7 @@ int hashmap_put(hashmap_map *m, char* key, int value){
 /*
  * Get your pointer out of the hashmap with a key
  */
-int hashmap_get(hashmap_map *m, char* key, int *arg){
+int hashmap_get(hashmap_map *m, const char* key, int *arg){
 	int curr;
 	int i;
 
@@ -291,7 +291,7 @@ int hashmap_get(hashmap_map *m, char* key, int *arg){
 /*
  * Remove an element with that key from the map
  */
-int hashmap_remove(hashmap_map * in, char* key){
+int hashmap_remove(hashmap_map * in, const char* key){
 	int i;
 	int curr;
 	hashmap_map* m;

@@ -158,7 +158,7 @@ static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
                              "/boot/", "/lib/",  "/opt/", "/sbin/",
                              "/sys/",  "/proc/", NULL};
 
-int fn2id(char *fn) {
+int fn2id(const char *fn) {
     if (!fn2id_map)
         return -1;
 
@@ -179,9 +179,8 @@ int fd2name2id(int fd) {
     struct stat sb;
     char fdname[len];
     sprintf(fdname, "/proc/self/fd/%d", fd);
-    if (lstat(fdname, &sb) == -1) {
-        return "null";
-    }
+    if (lstat(fdname, &sb) == -1)
+        return -1;
 
     char *linkname = malloc(len);
     int r = readlink(fdname, linkname, len);

@@ -12,7 +12,7 @@
 
 /* We need to keep keys and values */
 typedef struct _hashmap_element{
-	char* key;
+	const char* key;
 	int in_use;
 	int data;
 } hashmap_element;
@@ -29,7 +29,7 @@ typedef struct _hashmap_map {
 hashmap_map* hashmap_new();
 void hashmap_free(hashmap_map* m);
 int hashmap_length(hashmap_map* in);
-int hashmap_put(hashmap_map *m, char* key, int value);
-int hashmap_get(hashmap_map *m, char* key, int *arg);
-int hashmap_remove(hashmap_map *in, char* key);
+int hashmap_put(hashmap_map *m, const char* key, int value);
+int hashmap_get(hashmap_map *m, const char* key, int *arg);
+int hashmap_remove(hashmap_map *in, const char* key);
 
