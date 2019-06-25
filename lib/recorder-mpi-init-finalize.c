@@ -139,7 +139,6 @@ char *type2name(MPI_Datatype type) {
     int len;
     PMPI_Type_get_name(type, tmp, &len);
     tmp[len] = 0;
-
     return tmp;
 }
 

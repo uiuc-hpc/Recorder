@@ -46,10 +46,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include "recorder-log-format.h"
 #include <mpi.h>
+#include "recorder-log-format.h"
 
-extern FILE* __recorderfh;
+extern FILE* __recorderfh;          // file handler for each log file
 extern int depth;
 
 char* comm2name(MPI_Comm comm);
