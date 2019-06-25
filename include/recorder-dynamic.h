@@ -97,7 +97,6 @@ RECORDER_EXTERN_DECL(PMPI_Allgather, int, (void *sendbuf, int sendcount, MPI_Dat
 RECORDER_EXTERN_DECL(PMPI_Allgatherv, int, (void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int *recvcounts, int *displs, MPI_Datatype recvtype, MPI_Comm comm));
 
 
-
 RECORDER_EXTERN_DECL(PMPI_Wtime, double, ());
 RECORDER_EXTERN_DECL(PMPI_Allreduce, int, (void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm));
 RECORDER_EXTERN_DECL(PMPI_Bcast, int, (void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm));

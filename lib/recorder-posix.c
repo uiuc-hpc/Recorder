@@ -93,13 +93,19 @@ hashmap_map *fn2id_map;
         }
     extern double (*__real_PMPI_Wtime)(void);
 
-    #define RECORDER_IMP_CHEN(func, ret, real_func_call, log)       \
-        MAP_OR_FAIL(func)                                           \
-        double tm1 = recorder_wtime();                              \
-        ret res = real_func_call;                                   \
-        double tm2 = recorder_wtime();                              \
-        write_trace(tm1, tm2, log);                                 \
-        return res;
+    #ifndef DISABLE_POSIX_TRACE
+        #define RECORDER_IMP_CHEN(func, ret, real_func_call, log)       \
+            MAP_OR_FAIL(func)                                           \
+            double tm1 = recorder_wtime();                              \
+            ret res = real_func_call;                                   \
+            double tm2 = recorder_wtime();                              \
+            write_trace(tm1, tm2, log);                                 \
+            return res;
+    #else
+        #define RECORDER_IMP_CHEN(func, ret, real_func_call, log)       \
+            MAP_OR_FAIL(func)                                           \
+            return real_func_call;
+    #endif
 
 #else
 
