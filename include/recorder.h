@@ -46,16 +46,20 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include <mpi.h>
 #include "recorder-log-format.h"
+#include "hashmap.h"
+#include <mpi.h>
 
-extern FILE* __recorderfh;          // file handler for each log file
-extern int depth;
+extern FILE* __recorderfh;          /* file handler for each log file */
+extern int depth;                   /* funciton call depth */
+extern hashmap_map *fn2id_map;      /* filename to id map <string, int> */
 
 char* comm2name(MPI_Comm comm);
 char* type2name(MPI_Datatype type);
 char* makename(MPI_Datatype *type);
 double recorder_wtime(void);
 char* fd2name(int fd);
+
+int fd2name2id(int fd);             /* Get the file full name from the file descriptor and then map it to get the id */
 
 #endif /* __RECORDER_H */

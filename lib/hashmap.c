@@ -261,13 +261,9 @@ int hashmap_put(hashmap_map *m, char* key, int value){
 /*
  * Get your pointer out of the hashmap with a key
  */
-int hashmap_get(hashmap_map * in, char* key, int *arg){
+int hashmap_get(hashmap_map *m, char* key, int *arg){
 	int curr;
 	int i;
-	hashmap_map* m;
-
-	/* Cast the hashmap */
-	m = (hashmap_map *) in;
 
 	/* Find data location */
 	curr = hashmap_hash_int(m, key);
@@ -330,10 +326,13 @@ int hashmap_remove(hashmap_map * in, char* key){
 }
 
 /* Deallocate the hashmap */
-void hashmap_free(hashmap_map * in){
-	hashmap_map* m = (hashmap_map*) in;
-	free(m->data);
-	free(m);
+void hashmap_free(hashmap_map *m){
+    if (m != NULL) {
+        printf("here: %d\n", hashmap_length(m));
+        if (m->data != NULL)
+            free(m->data);
+        free(m);
+    }
 }
 
 /* Return the length of the hashmap */

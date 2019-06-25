@@ -13,7 +13,7 @@ CC = mpicc
 LD = @LD@
 
 RECORDER_LOG_FORMAT = $(srcdir)/./recorder-log-format.h
-INCL_DEPS = include/recorder.h include/recorder-dynamic.h $(recorder_LOG_FORMAT)
+INCL_DEPS = include/recorder.h include/recorder-dynamic.h $(recorder_LOG_FORMAT) include/hashmap.h
 
 CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
     -I${MPI_DIR}/include -I${HDF5_DIR}/include\
@@ -31,7 +31,7 @@ lib:
 %.po: %.c $(INCL_DEPS) | lib
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
-lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po
+lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po
 	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lrt -lz $(LDFLAGS)
 
 install:: all

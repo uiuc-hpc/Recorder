@@ -272,11 +272,16 @@ void recorder_mpi_initialize(int *argc, char ***argv) {
     free(logfile_name);
     free(logdir_name);
 
+    fn2id_map = hashmap_new();
+
     return;
 }
 
 void recorder_shutdown(int timing_flag) {
-    fclose(__recorderfh);
+    // Any of the following will cause a crash, so wierd
+    //if (__recorderfh != NULL)
+    //    fclose(__recorderfh);
+    //hashmap_free(fn2id_map);
     return;
 }
 
@@ -326,6 +331,7 @@ int MPI_Finalize(void) {
     else
        recorder_shutdown(0);
     */
+    recorder_shutdown(0);
     int ret = RECORDER_MPI_CALL(PMPI_Finalize)();
     return (ret);
 }

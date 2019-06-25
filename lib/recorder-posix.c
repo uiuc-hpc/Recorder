@@ -71,6 +71,7 @@ extern char *__progname_full;
 extern char *__progname;
 FILE *__recorderfh;
 int depth;
+hashmap_map *fn2id_map;
 
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
@@ -157,7 +158,23 @@ static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
                              "/boot/", "/lib/",  "/opt/", "/sbin/",
                              "/sys/",  "/proc/", NULL};
 
-char *fd2name(int fd) {
+int fn2id(char *fn) {
+    if (!fn2id_map)
+        return -1;
+
+    int id;
+
+    /* filename already exists */
+    if (hashmap_get(fn2id_map, fn, &id) == MAP_OK)
+        return id;
+
+    /* insert filename into the map */
+    id = hashmap_length(fn2id_map);
+    hashmap_put(fn2id_map, fn, id);
+    return id;
+}
+
+int fd2name2id(int fd) {
     size_t len = 256;
     struct stat sb;
     char fdname[len];
@@ -169,7 +186,8 @@ char *fd2name(int fd) {
     char *linkname = malloc(len);
     int r = readlink(fdname, linkname, len);
     linkname[r] = '\x00';
-    return linkname;
+
+    return fn2id(linkname);
 }
 
 static void inline write_trace(double tstart, double tend, const char* text) {
@@ -181,25 +199,25 @@ static void inline write_trace(double tstart, double tend, const char* text) {
 
 int close(int fd) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "close (%s)", fd2name(fd));
+    sprintf(log_text, "close (%d)", fd2name2id(fd));
     RECORDER_IMP_CHEN(close, int, __real_close(fd), log_text)
 }
 
 int fclose(FILE *fp) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fclose (%s)", fd2name(fileno(fp)));
+    sprintf(log_text, "fclose (%d)", fd2name2id(fileno(fp)));
     RECORDER_IMP_CHEN(fclose, int, __real_fclose(fp), log_text)
 }
 
 int fsync(int fd) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fsync (%s)", fd2name(fd));
+    sprintf(log_text, "fsync (%d)", fd2name2id(fd));
     RECORDER_IMP_CHEN(fsync, int, __real_fsync(fd), log_text)
 }
 
 int fdatasync(int fd) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fdatasync (%s)", fd2name(fd));
+    sprintf(log_text, "fdatasync (%d)", fd2name2id(fd));
     RECORDER_IMP_CHEN(fclose, int, __real_fdatasync(fd), log_text)
 }
 
@@ -219,19 +237,19 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 int creat(const char *path, mode_t mode) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "creat (%s, %d)", path, mode);
+    sprintf(log_text, "creat (%d, %d)", fn2id(path), mode);
     RECORDER_IMP_CHEN(creat, int, __real_creat(path, mode), log_text)
 }
 
 int creat64(const char *path, mode_t mode) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "creat64 (%s, %d)", path, mode);
+    sprintf(log_text, "creat64 (%d, %d)", fn2id(path), mode);
     RECORDER_IMP_CHEN(creat64, int, __real_creat64(path, mode), log_text)
 }
 
 int open64(const char *path, int flags, ...) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "open64 (%s, %d)", path, flags);
+    sprintf(log_text, "open64 (%d, %d)", fn2id(path), flags);
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -245,7 +263,7 @@ int open64(const char *path, int flags, ...) {
 
 int open(const char *path, int flags, ...) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "open (%s, %d)", path, flags);
+    sprintf(log_text, "open (%d, %d)", fn2id(path), flags);
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -259,13 +277,13 @@ int open(const char *path, int flags, ...) {
 
 FILE *fopen64(const char *path, const char *mode) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fopen64 (%s, %s)", path, mode);
+    sprintf(log_text, "fopen64 (%d, %s)", fn2id(path), mode);
     RECORDER_IMP_CHEN(fopen64, FILE*, __real_fopen64(path, mode), log_text)
 }
 
 FILE *fopen(const char *path, const char *mode) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fopen (%s, %s)", path, mode);
+    sprintf(log_text, "fopen (%d, %s)", fn2id(path), mode);
     RECORDER_IMP_CHEN(fopen, FILE*, __real_fopen(path, mode), log_text)
 }
 
@@ -349,25 +367,25 @@ int RECORDER_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
 
 ssize_t pread64(int fd, void *buf, size_t count, off64_t offset) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "pread64 (%s, %p, %ld, %ld)", fd2name(fd), buf, count, offset);
+    sprintf(log_text, "pread64 (%d, %p, %ld, %ld)", fd2name2id(fd), buf, count, offset);
     RECORDER_IMP_CHEN(pread64, ssize_t, __real_pread64(fd, buf, count, offset), log_text)
 }
 
 ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "pread (%s, %p, %ld, %ld)", fd2name(fd), buf, count, offset);
+    sprintf(log_text, "pread (%d, %p, %ld, %ld)", fd2name2id(fd), buf, count, offset);
     RECORDER_IMP_CHEN(pread, ssize_t, __real_pread(fd, buf, count, offset), log_text)
 }
 
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "pwrite (%s, %p, %ld, %ld)", fd2name(fd), buf, count, offset);
+    sprintf(log_text, "pwrite (%d, %p, %ld, %ld)", fd2name2id(fd), buf, count, offset);
     RECORDER_IMP_CHEN(pwrite, ssize_t, __real_pwrite(fd, buf, count, offset), log_text)
 }
 
 ssize_t pwrite64(int fd, const void *buf, size_t count, off64_t offset) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "pwrite64 (%s, %p, %ld, %ld)", fd2name(fd), buf, count, offset);
+    sprintf(log_text, "pwrite64 (%d, %p, %ld, %ld)", fd2name2id(fd), buf, count, offset);
     RECORDER_IMP_CHEN(pwrite64, ssize_t, __real_pwrite64(fd, buf, count, offset), log_text)
 }
 
@@ -377,7 +395,7 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt) {
     int n = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
-    sprintf(log_text, "readv (%s, iov_len:[%s], %d)", fd2name(fd), iov_str, iovcnt);
+    sprintf(log_text, "readv (%d, iov_len:[%s], %d)", fd2name2id(fd), iov_str, iovcnt);
     RECORDER_IMP_CHEN(readv, ssize_t, __real_readv(fd, iov, iovcnt), log_text)
 }
 
@@ -387,25 +405,25 @@ ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
     int n = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
-    sprintf(log_text, "writev (%s, iov_len:[%s], %d)", fd2name(fd), iov_str, iovcnt);
+    sprintf(log_text, "writev (%d, iov_len:[%s], %d)", fd2name2id(fd), iov_str, iovcnt);
     RECORDER_IMP_CHEN(writev, ssize_t, __real_writev(fd, iov, iovcnt), log_text)
 }
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fread (%p, %ld, %ld, %s)", ptr, size, nmemb, fd2name(fileno(stream)));
+    sprintf(log_text, "fread (%p, %ld, %ld, %d)", ptr, size, nmemb, fd2name2id(fileno(stream)));
     RECORDER_IMP_CHEN(fread, size_t, __real_fread(ptr, size, nmemb, stream), log_text)
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "read (%s, %p, %ld)", fd2name(fd), buf, count);
+    sprintf(log_text, "read (%d, %p, %ld)", fd2name2id(fd), buf, count);
     RECORDER_IMP_CHEN(read, ssize_t, __real_read(fd, buf, count), log_text)
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "write (%s, %p, %ld)", fd2name(fd), buf, count);
+    sprintf(log_text, "write (%d, %p, %ld)", fd2name2id(fd), buf, count);
     RECORDER_IMP_CHEN(write, ssize_t, __real_write(fd, buf, count), log_text)
 }
 
@@ -415,25 +433,25 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fwrite (%p, %ld, %ld, %s)", ptr, size, nmemb, fd2name(fileno(stream)));
+    sprintf(log_text, "fwrite (%p, %ld, %ld, %d)", ptr, size, nmemb, fd2name2id(fileno(stream)));
     RECORDER_IMP_CHEN(fwrite, size_t, __real_fwrite(ptr, size, nmemb, stream), log_text)
 }
 
 off64_t lseek64(int fd, off64_t offset, int whence) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "lseek64 (%s, %ld, %d)", fd2name(fd), offset, whence);
+    sprintf(log_text, "lseek64 (%d, %ld, %d)", fd2name2id(fd), offset, whence);
     RECORDER_IMP_CHEN(lseek64, off64_t, __real_lseek64(fd, offset, whence), log_text)
 }
 
 off_t lseek(int fd, off_t offset, int whence) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "lseek (%s, %ld, %d)", fd2name(fd), offset, whence);
+    sprintf(log_text, "lseek (%d, %ld, %d)", fd2name2id(fd), offset, whence);
     RECORDER_IMP_CHEN(lseek, off_t, __real_lseek(fd, offset, whence), log_text)
 }
 
 int fseek(FILE *stream, long offset, int whence) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fseek (%s, %ld, %d)", fd2name(fileno(stream)), offset, whence);
+    sprintf(log_text, "fseek (%d, %ld, %d)", fd2name2id(fileno(stream)), offset, whence);
     RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), log_text)
 }
 
