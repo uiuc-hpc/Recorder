@@ -51,7 +51,6 @@
 #include <stdlib.h>
 
 #define RECORDER_MPI_CALL(func) __real_ ## func
-//#define RECORDER_MPI_CALL(func)
 
 #define RECORDER_EXTERN_DECL(name,ret,args) \
   extern ret (*__real_ ## name)args;
