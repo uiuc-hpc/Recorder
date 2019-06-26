@@ -93,7 +93,6 @@ int depth;
             }                                                                   \
         }
 
-
     #ifndef DISABLE_MPIO_TRACE
         #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
             MAP_OR_FAIL(func)                                           \
@@ -106,6 +105,7 @@ int depth;
             return res;
     #else
         #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
+            MAP_OR_FAIL(func)                                           \
             return RECORDER_MPI_CALL(func) args ;
     #endif
 #endif
@@ -172,7 +172,7 @@ RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
 
 static void inline write_trace(double tstart, double tend, const char* func, const char* args) {
     if (__recorderfh != NULL && depth == 1)
-        fprintf(__recorderfh, "%.6f 1 %s %.6f\n", tstart, args, tend-tstart);
+        fprintf(__recorderfh, "%.6f %s %s %.6f\n", tstart, func, args, tend-tstart);
 }
 
 int MPI_Comm_size(MPI_Comm comm, int *size) {

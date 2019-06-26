@@ -1,32 +1,61 @@
-#include <mpi.h>
 #include <stdio.h>
+#include "mpi.h"
+
+typedef enum { false, true } bool;
+
+static int rank;
+
+static void print(char *func_name, bool start) {
+    if (rank == 0) {
+        if (start == true)
+            printf("\n%s START\n", func_name);
+        else
+            printf("%s SUCCESS\n", func_name);
+    }
+}
+
+
+#define TEST_MPI_CALL(func, args)       \
+    print(#func, true);                 \
+    func args ;                         \
+    print(#func, false);
+
 
 int main(int argc, char *argv[]) {
     MPI_Init(NULL, NULL);
 
     int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    TEST_MPI_CALL("MPI_Comm_size", MPI_Comm_size, (MPI_COMM_WORLD, &world_size));
+
+    TEST_MPI_CALL("MPI_Comm_rank", MPI_Comm_rank, (MPI_COMM_WORLD, &rank));
 
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
-    MPI_Get_processor_name(processor_name, &name_len);
+    TEST_MPI_CALL("MPI_Get_processor_name", MPI_Get_processor_name, (processor_name, &name_len));
 
-
+    TEST_MPI_CALL("MPI_Comm_set_errhander", MPI_Comm_set_errhandler, (MPI_COMM_WORLD, MPI_ERRORS_RETURN))
 
     void *sbuf = processor_name;
     int scount = name_len;
     char rbuf[MPI_MAX_PROCESSOR_NAME];
-    MPI_Alltoall(sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD);
+    TEST_MPI_CALL("MPI_Alltoall", MPI_Alltoall, (sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD));
 
-    printf("Hello world from processor %s, rank %d out of %d processors\n",
-            rbuf, world_rank, world_size);
 
-    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    /* IO-Realted MPI Calls */
+    /*
+    MPI_File fh;
+    MPI_Status status;
+    int i, a[10];
+    for ( i=0;i<10;i++) a[i] = 5;
+    MPI_File_open( MPI_COMM_WORLD, "workfile", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+    MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL);
+    //MPI_File_set_atomicity(fh0, 1);
+    MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status) ;
+    */
 
-    MPI_Finalize();
+
+    TEST_MPI_CALL("MPI_Finalize", MPI_Finalize, ())
 
     return 0;
 }
