@@ -43,17 +43,17 @@ int main(int argc, char *argv[]) {
 
 
     /* IO-Realted MPI Calls */
-    /*
     MPI_File fh;
     MPI_Status status;
     int i, a[10];
     for ( i=0;i<10;i++) a[i] = 5;
-    MPI_File_open( MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
-    MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL);
-    //MPI_File_set_atomicity(fh0, 1);
-    MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status);
-    */
 
+    TEST_MPI_CALL(MPI_File_open, (MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh))
+
+    TEST_MPI_CALL(MPI_File_set_view, (fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL))
+
+    //MPI_File_set_atomicity(fh0, 1);
+    TEST_MPI_CALL(MPI_File_write_at, (fh, 0, a, 10, MPI_INT, &status))
 
     TEST_MPI_CALL(MPI_Finalize, ())
 
