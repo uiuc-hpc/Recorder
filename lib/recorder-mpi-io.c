@@ -82,7 +82,6 @@ int depth;
     /* Declare the function signature for all real functions */
     #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args = NULL;
 
-    #define RECORDER_MPI_CALL(func) __real_##func
 
     /* Point __read_func to the real funciton using dlsym() */
     #define MAP_OR_FAIL(func)                                                   \
@@ -92,6 +91,13 @@ int depth;
                 fprintf(stderr, "Recorder failed to map symbol: %s\n", #func);  \
             }                                                                   \
         }
+
+    /*
+     * Call the real MPI funciton
+     * Before call the real function, we need to make sure its mapped
+     * which means, every time we use this marco, we need to call MAP_OR_FAIL before it
+     * */
+    #define RECORDER_MPI_CALL(func) __real_##func
 
     #ifndef DISABLE_MPIO_TRACE
         #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
@@ -331,6 +337,7 @@ int MPI_Type_commit(MPI_Datatype *datatype) {
         fprintf(__recorderfh, "%.5f MPI_Type_commit (%p)", tm1, datatype);
 #endif
 
+    MAP_OR_FAIL(PMPI_Type_commit)
     ret = RECORDER_MPI_CALL(PMPI_Type_commit)(datatype);
     tm2 = recorder_wtime();
 
@@ -349,6 +356,7 @@ int MPI_Type_commit(MPI_Datatype *datatype) {
 int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info, MPI_File *fh) {
     depth++;
     double tm1 = recorder_wtime();
+    MAP_OR_FAIL(PMPI_File_open)
     int res = RECORDER_MPI_CALL(PMPI_File_open) (comm, filename, amode, info, fh) ;
     double tm2 = recorder_wtime();
 
