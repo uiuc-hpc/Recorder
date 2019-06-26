@@ -26,20 +26,20 @@ int main(int argc, char *argv[]) {
 
     int world_size;
 
-    TEST_MPI_CALL("MPI_Comm_size", MPI_Comm_size, (MPI_COMM_WORLD, &world_size));
+    TEST_MPI_CALL(MPI_Comm_size, (MPI_COMM_WORLD, &world_size));
 
-    TEST_MPI_CALL("MPI_Comm_rank", MPI_Comm_rank, (MPI_COMM_WORLD, &rank));
+    TEST_MPI_CALL(MPI_Comm_rank, (MPI_COMM_WORLD, &rank));
 
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
-    TEST_MPI_CALL("MPI_Get_processor_name", MPI_Get_processor_name, (processor_name, &name_len));
+    TEST_MPI_CALL(MPI_Get_processor_name, (processor_name, &name_len));
 
-    TEST_MPI_CALL("MPI_Comm_set_errhander", MPI_Comm_set_errhandler, (MPI_COMM_WORLD, MPI_ERRORS_RETURN))
+    TEST_MPI_CALL(MPI_Comm_set_errhandler, (MPI_COMM_WORLD, MPI_ERRORS_RETURN))
 
     void *sbuf = processor_name;
     int scount = name_len;
     char rbuf[MPI_MAX_PROCESSOR_NAME];
-    TEST_MPI_CALL("MPI_Alltoall", MPI_Alltoall, (sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD));
+    TEST_MPI_CALL(MPI_Alltoall, (sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD));
 
 
     /* IO-Realted MPI Calls */
@@ -48,14 +48,14 @@ int main(int argc, char *argv[]) {
     MPI_Status status;
     int i, a[10];
     for ( i=0;i<10;i++) a[i] = 5;
-    MPI_File_open( MPI_COMM_WORLD, "workfile", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+    MPI_File_open( MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL);
     //MPI_File_set_atomicity(fh0, 1);
-    MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status) ;
+    MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status);
     */
 
 
-    TEST_MPI_CALL("MPI_Finalize", MPI_Finalize, ())
+    TEST_MPI_CALL(MPI_Finalize, ())
 
     return 0;
 }
