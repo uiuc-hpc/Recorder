@@ -42,6 +42,8 @@
 #endif
 #include <otf2/OTF2_MPI_Collectives.h>
 
+#include "recorder.h"
+
 static OTF2_TimeStamp get_time(void) {
     double t = MPI_Wtime() * 1e9;
     return ( uint64_t )t;

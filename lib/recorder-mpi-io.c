@@ -628,6 +628,9 @@ void recorder_initialize(int *argc, char ***argv) {
     free(logdir_name);
 
     fn2id_map = hashmap_new();
+
+    // Init OTF2
+    otf2_init(nprocs, rank);
     return;
 }
 
@@ -670,11 +673,16 @@ int MPI_Finalize(void) {
     else
        recorder_shutdown(0);
     */
-    MAP_OR_FAIL(PMPI_Finalize)
-    int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
+
 
     // Shutdown
     recorder_shutdown(0);
+    otf2_exit();
+
+    MAP_OR_FAIL(PMPI_Finalize)
+    int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
+
+
     return ret;
 }
 
