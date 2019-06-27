@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
-
+#include <string.h>
 #include <mpi.h>
 
 #include <otf2/otf2.h>
@@ -67,30 +67,42 @@ static OTF2_FlushCallbacks flush_callbacks =
 /* Make them global so we don't pass them around */
 static OTF2_Archive *__archive;
 static OTF2_EvtWriter *__evt_writer;
+static int __rank;
 
-
-void writeIoEvent(int rank) {
-
-    OTF2_DefWriter *loc_def_writer = OTF2_Archive_GetDefWriter(__archive, rank);
-    OTF2_Archive_CloseDefWriter(__archive, loc_def_writer);
-
+static void write_open_close(const char *func) {
     OTF2_IoHandleRef ioHandle = 12;
-
-    /* Some IO events */
     OTF2_IoAccessMode fmode = OTF2_IO_ACCESS_MODE_READ_WRITE;
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
     OTF2_IoStatusFlag fstatus = OTF2_IO_STATUS_FLAG_APPEND;
+    if (strstr(func, "open") !=NULL)
+        OTF2_EvtWriter_IoCreateHandle(__evt_writer, NULL, get_time(), ioHandle, fmode, fflag, fstatus);
+    else
+        OTF2_EvtWriter_IoDestroyHandle(__evt_writer, NULL, get_time(), ioHandle);
+}
+static void write_read_write(const char *func, size_t bytes) {
+    OTF2_IoHandleRef ioHandle = 12;
+    OTF2_IoOperationMode opmode = OTF2_IO_OPERATION_MODE_WRITE;
+    OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
+    OTF2_EvtWriter_IoOperationBegin(__evt_writer, NULL, get_time(), ioHandle, opmode, fflag, bytes, 0);
+    OTF2_EvtWriter_IoOperationComplete(__evt_writer, NULL, get_time(), ioHandle, bytes, 0);
+}
+static void write_lseek() {
+}
 
-    OTF2_EvtWriter_IoCreateHandle(__evt_writer, NULL, get_time(), ioHandle, fmode, fflag, fstatus);
+void otf2_write_trace(const char *func, size_t bytes){
 
-    int i;
-    for(i = 0; i< 1473145; i++) {
-        OTF2_EvtWriter_IoOperationBegin(__evt_writer, NULL, get_time(), ioHandle, fmode, fflag, 100, 0);
-        OTF2_EvtWriter_IoOperationComplete(__evt_writer, NULL, get_time(), ioHandle, 100, 0);
+    if (strstr(func, "write") != NULL || strstr(func, "read") != NULL) {
+        write_read_write(func, bytes);
+    } else if (strstr(func, "seek") != NULL ) {
+        write_lseek();
+    } else if (strstr(func, "open") != NULL || strstr(func, "close") != NULL ) {
+        write_open_close(func);
     }
 
-    OTF2_EvtWriter_IoDestroyHandle(__evt_writer, NULL, get_time(), ioHandle);
+    //OTF2_DefWriter *loc_def_writer = OTF2_Archive_GetDefWriter(__archive, __rank);
+    //OTF2_Archive_CloseDefWriter(__archive, loc_def_writer);
 }
+
 
 
 void writeGlobalDefinitions(int nranks) {
@@ -136,6 +148,7 @@ void writeGlobalDefinitions(int nranks) {
  * out: archive and event writer
  */
 void otf2_init(int nprocs, int rank) {
+    __rank = rank;
     __archive = OTF2_Archive_Open("ArchivePath", "ArchiveName",
                                                OTF2_FILEMODE_WRITE,
                                                1024 * 1024 /* event chunk size */,
@@ -153,7 +166,7 @@ void otf2_init(int nprocs, int rank) {
 
     // Open event file and return Event writer
     OTF2_Archive_OpenEvtFiles(__archive);
-    __evt_writer = OTF2_Archive_GetEvtWriter(__archive, rank );
+    __evt_writer = OTF2_Archive_GetEvtWriter(__archive, rank);
 }
 
 void otf2_exit() {

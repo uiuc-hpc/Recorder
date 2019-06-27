@@ -64,5 +64,6 @@ int fd2name2id(int fd);             /* Get the file full name from the file desc
 
 void otf2_init();
 void otf2_exit();
+void otf2_write_trace(const char *func, size_t bytes);
 
 #endif /* __RECORDER_H */
