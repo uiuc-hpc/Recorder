@@ -61,10 +61,16 @@ static OTF2_FlushCallbacks flush_callbacks =
     .otf2_post_flush = post_flush
 };
 
-void writeIoEvent(OTF2_Archive *archive, OTF2_EvtWriter *evt_writer, int rank) {
 
-    OTF2_DefWriter *loc_def_writer = OTF2_Archive_GetDefWriter(archive, rank);
-    OTF2_Archive_CloseDefWriter(archive, loc_def_writer);
+/* Make them global so we don't pass them around */
+static OTF2_Archive *__archive;
+static OTF2_EvtWriter *__evt_writer;
+
+
+void writeIoEvent(int rank) {
+
+    OTF2_DefWriter *loc_def_writer = OTF2_Archive_GetDefWriter(__archive, rank);
+    OTF2_Archive_CloseDefWriter(__archive, loc_def_writer);
 
     OTF2_IoHandleRef ioHandle = 12;
 
@@ -73,20 +79,20 @@ void writeIoEvent(OTF2_Archive *archive, OTF2_EvtWriter *evt_writer, int rank) {
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
     OTF2_IoStatusFlag fstatus = OTF2_IO_STATUS_FLAG_APPEND;
 
-    OTF2_EvtWriter_IoCreateHandle(evt_writer, NULL, get_time(), ioHandle, fmode, fflag, fstatus);
+    OTF2_EvtWriter_IoCreateHandle(__evt_writer, NULL, get_time(), ioHandle, fmode, fflag, fstatus);
 
     int i;
     for(i = 0; i< 1473145; i++) {
-        OTF2_EvtWriter_IoOperationBegin(evt_writer, NULL, get_time(), ioHandle, fmode, fflag, 100, 0);
-        OTF2_EvtWriter_IoOperationComplete(evt_writer, NULL, get_time(), ioHandle, 100, 0);
+        OTF2_EvtWriter_IoOperationBegin(__evt_writer, NULL, get_time(), ioHandle, fmode, fflag, 100, 0);
+        OTF2_EvtWriter_IoOperationComplete(__evt_writer, NULL, get_time(), ioHandle, 100, 0);
     }
 
-    OTF2_EvtWriter_IoDestroyHandle(evt_writer, NULL, get_time(), ioHandle);
+    OTF2_EvtWriter_IoDestroyHandle(__evt_writer, NULL, get_time(), ioHandle);
 }
 
 
-void writeGlobalDefinitions(OTF2_Archive *archive, int nranks) {
-    OTF2_GlobalDefWriter* global_def_writer = OTF2_Archive_GetGlobalDefWriter( archive );
+void writeGlobalDefinitions(int nranks) {
+    OTF2_GlobalDefWriter* global_def_writer = OTF2_Archive_GetGlobalDefWriter(__archive);
 
     OTF2_GlobalDefWriter_WriteRegion( global_def_writer, 0, 2, 3, 4, OTF2_REGION_ROLE_BARRIER,
                                         OTF2_PARADIGM_MPI, OTF2_REGION_FLAG_NONE, 7, 0, 0);
@@ -120,48 +126,37 @@ void writeGlobalDefinitions(OTF2_Archive *archive, int nranks) {
     OTF2_IoHandleRef ioHandle = 12;
     OTF2_GlobalDefWriter_WriteIoHandle(global_def_writer, ioHandle, filenameRef, fileRef, 0, 0, 0, 0);
 
-    OTF2_Archive_CloseGlobalDefWriter( archive, global_def_writer );
+    OTF2_Archive_CloseGlobalDefWriter(__archive, global_def_writer);
 }
 
-int main(int argc, char** argv )
-{
-    MPI_Init( &argc, &argv );
-    int size;
-    MPI_Comm_size( MPI_COMM_WORLD, &size );
-    int rank;
-    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
-
-    OTF2_Archive* archive = OTF2_Archive_Open("ArchivePath", "ArchiveName",
+/*
+ * in: nprocs and rank
+ * out: archive and event writer
+ */
+void otf2_init(int nprocs, int rank) {
+    __archive = OTF2_Archive_Open("ArchivePath", "ArchiveName",
                                                OTF2_FILEMODE_WRITE,
                                                1024 * 1024 /* event chunk size */,
                                                4 * 1024 * 1024 /* def chunk size */,
                                                OTF2_SUBSTRATE_POSIX,
-                                               OTF2_COMPRESSION_ZLIB);
-
-    // mandatory
-    OTF2_Archive_SetFlushCallbacks( archive, &flush_callbacks, NULL );
-    OTF2_MPI_Archive_SetCollectiveCallbacks(archive, MPI_COMM_WORLD, MPI_COMM_NULL);
-
-    OTF2_Archive_OpenEvtFiles( archive );
-    OTF2_EvtWriter* evt_writer = OTF2_Archive_GetEvtWriter(archive, rank );
-
+                                               OTF2_COMPRESSION_NONE);
+    // Mandatory
+    OTF2_Archive_SetFlushCallbacks(__archive, &flush_callbacks, NULL );
+    OTF2_MPI_Archive_SetCollectiveCallbacks(__archive, MPI_COMM_WORLD, MPI_COMM_NULL);
 
     // Write Gobal Definitions
     if ( 0 == rank ) {
-        writeGlobalDefinitions(archive, size);
+        writeGlobalDefinitions(nprocs);
     }
 
-    // Write IO Event
-    //writeIoEvent(archive, evt_writer, rank);
+    // Open event file and return Event writer
+    OTF2_Archive_OpenEvtFiles(__archive);
+    __evt_writer = OTF2_Archive_GetEvtWriter(__archive, rank );
+}
 
-    OTF2_Archive_CloseEvtWriter( archive, evt_writer );
-    OTF2_Archive_CloseEvtFiles( archive );
-
-
-    MPI_Barrier( MPI_COMM_WORLD );
-    OTF2_Archive_Close( archive );
-
-    MPI_Finalize();
-
-    return EXIT_SUCCESS;
+void otf2_exit() {
+    OTF2_Archive_CloseEvtWriter(__archive, __evt_writer);
+    OTF2_Archive_CloseEvtFiles(__archive);
+    MPI_Barrier( MPI_COMM_WORLD);
+    OTF2_Archive_Close(__archive);
 }
