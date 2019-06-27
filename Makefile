@@ -14,20 +14,15 @@ LD = @LD@
 
 
 
-OTF2_DIR = /g/g90/wang116/packages/otf2-2.1.1/build/bin
-
-
 RECORDER_LOG_FORMAT = $(srcdir)/./recorder-log-format.h
 INCL_DEPS = include/recorder.h $(recorder_LOG_FORMAT) include/hashmap.h
 
 CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
     -I${MPI_DIR}/include -I${HDF5_DIR}/include	\
-	`${OTF2_DIR}/otf2-config --cflags`			\
     -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD
 
 LIBS += -lz @LIBBZ2@
-LDFLAGS += -L${HDF5_DIR}/lib -lhdf5 -ldl		\
-			`${OTF2_DIR}/otf2-config --ldflags` `${OTF2_DIR}/otf2-config --libs`
+LDFLAGS += -L${HDF5_DIR}/lib -lhdf5 -ldl
 
 CFLAGS += $(CFLAGS_SHARED) ${DISABLED_LAYERS}
 
@@ -39,7 +34,7 @@ lib:
 %.po: %.c $(INCL_DEPS) | lib
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
-lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po lib/otf2_writer.po
+lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po
 	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lrt -lz $(LDFLAGS)
 
 install:: all
