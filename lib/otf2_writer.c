@@ -70,7 +70,8 @@ static OTF2_EvtWriter *__evt_writer;
 static int __rank;
 
 static void write_open_close(const char *func) {
-    OTF2_IoHandleRef ioHandle = 12;
+    printf("here %d\n", __rank);
+    OTF2_IoHandleRef ioHandle = 12 + __rank;
     OTF2_IoAccessMode fmode = OTF2_IO_ACCESS_MODE_READ_WRITE;
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
     OTF2_IoStatusFlag fstatus = OTF2_IO_STATUS_FLAG_APPEND;
@@ -80,7 +81,7 @@ static void write_open_close(const char *func) {
         OTF2_EvtWriter_IoDestroyHandle(__evt_writer, NULL, get_time(), ioHandle);
 }
 static void write_read_write(const char *func, size_t bytes) {
-    OTF2_IoHandleRef ioHandle = 12;
+    OTF2_IoHandleRef ioHandle = 12 + __rank;
     OTF2_IoOperationMode opmode = OTF2_IO_OPERATION_MODE_WRITE;
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
     OTF2_EvtWriter_IoOperationBegin(__evt_writer, NULL, get_time(), ioHandle, opmode, fflag, bytes, 0);
@@ -92,9 +93,9 @@ static void write_lseek() {
 void otf2_write_trace(const char *func, size_t bytes){
 
     if (strstr(func, "write") != NULL || strstr(func, "read") != NULL) {
-        write_read_write(func, bytes);
+        //write_read_write(func, bytes);
     } else if (strstr(func, "seek") != NULL ) {
-        write_lseek();
+        //write_lseek();
     } else if (strstr(func, "open") != NULL || strstr(func, "close") != NULL ) {
         write_open_close(func);
     }
@@ -107,9 +108,6 @@ void otf2_write_trace(const char *func, size_t bytes){
 
 void writeGlobalDefinitions(int nranks) {
     OTF2_GlobalDefWriter* global_def_writer = OTF2_Archive_GetGlobalDefWriter(__archive);
-
-    OTF2_GlobalDefWriter_WriteRegion( global_def_writer, 0, 2, 3, 4, OTF2_REGION_ROLE_BARRIER,
-                                        OTF2_PARADIGM_MPI, OTF2_REGION_FLAG_NONE, 7, 0, 0);
 
     OTF2_GlobalDefWriter_WriteSystemTreeNode( global_def_writer, 0, 5, 6, OTF2_UNDEFINED_SYSTEM_TREE_NODE);
 
@@ -158,6 +156,7 @@ void otf2_init(int nprocs, int rank) {
     // Mandatory
     OTF2_Archive_SetFlushCallbacks(__archive, &flush_callbacks, NULL );
     OTF2_MPI_Archive_SetCollectiveCallbacks(__archive, MPI_COMM_WORLD, MPI_COMM_NULL);
+    //OTF2_Archive_SetSerialCollectiveCallbacks(__archive);
 
     // Write Gobal Definitions
     if ( 0 == rank ) {

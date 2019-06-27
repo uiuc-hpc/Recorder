@@ -99,7 +99,7 @@ hashmap_map *fn2id_map;
             double tm1 = recorder_wtime();                              \
             ret res = real_func_call;                                   \
             double tm2 = recorder_wtime();                              \
-            write_trace(tm1, tm2, log);                                 \
+            write_trace(tm1, tm2, #func, log);                          \
             return res;
     #else
         #define RECORDER_IMP_CHEN(func, ret, real_func_call, log)       \
@@ -192,7 +192,7 @@ int fd2name2id(int fd) {
     return fn2id(linkname);
 }
 
-static void inline write_trace(double tstart, double tend, const char* text) {
+static void inline write_trace(double tstart, double tend, const char* func, const char* text) {
     #ifndef DISABLE_POSIX_TRACE
     if (__recorderfh != NULL)
         fprintf(__recorderfh, "%.6f %s %.6f\n", tstart, text, tend-tstart);
