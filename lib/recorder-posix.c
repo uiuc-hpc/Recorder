@@ -73,9 +73,9 @@ FILE *__recorderfh;
 int depth;
 hashmap_map *fn2id_map;
 
+
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
-    #include <stdlib.h>
 
     #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args = NULL;
 
@@ -110,11 +110,8 @@ hashmap_map *fn2id_map;
 #else
 
     #define RECORDER_FORWARD_DECL(name, ret, args) extern ret __real_##name args;
-
     #define RECORDER_DECL(__name) __wrap_##__name
-
     #define MAP_OR_FAIL(func)
-
     #define RECORDER_MPI_CALL(func) func
 
 #endif

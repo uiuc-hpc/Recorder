@@ -95,7 +95,7 @@ int depth;
     /*
      * Call the real MPI funciton
      * Before call the real function, we need to make sure its mapped
-     * which means, every time we use this marco, we need to call MAP_OR_FAIL before it
+     * which means, every time we use this marco directly, we need to call MAP_OR_FAIL before it
      * */
     #define RECORDER_MPI_CALL(func) __real_##func
 
