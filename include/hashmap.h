@@ -28,8 +28,8 @@ typedef struct _hashmap_map {
 
 hashmap_map* hashmap_new();
 void hashmap_free(hashmap_map* m);
-int hashmap_length(hashmap_map* in);
+int hashmap_length(hashmap_map* m);
 int hashmap_put(hashmap_map *m, const char* key, int value);
 int hashmap_get(hashmap_map *m, const char* key, int *arg);
-int hashmap_remove(hashmap_map *in, const char* key);
+int hashmap_remove(hashmap_map *m, const char* key);
 

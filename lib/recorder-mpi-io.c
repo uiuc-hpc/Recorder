@@ -535,9 +535,7 @@ void recorder_init(int *argc, char ***argv) {
 }
 
 void recorder_exit() {
-    int rank;
-    RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
-    logger_exit(rank);
+    logger_exit();
 }
 
 int PMPI_Init(int *argc, char ***argv) {
@@ -565,10 +563,14 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
 }
 
 int MPI_Finalize(void) {
-    recorder_exit();
+
     MAP_OR_FAIL(PMPI_Finalize)
     int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
 
+    // TODO: This has to happen after MPI_Finalize
+    // otherwise, flose or free operations in logger_exit() will crash
+    // not sure why.
+    recorder_exit();
     return ret;
 }
 

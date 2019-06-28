@@ -1,18 +1,17 @@
 /*
  * Generic map implementation.
  */
-#include "hashmap.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "hashmap.h"
 
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-hashmap_map * hashmap_new() {
-	hashmap_map* m = (hashmap_map*) malloc(sizeof(hashmap_map));
+hashmap_map* hashmap_new() {
+	hashmap_map *m = (hashmap_map*) malloc(sizeof(hashmap_map));
 	if(!m) goto err;
 
 	m->data = (hashmap_element*) calloc(INITIAL_SIZE, sizeof(hashmap_element));
@@ -20,12 +19,11 @@ hashmap_map * hashmap_new() {
 
 	m->table_size = INITIAL_SIZE;
 	m->size = 0;
+    return m;
 
-	return m;
 	err:
-		if (m)
-			hashmap_free(m);
-		return NULL;
+		if (m) hashmap_free(m);
+        return NULL;
 }
 
 /* The implementation here was originally done by Gary S. Brown.  I have
@@ -328,7 +326,6 @@ int hashmap_remove(hashmap_map * in, const char* key){
 /* Deallocate the hashmap */
 void hashmap_free(hashmap_map *m){
     if (m != NULL) {
-        printf("here: %d\n", hashmap_length(m));
         if (m->data != NULL)
             free(m->data);
         free(m);

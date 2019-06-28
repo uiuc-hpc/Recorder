@@ -9,9 +9,9 @@ static FILE *__datafh;
 static FILE *__metafh;
 
 /* Global (defined in recorder.h) function name to id map */
-static hashmap_map *__func2id_map;
+hashmap_map *__func2id_map;
 /* Global (defined in recorder.h) filename to id map */
-static hashmap_map *__filename2id_map;
+hashmap_map *__filename2id_map;
 
 typedef struct IoOperation {
     unsigned char func_id;
@@ -62,7 +62,7 @@ static inline unsigned char get_filename_id(const char *filename) {
 
 
 static inline void write_in_binary(IoOperation_t *op) {
-    if (__datafh ) {
+    if (__datafh != NULL ) {
         MAP_OR_FAIL(fwrite)
         RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
     }
@@ -84,8 +84,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
     #ifndef DISABLE_POSIX_TRACE
-    write_in_text(start, end, log_text);
-    //write_in_binary(&op);
+    //write_in_text(start, end, log_text);
+    write_in_binary(&op);
     #endif
 }
 
@@ -103,12 +103,13 @@ void logger_init(int rank) {
     sprintf(logfile_name, "logs/%d.itf", rank);
     sprintf(metafile_name, "logs/%d.mt", rank);
     __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "wb");
-    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
+    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w+");
 }
 
-void logger_exit(int rank) {
+void logger_exit() {
     /* Write out the function and filename mappings */
     int i;
+    if (hashmap_length(__func2id_map) <= 0 ) return;
     for(i = 0; i< __func2id_map->table_size; i++) {
         if(__func2id_map->data[i].in_use != 0) {
             const char *func = __func2id_map->data[i].key;
@@ -116,6 +117,7 @@ void logger_exit(int rank) {
             fprintf(__metafh, "%s %d\n", func, id);
         }
     }
+    if (hashmap_length(__filename2id_map) <= 0 ) return;
     for(i = 0; i< __filename2id_map->table_size; i++) {
         if(__filename2id_map->data[i].in_use != 0) {
             const char *func = __filename2id_map->data[i].key;
@@ -124,11 +126,14 @@ void logger_exit(int rank) {
         }
     }
 
+    hashmap_free(__func2id_map);
+    hashmap_free(__filename2id_map);
+
     MAP_OR_FAIL(fclose)
     if ( __metafh)
         RECORDER_MPI_CALL(fclose) (__metafh);
 
     // Close the log file would cause a segmentation error
-    //if ( __datafh )
-    //    RECORDER_MPI_CALL(fclose) (__datafh);
+    if ( __datafh )
+        RECORDER_MPI_CALL(fclose) (__datafh);
 }
