@@ -34,7 +34,7 @@ lib:
 %.po: %.c $(INCL_DEPS) | lib
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
-lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po
+lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po lib/logger.po
 	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lrt -lz $(LDFLAGS)
 
 install:: all

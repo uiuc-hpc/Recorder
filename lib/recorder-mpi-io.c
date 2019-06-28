@@ -361,9 +361,11 @@ int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info,
     double tm2 = recorder_wtime();
 
     // Have to print log after the function call bacause only when the *fh is allocated
+    #ifndef DISABLE_MPIO_TRACE
     char log_args[TRACE_LEN];
     sprintf(log_args, "(%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, *fh);
     write_trace(tm1, tm2, "MPI_File_open", log_args);
+    #endif
     depth--;
 
     return res;
@@ -619,7 +621,7 @@ void recorder_initialize(int *argc, char ***argv) {
     }
 
     sprintf(logfile_name, "%s/log.%d", logdir_name, rank);
-    __recorderfh = fopen(logfile_name, "w");
+    __recorderfh = fopen(logfile_name, "wb");
     depth = 0;
 
     printf(" logfile_name %s\n", logfile_name);
@@ -627,10 +629,8 @@ void recorder_initialize(int *argc, char ***argv) {
     free(logfile_name);
     free(logdir_name);
 
-    fn2id_map = hashmap_new();
+    func2id_map = hashmap_new();
 
-    // Init OTF2
-    otf2_init(nprocs, rank);
     return;
 }
 
@@ -677,7 +677,6 @@ int MPI_Finalize(void) {
 
     // Shutdown
     recorder_shutdown(0);
-    otf2_exit();
 
     MAP_OR_FAIL(PMPI_Finalize)
     int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
