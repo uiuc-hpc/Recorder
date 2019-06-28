@@ -629,7 +629,8 @@ void recorder_initialize(int *argc, char ***argv) {
     free(logfile_name);
     free(logdir_name);
 
-    func2id_map = hashmap_new();
+    __func2id_map = hashmap_new();
+    __filename2id_map = hashmap_new();
 
     return;
 }

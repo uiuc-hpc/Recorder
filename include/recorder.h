@@ -52,7 +52,9 @@
 
 extern FILE* __recorderfh;          /* file handler for each log file */
 extern int depth;                   /* funciton call depth */
-extern hashmap_map *func2id_map;      /* filename to id map <string, int> */
+
+extern hashmap_map *__func2id_map;      /* function name to id map <const char*, int> */
+extern hashmap_map *__filename2id_map;  /* filename to id map <const char*, int> */
 
 char* comm2name(MPI_Comm comm);
 char* type2name(MPI_Datatype type);

@@ -4,9 +4,12 @@
 #include <dlfcn.h>
 #include "recorder.h"
 
-/* Global hander for the local trace log */
+/* Global handle for the local trace log */
 FILE *__recorderfh;
-hashmap_map *func2id_map;
+/* Global (defined in recorder.h) function name to id map */
+hashmap_map *__func2id_map;
+/* Global (defined in recorder.h) filename to id map */
+hashmap_map *__filename2id_map;
 
 typedef struct IoOperation {
     unsigned char func_id;
@@ -27,21 +30,32 @@ typedef struct IoOperation {
 
 static inline unsigned char get_func_id(const char *func) {
     int id = -1;
-    if (!func || !func2id_map)
+    if (!func || !__func2id_map)
         return id;
 
     /* filename already exists */
-    if (hashmap_get(func2id_map, func, &id) == MAP_OK)
+    if (hashmap_get(__func2id_map, func, &id) == MAP_OK)
         return id;
 
     /* insert filename into the map */
-    id = hashmap_length(func2id_map);
-    hashmap_put(func2id_map, func, id);
+    id = hashmap_length(__func2id_map);
+    hashmap_put(__func2id_map, func, id);
     return id;
 }
 
 static inline unsigned char get_filename_id(const char *filename) {
-    return 1;
+    int id = -1;
+    if (!filename || !__filename2id_map)
+        return id;
+
+    /* filename already exists */
+    if (hashmap_get(__filename2id_map, filename, &id) == MAP_OK)
+        return id;
+
+    /* insert filename into the map */
+    id = hashmap_length(__filename2id_map);
+    hashmap_put(__filename2id_map, filename, id);
+    return id;
 }
 
 
