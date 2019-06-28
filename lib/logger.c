@@ -45,24 +45,22 @@ static inline unsigned char get_filename_id(const char *filename) {
 }
 
 
+/* Get the real function pointer to fwrite */
 static int(*__real_fwrite) (const void * ptr, size_t size, size_t count, FILE * stream) = NULL;
-int write_to_file(IoOperation_t *op) {
-
+static inline void write_in_binary(IoOperation_t *op) {
     if (!__real_fwrite)
         __real_fwrite = dlsym(RTLD_NEXT, "fwrite");
-
-    printf("size of IoOperation: %ld bytes\n", sizeof(IoOperation_t));
-    if (__recorderfh) {
+    if (__recorderfh && __real_fwrite)
         __real_fwrite(op, sizeof(IoOperation_t), 1, __recorderfh);
-    }
-    return 0;
 }
 
-/*
- * read, write, seek
- */
-void write_data_operation(const char *func, const char *filename, double start, double end, size_t offset, size_t count_or_whence) {
-    printf("%s ", func);
+static inline void write_in_text(double tstart, double tend, const char* log_text) {
+    if (__recorderfh != NULL)
+        fprintf(__recorderfh, "%.6f %s %.6f\n", tstart, log_text, tend-tstart);
+}
+
+void write_data_operation(const char *func, const char *filename, double start, double end,
+                          size_t offset, size_t count_or_whence, const char *log_text) {
     IoOperation_t op = {
         .func_id = get_func_id(func),
         .filename_id = get_filename_id(filename),
@@ -71,15 +69,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr1 = offset,
         .attr2 = count_or_whence
     };
-    write_to_file(&op);
-}
-void write_meta_operation(const char *func, const char *filename, double start, double end, unsigned char mode) {
-    IoOperation_t op = {
-        .func_id = get_func_id(func),
-        .filename_id = get_filename_id(filename),
-        .start_time = start,
-        .end_time = end,
-        .attr1 = (size_t) mode,
-    };
-    write_to_file(&op);
+    #ifndef DISABLE_POSIX_TRACE
+    //write_in_text(start, end, log_text);
+    write_in_binary(&op);
+    #endif
 }
