@@ -495,7 +495,7 @@ int MPI_File_iwrite_shared(MPI_File fh, CONST void *buf, int count,
 }
 
 extern char *__progname;
-void recorder_initialize(int *argc, char ***argv) {
+void recorder_init(int *argc, char ***argv) {
     int nprocs;
     int rank;
 
@@ -547,24 +547,22 @@ void recorder_initialize(int *argc, char ***argv) {
     free(logfile_name);
     free(logdir_name);
 
-    logger_init();
+    logger_init(rank);
 
     return;
 }
 
-void recorder_shutdown(int timing_flag) {
-    // Any of the following will cause a crash, so wierd
-    //if (__recorderfh != NULL)
-    //    fclose(__recorderfh);
-    //hashmap_free(fn2id_map);
-    return;
+void recorder_exit() {
+    int rank;
+    RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+    logger_exit(rank);
 }
 
 int PMPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
     // Init our system
-    recorder_initialize(argc, argv);
+    recorder_init(argc, argv);
     return ret;
 }
 
@@ -572,7 +570,7 @@ int MPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
     // Init our system
-    recorder_initialize(argc, argv);
+    recorder_init(argc, argv);
     return ret;
 }
 
@@ -580,25 +578,14 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
     MAP_OR_FAIL(PMPI_Init_thread)
     int ret = RECORDER_MPI_CALL(PMPI_Init_thread) (argc, argv, required, provided);
     // Init our system
-    recorder_initialize(argc, argv);
+    recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Finalize(void) {
-    /*
-    if(getenv("RECORDER_INTERNAL_TIMING"))
-       recorder_shutdown(1);
-    else
-       recorder_shutdown(0);
-    */
-
-
-    // Shutdown
-    recorder_shutdown(0);
-
+    recorder_exit();
     MAP_OR_FAIL(PMPI_Finalize)
     int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
-
 
     return ret;
 }

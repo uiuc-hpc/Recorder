@@ -1,0 +1,62 @@
+1561746180.043652 open64 (/dev/urandom, 131072) 0.000011
+1561746180.043701 read (/dev/urandom, 0x7fffffffadcc, 4) 0.000003
+1561746180.043713 close (/dev/urandom) 0.000003
+1561746180.060861 open (workfile.out.locktest.0, 66) 0.001293
+1561746180.064076 close (/g/g90/wang116/sources/Recorder/test/workfile.out.locktest.0) 0.000912
+1561746180.065844 open (workfile.out, 66) 0.001076
+1561746180.067196 lseek (/g/g90/wang116/sources/Recorder/test/workfile.out, 0, 0) 0.000002
+1561746180.067228 writev (/g/g90/wang116/sources/Recorder/test/workfile.out, iov_len:[40 ], 1) 0.000007
+1561746180.068348 write (anon_inode:[eventfd], 0x7fffffffb488, 8) 0.000008
+1561746180.068437 read (anon_inode:[eventfd], 0x2aaaafee0d50, 8) 0.000002
+1561746180.068457 write (socket:[109382516], 0x2aaab8002370, 16) 0.000030
+1561746180.068518 write (socket:[109382516], 0x7f1980, 67) 0.000002
+1561746180.068938 read (socket:[109382516], 0x2aaab8002690, 16) 0.000004
+1561746180.068972 read (socket:[109382516], 0x2aaab8001c80, 12) 0.000001
+1561746180.069163 close (/g/g90/wang116/sources/Recorder/test/workfile.out) 0.000806
+1561746180.071226 write (anon_inode:[eventfd], 0x7fffffffb668, 8) 0.000005
+1561746180.071256 write (/dev/infiniband/uverbs0, 0x7fffffffb5f0, 120) 0.000026
+1561746180.071301 read (anon_inode:[eventfd], 0x2aaaafcdfd50, 8) 0.000002
+1561746180.071310 write (/dev/infiniband/uverbs0, 0x7fffffffb5f0, 120) 0.009229
+1561746180.080598 write (/dev/infiniband/uverbs0, 0x7fffffffb610, 24) 0.000016
+1561746180.080709 write (/dev/infiniband/uverbs0, 0x7fffffffb630, 12) 0.005834
+1561746180.086582 write (/dev/infiniband/uverbs0, 0x7fffffffb5e0, 24) 0.000004
+1561746180.086618 write (/dev/infiniband/uverbs0, 0x7fffffffb5e0, 24) 0.000003
+1561746180.086647 close (anon_inode:[infinibandevent]) 0.000004
+1561746180.086672 write (/dev/infiniband/uverbs0, 0x7fffffffb710, 12) 0.000003
+1561746180.086686 close (/dev/infiniband/uverbs0) 0.000002
+1561746180.086697 close (anon_inode:[infinibandevent]) 0.000003
+1561746180.086716 write (anon_inode:[eventfd], 0x7fffffffb708, 8) 0.000005
+1561746180.086729 close (/dev/infiniband/rdma_cm) 0.000001
+1561746180.086857 read (anon_inode:[eventfd], 0x2aaaafcdfd50, 8) 0.000002
+1561746180.086883 close (socket:[109382528]) 0.000006
+1561746180.087181 write (anon_inode:[eventfd], 0x7fffffffb7b8, 8) 0.000005
+1561746180.087258 read (anon_inode:[eventfd], 0x2aaaafcdfd50, 8) 0.000002
+1561746180.087491 write (/dev/infiniband/uverbs0, 0x7fffffffb710, 12) 0.000003
+1561746180.087541 write (anon_inode:[eventfd], 0x7fffffffb758, 8) 0.000004
+1561746180.087568 read (anon_inode:[eventfd], 0x2aaaafcdfd50, 8) 0.000001
+1561746180.087560 write (/dev/infiniband/uverbs0, 0x7fffffffb5e0, 120) 0.000028
+1561746180.087601 write (/dev/infiniband/uverbs0, 0x7fffffffb5e0, 120) 0.007939
+1561746180.095689 write (/dev/infiniband/uverbs0, 0x7fffffffb700, 12) 0.006859
+1561746180.102613 write (/dev/infiniband/uverbs0, 0x7fffffffb700, 12) 0.006125
+1561746180.109210 write (/dev/infiniband/uverbs0, 0x7fffffffb740, 12) 0.000003
+1561746180.109230 close (/dev/infiniband/uverbs0) 0.000001
+1561746180.109241 close (anon_inode:[infinibandevent]) 0.000003
+1561746180.111285 write (anon_inode:[eventfd], 0x7fffffffb828, 8) 0.000005
+1561746180.111372 read (anon_inode:[eventfd], 0x2aaaafee0d50, 8) 0.000002
+1561746180.111394 write (socket:[109382516], 0x2aaab8002370, 16) 0.000008
+1561746180.111431 write (socket:[109382516], 0x69cb70, 8) 0.000002
+1561746180.111565 read (socket:[109382516], 0x2aaab8002690, 16) 0.000004
+1561746180.111579 read (socket:[109382516], 0x2aaab8001c80, 12) 0.000002
+1561746180.111608 write (pipe:[109382515], 0x7fffffffb800, 4) 0.000006
+1561746180.111682 close (pipe:[109382515]) 0.000003
+1561746180.111694 close (pipe:[109382515]) 0.000005
+1561746180.111715 close (socket:[109382516]) 0.000005
+1561746180.111749 close (anon_inode:[eventfd]) 0.000003
+1561746180.111767 close (socket:[109382513]) 0.000003
+1561746180.111781 close (socket:[109382514]) 0.000004
+1561746180.111797 close (anon_inode:[eventpoll]) 0.000002
+1561746180.111923 write (anon_inode:[eventfd], 0x7fffffffb818, 8) 0.000005
+1561746180.112042 read (anon_inode:[eventfd], 0x2aaaafcdfd50, 8) 0.000002
+1561746180.112090 close (anon_inode:[eventfd]) 0.000003
+1561746180.112104 close (socket:[109382511]) 0.000004
+1561746180.112119 close (socket:[109382512]) 0.000003

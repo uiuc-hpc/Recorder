@@ -61,12 +61,11 @@ static inline unsigned char get_filename_id(const char *filename) {
 }
 
 
-
 static inline void write_in_binary(IoOperation_t *op) {
-    if (!__real_fwrite)
-        __real_fwrite = dlsym(RTLD_NEXT, "fwrite");
-    if (__datafh && __real_fwrite)
-        __real_fwrite(op, sizeof(IoOperation_t), 1, __datafh);
+    if (__datafh ) {
+        MAP_OR_FAIL(fwrite)
+        RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
+    }
 }
 
 static inline void write_in_text(double tstart, double tend, const char* log_text) {
@@ -85,25 +84,51 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
     #ifndef DISABLE_POSIX_TRACE
-    //write_in_text(start, end, log_text);
+    write_in_text(start, end, log_text);
     //write_in_binary(&op);
     #endif
 }
 
-void logger_init() {
+void logger_init(int rank) {
     __func2id_map = hashmap_new();
     __filename2id_map = hashmap_new();
 
-    //__metafh = fopen(logfile_name, "w");
-    //__datafh = fopen(logfile_name, "wb");
+    MAP_OR_FAIL(fopen)
+    if (rank == 0) {
+        mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+
+    char logfile_name[100];
+    char metafile_name[100];
+    sprintf(logfile_name, "logs/%d.itf", rank);
+    sprintf(metafile_name, "logs/%d.mt", rank);
+    __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "wb");
+    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
 }
 
-void logger_exit() {
+void logger_exit(int rank) {
+    /* Write out the function and filename mappings */
     int i;
     for(i = 0; i< __func2id_map->table_size; i++) {
         if(__func2id_map->data[i].in_use != 0) {
             const char *func = __func2id_map->data[i].key;
             int id = __func2id_map->data[i].data;
+            fprintf(__metafh, "%s %d\n", func, id);
         }
     }
+    for(i = 0; i< __filename2id_map->table_size; i++) {
+        if(__filename2id_map->data[i].in_use != 0) {
+            const char *func = __filename2id_map->data[i].key;
+            int id = __filename2id_map->data[i].data;
+            fprintf(__metafh, "%s %d\n", func, id);
+        }
+    }
+
+    MAP_OR_FAIL(fclose)
+    if ( __metafh)
+        RECORDER_MPI_CALL(fclose) (__metafh);
+
+    // Close the log file would cause a segmentation error
+    //if ( __datafh )
+    //    RECORDER_MPI_CALL(fclose) (__datafh);
 }

@@ -69,7 +69,8 @@ char* makename(MPI_Datatype *type);
 double recorder_wtime(void);
 char* fd2name(int fd);
 
-void logger_init();
+void logger_init(int rank);
+void logger_exit(int rank);
 void write_data_operation(const char *func, const char *filename, double start, double end, size_t attr1, size_t attr2, const char *log);
 
 
