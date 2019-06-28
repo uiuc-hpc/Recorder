@@ -58,15 +58,6 @@
 
 #define RECORDER_DECL(__name) __name
 
-#define MAP_OR_FAIL(func)                                                      \
-  if (!(__real_##func)) {                                                      \
-    __real_##func = dlsym(RTLD_NEXT, #func);                                   \
-    if (!(__real_##func)) {                                                    \
-      fprintf(stderr, "Recorder failed to map symbol: %s\n", #func);            \
-      exit(1);                                                                 \
-    }                                                                          \
-  }
-
 #else
 
 #define RECORDER_FORWARD_DECL(name, ret, args) extern ret __real_##name args;

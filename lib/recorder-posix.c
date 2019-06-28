@@ -75,22 +75,9 @@ int depth;
 
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
-
-    #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args = NULL;
+    extern double (*__real_PMPI_Wtime)(void);
 
     #define RECORDER_DECL(__name) __name
-
-    #define RECORDER_MPI_CALL(func) __real_##func
-
-    #define MAP_OR_FAIL(func)                                                       \
-        if (!(__real_##func)) {                                                     \
-            __real_##func = dlsym(RTLD_NEXT, #func);                                \
-            if (!(__real_##func)) {                                                 \
-                fprintf(stderr, "Recorder failed to map symbol: %s\n", #func);      \
-                exit(1);                                                            \
-            }                                                                       \
-        }
-    extern double (*__real_PMPI_Wtime)(void);
 
     #ifndef DISABLE_POSIX_TRACE
         /*
@@ -122,6 +109,7 @@ int depth;
 
 #endif
 
+/*
 RECORDER_FORWARD_DECL(creat, int, (const char *path, mode_t mode));
 RECORDER_FORWARD_DECL(creat64, int, (const char *path, mode_t mode));
 RECORDER_FORWARD_DECL(open, int, (const char *path, int flags, ...));
@@ -131,25 +119,20 @@ RECORDER_FORWARD_DECL(write, ssize_t, (int fd, const void *buf, size_t count));
 RECORDER_FORWARD_DECL(read, ssize_t, (int fd, void *buf, size_t count));
 RECORDER_FORWARD_DECL(lseek, off_t, (int fd, off_t offset, int whence));
 RECORDER_FORWARD_DECL(lseek64, off64_t, (int fd, off64_t offset, int whence));
-
 RECORDER_FORWARD_DECL(pread, ssize_t, (int fd, void *buf, size_t count, off_t offset));
 RECORDER_FORWARD_DECL(pread64, ssize_t, (int fd, void *buf, size_t count, off64_t offset));
 RECORDER_FORWARD_DECL(pwrite, ssize_t, (int fd, const void *buf, size_t count, off_t offset));
 RECORDER_FORWARD_DECL(pwrite64, ssize_t, (int fd, const void *buf, size_t count, off64_t offset));
-
 RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
 RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-
 RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
 RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
 RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
 RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
 RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
 RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
-
 RECORDER_FORWARD_DECL(mmap, void *, (void *addr, size_t length, int prot, int flags, int fd, off_t offset));
 RECORDER_FORWARD_DECL(mmap64, void *, (void *addr, size_t length, int prot, int flags, int fd, off64_t offset));
-
 RECORDER_FORWARD_DECL(fopen, FILE *, (const char *path, const char *mode));
 RECORDER_FORWARD_DECL(fopen64, FILE *, (const char *path, const char *mode));
 RECORDER_FORWARD_DECL(fclose, int, (FILE * fp));
@@ -158,6 +141,7 @@ RECORDER_FORWARD_DECL(fwrite, size_t, (const void *ptr, size_t size, size_t nmem
 RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
 RECORDER_FORWARD_DECL(fsync, int, (int fd));
 RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
+*/
 
 static int recorder_mem_alignment = 1;
 

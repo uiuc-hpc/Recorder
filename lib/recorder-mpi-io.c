@@ -76,29 +76,7 @@ int depth;
 #define TRACE_LEN 256
 
 #ifdef RECORDER_PRELOAD
-
     #include <dlfcn.h>
-
-    /* Declare the function signature for all real functions */
-    #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args = NULL;
-
-
-    /* Point __read_func to the real funciton using dlsym() */
-    #define MAP_OR_FAIL(func)                                                   \
-        if (!(__real_##func)) {                                                 \
-            __real_##func = dlsym(RTLD_NEXT, #func);                            \
-            if (!(__real_##func)) {                                             \
-                fprintf(stderr, "Recorder failed to map symbol: %s\n", #func);  \
-            }                                                                   \
-        }
-
-    /*
-     * Call the real MPI funciton
-     * Before call the real function, we need to make sure its mapped
-     * which means, every time we use this marco directly, we need to call MAP_OR_FAIL before it
-     * */
-    #define RECORDER_MPI_CALL(func) __real_##func
-
     #ifndef DISABLE_MPIO_TRACE
         #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
             MAP_OR_FAIL(func)                                           \
@@ -116,6 +94,7 @@ int depth;
     #endif
 #endif
 
+/*
 RECORDER_FORWARD_DECL(PMPI_File_close, int, (MPI_File * fh));
 RECORDER_FORWARD_DECL(PMPI_File_set_size, int, (MPI_File fh, MPI_Offset size));
 RECORDER_FORWARD_DECL(PMPI_File_iread_at, int, (MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, __D_MPI_REQUEST *request));
@@ -148,7 +127,6 @@ RECORDER_FORWARD_DECL(PMPI_File_write_shared, int, (MPI_File fh, CONST void *buf
 RECORDER_FORWARD_DECL(PMPI_Finalize, int, ());
 RECORDER_FORWARD_DECL(PMPI_Init, int, (int *argc, char ***argv));
 RECORDER_FORWARD_DECL(PMPI_Init_thread, int, (int *argc, char ***argv, int required, int *provided));
-
 RECORDER_FORWARD_DECL(PMPI_Wtime, double, ());
 RECORDER_FORWARD_DECL(PMPI_Comm_rank, int, (MPI_Comm comm, int *rank));
 RECORDER_FORWARD_DECL(PMPI_Comm_size, int, (MPI_Comm comm, int *size));
@@ -174,6 +152,7 @@ RECORDER_FORWARD_DECL(PMPI_Op_create, int, (MPI_User_function * function, int co
 RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
 RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
 RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
+*/
 
 
 static void inline write_trace(double tstart, double tend, const char* func, const char* args) {
@@ -625,12 +604,10 @@ void recorder_initialize(int *argc, char ***argv) {
     depth = 0;
 
     printf(" logfile_name %s\n", logfile_name);
-
     free(logfile_name);
     free(logdir_name);
 
-    __func2id_map = hashmap_new();
-    __filename2id_map = hashmap_new();
+    logger_init();
 
     return;
 }
