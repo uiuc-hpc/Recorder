@@ -78,83 +78,78 @@ int depth;
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
     #ifndef DISABLE_MPIO_TRACE
-        #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
-            MAP_OR_FAIL(func)                                           \
-            depth++;                                                    \
-            double tm1 = recorder_wtime();                              \
-            ret res = RECORDER_MPI_CALL(func) args ;                    \
-            double tm2 = recorder_wtime();                              \
-            write_trace(tm1, tm2, log_func, log_args);                  \
-            depth--;                                                    \
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)      \
+            MAP_OR_FAIL(func)                                                   \
+            depth++;                                                            \
+            double tm1 = recorder_wtime();                                      \
+            ret res = RECORDER_MPI_CALL(func) args ;                            \
+            double tm2 = recorder_wtime();                                      \
+            write_data_operation(#func, "", tm1, tm2, attr1, attr2, log_text);  \
+            depth--;                                                            \
             return res;
     #else
-        #define RECORDER_IMP_CHEN(func, ret, args, log_func, log_args)  \
-            MAP_OR_FAIL(func)                                           \
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)  \
+            MAP_OR_FAIL(func)                                               \
             return RECORDER_MPI_CALL(func) args ;
     #endif
 #endif
 
 
-static void inline write_trace(double tstart, double tend, const char* func, const char* args) {
-    if (__recorderfh != NULL && depth == 1)
-        fprintf(__recorderfh, "%.6f %s %s %.6f\n", tstart, func, args, tend-tstart);
-}
-
 int MPI_Comm_size(MPI_Comm comm, int *size) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%s, %d)", comm2name(comm), *size);
-    RECORDER_IMP_CHEN(PMPI_Comm_size, int, (comm, size), "MPI_Comm_size", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Comm_size (%s, %d)", comm2name(comm), *size);
+    RECORDER_IMP_CHEN(PMPI_Comm_size, int, (comm, size), 0, 0, log_text)
 }
 
 int MPI_Comm_rank(MPI_Comm comm, int *rank) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%s, %d)", comm2name(comm), *rank);
-    RECORDER_IMP_CHEN(PMPI_Comm_rank, int, (comm, rank), "MPI_Comm_rank", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Comm_rank (%s, %d)", comm2name(comm), *rank);
+    RECORDER_IMP_CHEN(PMPI_Comm_rank, int, (comm, rank), 0, 0, log_text)
 }
 
 int MPI_Comm_Barrier(MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%s)", comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Barrier, int, (comm), "MPI_Comm_Barrier", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Comm_Barrier (%s)", comm2name(comm));
+    RECORDER_IMP_CHEN(PMPI_Barrier, int, (comm), 0, 0, log_text)
 }
 
 int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %d, %s)", buffer, count,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Bast (%p, %d, %s, %d, %s)", buffer, count,
             type2name(datatype), root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Bcast, int, (buffer, count, datatype, root, comm), "MPI_Bcast", log_args)
+    RECORDER_IMP_CHEN(PMPI_Bcast, int, (buffer, count, datatype, root, comm), 0, 0, log_text)
 }
 
 int MPI_Gather(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         int rcount, MPI_Datatype rtype, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Gather (%p, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
             type2name(stype), rbuf, rcount, type2name(rtype), root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Gather, int, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm), "MPI_Gather", log_args)
+    RECORDER_IMP_CHEN(PMPI_Gather, int, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm), 0, 0, log_text)
 }
 
 int MPI_Scatter(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         int rcount, MPI_Datatype rtype, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Scatter (%p, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
             type2name(stype), rbuf, rcount, type2name(rtype), root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Scatter, int, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm), "MPI_Scatter", log_args)
+    RECORDER_IMP_CHEN(PMPI_Scatter, int, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm), 0, 0, log_text)
 }
 
 int MPI_Gatherv(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         CONST int *rcount, CONST int *displs, MPI_Datatype rtype, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %p, %d, %d, %s, %d, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Gahterv (%p, %d, %s, %p, %d, %d, %s, %d, %s)", sbuf, scount,
             type2name(stype), rbuf, rcount, *displs, type2name(rtype), root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Gatherv, int, (sbuf, scount, stype, rbuf, rcount, displs, rtype, root, comm), "MPI_Gatherv", log_args)
+    RECORDER_IMP_CHEN(PMPI_Gatherv, int, (sbuf, scount, stype, rbuf, rcount, displs, rtype, root, comm), 0, 0, log_text)
 }
 
 int MPI_Scatterv(CONST void *sbuf, CONST int *scount, CONST int *displa,
         MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Scatterv (%p, %d, %d, %s, %p, %d, %s, %d, %s)", sbuf, scount,
             *displa, type2name(stype), rbuf, rcount, type2name(rtype), root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Scatterv, int, (sbuf, scount, displa, stype, rbuf, rcount, rtype, root, comm), "MPI_Scatterv", log_args)
+    RECORDER_IMP_CHEN(PMPI_Scatterv, int, (sbuf, scount, displa, stype, rbuf, rcount, rtype, root, comm), 0, 0, log_text)
 }
 
 /*
@@ -165,50 +160,50 @@ int MPI_Scatterv(CONST void *sbuf, CONST int *scount, CONST int *displa,
 
 int MPI_Allgatherv(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         CONST int *rcount, CONST int *displs, MPI_Datatype rtype, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %p, %d, %d, %s, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Allgatherv (%p, %d, %s, %p, %d, %d, %s, %s)", sbuf, scount,
             type2name(stype), rbuf, *rcount, *displs, type2name(rtype), comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Allgatherv, int, (sbuf, scount, stype, rbuf, rcount, displs, rtype, comm), "MPI_Allgatherv", log_args)
+    RECORDER_IMP_CHEN(PMPI_Allgatherv, int, (sbuf, scount, stype, rbuf, rcount, displs, rtype, comm), 0, 0, log_text)
 }
 
 int MPI_Alltoall(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         int rcount, MPI_Datatype rtype, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %d, %s, %p, %d, %s, %s)", sbuf, scount,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Alltoall (%p, %d, %s, %p, %d, %s, %s)", sbuf, scount,
             type2name(stype), rbuf, rcount, type2name(rtype), comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Alltoall, int, (sbuf, scount, stype, rbuf, rcount, rtype, comm), "MPI_Alltoall", log_args)
+    RECORDER_IMP_CHEN(PMPI_Alltoall, int, (sbuf, scount, stype, rbuf, rcount, rtype, comm), 0, 0, log_text)
 }
 
 int MPI_Reduce(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype,
         MPI_Op op, int root, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %d, %d, %s)", sbuf, rbuf, count,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Reduce (%p, %p, %d, %s, %d, %d, %s)", sbuf, rbuf, count,
             type2name(stype), op, root, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Reduce, int, (sbuf, rbuf, count, stype, op, root, comm), "MPI_Reduce", log_args)
+    RECORDER_IMP_CHEN(PMPI_Reduce, int, (sbuf, rbuf, count, stype, op, root, comm), 0, 0, log_text)
 }
 
 int MPI_Allreduce(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype,
         MPI_Op op, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %d, %s)", sbuf, rbuf, count,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Allreduce (%p, %p, %d, %s, %d, %s)", sbuf, rbuf, count,
             type2name(stype), op, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Allreduce, int, (sbuf, rbuf, count, stype, op, comm), "MPI_Allreduce", log_args)
+    RECORDER_IMP_CHEN(PMPI_Allreduce, int, (sbuf, rbuf, count, stype, op, comm), 0, 0, log_text)
 }
 
 int MPI_Reduce_scatter(CONST void *sbuf, void *rbuf, CONST int *rcounts,
         MPI_Datatype stype, MPI_Op op, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %d, %s)", sbuf, rbuf, *rcounts,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Reduce_scatter (%p, %p, %d, %s, %d, %s)", sbuf, rbuf, *rcounts,
             type2name(stype), op, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Reduce_scatter, int, (sbuf, rbuf, rcounts, stype, op, comm), "MPI_Reduce_scatter", log_args)
+    RECORDER_IMP_CHEN(PMPI_Reduce_scatter, int, (sbuf, rbuf, rcounts, stype, op, comm), 0, 0, log_text)
 }
 
 int MPI_Scan(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype,
         MPI_Op op, MPI_Comm comm) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %d, %s)", sbuf, rbuf, count,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Scan (%p, %p, %d, %s, %d, %s)", sbuf, rbuf, count,
             type2name(stype), op, comm2name(comm));
-    RECORDER_IMP_CHEN(PMPI_Scan, int, (sbuf, rbuf, count, stype, op, comm), "MPI_Scan", log_args)
+    RECORDER_IMP_CHEN(PMPI_Scan, int, (sbuf, rbuf, count, stype, op, comm), 0, 0, log_text)
 }
 
 int MPI_Type_create_darray(int size, int rank, int ndims,
@@ -229,7 +224,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
 
     if (__recorderfh != NULL)
         fprintf(__recorderfh,
-                "%.5f MPI_Type_create_darray (%d,%d,%d,%s,%s,%s,%s,%d,%s,%p)", tm1,
+                "%.6f MPI_Type_create_darray (%d,%d,%d,%s,%s,%s,%s,%d,%s,%p)", tm1,
                 size, rank, ndims, arr1, arr2, arr3, arr4, order, oldtype_name,
                 newtype);
     free(oldtype_name);
@@ -241,7 +236,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
     tm2 = recorder_wtime();
 
 #ifndef DISABLE_MPIO_TRACE
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
+    fprintf(__recorderfh, " %d %.6f\n", ret, tm2 - tm1);
 #endif
     return (ret);
 }
@@ -273,225 +268,212 @@ int MPI_Type_commit(MPI_Datatype *datatype) {
 }
 
 int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info, MPI_File *fh) {
-    depth++;
-    double tm1 = recorder_wtime();
-    MAP_OR_FAIL(PMPI_File_open)
-    int res = RECORDER_MPI_CALL(PMPI_File_open) (comm, filename, amode, info, fh) ;
-    double tm2 = recorder_wtime();
-
-    // Have to print log after the function call bacause only when the *fh is allocated
-    #ifndef DISABLE_MPIO_TRACE
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, *fh);
-    write_trace(tm1, tm2, "MPI_File_open", log_args);
-    #endif
-    depth--;
-
-    return res;
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_open (%s, %s, %d, %d, %p)", comm2name(comm), filename, amode, info, fh);
+    RECORDER_IMP_CHEN(PMPI_File_open, int, (comm, filename, amode, info, fh), amode, 0, log_text)
 }
 
 int MPI_File_close(MPI_File *fh) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p)", fh);
-    RECORDER_IMP_CHEN(PMPI_File_close, int, (fh), "MPI_File_close", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_close (%p)", fh);
+    RECORDER_IMP_CHEN(PMPI_File_close, int, (fh), 0, 0, log_text)
 }
 
 int MPI_File_sync(MPI_File fh) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p)", fh);
-    RECORDER_IMP_CHEN(PMPI_File_sync, int, (fh), "MPI_File_sync", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_sync (%p)", fh);
+    RECORDER_IMP_CHEN(PMPI_File_sync, int, (fh), 0 ,0, log_text)
 }
 
 int MPI_File_set_size(MPI_File fh, MPI_Offset size) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld)", fh, size);
-    RECORDER_IMP_CHEN(PMPI_File_set_size, int, (fh, size), "MPI_File_set_size", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_set_size (%p, %lld)", fh, size);
+    RECORDER_IMP_CHEN(PMPI_File_set_size, int, (fh, size), size, 0, log_text)
 }
 
 int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
         MPI_Datatype filetype, CONST char *datarep, MPI_Info info) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %s, %s, %s, %d)", fh, disp,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_set_view (%p, %lld, %s, %s, %s, %d)", fh, disp,
             type2name(etype), type2name(filetype), datarep, info);
-    RECORDER_IMP_CHEN(PMPI_File_set_view, int, (fh, disp, etype, filetype, datarep, info), "MPI_File_set_view", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_set_view, int, (fh, disp, etype, filetype, datarep, info), disp, 0, log_text)
 }
 
 int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read, int, (fh, buf, count, datatype, status), "MPI_File_read", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
+    RECORDER_IMP_CHEN(PMPI_File_read, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_at (%p, %lld, %p, %d, %s, %p)", fh, offset,
             buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read_at, int, (fh, offset, buf, count, datatype, status), "MPI_File_read_at", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_at, int, (fh, offset, buf, count, datatype, status), offset, count, log_text)
 }
 
 int MPI_File_read_at_all(MPI_File fh, MPI_Offset offset, void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_at_all (%p, %lld, %p, %d, %s, %p)", fh, offset,
             buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read_at_all, int, (fh, offset, buf, count, datatype, status), "MPI_File_read_at_all", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_at_all, int, (fh, offset, buf, count, datatype, status), offset, count, log_text)
 }
 
 int MPI_File_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype,
         MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_all (%p, %p, %d, %s, %p)", fh, buf,
             count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read_all, int, (fh, buf, count, datatype, status), "MPI_File_read_all", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_all, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_read_shared(MPI_File fh, void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_shared (%p, %p, %d, %s, %p)", fh, buf,
             count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read_shared, int, (fh, buf, count, datatype, status), "MPI_File_read_shared", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_shared, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_read_ordered(MPI_File fh, void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_ordered (%p, %p, %d, %s, %p)", fh, buf,
             count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_read_ordered, int, (fh, buf, count, datatype, status), "MPI_File_read_ordered", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_ordered, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_read_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
         int count, MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_at_all_begin (%p, %lld, %p, %d, %s)", fh, offset,
             buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_read_at_all_begin, int, (fh, offset, buf, count, datatype), "MPI_File_read_at_all_begin", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_read_at_all_begin, int, (fh, offset, buf, count, datatype), offset, count, log_text)
 }
 
 int MPI_File_read_all_begin(MPI_File fh, void *buf, int count,
         MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_read_all_begin, int, (fh, buf, count, datatype), "MPI_File_read_all_begin", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_all_begin (%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
+    RECORDER_IMP_CHEN(PMPI_File_read_all_begin, int, (fh, buf, count, datatype), count, 0, log_text)
 }
 
-int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count,
-        MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_read_ordered_begin, int, (fh, buf, count, datatype), "MPI_File_read_ordered_begin", log_args)
+int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_read_ordered_begin (%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
+    RECORDER_IMP_CHEN(PMPI_File_read_ordered_begin, int, (fh, buf, count, datatype), count, 0, log_text)
 }
 
 int MPI_File_iread_at(MPI_File fh, MPI_Offset offset, void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iread_at (%p, %lld, %p, %d, %s, %p)", fh, offset,
             buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iread_at, int, (fh, offset, buf, count, datatype, request), "MPI_File_iread_at", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_iread_at, int, (fh, offset, buf, count, datatype, request), offset, count, log_text)
 }
 
 int MPI_File_iread(MPI_File fh, void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iread, int, (fh, buf, count, datatype, request), "MPI_File_iread", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iread (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
+    RECORDER_IMP_CHEN(PMPI_File_iread, int, (fh, buf, count, datatype, request), count, 0, log_text)
 }
 
 int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iread_shared, int, (fh, buf, count, datatype, request), "MPI_File_iread_shared", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iread_sared (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
+    RECORDER_IMP_CHEN(PMPI_File_iread_shared, int, (fh, buf, count, datatype, request), count, 0, log_text)
 }
 
 int MPI_File_write(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write, int, (fh, buf, count, datatype, status), "MPI_File_write", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
+    RECORDER_IMP_CHEN(PMPI_File_write, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_write_at(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_at (%p, %lld, %p, %d, %s, %p)", fh, offset,
             buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write_at, int, (fh, offset, buf, count, datatype, status), "MPI_File_write_at", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_write_at, int, (fh, offset, buf, count, datatype, status), offset, count, log_text)
 }
 
 int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype,
         MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_at_all (%p, %lld, %p, %d, %s, %p)", fh, offset,
             buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write_at_all, int, (fh, offset, buf, count, datatype, status), "MPI_File_write_at_all", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_write_at_all, int, (fh, offset, buf, count, datatype, status), offset, count, log_text)
 }
 
 int MPI_File_write_all(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write_all, int, (fh, buf, count, datatype, status), "MPI_File_write_all", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_all (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
+    RECORDER_IMP_CHEN(PMPI_File_write_all, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_write_shared(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write_shared, int, (fh, buf, count, datatype, status), "MPI_File_write_shared", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_shared (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
+    RECORDER_IMP_CHEN(PMPI_File_write_shared, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_write_ordered(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
-    RECORDER_IMP_CHEN(PMPI_File_write_ordered, int, (fh, buf, count, datatype, status), "MPI_File_write_ordered", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_ordered (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), status);
+    RECORDER_IMP_CHEN(PMPI_File_write_ordered, int, (fh, buf, count, datatype, status), count, 0, log_text)
 }
 
 int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s)", fh, offset,
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_at_all_begin (%p, %lld, %p, %d, %s)", fh, offset,
             buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_write_at_all_begin, int, (fh, offset, buf, count, datatype), "MPI_File_write_at_all_begin", log_args)
+    RECORDER_IMP_CHEN(PMPI_File_write_at_all_begin, int, (fh, offset, buf, count, datatype), count, 0, log_text)
 }
 
 int MPI_File_write_all_begin(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_write_all_begin, int, (fh, buf, count, datatype), "MPI_File_write_all_begin", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_all_begin (%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
+    RECORDER_IMP_CHEN(PMPI_File_write_all_begin, int, (fh, buf, count, datatype), count, 0, log_text)
 }
 
 int MPI_File_write_ordered_begin(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
-    RECORDER_IMP_CHEN(PMPI_File_write_ordered_begin, int, (fh, buf, count, datatype), "MPI_File_write_ordered_begin", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_write_ordered_begin (%p, %p, %d, %s)", fh, buf, count, type2name(datatype));
+    RECORDER_IMP_CHEN(PMPI_File_write_ordered_begin, int, (fh, buf, count, datatype), count, 0, log_text)
 }
 
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %lld, %p, %d, %s, %p)", fh, offset, buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iwrite_at, int, (fh, offset, buf, count, datatype, request), "MPI_File_iwrite_at", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iwrite_at (%p, %lld, %p, %d, %s, %p)", fh, offset, buf, count, type2name(datatype), request);
+    RECORDER_IMP_CHEN(PMPI_File_iwrite_at, int, (fh, offset, buf, count, datatype, request), offset, count, log_text)
 }
 
 int MPI_File_iwrite(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iwrite, int, (fh, buf, count, datatype, request), "MPI_File_iwrite", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iwrite (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
+    RECORDER_IMP_CHEN(PMPI_File_iwrite, int, (fh, buf, count, datatype, request), count, 0, log_text)
 }
 
 int MPI_File_iwrite_shared(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char log_args[TRACE_LEN];
-    sprintf(log_args, "(%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
-    RECORDER_IMP_CHEN(PMPI_File_iwrite_shared, int, (fh, buf, count, datatype, request), "MPI_File_iwrite_shared", log_args)
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_File_iwrite_shared (%p, %p, %d, %s, %p)", fh, buf, count, type2name(datatype), request);
+    RECORDER_IMP_CHEN(PMPI_File_iwrite_shared, int, (fh, buf, count, datatype, request), count, 0, log_text)
 }
 
 extern char *__progname;

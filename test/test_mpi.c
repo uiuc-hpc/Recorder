@@ -55,7 +55,10 @@ int main(int argc, char *argv[]) {
     //MPI_File_set_atomicity(fh0, 1);
     TEST_MPI_CALL(MPI_File_write_at, (fh, 0, a, 10, MPI_INT, &status))
 
+    TEST_MPI_CALL(MPI_File_close, (&fh))
+
     TEST_MPI_CALL(MPI_Finalize, ())
+
 
     return 0;
 }
