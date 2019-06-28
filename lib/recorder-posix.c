@@ -67,17 +67,11 @@
 typedef int64_t off64_t;
 #endif
 
-extern char *__progname_full;
-extern char *__progname;
-FILE *__recorderfh;
 int depth;
-
 
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
     extern double (*__real_PMPI_Wtime)(void);
-
-    #define RECORDER_DECL(__name) __name
 
     #ifndef DISABLE_POSIX_TRACE
         /*
@@ -100,48 +94,8 @@ int depth;
             return real_func_call;
     #endif
 
-#else
-
-    #define RECORDER_FORWARD_DECL(name, ret, args) extern ret __real_##name args;
-    #define RECORDER_DECL(__name) __wrap_##__name
-    #define MAP_OR_FAIL(func)
-    #define RECORDER_MPI_CALL(func) func
-
 #endif
 
-/*
-RECORDER_FORWARD_DECL(creat, int, (const char *path, mode_t mode));
-RECORDER_FORWARD_DECL(creat64, int, (const char *path, mode_t mode));
-RECORDER_FORWARD_DECL(open, int, (const char *path, int flags, ...));
-RECORDER_FORWARD_DECL(open64, int, (const char *path, int flags, ...));
-RECORDER_FORWARD_DECL(close, int, (int fd));
-RECORDER_FORWARD_DECL(write, ssize_t, (int fd, const void *buf, size_t count));
-RECORDER_FORWARD_DECL(read, ssize_t, (int fd, void *buf, size_t count));
-RECORDER_FORWARD_DECL(lseek, off_t, (int fd, off_t offset, int whence));
-RECORDER_FORWARD_DECL(lseek64, off64_t, (int fd, off64_t offset, int whence));
-RECORDER_FORWARD_DECL(pread, ssize_t, (int fd, void *buf, size_t count, off_t offset));
-RECORDER_FORWARD_DECL(pread64, ssize_t, (int fd, void *buf, size_t count, off64_t offset));
-RECORDER_FORWARD_DECL(pwrite, ssize_t, (int fd, const void *buf, size_t count, off_t offset));
-RECORDER_FORWARD_DECL(pwrite64, ssize_t, (int fd, const void *buf, size_t count, off64_t offset));
-RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
-RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
-RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
-RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
-RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
-RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
-RECORDER_FORWARD_DECL(mmap, void *, (void *addr, size_t length, int prot, int flags, int fd, off_t offset));
-RECORDER_FORWARD_DECL(mmap64, void *, (void *addr, size_t length, int prot, int flags, int fd, off64_t offset));
-RECORDER_FORWARD_DECL(fopen, FILE *, (const char *path, const char *mode));
-RECORDER_FORWARD_DECL(fopen64, FILE *, (const char *path, const char *mode));
-RECORDER_FORWARD_DECL(fclose, int, (FILE * fp));
-RECORDER_FORWARD_DECL(fread, size_t, (void *ptr, size_t size, size_t nmemb, FILE *stream));
-RECORDER_FORWARD_DECL(fwrite, size_t, (const void *ptr, size_t size, size_t nmemb, FILE *stream));
-RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
-RECORDER_FORWARD_DECL(fsync, int, (int fd));
-RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
-*/
 
 static int recorder_mem_alignment = 1;
 
@@ -262,7 +216,7 @@ FILE *fopen(const char *path, const char *mode) {
     RECORDER_IMP_CHEN(fopen, FILE*, __real_fopen(path, mode), path, 0, 0, log_text)
 }
 
-int RECORDER_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
+int __xstat64(int vers, const char *path, struct stat64 *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
@@ -275,7 +229,7 @@ int RECORDER_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
   return (ret);
 }
 
-int RECORDER_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
+int __lxstat64(int vers, const char *path, struct stat64 *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
@@ -288,7 +242,7 @@ int RECORDER_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
   return (ret);
 }
 
-int RECORDER_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
+int __fxstat64(int vers, int fd, struct stat64 *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
@@ -301,7 +255,7 @@ int RECORDER_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
   return (ret);
 }
 
-int RECORDER_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
+int __xstat(int vers, const char *path, struct stat *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
@@ -314,7 +268,7 @@ int RECORDER_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
   return (ret);
 }
 
-int RECORDER_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
+int __lxstat(int vers, const char *path, struct stat *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
@@ -327,7 +281,7 @@ int RECORDER_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
   return (ret);
 }
 
-int RECORDER_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
+int __fxstat(int vers, int fd, struct stat *buf) {
   int ret;
   struct recorder_file_runtime *file;
   double tm1, tm2;
