@@ -150,9 +150,10 @@ void logger_exit() {
         }
     }
 
-    hashmap_free(__func2id_map);
-    hashmap_free(__filename2id_map);
+    //hashmap_free(__func2id_map);
+    //hashmap_free(__filename2id_map);
 
+    /*
     MAP_OR_FAIL(fclose)
     if ( __metafh)
         RECORDER_MPI_CALL(fclose) (__metafh);
@@ -160,4 +161,5 @@ void logger_exit() {
     // Close the log file would cause a segmentation error
     if ( __datafh )
         RECORDER_MPI_CALL(fclose) (__datafh);
+    */
 }
