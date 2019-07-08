@@ -47,7 +47,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #ifdef HAVE_INTTYPES_H
-	#include <inttypes.h>
+#include <inttypes.h>
 #endif
 
 #if !defined PRId64 || defined(PRI_MACROS_BROKEN)
@@ -73,5 +73,20 @@
 #endif
 #endif
 
+typedef struct IoOperation {
+    unsigned char func_id;
+    unsigned char filename_id;
+    double start_time;
+    double end_time;
+    /**
+     * attr1 = offset for read/write/seek
+     * attr1 = mode for open
+     *
+     * attr2 = counts for read/write
+     * attr2 = whence for seek
+     */
+    size_t attr1;
+    size_t attr2;
+} IoOperation_t;
 
 #endif /* __RECORDER_LOG_FORMAT_H */

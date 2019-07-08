@@ -13,23 +13,6 @@ hashmap_map *__func2id_map;
 /* Global (defined in recorder.h) filename to id map */
 hashmap_map *__filename2id_map;
 
-typedef struct IoOperation {
-    unsigned char func_id;
-    unsigned char filename_id;
-    double start_time;
-    double end_time;
-    /**
-     * attr1 = offset for read/write/seek
-     * attr1 = mode for open
-     *
-     * attr2 = counts for read/write
-     * attr2 = whence for seek
-     */
-    size_t attr1;
-    size_t attr2;
-} IoOperation_t;
-
-
 /* Map function name to Integer in binary format */
 static inline unsigned char get_func_id(const char *func) {
     int id = -1;
@@ -108,8 +91,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
     #ifndef DISABLE_POSIX_TRACE
-    write_in_text(start, end, log_text);
-    //write_in_binary(&op);
+    //write_in_text(start, end, log_text);
+    write_in_binary(&op);
     #endif
 }
 
