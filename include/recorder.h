@@ -97,6 +97,12 @@ void write_data_operation(const char *func, const char *filename, double start, 
      */
     #define RECORDER_MPI_CALL(func) __real_##func
 
+#else
+
+    #define RECORDER_FORWARD_DECL(name, ret, args)
+    #define MAP_OR_FAIL(func)
+    #define RECORDER_MPI_CALL(func) func
+
 #endif
 
 

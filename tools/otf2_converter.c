@@ -174,3 +174,7 @@ void otf2_exit() {
     MPI_Barrier( MPI_COMM_WORLD);
     OTF2_Archive_Close(__archive);
 }
+
+int main(int argc, char* argv[]) {
+    return 0;
+}
