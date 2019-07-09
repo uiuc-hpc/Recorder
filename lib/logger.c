@@ -95,8 +95,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
 
-    //write_in_text(start, end, log_text);
-    write_in_binary(&op);
+    write_in_text(start, end, log_text);
+    //write_in_binary(&op);
 }
 
 void logger_init(int rank) {
@@ -104,38 +104,43 @@ void logger_init(int rank) {
     __filename2id_map = hashmap_new();
 
     MAP_OR_FAIL(fopen)
-    if (rank == 0) {
-        mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    }
+    mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     char logfile_name[100];
     char metafile_name[100];
     sprintf(logfile_name, "logs/%d.itf", rank);
     sprintf(metafile_name, "logs/%d.mt", rank);
-    __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "wb");
-    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w+");
+    __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "w");
+    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
 }
 
 void logger_exit() {
     /* Write out the function and filename mappings */
     int i;
-    if (hashmap_length(__func2id_map) <= 0 ) return;
-    for(i = 0; i< __func2id_map->table_size; i++) {
-        if(__func2id_map->data[i].in_use != 0) {
-            const char *func = __func2id_map->data[i].key;
-            int id = __func2id_map->data[i].data;
-            fprintf(__metafh, "%s %d\n", func, id);
+    if (hashmap_length(__func2id_map) > 0 ) {
+        for(i = 0; i< __func2id_map->table_size; i++) {
+            if(__func2id_map->data[i].in_use != 0) {
+                char *func = __func2id_map->data[i].key;
+                int id = __func2id_map->data[i].data;
+                fprintf(__metafh, "%s %d\n", func, id);
+            }
         }
+    } else {
+        printf("func2id_map size : %d\n", __func2id_map->size);
     }
 
-    if (hashmap_length(__filename2id_map) <= 0 ) return;
-    for(i = 0; i< __filename2id_map->table_size; i++) {
-        if(__filename2id_map->data[i].in_use != 0) {
-            const char *filename = __filename2id_map->data[i].key;
-            int id = __filename2id_map->data[i].data;
-            fprintf(__metafh, "%s %d\n", filename, id);
+    if (hashmap_length(__filename2id_map) > 0 ) {
+        for(i = 0; i< __filename2id_map->table_size; i++) {
+            if(__filename2id_map->data[i].in_use != 0) {
+                char *filename = __filename2id_map->data[i].key;
+                int id = __filename2id_map->data[i].data;
+                fprintf(__metafh, "%s %d\n", filename, id);
+            }
         }
+    } else {
+        printf("filename2id_map size : %d\n", __filename2id_map->size);
     }
+
 
     hashmap_free(__func2id_map);
     hashmap_free(__filename2id_map);
