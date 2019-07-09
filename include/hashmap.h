@@ -8,11 +8,11 @@
 #define MAP_MISSING -3  /* No such element */
 #define MAP_FULL -2 	/* Hashmap is full */
 #define MAP_OMEM -1 	/* Out of Memory */
-#define MAP_OK 0 	/* OK */
+#define MAP_OK 0 	    /* OK */
 
 /* We need to keep keys and values */
 typedef struct _hashmap_element{
-	const char* key;
+	char* key;
 	int in_use;
 	int data;
 } hashmap_element;

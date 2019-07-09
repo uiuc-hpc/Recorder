@@ -5,13 +5,14 @@
 #include "recorder.h"
 
 /* Global handle for the local trace log */
-static FILE *__datafh;
-static FILE *__metafh;
+FILE *__datafh;
+FILE *__metafh;
 
 /* Global (defined in recorder.h) function name to id map */
 hashmap_map *__func2id_map;
 /* Global (defined in recorder.h) filename to id map */
 hashmap_map *__filename2id_map;
+
 
 /* Map function name to Integer in binary format */
 static inline unsigned char get_func_id(const char *func) {
@@ -48,14 +49,18 @@ static inline unsigned char get_filename_id(const char *filename) {
 
 /*
  * Some of functions are not made by the application
- * We should not include then in the trace file
+ * And they are operating on wierd files
+ * We should not include them in the trace file
  */
 static inline int exclude_filename(const char *filename) {
+    if (filename == NULL) return 0; // pass
+
     /* these are paths that we will not trace */
     // TODO put these in configuration file?
-    static char *exclusions[] = {"/dev/", "/proc", "/sys", "pipe:[",
+    static const char *exclusions[] = {"/dev/", "/proc", "/sys", "pipe:[",
                             "anon_inode:[", "socket:[", NULL};
     int i = 0;
+    // Need to make sure both parameters for strncmp are not NULL, otherwise its gonna crash
     while(exclusions[i] != NULL) {
         int find = strncmp(exclusions[i], filename, strlen(exclusions[i]));
         if (find == 0)      // find it. should ignore this filename
@@ -66,21 +71,20 @@ static inline int exclude_filename(const char *filename) {
 }
 
 static inline void write_in_binary(IoOperation_t *op) {
-    if (__datafh != NULL ) {
-        MAP_OR_FAIL(fwrite)
-        RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
-    }
+    MAP_OR_FAIL(fwrite)
+    RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
 }
 
 static inline void write_in_text(double tstart, double tend, const char* log_text) {
-    if (__datafh != NULL)
-        fprintf(__datafh, "%.6f %s %.6f\n", tstart, log_text, tend-tstart);
+    fprintf(__datafh, "%.6f %s %.6f\n", tstart, log_text, tend-tstart);
 }
 
 void write_data_operation(const char *func, const char *filename, double start, double end,
                           size_t offset, size_t count_or_whence, const char *log_text) {
-    if (exclude_filename(filename))
-        return;
+
+    if (__datafh == NULL) return;       // Haven't initialized yet.
+
+    if (exclude_filename(filename)) return;
 
     IoOperation_t op = {
         .func_id = get_func_id(func),
@@ -90,10 +94,9 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr1 = offset,
         .attr2 = count_or_whence
     };
-    #ifndef DISABLE_POSIX_TRACE
+
     //write_in_text(start, end, log_text);
     write_in_binary(&op);
-    #endif
 }
 
 void logger_init(int rank) {
@@ -124,25 +127,20 @@ void logger_exit() {
             fprintf(__metafh, "%s %d\n", func, id);
         }
     }
+
     if (hashmap_length(__filename2id_map) <= 0 ) return;
     for(i = 0; i< __filename2id_map->table_size; i++) {
         if(__filename2id_map->data[i].in_use != 0) {
-            const char *func = __filename2id_map->data[i].key;
+            const char *filename = __filename2id_map->data[i].key;
             int id = __filename2id_map->data[i].data;
-            fprintf(__metafh, "%s %d\n", func, id);
+            fprintf(__metafh, "%s %d\n", filename, id);
         }
     }
 
-    //hashmap_free(__func2id_map);
-    //hashmap_free(__filename2id_map);
+    hashmap_free(__func2id_map);
+    hashmap_free(__filename2id_map);
 
-    /*
     MAP_OR_FAIL(fclose)
-    if ( __metafh)
-        RECORDER_MPI_CALL(fclose) (__metafh);
-
-    // Close the log file would cause a segmentation error
-    if ( __datafh )
-        RECORDER_MPI_CALL(fclose) (__datafh);
-    */
+    if ( __metafh)  RECORDER_MPI_CALL(fclose) (__metafh);
+    if ( __datafh ) RECORDER_MPI_CALL(fclose) (__datafh);
 }

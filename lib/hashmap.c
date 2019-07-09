@@ -22,6 +22,7 @@ hashmap_map* hashmap_new() {
     return m;
 
 	err:
+        perror("Something wrong when initiazling hashmap");
 		if (m) hashmap_free(m);
         return NULL;
 }
@@ -247,10 +248,15 @@ int hashmap_put(hashmap_map *m, const char* key, int value){
 		index = hashmap_hash(m, key);
 	}
 
+
 	/* Set the data */
-	m->data[index].data = value;
-	m->data[index].key = key;
 	m->data[index].in_use = 1;
+	m->data[index].data = value;
+    // Need to allocate memory for key
+    // instead of just do m->data[index].key = key, because
+    // the passed in *key could be freed by caller
+    m->data[index].key = malloc(strlen(key) + 1);
+    strcpy(m->data[index].key, key);
 	m->size++;
 
 	return MAP_OK;
@@ -271,7 +277,7 @@ int hashmap_get(hashmap_map *m, const char* key, int *arg){
 
         int in_use = m->data[curr].in_use;
         if (in_use == 1){
-            if (strcmp(m->data[curr].key,key)==0){
+            if (strcmp(m->data[curr].key, key)==0){
                 *arg = (m->data[curr].data);
                 return MAP_OK;
             }
