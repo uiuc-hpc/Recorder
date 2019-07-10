@@ -8,7 +8,7 @@ MPI_DIR=/usr/tce/packages/openmpi/openmpi-2.0.0-intel-18.0.1/
 # Only for LBANN
 # Also need to set LD_LIBRARY_PATH when running the LBANN
 #MPI_DIR=/usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
-#HDF5_DIR=/g/g90/wang116/softwares/lbann/install/
+#HDF5_DIR=/p/lscratchh/wang116/applications/lbann/install/
 
 # Only for Chombo
 #MPI_DIR=/usr/tce/packages/openmpi/openmpi-2.0.0-gcc-4.9.3/

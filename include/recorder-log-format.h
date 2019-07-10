@@ -46,6 +46,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdint.h>
+#include <string.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
