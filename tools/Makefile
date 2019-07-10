@@ -18,19 +18,19 @@ OTF2_LIBS = `$(OTF2_CONFIG) --libs`
 
 RECORDER_CFLAGS = -I/g/g90/wang116/sources/Recorder/include
 
-ALL_MPI = otf2_converter
+ALL = otf2-converter
 
-mpi: $(ALL_MPI)
+all: $(ALL)
 
-otf2_converter.o: otf2_converter.c
+otf2-converter.o: otf2-converter.c
 	mpicc -std=c99 $(OTF2_CFLAGS) $(RECORDER_CFLAGS) \
-            -c otf2_converter.c \
-            -o otf2_converter.o
+            -c otf2-converter.c \
+            -o otf2-converter.o
 
-otf2_converter: otf2_converter.o
-	mpicc otf2_converter.o \
+otf2-converter: otf2-converter.o
+	mpicc otf2-converter.o \
             $(OTF2_LDFLAGS) $(OTF2_LIBS) \
-            -o otf2_converter
+            -o otf2-converter
 
 clean:
-	$(RM) $(ALL) $(ALL_MPI) $(ALL_OPENMP) $(ALL_PTHREAD) *.o
+	rm $(ALL) *.o
