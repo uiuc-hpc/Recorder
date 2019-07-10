@@ -36,3 +36,4 @@ config.inc
 
 # Configuration file
 *.inc
+logs/
