@@ -77,18 +77,19 @@ int depth;
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
     #ifndef DISABLE_MPIO_TRACE
-        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)      \
-            MAP_OR_FAIL(func)                                                   \
-            depth++;                                                            \
-            double tm1 = recorder_wtime();                                      \
-            ret res = RECORDER_MPI_CALL(func) args ;                            \
-            double tm2 = recorder_wtime();                                      \
-            write_data_operation(#func, "", tm1, tm2, attr1, attr2, log_text);  \
-            depth--;                                                            \
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)          \
+            MAP_OR_FAIL(func)                                                       \
+            depth++;                                                                \
+            double tm1 = recorder_wtime();                                          \
+            ret res = RECORDER_MPI_CALL(func) args ;                                \
+            double tm2 = recorder_wtime();                                          \
+            if (depth == 1)                                                         \
+                write_data_operation(#func, "", tm1, tm2, attr1, attr2, log_text);  \
+            depth--;                                                                \
             return res;
     #else
-        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)  \
-            MAP_OR_FAIL(func)                                               \
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)          \
+            MAP_OR_FAIL(func)                                                       \
             return RECORDER_MPI_CALL(func) args ;
     #endif
 #endif

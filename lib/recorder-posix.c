@@ -82,10 +82,13 @@ int depth;
          */
         #define RECORDER_IMP_CHEN(func, ret, real_func_call, filename, attr1, attr2, log)   \
             MAP_OR_FAIL(func)                                                               \
+            depth++;                                                                        \
             double tm1 = recorder_wtime();                                                  \
             ret res = real_func_call;                                                       \
             double tm2 = recorder_wtime();                                                  \
-            write_data_operation(#func, filename, tm1, tm2, attr1, attr2, log);             \
+            if (depth == 1)                                                                 \
+                write_data_operation(#func, filename, tm1, tm2, attr1, attr2, log);         \
+            depth--;                                                                        \
             return res;
     #else
         #define RECORDER_IMP_CHEN(func, ret, real_func_call, filename, attr1, attr2, log)   \
