@@ -70,7 +70,6 @@
 #define CONST
 #endif
 
-FILE *__recorderfh;
 int depth;
 
 #define TRACE_LEN 256
