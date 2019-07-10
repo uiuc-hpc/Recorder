@@ -105,8 +105,8 @@ static void convert_data_operations(OTF2_Archive *archive, int rank, const char*
         const char* func = get_function_name_by_id(op->func_id);
         //printf("DATA[%d]: %s %u %f %f\n", rank, func, op->filename_id, op->start_time, op->end_time);
 
-        //if ( op->func_id > 22 )     // Not POSIX IO Calls
-        //    continue;
+        if ( op->func_id > 22 )     // Not POSIX IO Calls
+            continue;
 
         if ( strstr(func, "open") ) {
             record_open_event(evt_writer, op->filename_id, op->start_time);
