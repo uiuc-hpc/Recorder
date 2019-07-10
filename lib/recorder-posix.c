@@ -70,7 +70,6 @@ typedef int64_t off64_t;
 int depth;
 
 #ifdef RECORDER_PRELOAD
-    #include <dlfcn.h>
     extern double (*__real_PMPI_Wtime)(void);
 
     #ifndef DISABLE_POSIX_TRACE

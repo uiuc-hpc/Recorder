@@ -49,6 +49,7 @@
 #include <sys/uio.h>
 #include <stdint.h>
 #include <mpi.h>
+#include "hdf5.h"
 #include "recorder-log-format.h"
 #include "hashmap.h"
 
@@ -70,7 +71,7 @@ void write_data_operation(const char *func, const char *filename, double start, 
 
 
 #ifdef RECORDER_PRELOAD
-
+    #include <dlfcn.h>
     /*
      * Declare the function signature for real functions
      * e.g. The real function point to fwrite would be defined as __real_fwrite

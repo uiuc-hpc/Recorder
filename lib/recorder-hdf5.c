@@ -40,6 +40,9 @@
  * Prime Contract No. DE-AC02-05CH11231.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#define _XOPEN_SOURCE 500
+#define _GNU_SOURCE         //  Need to be on top to use RTLD_NEXT
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -49,8 +52,33 @@
 #include "recorder.h"
 #include "hdf5.h"
 
+
 #define SMALL_BUF_SIZE 128
 #define LARGE_BUF_SIZE 1024
+
+
+#define TRACE_LEN 256
+
+#ifdef RECORDER_PRELOAD
+    #ifndef DISABLE_HDF5_TRACE
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)      \
+            MAP_OR_FAIL(func)                                                   \
+            depth++;                                                            \
+            double tm1 = recorder_wtime();                                      \
+            ret res = RECORDER_MPI_CALL(func) args ;                            \
+            double tm2 = recorder_wtime();                                      \
+            write_data_operation(#func, "", tm1, tm2, attr1, attr2, log_text);  \
+            depth--;                                                            \
+            return res;
+    #else
+        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)  \
+            MAP_OR_FAIL(func)                                               \
+            return RECORDER_MPI_CALL(func) args ;
+    #endif
+#endif
+
+
+
 
 char *func_list[] = {
     "H5Fcreate", // File interface
@@ -313,1735 +341,386 @@ void get_op_name(H5S_seloper_t op, char *string) {
   free(tmp);
 }
 
-static struct recorder_file_runtime *recorder_file_by_hid(int hid);
+// TODO: not used?
+//static struct recorder_file_runtime *recorder_file_by_hid(int hid);
 
 
-
-hid_t RECORDER_DECL(H5Fcreate)(const char *filename, unsigned flags,
-                               hid_t create_plist, hid_t access_plist) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Fcreate);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    if (flags == H5F_ACC_TRUNC)
-      fprintf(__recorderfh, "%.5f H5Fcreate (%s,H5F_ACC_TRUNC,%d,%d)", tm1,
-              filename, create_plist, access_plist);
-    else if (flags == H5F_ACC_EXCL)
-      fprintf(__recorderfh, "%.5f H5Fcreate (%s,H5F_ACC_EXCL,%d,%d)", tm1,
-              filename, create_plist, access_plist);
-    else
-      fprintf(__recorderfh, "%.5f H5Fcreate (%s,%d,%d,%d)", tm1, filename,
-              flags, create_plist, access_plist);
-  }
-#endif
-
-  ret = __real_H5Fcreate(filename, flags, create_plist, access_plist);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Fcreate)(const char *filename, unsigned flags, hid_t create_plist, hid_t access_plist) {
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Fcreate (%s, %d, %d, %d)", filename, flags, create_plist, access_plist);
+  RECORDER_IMP_CHEN(H5Fcreate, hid_t, (filename, flags, create_plist, access_plist), flags, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Fopen)(const char *filename, unsigned flags,
-                             hid_t access_plist) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Fopen);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Fopen (%s,%d,%d)", tm1, filename, flags,
-            access_plist);
-  }
-#endif
-
-  ret = __real_H5Fopen(filename, flags, access_plist);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Fopen)(const char *filename, unsigned flags, hid_t access_plist) {
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Fopen (%s, %d, %d)", filename, flags, access_plist);
+  RECORDER_IMP_CHEN(H5Fopen, hid_t, (filename, flags, access_plist), flags, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Fclose)(hid_t file_id) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Fclose);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Fclose (%d)", tm1, file_id);
-  }
-#endif
-
-  ret = __real_H5Fclose(file_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Fclose (%d)", file_id);
+  RECORDER_IMP_CHEN(H5Fclose, herr_t, (file_id), 0, 0, log_text);
 }
 
 // Group Interface
 herr_t RECORDER_DECL(H5Gclose)(hid_t group_id) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Gclose);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Gclose (%d)", tm1, group_id);
-  }
-#endif
-
-  ret = __real_H5Gclose(group_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Gclose (%d)", group_id);
+  RECORDER_IMP_CHEN(H5Gclose, herr_t, (group_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Gcreate1)(hid_t loc_id, const char *name,
-                                size_t size_hint) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Gcreate1);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Gcreate1 (%d,%s,%d)", tm1, loc_id, new_name,
-            size_hint);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Gcreate1(loc_id, name, size_hint);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Gcreate1)(hid_t loc_id, const char *name, size_t size_hint) {
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Gcreate1 (%d, %s, %ld)", loc_id, name, size_hint);
+  RECORDER_IMP_CHEN(H5Gcreate1, hid_t, (loc_id, name, size_hint), size_hint, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Gcreate2)(hid_t loc_id, const char *name, hid_t lcpl_id,
-                                hid_t gcpl_id, hid_t gapl_id) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Gcreate2);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Gcreate2 (%d,%s,%d,%d,%d)", tm1, loc_id,
-            new_name, lcpl_id, gcpl_id, gapl_id);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Gcreate2(loc_id, name, lcpl_id, gcpl_id, gapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Gcreate2)(hid_t loc_id, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id) {
+  char log_text[TRACE_LEN];
+  sprintf(log_text, "H5Gcreate2 (%d, %s, %d, %d, %d)", loc_id, name, lcpl_id, gcpl_id, gapl_id);
+  RECORDER_IMP_CHEN(H5Gcreate2, hid_t, (loc_id, name, lcpl_id, gcpl_id, gapl_id), size_hint, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Gget_objinfo)(hid_t loc_id, const char *name,
-                                     hbool_t follow_link, H5G_stat_t *statbuf) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Gget_objinfo);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Gget_objinfo (%d,%s,%d,statbuf)", tm1, loc_id,
-            new_name, follow_link);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Gget_objinfo(loc_id, name, follow_link, statbuf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Gget_objinfo)(hid_t loc_id, const char *name, hbool_t follow_link, H5G_stat_t *statbuf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Gget_objinfo (%d, %s, %d, %p)", loc_id, name, follow_link, statbuf);
+    RECORDER_IMP_CHEN(H5Gget_objinfo, herr_t, (loc_id, name, follow_link, statbuf), 0, 0, log_text);
 }
 
-int RECORDER_DECL(H5Giterate)(hid_t loc_id, const char *name, int *idx,
-                              H5G_iterate_t operator, void *operator_data) {
-  int ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Giterate);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Giterate (%d,%s,%d,%d,%d)", tm1, loc_id,
-            new_name, idx, operator, operator_data);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Giterate(loc_id, name, idx, operator, operator_data);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+int RECORDER_DECL(H5Giterate)(hid_t loc_id, const char *name, int *idx, H5G_iterate_t operator, void *operator_data) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Giterate (%d, %s, %p, %d, %p)", loc_id, name, idx, operator, operator_data);
+    RECORDER_IMP_CHEN(H5Giterate, int, (loc_id, name, idx, operator, operator_data), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Gopen1)(hid_t loc_id, const char *name) {
-  hid_t ret;
-  double tm1, tm2, duration;
-
-  MAP_OR_FAIL(H5Gopen1);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Gopen1 (%d,%s)", tm1, loc_id, new_name);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Gopen1(loc_id, name);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Gopen1 (%d, %s)", loc_id, name);
+    RECORDER_IMP_CHEN(H5Gopen1, hid_t, (loc_id, name), 0, 0, log_text);
 }
 
+
 hid_t RECORDER_DECL(H5Gopen2)(hid_t loc_id, const char *name, hid_t gapl_id) {
-  hid_t ret;
-  double tm1, tm2, duration;
-  MAP_OR_FAIL(H5Gopen2);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Gopen2 (%d,%s,%d)", tm1, loc_id, new_name,
-            gapl_id);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Gopen2(loc_id, name, gapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Gopen2 (%d, %s, %d)", loc_id, name, gapl_id);
+    RECORDER_IMP_CHEN(H5Gopen2, hid_t, (loc_id, name, gapl_id), 0, 0, log_text);
 }
 
 // Dataset interface
 herr_t RECORDER_DECL(H5Dclose)(hid_t dataset_id) {
-  herr_t ret;
-  double tm1, tm2, duration;
-
-  MAP_OR_FAIL(H5Dclose);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Dclose (%d)", tm1, dataset_id);
-  }
-#endif
-
-  ret = __real_H5Dclose(dataset_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dclose (%d)", dataset_id);
+    RECORDER_IMP_CHEN(H5Dclose, herr_t, (dataset_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Dcreate1)(hid_t loc_id, const char *name, hid_t type_id,
-                                hid_t space_id, hid_t dcpl_id) {
-  hid_t ret;
-  double tm1, tm2, duration;
-
-  MAP_OR_FAIL(H5Dcreate1);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+hid_t RECORDER_DECL(H5Dcreate1)(hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t dcpl_id) {
+    char log_text[TRACE_LEN];
+    char datatype_name[64];
     get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Dcreate1 (%d,%s,%s,%d,%d)", tm1, loc_id,
-            new_name, datatype_name, space_id, dcpl_id);
-    free(new_name);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Dcreate1(loc_id, name, type_id, space_id, dcpl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+    sprintf(log_text, "H5Dcreate1 (%d, %s, %s, %d, %d)", loc_id, name, datatype_name, space_id, dcpl_id);
+    RECORDER_IMP_CHEN(H5Dcreate1, hid_t, (loc_id, name, type_id, space_id, dcpl_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Dcreate2)(hid_t loc_id, const char *name, hid_t dtype_id,
-                                hid_t space_id, hid_t lcpl_id, hid_t dcpl_id,
-                                hid_t dapl_id) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Dcreate2);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-    get_datatype_name(H5Tget_class(dtype_id), dtype_id, datatype_name);
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Dcreate2 (%d,%s,%s,%d,%d,%d,%d)", tm1, loc_id,
-            new_name, datatype_name, space_id, lcpl_id, dcpl_id, dapl_id);
-    free(new_name);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Dcreate2(loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id,
-                          dapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+hid_t RECORDER_DECL(H5Dcreate2)(hid_t loc_id, const char *name, hid_t dtype_id, hid_t space_id, hid_t lcpl_id, hid_t dcpl_id, hid_t dapl_id) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dcreate2 (%d, %s, %d, %d, %d, %d, %d)", loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id);
+    RECORDER_IMP_CHEN(H5Dcreate2, hid_t, (loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Dget_create_plist)(hid_t dataset_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Dget_create_plist);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Dget_create_plist (%d)", tm1, dataset_id);
-  }
-#endif
-
-  ret = __real_H5Dget_create_plist(dataset_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dget_create_plist (%d)", dataset_id);
+    RECORDER_IMP_CHEN(H5Dget_create_plist, hid_t, (dataset_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Dget_space)(hid_t dataset_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Dget_space);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Dget_space (%d)", tm1, dataset_id);
-  }
-#endif
-
-  ret = __real_H5Dget_space(dataset_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dget_space (%d)", dataset_id);
+    RECORDER_IMP_CHEN(H5Dget_space, hid_t, (dataset_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Dget_type)(hid_t dataset_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Dget_type);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Dget_type (%d)", tm1, dataset_id);
-  }
-#endif
-
-  ret = __real_H5Dget_type(dataset_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dget_type (%d)", dataset_id);
+    RECORDER_IMP_CHEN(H5Dget_type, hid_t, (dataset_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Dopen1)(hid_t loc_id, const char *name) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Dopen1);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Dopen1 (%d,%s)", tm1, loc_id, new_name);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Dopen1(loc_id, name);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dopen1 (%d, %s)", loc_id, name);
+    RECORDER_IMP_CHEN(H5Dopen1, hid_t, (loc_id, name), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Dopen2)(hid_t loc_id, const char *name, hid_t dapl_id) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Dopen2);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Dopen2 (%d,%s,%d)", tm1, loc_id, new_name,
-            dapl_id);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Dopen2(loc_id, name, dapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dopen2 (%d, %s, %d)", loc_id, name, dapl_id);
+    RECORDER_IMP_CHEN(H5Dopen2, hid_t, (loc_id, name, dapl_id), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Dread)(hid_t dataset_id, hid_t mem_type_id,
-                              hid_t mem_space_id, hid_t file_space_id,
-                              hid_t xfer_plist_id, void *buf) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Dread);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  hssize_t npoints = H5Sget_select_npoints(mem_space_id);
-  size_t size_of_data_type = H5Tget_size(mem_type_id);
-  long long total_size_read = npoints * size_of_data_type;
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-    get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Dread (%d,%s,%d,%d,%d,%lld)", tm1, dataset_id,
-            datatype_name, mem_space_id, file_space_id, xfer_plist_id,
-            total_size_read);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Dread(dataset_id, mem_type_id, mem_space_id, file_space_id,
-                       xfer_plist_id, buf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Dread)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dread (%d, %d, %d, %d, %d, %p)", dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf);
+    RECORDER_IMP_CHEN(H5Dread, hid_t, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Dwrite)(hid_t dataset_id, hid_t mem_type_id,
-                               hid_t mem_space_id, hid_t file_space_id,
-                               hid_t xfer_plist_id, const void *buf) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Dwrite);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  size_t size_of_data_type = H5Tget_size(mem_type_id);
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-    get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Dwrite (%d,%s,%d,%d,%d)", tm1, dataset_id,
-            datatype_name, mem_space_id, file_space_id, xfer_plist_id);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Dwrite(dataset_id, mem_type_id, mem_space_id, file_space_id,
-                        xfer_plist_id, buf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Dwrite)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Dwrite (%d, %d, %d, %d, %d, %p)", dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf);
+    RECORDER_IMP_CHEN(H5Dwrite, hid_t, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 0, 0, log_text);
 }
 
-// Dataspace interface
 herr_t RECORDER_DECL(H5Sclose)(hid_t space_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sclose);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sclose (%d)", tm1, space_id);
-  }
-#endif
-
-  ret = __real_H5Sclose(space_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sclose (%d)", space_id);
+    RECORDER_IMP_CHEN(H5Sclose, herr_t, (space_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Screate)(H5S_class_t type) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Screate);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Screate (%d)", tm1, type);
-  }
-#endif
-
-  ret = __real_H5Screate(type);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Screate (%d)", type);
+    RECORDER_IMP_CHEN(H5Screate, hid_t, (type), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Screate_simple)(int rank, const hsize_t *current_dims,
-                                      const hsize_t *maximum_dims) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Screate_simple);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-
-  if (__recorderfh != NULL && depth == 1) {
-    char *current_dims_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (current_dims != NULL)
-      print_arr(current_dims, rank, current_dims_str);
-    else
-      strcpy(current_dims_str, "NULL");
-
-    char *maximum_dims_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (maximum_dims != NULL)
-      print_arr(maximum_dims, rank, maximum_dims_str);
-    else
-      strcpy(maximum_dims_str, "NULL");
-
-    // fprintf(__recorderfh,"%.5f H5Screate_simple
-    // (%d,current_dims,maximum_dims)",tm1, rank);
-    fprintf(__recorderfh, "%.5f H5Screate_simple (%d,%s,%s)", tm1, rank,
-            current_dims_str, maximum_dims_str);
-
-    free(current_dims_str);
-    free(maximum_dims_str);
-  }
-#endif
-
-  ret = __real_H5Screate_simple(rank, current_dims, maximum_dims);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Screate_simple)(int rank, const hsize_t *current_dims, const hsize_t *maximum_dims) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Screate_simple (%d, %p, %p)", rank, current_dims, maximum_dims);
+    RECORDER_IMP_CHEN(H5Screate_simple, hid_t, (rank, current_dims, maximum_dims), 0, 0, log_text);
 }
 
 hssize_t RECORDER_DECL(H5Sget_select_npoints)(hid_t space_id) {
-  hssize_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sget_select_npoints);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sget_select_npoints (%d)", tm1, space_id);
-  }
-#endif
-
-  ret = __real_H5Sget_select_npoints(space_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sget_select_npoints (%d)", space_id);
+    RECORDER_IMP_CHEN(H5Sget_select_npoints, hssize_t, (space_id), 0, 0, log_text);
 }
 
-int RECORDER_DECL(H5Sget_simple_extent_dims)(hid_t space_id, hsize_t *dims,
-                                             hsize_t *maxdims) {
-  int ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sget_simple_extent_dims);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sget_simple_extent_dims (%d,%d,%d)", tm1,
-            space_id, dims, maxdims);
-  }
-#endif
-
-  ret = __real_H5Sget_simple_extent_dims(space_id, dims, maxdims);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+int RECORDER_DECL(H5Sget_simple_extent_dims)(hid_t space_id, hsize_t *dims, hsize_t *maxdims) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sget_simple_extent_dims (%d, %p, %p)", space_id, dims, maxdims);
+    RECORDER_IMP_CHEN(H5Sget_simple_extent_dims, int, (space_id, dims, maxdims), 0, 0, log_text);
 }
 
 hssize_t RECORDER_DECL(H5Sget_simple_extent_npoints)(hid_t space_id) {
-  hssize_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sget_simple_extent_npoints);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sget_simple_extent_npoints (%d)", tm1,
-            space_id);
-  }
-#endif
-
-  ret = __real_H5Sget_simple_extent_npoints(space_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sget_simple_extent_npoints (%d)", space_id);
+    RECORDER_IMP_CHEN(H5Sget_simple_extent_npoints, hssize_t, (space_id), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Sselect_elements)(hid_t space_id, H5S_seloper_t op,
-                                         size_t num_elements,
-                                         const hsize_t *coord) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sselect_elements);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sselect_elements (%d,%d,%d,%d)", tm1,
-            space_id, op, num_elements, coord);
-  }
-#endif
-
-  ret = __real_H5Sselect_elements(space_id, op, num_elements, coord);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Sselect_elements)(hid_t space_id, H5S_seloper_t op, size_t num_elements, const hsize_t *coord) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sselect_elements (%d, %d, %ld, %p)", space_id, op, num_elements, coord);
+    RECORDER_IMP_CHEN(H5Sselect_elements, herr_t, (space_id, op, num_elements, coord), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Sselect_hyperslab)(hid_t space_id, H5S_seloper_t op,
-                                          const hsize_t *start,
-                                          const hsize_t *stride,
-                                          const hsize_t *count,
-                                          const hsize_t *block) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sselect_hyperslab);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-
-  if (__recorderfh != NULL && depth == 1) {
-    // The start, stride, count, and block arrays must be the same size as the
-    // rank of the dataspace.
-    int rank = H5Sget_simple_extent_ndims(space_id);
-
-    char *start_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (start != NULL)
-      print_arr(start, rank, start_str);
-    else
-      strcpy(start_str, "NULL");
-
-    char *stride_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (stride != NULL)
-      print_arr(stride, rank, stride_str);
-    else
-      strcpy(stride_str, "NULL");
-
-    char *count_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (count != NULL)
-      print_arr(count, rank, count_str);
-    else
-      strcpy(count_str, "NULL");
-
-    char *block_str = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-    if (block != NULL)
-      print_arr(block, rank, block_str);
-    else
-      strcpy(block_str, "NULL");
-
-    char *op_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-    get_op_name(op, op_name);
-    fprintf(__recorderfh, "%.5f H5Sselect_hyperslab (%d,%s,%s,%s,%s,%s)", tm1,
-            space_id, op_name, start_str, stride_str, count_str, block_str);
-
-    free(op_name);
-    free(start_str);
-    free(stride_str);
-    free(count_str);
-    free(block_str);
-  }
-#endif
-
-  ret = __real_H5Sselect_hyperslab(space_id, op, start, stride, count, block);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Sselect_hyperslab)(hid_t space_id, H5S_seloper_t op, const hsize_t *start, const hsize_t *stride, const hsize_t *count, const hsize_t *block) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sselect_hyperslab (%d, %d, %p, %p, %p, %p)", space_id, op, start, stride, count, block);
+    RECORDER_IMP_CHEN(H5Sselect_hyperslab, herr_t, (space_id, op, start, stride, count, block), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Sselect_none)(hid_t space_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Sselect_none);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Sselect_none (%d)", tm1, space_id);
-  }
-#endif
-
-  ret = __real_H5Sselect_none(space_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Sselect_none (%d)", space_id);
+    RECORDER_IMP_CHEN(H5Sselect_none, herr_t, (space_id), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Tclose)(hid_t dtype_id) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Tclose);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Tclose (%d)", tm1, dtype_id);
-  }
-#endif
-
-  ret = __real_H5Tclose(dtype_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tclose (%d)", dtype_id);
+    RECORDER_IMP_CHEN(H5Tclose, herr_t, (dtype_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Tcopy)(hid_t dtype_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tcopy);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-    get_datatype_name(H5Tget_class(dtype_id), dtype_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Tcopy (%s)", tm1, datatype_name);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Tcopy(dtype_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tcopy (%d)", dtype_id);
+    RECORDER_IMP_CHEN(H5Tcopy, hid_t , (dtype_id), 0, 0, log_text);
 }
 
 H5T_class_t RECORDER_DECL(H5Tget_class)(hid_t dtype_id) {
-  H5T_class_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tget_class);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Tget_class (%d)", tm1, dtype_id);
-  }
-#endif
-
-  ret = __real_H5Tget_class(dtype_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tget_class (%d)", dtype_id);
+    RECORDER_IMP_CHEN(H5Tget_class, H5T_Class_t, (dtype_id), 0, 0, log_text);
 }
 
 size_t RECORDER_DECL(H5Tget_size)(hid_t dtype_id) {
-  size_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tget_size);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Tget_size (%d)", tm1, dtype_id);
-  }
-#endif
-
-  ret = __real_H5Tget_size(dtype_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return ret;
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tget_size (%d)", dtype_id);
+    RECORDER_IMP_CHEN(H5Tget_size, size_t, (dtype_id), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Tset_size)(hid_t dtype_id, size_t size) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tset_size);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Tset_size (%d,%d)", tm1, dtype_id, size);
-  }
-#endif
-
-  ret = __real_H5Tset_size(dtype_id, size);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tset_size (%d, %ld)", dtype_id, size);
+    RECORDER_IMP_CHEN(H5Tset_size, herr_t, (dtype_id, size), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Tcreate)(H5T_class_t class, size_t size) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tcreate);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    if (class == H5T_COMPOUND)
-      fprintf(__recorderfh, "%.5f H5Tcreate (H5T_COMPOUND,%d)", tm1, size);
-    else if (class == H5T_OPAQUE)
-      fprintf(__recorderfh, "%.5f H5Tcreate (H5T_OPAQUE,%d)", tm1, size);
-    else if (class == H5T_ENUM)
-      fprintf(__recorderfh, "%.5f H5Tcreate (H5T_ENUM,%d)", tm1, size);
-    else if (class == H5T_STRING)
-      fprintf(__recorderfh, "%.5f H5Tcreate (H5T_STRING,%d)", tm1, size);
-    else
-      fprintf(__recorderfh, "%.5f H5Tcreate (%d,%d)", tm1, class, size);
-  }
-#endif
-
-  ret = __real_H5Tcreate(class, size);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tcreate (%d, %ld)", class, size);
+    RECORDER_IMP_CHEN(H5Tcreate, hid_t, (class, size), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Tinsert)(hid_t dtype_id, const char *name, size_t offset,
-                                hid_t field_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Tinsert);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Tinsert (%d,%s,%d,%d)", tm1, dtype_id, name,
-            offset, field_id);
-  }
-#endif
-
-  ret = __real_H5Tinsert(dtype_id, name, offset, field_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Tinsert)(hid_t dtype_id, const char *name, size_t offset, hid_t field_id) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Tinsert (%d, %s, %ld, %d)", dtype_id, name, offset, field_id);
+    RECORDER_IMP_CHEN(H5Tinsert, herr_t, (dtype_id, name, offset, field_id), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Aclose)(hid_t attr_id) {
-  herr_t ret;
-  double tm1, tm2, duration;
-  MAP_OR_FAIL(H5Aclose);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aclose (%d)", tm1, attr_id);
-  }
-#endif
-
-  ret = __real_H5Aclose(attr_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aclose (%d)", attr_id);
+    RECORDER_IMP_CHEN(H5Aclose, herr_t, (attr_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Acreate1)(hid_t loc_id, const char *attr_name,
-                                hid_t type_id, hid_t space_id, hid_t acpl_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Acreate1);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+hid_t RECORDER_DECL(H5Acreate1)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id) {
+    char log_text[TRACE_LEN];
+    char datatype_name[64];
     get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Acreate1 (%d,%s,%s,%d,%d)", tm1, loc_id,
-            attr_name, datatype_name, space_id, acpl_id);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Acreate1(loc_id, attr_name, type_id, space_id, acpl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    sprintf(log_text, "H5Acreate1 (%d, %s, %s, %d, %d)", loc_id, attr_name, datatype_name, space_id, acpl_id);
+    RECORDER_IMP_CHEN(H5Acreate1, hid_t, (loc_id, attr_name, type_id, space_id, acpl_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Acreate2)(hid_t loc_id, const char *attr_name,
-                                hid_t type_id, hid_t space_id, hid_t acpl_id,
-                                hid_t aapl_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Acreate2);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+hid_t RECORDER_DECL(H5Acreate2)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id) {
+    char log_text[TRACE_LEN];
+    char datatype_name[64];
     get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Acreate2 (%d,%s,%s,%d,%d,%d)", tm1, loc_id,
-            attr_name, datatype_name, space_id, acpl_id, aapl_id);
-    free(datatype_name);
-  }
-#endif
-
-  ret =
-      __real_H5Acreate2(loc_id, attr_name, type_id, space_id, acpl_id, aapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    sprintf(log_text, "H5Acreate2 (%d, %s, %s, %d, %d, %d)", loc_id, attr_name, datatype_name, space_id, acpl_id, aapl_id);
+    RECORDER_IMP_CHEN(H5Acreate2, hid_t, (loc_id, attr_name, type_id, space_id, acpl_id, aapl_id), 0, 0, log_text);
 }
 
 ssize_t RECORDER_DECL(H5Aget_name)(hid_t attr_id, size_t buf_size, char *buf) {
-  ssize_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aget_name);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aget_name (%d,%d,%s)", tm1, attr_id, buf_size,
-            buf);
-  }
-#endif
-
-  ret = __real_H5Aget_name(attr_id, buf_size, buf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d <%.5f>\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aget_name (%d, %ld, %p)", attr_id, buf_size, buf);
+    RECORDER_IMP_CHEN(H5Aget_name, ssize_t, (attr_id, buf_size, buf), 0, 0, log_text);
 }
 
 int RECORDER_DECL(H5Aget_num_attrs)(hid_t loc_id) {
-  int ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aget_num_attrs);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aget_num_attrs (%d)", tm1, loc_id);
-  }
-#endif
-
-  ret = __real_H5Aget_num_attrs(loc_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aget_num_attrs (%d)", loc_id);
+    RECORDER_IMP_CHEN(H5Aget_num_attrs, int, (loc_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Aget_space)(hid_t attr_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aget_space);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aget_space (%d)", tm1, attr_id);
-  }
-#endif
-
-  ret = __real_H5Aget_space(attr_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aget_space (%d)", attr_id);
+    RECORDER_IMP_CHEN(H5Aget_space, hid_t, (attr_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Aget_type)(hid_t attr_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aget_type);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aget_type (%d)", tm1, attr_id);
-  }
-#endif
-
-  ret = __real_H5Aget_type(attr_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aget_type (%d)", attr_id);
+    RECORDER_IMP_CHEN(H5Aget_type, hid_t, (attr_id), 0, 0, log_text);
 }
 
-hid_t RECORDER_DECL(H5Aopen)(hid_t obj_id, const char *attr_name,
-                             hid_t aapl_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aopen);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aopen (%d,%s,%d)", tm1, obj_id, attr_name,
-            aapl_id);
-  }
-#endif
-
-  ret = __real_H5Aopen(obj_id, attr_name, aapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+hid_t RECORDER_DECL(H5Aopen)(hid_t obj_id, const char *attr_name, hid_t aapl_id) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aopen (%d, %s, %d)", obj_id, attr_name, aapl_id);
+    RECORDER_IMP_CHEN(H5Aopen, hid_t, (obj_id, attr_name, aapl_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Aopen_idx)(hid_t loc_id, unsigned int idx) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aopen_idx);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aopen_idx (%d,%d)", tm1, loc_id, idx);
-  }
-#endif
-
-  ret = __real_H5Aopen_idx(loc_id, idx);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aopen_idx (%d, %d)", loc_id, idx);
+    RECORDER_IMP_CHEN(H5Aopen_idx, hid_t, (loc_id,idx), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Aopen_name)(hid_t loc_id, const char *name) {
-  hid_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Aopen_name);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Aopen_name (%d,%s)", tm1, loc_id, name);
-  }
-#endif
-
-  ret = __real_H5Aopen_name(loc_id, name);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Aopen_name (%d, %s)", loc_id, name);
+    RECORDER_IMP_CHEN(H5Aopen_name, hid_t, (loc_id, name), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Aread)(hid_t attr_id, hid_t mem_type_id, void *buf) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Aread);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+    char log_text[TRACE_LEN];
+    char datatype_name[64];
     get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Aread (%d,%d)", tm1, attr_id, datatype_name);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Aread(attr_id, mem_type_id, buf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    sprintf(log_text, "H5Aread (%d, %s, %p", attr_id, datatype_name, buf);
+    RECORDER_IMP_CHEN(H5Aread, herr_t, (attr_id, mem_type_id, buf), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Awrite)(hid_t attr_id, hid_t mem_type_id,
-                               const void *buf) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Awrite);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *datatype_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+herr_t RECORDER_DECL(H5Awrite)(hid_t attr_id, hid_t mem_type_id, const void *buf) {
+    char log_text[TRACE_LEN];
+    char datatype_name[64];
     get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    fprintf(__recorderfh, "%.5f H5Awrite (%d,%s)", tm1, attr_id, datatype_name);
-    free(datatype_name);
-  }
-#endif
-
-  ret = __real_H5Awrite(attr_id, mem_type_id, buf);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    sprintf(log_text, "H5Awrite (%d, %s, %p", attr_id, datatype_name, buf);
+    RECORDER_IMP_CHEN(H5Awrite, herr_t, (attr_id, mem_type_id, buf), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Pclose)(hid_t plist) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pclose);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pclose (%d)", tm1, plist);
-  }
-#endif
-
-  ret = __real_H5Pclose(plist);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pclose (%d)", plist);
+    RECORDER_IMP_CHEN(H5Pclose, herr_t, (plist), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Pcreate)(hid_t cls_id) {
-  hid_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pcreate);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *prop_list_cls_name = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
+    char prop_list_cls_name[SMALL_BUF_SIZE];
+    char log_text[TRACE_LEN];
     get_prop_list_cls_name(cls_id, prop_list_cls_name);
-    fprintf(__recorderfh, "%.5f H5Pcreate (%s)", tm1, prop_list_cls_name);
-    free(prop_list_cls_name);
-  }
-#endif
-
-  ret = __real_H5Pcreate(cls_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    sprintf(log_text, "H5Pcreate (%s)", prop_list_cls_name);
+    RECORDER_IMP_CHEN(H5Pcreate, hid_t, (cls_id), 0, 0, log_text);
 }
 
 int RECORDER_DECL(H5Pget_chunk)(hid_t plist, int max_ndims, hsize_t *dims) {
-  int ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pget_chunk);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pget_chunk (%d,%d,%d)", tm1, plist, max_ndims,
-            dims);
-  }
-#endif
-
-  ret = __real_H5Pget_chunk(plist, max_ndims, dims);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pget_chunk (%d, %d, %p)", plist, max_ndims, dims);
+    RECORDER_IMP_CHEN(H5Pget_chunk, int, (plist, max_ndims, dims), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pget_mdc_config)(hid_t plist_id,
-                                        H5AC_cache_config_t *config_ptr) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pget_mdc_config);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pget_mdc_config (%d,config_ptr)", tm1,
-            plist_id);
-  }
-#endif
-
-  ret = __real_H5Pget_mdc_config(plist_id, config_ptr);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Pget_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pget_mdc_config (%d, %p)", plist_id, config_ptr);
+    RECORDER_IMP_CHEN(H5Pget_mdc_config, herr_t, (plist_id, config_ptr), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_alignment)(hid_t plist, hsize_t threshold,
-                                       hsize_t alignment) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_alignment);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_alignment (%d,%d,%d)", tm1, plist,
-            threshold, alignment);
-  }
-#endif
-
-  ret = __real_H5Pset_alignment(plist, threshold, alignment);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Pset_alignment)(hid_t plist, hsize_t threshold, hsize_t alignment) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_alignment (%d, %d, %d)", plist, threshold, alignment);
+    RECORDER_IMP_CHEN(H5Pset_alignment, herr_t, (plist, threshold, alignment), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Pset_chunk)(hid_t plist, int ndims, const hsize_t *dim) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_chunk);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_chunk (%d,%d,%d)", tm1, plist, ndims,
-            ndims * sizeof(hsize_t));
-  }
-#endif
-
-  ret = __real_H5Pset_chunk(plist, ndims, dim);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_chunk (%d, %d, %p)", plist, ndims, dim);
+    RECORDER_IMP_CHEN(H5Pset_chunk, herr_t, (plist, ndims, dim), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_dxpl_mpio)(hid_t dxpl_id,
-                                       H5FD_mpio_xfer_t xfer_mode) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_dxpl_mpio);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
+herr_t RECORDER_DECL(H5Pset_dxpl_mpio)(hid_t dxpl_id, H5FD_mpio_xfer_t xfer_mode) {
+
+    char log_text[TRACE_LEN];
     if (xfer_mode == H5FD_MPIO_INDEPENDENT)
-      fprintf(__recorderfh, "%.5f H5Pset_dxpl_mpio (%d,H5FD_MPIO_INDEPENDENT)",
-              tm1, dxpl_id);
+        sprintf(log_text, "H5Pset_dxpl_mpio (%d, H5FD_MPIO_INDEPENDENT)", dxpl_id);
     else if (xfer_mode == H5FD_MPIO_COLLECTIVE)
-      fprintf(__recorderfh, "%.5f H5Pset_dxpl_mpio (%d,H5FD_MPIO_COLLECTIVE)",
-              tm1, dxpl_id);
+        sprintf(log_text, "H5Pset_dxpl_mpio (%d, H5FD_MPIO_COLLECTIVE)", dxpl_id);
     else
-      fprintf(__recorderfh, "%.5f H5Pset_dxpl_mpio (%d,%d)", tm1, dxpl_id,
-              xfer_mode);
-  }
-#endif
-
-  ret = __real_H5Pset_dxpl_mpio(dxpl_id, xfer_mode);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+        sprintf(log_text, "H5Pset_dxpl_mpio (%d, %d)", dxpl_id, xfer_mode);
+    RECORDER_IMP_CHEN(H5Pset_dxpl_mpio, herr_t, (dxpl_id, xfer_mode), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_fapl_core)(hid_t fapl_id, size_t increment,
-                                       hbool_t backing_store) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_fapl_core);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_fapl_core (%d,%d,%d)", tm1, fapl_id,
-            increment, backing_store);
-  }
-#endif
-
-  ret = __real_H5Pset_fapl_core(fapl_id, increment, backing_store);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Pset_fapl_core)(hid_t fapl_id, size_t increment, hbool_t backing_store) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_fapl_core (%d, %d, %p)", fapl_id, increment, backing_store);
+    RECORDER_IMP_CHEN(H5Pset_fapl_core, herr_t, (fapl_id, increment, backing_store), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm,
-                                       MPI_Info info) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_fapl_mpio);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *comm_name = comm2name(comm);
-    fprintf(__recorderfh, "%.5f H5Pset_fapl_mpio (%d,%s,%d)", tm1, fapl_id,
-            comm_name, info);
-  }
-#endif
-
-  ret = __real_H5Pset_fapl_mpio(fapl_id, comm, info);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm, MPI_Info info) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_fapl_mpio (%d, %p, %p)", fapl_id, comm, info);
+    RECORDER_IMP_CHEN(H5Pset_fapl_mpio, herr_t, (fapl_id, comm, info), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_fapl_mpiposix)(hid_t fapl_id, MPI_Comm comm,
-                                           hbool_t use_gpfs_hints) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_fapl_mpiposix);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_fapl_mpiposix (%d,%d,%d)", tm1, fapl_id,
-            comm, use_gpfs_hints);
-  }
-#endif
-
-  ret = __real_H5Pset_fapl_mpiposix(fapl_id, comm, use_gpfs_hints);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Pset_fapl_mpiposix)(hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_fapl_mpiposix (%d, %p, %d)", fapl_id, comm, use_gpfs_hints);
+    RECORDER_IMP_CHEN(H5Pset_fapl_mpiposix, herr_t, (fapl_id, comm, use_gpfs_hints), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Pset_istore_k)(hid_t plist, unsigned ik) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_istore_k);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_istore_k (%d,%d)", tm1, plist, ik);
-  }
-#endif
-
-  ret = __real_H5Pset_istore_k(plist, ik);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_istore_k (%d, %d)", plist, ik);
+    RECORDER_IMP_CHEN(H5Pset_istore_k, herr_t, (plist, ik), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id,
-                                        H5AC_cache_config_t *config_ptr) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_mdc_config);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
+herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
     // int version, hbool_t rpt_fcn_enabled, hbool_t open_trace_file, hbool_t
     // close_trace_file,
     // char trace_file_name [H5AC__MAX_TRACE_FILE_NAME_LEN+1], hbool_t
@@ -2059,10 +738,9 @@ herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id,
     // apply_empty_reserve, double empty_reserve
     // int dirty_bytes_threshold, int metadata_write_strategy
 
-    fprintf(__recorderfh, "%.5f H5Pset_mdc_config "
-                          "(%d,[%d;%d;%d;%d;%s;%d;%d;%d;%f;%d;%d;%ld;%d;%f;%f;%"
-                          "d;%d;%d;%f;%f;%d;%f;%f;%d;%d;%d;%d;%f;%d;%d]);",
-            tm1, plist_id, config_ptr->version, config_ptr->rpt_fcn_enabled,
+    char log_text[1024];
+    sprintf(log_text, "H5Pset_mdc_config (%d, [%d;%d;%d;%d;%s;%d;%d;%d;%f;%d;%d;%ld;%d;%f;%f;% d;%d;%d;%f;%f;%d;%f;%f;%d;%d;%d;%d;%f;%d;%d])",
+            plist_id, config_ptr->version, config_ptr->rpt_fcn_enabled,
             config_ptr->open_trace_file, config_ptr->close_trace_file,
             config_ptr->trace_file_name, config_ptr->evictions_enabled,
             config_ptr->set_initial_size, config_ptr->initial_size,
@@ -2078,244 +756,53 @@ herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id,
             config_ptr->apply_empty_reserve, config_ptr->empty_reserve,
             config_ptr->dirty_bytes_threshold,
             config_ptr->metadata_write_strategy);
-  }
-#endif
-
-  ret = __real_H5Pset_mdc_config(plist_id, config_ptr);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    RECORDER_IMP_CHEN(H5Pset_mdc_config, herr_t, (plist_id, config_ptr), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Pset_meta_block_size)(hid_t fapl_id, hsize_t size) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Pset_meta_block_size);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Pset_meta_block_size (%d,%d)", tm1, fapl_id,
-            size);
-  }
-#endif
-
-  ret = __real_H5Pset_meta_block_size(fapl_id, size);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Pset_meta_block_size (%d, %d)", fapl_id, size);
+    RECORDER_IMP_CHEN(H5Pset_meta_block_size, herr_t, (fapl_id, size), 0, 0, log_text);
 }
 
 htri_t RECORDER_DECL(H5Lexists)(hid_t loc_id, const char *name, hid_t lapl_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Lexists);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Lexists (%d,%s,%d)", tm1, loc_id, new_name,
-            lapl_id);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Lexists(loc_id, name, lapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Lexists (%d, %s, %d)", loc_id, name, lapl_id);
+    RECORDER_IMP_CHEN(H5Lexists, htri_t, (loc_id, name, lapl_id), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Lget_val)(hid_t link_loc_id, const char *link_name,
-                                 void *linkval_buff, size_t size,
-                                 hid_t lapl_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Lget_val);
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Lget_val (%d,%s,%d,%d,%d)", tm1, link_loc_id,
-            link_name, linkval_buff, size, lapl_id);
-  }
-#endif
-
-  ret = __real_H5Lget_val(link_loc_id, link_name, linkval_buff, size, lapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Lget_val)(hid_t link_loc_id, const char *link_name, void *linkval_buff, size_t size, hid_t lapl_id) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Lget_val (%d, %s, %p, %d, %d)", link_loc_id, link_name, linkval_buff, size, lapl_id);
+    RECORDER_IMP_CHEN(H5Lget_val, herr_t, (link_loc_id, link_name, linkval_buff, size, lapl_id), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Literate)(hid_t group_id, H5_index_t index_type,
-                                 H5_iter_order_t order, hsize_t *idx,
-                                 H5L_iterate_t op, void *op_data) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Literate);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Literate (%d,%d,%d,%d,%d,%d)", tm1, group_id,
-            index_type, order, idx, op, op_data);
-  }
-#endif
-
-  ret = __real_H5Literate(group_id, index_type, order, idx, op, op_data);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Literate)(hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t *idx, H5L_iterate_t op, void *op_data) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Literate (%d, %d, %d, %p, %d, %p)", group_id, index_type, order, idx, op, op_data);
+    RECORDER_IMP_CHEN(H5Literate, htri_t, (group_id, index_type, order, idx, op, op_data), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Oclose)(hid_t object_id) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Oclose);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Oclose (%d)", tm1, object_id);
-  }
-#endif
-
-  ret = __real_H5Oclose(object_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Oclose (%d)", object_id);
+    RECORDER_IMP_CHEN(H5Oclose, herr_t, (object_id), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Oget_info)(hid_t object_id, H5O_info_t *object_info) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Oget_info);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Oget_info (%d,%d)", tm1, object_id,
-            object_info);
-  }
-#endif
-
-  ret = __real_H5Oget_info(object_id, object_info);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Oget_info (%d, %p)", object_id, object_info);
+    RECORDER_IMP_CHEN(H5Oget_info, herr_t, (object_id, object_info), 0, 0, log_text);
 }
 
-herr_t RECORDER_DECL(H5Oget_info_by_name)(hid_t loc_id, const char *object_name,
-                                          H5O_info_t *object_info,
-                                          hid_t lapl_id) {
-  herr_t ret;
-  double tm1, tm2;
-  MAP_OR_FAIL(H5Oget_info_by_name);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, "%.5f H5Oget_info_by_name (%d,%s,%d,%d)", tm1, loc_id,
-            object_name, object_info, lapl_id);
-  }
-#endif
-
-  ret = __real_H5Oget_info_by_name(loc_id, object_name, object_info, lapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+herr_t RECORDER_DECL(H5Oget_info_by_name)(hid_t loc_id, const char *object_name, H5O_info_t *object_info, hid_t lapl_id) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Oget_info_by_name (%d, %s, %p, %d)", loc_id, object_name, object_info, lapl_id);
+    RECORDER_IMP_CHEN(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
 }
 
 hid_t RECORDER_DECL(H5Oopen)(hid_t loc_id, const char *name, hid_t lapl_id) {
-  herr_t ret;
-  double tm1, tm2;
-
-  MAP_OR_FAIL(H5Oopen);
-
-#ifndef DISABLE_HDF5_TRACE
-  depth++;
-  tm1 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    char *new_name = (char *)malloc(sizeof(char) * strlen(name));
-    change_char(name, ' ', new_name, '_');
-    fprintf(__recorderfh, "%.5f H5Oopen (%d,%s,%d)", tm1, loc_id, new_name,
-            lapl_id);
-    free(new_name);
-  }
-#endif
-
-  ret = __real_H5Oopen(loc_id, name, lapl_id);
-
-#ifndef DISABLE_HDF5_TRACE
-  tm2 = recorder_wtime();
-  if (__recorderfh != NULL && depth == 1) {
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-  }
-  depth--;
-#endif
-
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "H5Oopen (%d, %s, %d)", loc_id, name, lapl_id);
+    RECORDER_IMP_CHEN(H5Oopen, hid_t, (loc_id, name, lapl_id), 0, 0, log_text);
 }
