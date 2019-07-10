@@ -125,8 +125,6 @@ void logger_exit() {
                 fprintf(__metafh, "%s %d\n", func, id);
             }
         }
-    } else {
-        printf("func2id_map size : %d\n", __func2id_map->size);
     }
 
     if (hashmap_length(__filename2id_map) > 0 ) {
@@ -137,10 +135,7 @@ void logger_exit() {
                 fprintf(__metafh, "%s %d\n", filename, id);
             }
         }
-    } else {
-        printf("filename2id_map size : %d\n", __filename2id_map->size);
     }
-
 
     hashmap_free(__func2id_map);
     hashmap_free(__filename2id_map);

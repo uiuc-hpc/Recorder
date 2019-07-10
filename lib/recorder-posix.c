@@ -99,12 +99,6 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-/* these are paths that we will not trace */
-// TODO not used here, see logger.c
-//static char *exclusions[] = {"/etc/",  "/dev/",  "/usr/", "/bin/",
-//                             "/boot/", "/lib/",  "/opt/", "/sbin/",
-//                             "/sys/",  "/proc/", NULL};
-
 char* fd2name(int fd) {
     size_t len = 256;
     struct stat sb;
