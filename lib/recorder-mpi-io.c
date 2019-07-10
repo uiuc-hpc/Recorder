@@ -222,65 +222,18 @@ int MPI_Scan(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype,
     RECORDER_IMP_CHEN(PMPI_Scan, int, (sbuf, rbuf, count, stype, op, comm), 0, 0, log_text)
 }
 
-int MPI_Type_create_darray(int size, int rank, int ndims,
-        CONST int array_of_gsizes[], CONST int array_of_distribs[],
-        CONST int array_of_dargs[], CONST int array_of_psizes[], int order,
-        MPI_Datatype oldtype, MPI_Datatype *newtype) {
-    int ret;
-    double tm1, tm2;
-
-#ifndef DISABLE_MPIO_TRACE
-    tm1 = recorder_wtime();
-    char *oldtype_name = type2name(oldtype);
-    char arr1[1024], arr2[1024], arr3[1024], arr4[1024];
-    print_arr(array_of_gsizes, ndims, arr1);
-    print_arr(array_of_distribs, ndims, arr2);
-    print_arr(array_of_dargs, ndims, arr3);
-    print_arr(array_of_psizes, ndims, arr4);
-
-    if (__recorderfh != NULL)
-        fprintf(__recorderfh,
-                "%.6f MPI_Type_create_darray (%d,%d,%d,%s,%s,%s,%s,%d,%s,%p)", tm1,
-                size, rank, ndims, arr1, arr2, arr3, arr4, order, oldtype_name,
-                newtype);
-    free(oldtype_name);
-#endif
-
-    ret = PMPI_Type_create_darray(size, rank, ndims, array_of_gsizes,
-            array_of_distribs, array_of_dargs,
-            array_of_psizes, order, oldtype, newtype);
-    tm2 = recorder_wtime();
-
-#ifndef DISABLE_MPIO_TRACE
-    fprintf(__recorderfh, " %d %.6f\n", ret, tm2 - tm1);
-#endif
-    return (ret);
+int MPI_Type_create_darray(int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],
+        CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Type_create_darray (%d, %d, %d, %p, %p, %p, %p, %d, %s, %p)",
+            size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, type2name(oldtype), newtype);
+    RECORDER_IMP_CHEN(PMPI_Type_create_darray, int, (size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype), 0, 0, log_text)
 }
 
 int MPI_Type_commit(MPI_Datatype *datatype) {
-    int ret;
-    double tm1, tm2;
-
-#ifndef DISABLE_MPIO_TRACE
-    tm1 = recorder_wtime();
-    if (__recorderfh != NULL)
-        fprintf(__recorderfh, "%.5f MPI_Type_commit (%p)", tm1, datatype);
-#endif
-
-    MAP_OR_FAIL(PMPI_Type_commit)
-    ret = RECORDER_MPI_CALL(PMPI_Type_commit)(datatype);
-    tm2 = recorder_wtime();
-
-#ifndef DISABLE_MPIO_TRACE
-    char *typename = type2name(*datatype);
-    if (strlen(typename) == 0) {
-        char *name = makename(datatype);
-        MPI_Type_set_name(*datatype, name);
-        free(name);
-    }
-    fprintf(__recorderfh, " %d %.5f\n", ret, tm2 - tm1);
-#endif
-    return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Type_commit (%p)", datatype);
+    RECORDER_IMP_CHEN(PMPI_Type_commit, int, (datatype), 0, 0, log_text)
 }
 
 int MPI_File_open(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info, MPI_File *fh) {

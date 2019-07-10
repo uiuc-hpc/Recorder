@@ -200,6 +200,7 @@ RECORDER_FORWARD_DECL(PMPI_Op_create, int, (MPI_User_function * function, int co
 RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
 RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
 RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
+RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype));
 
 
 /* NOTE: using HDF5 1.8 version */
