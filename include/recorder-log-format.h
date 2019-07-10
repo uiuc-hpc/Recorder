@@ -89,4 +89,92 @@ typedef struct IoOperation {
     size_t attr2;
 } IoOperation_t;
 
+static const char* my_func_list[] = {
+    // POSIX I/O
+    "creat", /* 0 */        "creat64",  /* 1 */
+    "open",  /* 2 */        "open64",   /* 3 */     "close",    /* ... */
+    "write",                "read",
+    "lseek",                "lseek64",
+    "pread",                "pread64",
+    "pwrite",               "pwrite64",
+    "readv",                "writev",
+    "mmap",                 "mmap64",
+    "fopen",                "fopen64",              "fclose"
+    "fwrite",               "fread",
+    "fseek",                "fsync",                "fdatasync",
+
+    // MPI I/O
+    "MPI_File_close",                       /* 25 */
+    "MPI_File_set_size",
+    "MPI_File_iread_at",
+    "MPI_File_iread",
+    "MPI_File_iread_shared",
+    "MPI_File_iwrite_at",
+    "MPI_File_iwrite",
+    "MPI_File_iwrite_shared",
+    "MPI_File_open",
+    "MPI_File_read_all_begin",
+    "MPI_File_read_all",
+    "MPI_File_read_at_all",
+    "MPI_File_read_at_all_begin",
+    "MPI_File_read_at",
+    "MPI_File_read",
+    "MPI_File_read_ordered_begin",
+    "MPI_File_read_ordered",
+    "MPI_File_read_shared",
+    "MPI_File_set_view",
+    "MPI_File_sync",
+    "MPI_File_write_all_begin",
+    "MPI_File_write_all",
+    "MPI_File_write_at_all_begin",
+    "MPI_File_write_at_all",
+    "MPI_File_write_at",
+    "MPI_File_write",
+    "MPI_File_write_ordered_begin",
+    "MPI_File_write_ordered",
+    "MPI_File_write_shared"
+    "MPI_Finalize",
+    "MPI_Init",
+    "MPI_Init_thread",
+    "MPI_Wtime",
+    "MPI_Comm_rank",
+    "MPI_Comm_size",
+    "MPI_Barrier",
+    "MPI_Bcast",
+    "MPI_Gather",
+    "MPI_Gatherv",
+    "MPI_Scatter",
+    "MPI_Scatterv",
+    "MPI_Allgather",
+    "MPI_Allgatherv",
+    "MPI_Alltoall",
+    "MPI_Reduce",
+    "MPI_Allreduce",
+    "MPI_Reduce_scatter",
+    "MPI_Scan",
+    "MPI_Type_commit",
+    "MPI_Type_contiguous",
+    "MPI_Type_extent",
+    "MPI_Type_free",
+    "MPI_Type_hindexed",
+    "MPI_Op_create",
+    "MPI_Op_free",
+    "MPI_Type_get_envelope",
+    "MPI_Type_size",                        /* 81 */
+};
+
+static inline const char* get_function_name_by_id(int id) {
+    return my_func_list[id];
+}
+static inline int get_function_id_by_name(const char* name) {
+    size_t len = sizeof(my_func_list) / sizeof(char *);
+    int i;
+    for(i = 0; i < len; i++) {
+        if (strcmp(my_func_list[i], name) == 0)
+            return i;
+    }
+    return -1;
+}
+
+
 #endif /* __RECORDER_LOG_FORMAT_H */
