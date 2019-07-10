@@ -545,37 +545,40 @@ void recorder_exit() {
 }
 
 int PMPI_Init(int *argc, char ***argv) {
+    printf("PMPI_init\n");
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
-    // Init our system
     recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Init(int *argc, char ***argv) {
+    printf("MPI_init\n");
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
-    // Init our system
     recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
+    printf("init thread\n");
     MAP_OR_FAIL(PMPI_Init_thread)
     int ret = RECORDER_MPI_CALL(PMPI_Init_thread) (argc, argv, required, provided);
-    // Init our system
     recorder_init(argc, argv);
     return ret;
 }
 
-int MPI_Finalize(void) {
-    printf("Finalize\n");
-
+int PMPI_Finalize(void) {
     recorder_exit();
-
     MAP_OR_FAIL(PMPI_Finalize)
     int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
+    return ret;
+}
 
+int MPI_Finalize(void) {
+    recorder_exit();
+    MAP_OR_FAIL(PMPI_Finalize)
+    int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
     return ret;
 }
 
