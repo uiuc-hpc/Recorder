@@ -164,6 +164,7 @@ static const char* my_func_list[] = {
 };
 
 static inline const char* get_function_name_by_id(int id) {
+    if (id < 0 || id > 90) return "WRONG_FUNCTION_ID";
     return my_func_list[id];
 }
 static inline int get_function_id_by_name(const char* name) {
