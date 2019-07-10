@@ -62,11 +62,7 @@
 extern FILE* __recorderfh;          /* file handler for each log file */
 extern int depth;                   /* funciton call depth */
 
-char* comm2name(MPI_Comm comm);
-char* type2name(MPI_Datatype type);
-char* makename(MPI_Datatype *type);
 double recorder_wtime(void);
-char* fd2name(int fd);
 
 void logger_init(int rank);
 void logger_exit();

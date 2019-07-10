@@ -99,7 +99,7 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-char* fd2name(int fd) {
+static inline char* fd2name(int fd) {
     size_t len = 256;
     struct stat sb;
     char fdname[len];

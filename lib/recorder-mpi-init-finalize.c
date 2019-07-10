@@ -52,25 +52,3 @@
 #include "mpi.h"
 #include "recorder.h"
 
-char *comm2name(MPI_Comm comm) {
-    char *tmp = (char *)malloc(1024);
-    int len;
-    PMPI_Comm_get_name(comm, tmp, &len);
-    tmp[len] = 0;
-    if(len == 0) strcpy(tmp, "MPI_COMM_UNKNOWN");
-    return tmp;
-}
-
-char *type2name(MPI_Datatype type) {
-    char *tmp = (char *)malloc(1024);
-    int len;
-    PMPI_Type_get_name(type, tmp, &len);
-    tmp[len] = 0;
-    return tmp;
-}
-
-char *makename(MPI_Datatype *type) {
-    char *tmp = (char *)malloc(1024);
-    sprintf(tmp, "RECORDER_TYPE_%p", type);
-    return tmp;
-}

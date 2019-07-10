@@ -94,6 +94,22 @@ int depth;
     #endif
 #endif
 
+static inline char *comm2name(MPI_Comm comm) {
+    char *tmp = malloc(128);
+    int len;
+    PMPI_Comm_get_name(comm, tmp, &len);
+    tmp[len] = 0;
+    if(len == 0) strcpy(tmp, "MPI_COMM_UNKNOWN");
+    return tmp;
+}
+
+static inline char *type2name(MPI_Datatype type) {
+    char *tmp = malloc(128);
+    int len;
+    PMPI_Type_get_name(type, tmp, &len);
+    tmp[len] = 0;
+    return tmp;
+}
 
 int MPI_Comm_size(MPI_Comm comm, int *size) {
     char log_text[TRACE_LEN];
