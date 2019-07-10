@@ -545,7 +545,6 @@ void recorder_exit() {
 }
 
 int PMPI_Init(int *argc, char ***argv) {
-    printf("PMPI_init\n");
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
@@ -553,7 +552,6 @@ int PMPI_Init(int *argc, char ***argv) {
 }
 
 int MPI_Init(int *argc, char ***argv) {
-    printf("MPI_init\n");
     MAP_OR_FAIL(PMPI_Init)
     int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
@@ -561,7 +559,6 @@ int MPI_Init(int *argc, char ***argv) {
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
-    printf("init thread\n");
     MAP_OR_FAIL(PMPI_Init_thread)
     int ret = RECORDER_MPI_CALL(PMPI_Init_thread) (argc, argv, required, provided);
     recorder_init(argc, argv);
