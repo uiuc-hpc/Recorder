@@ -21,15 +21,21 @@ static OTF2_FlushCallbacks flush_callbacks = {
 };
 
 
-static void write_read_write(OTF2_IoHandleRef ioHandle, OTF2_EvtWriter *evt_writer, const char *func, size_t bytes, double tstart, double tend) {
+// Record read/write operations
+static void record_io_event(OTF2_EvtWriter *evt_writer, OTF2_IoHandleRef ioHandle, const char *func, size_t bytes, double tstart, double tend) {
     static int matchingId;
     OTF2_IoOperationMode opmode = OTF2_IO_OPERATION_MODE_WRITE;
+    if ( strstr(func, "read") )
+        opmode = OTF2_IO_OPERATION_MODE_READ;
+    else if ( strstr(func, "sync") || strstr(func, "flush") )
+        opmode = OTF2_IO_OPERATION_MODE_FLUSH;
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
     OTF2_EvtWriter_IoOperationBegin(evt_writer, NULL, tstart, ioHandle, opmode, fflag, bytes, matchingId);
     OTF2_EvtWriter_IoOperationComplete(evt_writer, NULL, tend, ioHandle, bytes, matchingId++);
 }
 
-static void create_io_handle(OTF2_EvtWriter *evt_writer, int fileId, double tstart){
+// Record file open operations
+static void record_open_event(OTF2_EvtWriter *evt_writer, int fileId, double tstart){
     OTF2_IoHandleRef ioHandle = fileId;
     OTF2_IoAccessMode fmode = OTF2_IO_ACCESS_MODE_READ_WRITE;
     OTF2_IoCreationFlag fflag = OTF2_IO_CREATION_FLAG_CREATE;
@@ -37,10 +43,21 @@ static void create_io_handle(OTF2_EvtWriter *evt_writer, int fileId, double tsta
     OTF2_EvtWriter_IoCreateHandle(evt_writer, NULL, tstart, ioHandle, fmode, fflag, fstatus);
 }
 
-static void close_io_handle(OTF2_EvtWriter *evt_writer, int fileId, double tend) {
+// Record file close operations
+static void record_close_event(OTF2_EvtWriter *evt_writer, int fileId, double tend) {
     OTF2_IoHandleRef ioHandle = fileId;
     OTF2_EvtWriter_IoDestroyHandle(evt_writer, NULL, tend, ioHandle);
 }
+
+// Record file seek operations
+static  void record_seek_event(OTF2_EvtWriter *evt_writer, int fileId, int64_t offset, double time) {
+    OTF2_IoHandleRef ioHandle = fileId;
+    OTF2_IoSeekOption whence = OTF2_IO_SEEK_FROM_START;
+    uint64_t offsetResult = offset;
+    OTF2_EvtWriter_IoSeek(evt_writer, NULL, time, ioHandle, offset, whence, offset);
+}
+
+
 
 static void convert_metadata_operations(OTF2_Archive *archive, int rank, const char* base_dir) {
     OTF2_DefWriter *local_def_writer = OTF2_Archive_GetDefWriter(archive, rank);
@@ -86,18 +103,19 @@ static void convert_data_operations(OTF2_Archive *archive, int rank, const char*
     IoOperation_t *op = (IoOperation_t *) malloc(size);
     while ( fread(op, size, 1, fp) == 1) { // Read one IoOperation at a time
         const char* func = get_function_name_by_id(op->func_id);
-        printf("DATA[%d]: %s %u %f %f\n", rank, func, op->filename_id, op->start_time, op->end_time);
+        //printf("DATA[%d]: %s %u %f %f\n", rank, func, op->filename_id, op->start_time, op->end_time);
 
-        if ( op->func_id > 22 )     // Not POSIX IO Calls
-            continue;
+        //if ( op->func_id > 22 )     // Not POSIX IO Calls
+        //    continue;
 
         if ( strstr(func, "open") ) {
-            create_io_handle(evt_writer, op->filename_id, op->start_time);
+            record_open_event(evt_writer, op->filename_id, op->start_time);
         } else if ( strstr(func, "close") ) {
-            close_io_handle(evt_writer, op->filename_id, op->end_time);
+            record_close_event(evt_writer, op->filename_id, op->end_time);
         } else if ( strstr(func, "seek" ) ) {
-        } else {
-            write_read_write(op->filename_id, evt_writer, "write", 100, op->start_time, op->end_time);
+            record_seek_event(evt_writer, op->filename_id, op->attr1, op->end_time);
+        } else {    // read, write, flush
+            record_io_event(evt_writer, op->filename_id, func, 100, op->start_time, op->end_time);
         }
     }
     free(op);
@@ -108,7 +126,7 @@ static void convert_data_operations(OTF2_Archive *archive, int rank, const char*
 
 int main(int argc, char** argv) {
 
-    OTF2_Archive* archive = OTF2_Archive_Open("ArchivePath", "ArchiveName", OTF2_FILEMODE_WRITE,
+    OTF2_Archive* archive = OTF2_Archive_Open("logs", "logs", OTF2_FILEMODE_WRITE,
                                                1024 * 1024 /* event chunk size */,
                                                4 * 1024 * 1024 /* def chunk size */,
                                                OTF2_SUBSTRATE_POSIX, OTF2_COMPRESSION_NONE );
