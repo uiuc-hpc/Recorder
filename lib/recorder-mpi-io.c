@@ -476,6 +476,12 @@ int MPI_File_iwrite_shared(MPI_File fh, CONST void *buf, int count,
     RECORDER_IMP_CHEN(PMPI_File_iwrite_shared, int, (fh, buf, count, datatype, request), count, 0, log_text)
 }
 
+int MPI_Finalized(int *flag) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "MPI_Finalized (%p)", flag);
+    RECORDER_IMP_CHEN(PMPI_Finalized, int, (flag), 0, 0, log_text)
+}
+
 extern char *__progname;
 void recorder_init(int *argc, char ***argv) {
     int nprocs;
@@ -563,14 +569,14 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
 }
 
 int MPI_Finalize(void) {
+    printf("Finalize\n");
+
+    recorder_exit();
 
     MAP_OR_FAIL(PMPI_Finalize)
     int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
 
-    // TODO: This has to happen after MPI_Finalize
-    // otherwise, flose or free operations in logger_exit() will crash
-    // not sure why.
-    recorder_exit();
     return ret;
 }
+
 

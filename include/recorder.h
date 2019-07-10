@@ -62,7 +62,6 @@
 extern FILE* __recorderfh;          /* file handler for each log file */
 extern int depth;                   /* funciton call depth */
 
-
 char* comm2name(MPI_Comm comm);
 char* type2name(MPI_Datatype type);
 char* makename(MPI_Datatype *type);
@@ -170,6 +169,7 @@ RECORDER_FORWARD_DECL(PMPI_File_write_ordered_begin, int, (MPI_File fh, CONST vo
 RECORDER_FORWARD_DECL(PMPI_File_write_ordered, int, (MPI_File fh, CONST void *buf, int count, MPI_Datatype datatype, MPI_Status *status));
 RECORDER_FORWARD_DECL(PMPI_File_write_shared, int, (MPI_File fh, CONST void *buf, int count, MPI_Datatype datatype, MPI_Status *status));
 RECORDER_FORWARD_DECL(PMPI_Finalize, int, ());
+RECORDER_FORWARD_DECL(PMPI_Finalized, int, (int *flag));
 RECORDER_FORWARD_DECL(PMPI_Init, int, (int *argc, char ***argv));
 RECORDER_FORWARD_DECL(PMPI_Init_thread, int, (int *argc, char ***argv, int required, int *provided));
 RECORDER_FORWARD_DECL(PMPI_Wtime, double, ());
