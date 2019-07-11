@@ -14,7 +14,7 @@ hashmap_map *__filename2id_map;
 /* Map filename to Integer in binary format */
 static inline unsigned char get_filename_id(const char *filename) {
     int id = -1;
-    if (!filename || !__filename2id_map)
+    if (!filename || !__filename2id_map || strlen(filename) == 0)
         return id;
 
     /* filename already exists */
@@ -75,8 +75,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
 
-    write_in_text(start, end, log_text);
-    //write_in_binary(&op);
+    //write_in_text(start, end, log_text);
+    write_in_binary(&op);
 }
 
 void logger_init(int rank) {
