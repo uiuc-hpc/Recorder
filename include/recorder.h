@@ -60,7 +60,6 @@
 #define CONST
 #endif
 
-extern FILE* __recorderfh;          /* file handler for each log file */
 extern int depth;                   /* funciton call depth */
 
 double recorder_wtime(void);

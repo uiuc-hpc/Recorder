@@ -53,62 +53,15 @@
 #include "mpi.h"
 #include "recorder.h"
 
-extern char *__progname;
 void recorder_init(int *argc, char ***argv) {
-    int nprocs;
-    int rank;
-
+    int rank, nprocs;
     MAP_OR_FAIL(PMPI_Comm_size)
     MAP_OR_FAIL(PMPI_Comm_rank)
     RECORDER_MPI_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 
-    char *logfile_name;
-    char *metafile_name;
-    char *logdir_name;
-    logfile_name = malloc(PATH_MAX);
-    logdir_name = malloc(PATH_MAX);
-    metafile_name = malloc(PATH_MAX);
-    char cuser[L_cuserid] = {0};
-    cuserid(cuser);
-
-    sprintf(logdir_name, "%s_%s", cuser, __progname);
-    int status;
-    status = mkdir(logdir_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    // write enabled i/o layers to meta file
-    if(rank == 0){
-        FILE *__recordermeta;
-        sprintf(metafile_name, "%s/recorder.meta", logdir_name);
-        __recordermeta = fopen(metafile_name, "w");
-        printf(" metafile_name %s\n", metafile_name);
-
-        fprintf(__recordermeta, "enabled_layers:");
-        #ifndef DISABLE_HDF5_TRACE
-        fprintf(__recordermeta, " HDF5");
-        #endif
-        #ifndef DISABLE_MPIO_TRACE
-        fprintf(__recordermeta, " MPI");
-        #endif
-        #ifndef DISABLE_POSIX_TRACE
-        fprintf(__recordermeta, " POSIX");
-        #endif
-        fprintf(__recordermeta, "\n");
-        fprintf(__recordermeta, "workload_start_time:");
-        fprintf(__recordermeta, " %.5f\n",recorder_wtime());
-        fclose(__recordermeta);
-    }
-
-    sprintf(logfile_name, "%s/log.%d", logdir_name, rank);
-    __recorderfh = fopen(logfile_name, "wb");
     depth = 0;
-
-    printf(" logfile_name %s\n", logfile_name);
-    free(logfile_name);
-    free(logdir_name);
-
     logger_init(rank);
-
-    return;
 }
 
 void recorder_exit() {
