@@ -122,39 +122,8 @@ char *func_list[] = {
     "H5Oget_info",                  "H5Oget_info_by_name",
     "H5Oopen",                      "ENDLIST"};
 
-void change_char(const char *str, char oldChar, char *newStr, char newChar) {
-  int len = strlen(str);
-  strncpy(newStr, str, len);
-  newStr[len] = '\0';
-  char *newStrPtr = newStr;
-  while ((newStrPtr = strchr(newStr, oldChar)) != NULL)
-    *newStrPtr++ = newChar;
-}
-
-void print_arr(const hsize_t *array, int array_size, char *string) {
-  char *tmp = (char *)malloc(sizeof(char) * LARGE_BUF_SIZE);
-  int i;
-
-  char open_bracket[] = "{";
-  char close_bracket[] = "}";
-  char zero_str[] = "0";
-  strcpy(string, open_bracket);
-  for (i = 0; i < array_size - 1; i++) {
-    strcpy(tmp, zero_str);
-    sprintf(tmp, "%lld;", array[i]);
-    strcat(string, tmp);
-  }
-  strcpy(tmp, zero_str);
-  sprintf(tmp, "%lld", array[array_size - 1]);
-  strcat(string, tmp);
-  strcat(string, close_bracket);
-
-  free(tmp);
-}
-
 void get_datatype_name(int class_id, int type, char *string) {
   char *tmp = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-
   switch (class_id) {
   case H5T_INTEGER:
     if (H5Tequal(type, H5T_STD_I8BE) == 1) {
@@ -321,7 +290,6 @@ void get_prop_list_cls_name(int class_id, char *string) {
 
 void get_op_name(H5S_seloper_t op, char *string) {
   char *tmp = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
-
   if (op == H5S_SELECT_SET)
     sprintf(tmp, "H5S_SELECT_SET");
   else if (op == H5S_SELECT_OR)
@@ -379,7 +347,7 @@ hid_t RECORDER_DECL(H5Gcreate1)(hid_t loc_id, const char *name, size_t size_hint
 hid_t RECORDER_DECL(H5Gcreate2)(hid_t loc_id, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id) {
   char log_text[TRACE_LEN];
   sprintf(log_text, "H5Gcreate2 (%d, %s, %d, %d, %d)", loc_id, name, lcpl_id, gcpl_id, gapl_id);
-  RECORDER_IMP_CHEN(H5Gcreate2, hid_t, (loc_id, name, lcpl_id, gcpl_id, gapl_id), size_hint, 0, log_text);
+  RECORDER_IMP_CHEN(H5Gcreate2, hid_t, (loc_id, name, lcpl_id, gcpl_id, gapl_id), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Gget_objinfo)(hid_t loc_id, const char *name, hbool_t follow_link, H5G_stat_t *statbuf) {
@@ -507,14 +475,18 @@ hssize_t RECORDER_DECL(H5Sget_simple_extent_npoints)(hid_t space_id) {
 }
 
 herr_t RECORDER_DECL(H5Sselect_elements)(hid_t space_id, H5S_seloper_t op, size_t num_elements, const hsize_t *coord) {
+    char op_name[32];
     char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sselect_elements (%d, %d, %ld, %p)", space_id, op, num_elements, coord);
+    get_op_name(op, op_name);
+    sprintf(log_text, "H5Sselect_elements (%d, %s, %ld, %p)", space_id, op_name, num_elements, coord);
     RECORDER_IMP_CHEN(H5Sselect_elements, herr_t, (space_id, op, num_elements, coord), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Sselect_hyperslab)(hid_t space_id, H5S_seloper_t op, const hsize_t *start, const hsize_t *stride, const hsize_t *count, const hsize_t *block) {
+    char op_name[32];
     char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sselect_hyperslab (%d, %d, %p, %p, %p, %p)", space_id, op, start, stride, count, block);
+    get_op_name(op, op_name);
+    sprintf(log_text, "H5Sselect_hyperslab (%d, %s, %p, %p, %p, %p)", space_id, op_name, start, stride, count, block);
     RECORDER_IMP_CHEN(H5Sselect_hyperslab, herr_t, (space_id, op, start, stride, count, block), 0, 0, log_text);
 }
 
@@ -539,7 +511,7 @@ hid_t RECORDER_DECL(H5Tcopy)(hid_t dtype_id) {
 H5T_class_t RECORDER_DECL(H5Tget_class)(hid_t dtype_id) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Tget_class (%d)", dtype_id);
-    RECORDER_IMP_CHEN(H5Tget_class, H5T_Class_t, (dtype_id), 0, 0, log_text);
+    RECORDER_IMP_CHEN(H5Tget_class, H5T_class_t, (dtype_id), 0, 0, log_text);
 }
 
 size_t RECORDER_DECL(H5Tget_size)(hid_t dtype_id) {
