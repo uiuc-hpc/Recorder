@@ -77,51 +77,6 @@
     #endif
 #endif
 
-
-
-
-char *func_list[] = {
-    "H5Fcreate", // File interface
-    "H5Fopen",                      "H5Fclose",
-    "H5Gclose", // Group interface
-    "H5Gcreate1",                   "H5Gcreate2",
-    "H5Gget_objinfo",               "H5Giterate",
-    "H5Gopen1",                     "H5Gopen2",
-    "H5Dclose", // Dataset interface
-    "H5Dcreate1",                   "H5Dcreate2",
-    "H5Dget_create_plist",          "H5Dget_space",
-    "H5Dget_type",                  "H5Dopen1",
-    "H5Dopen2",                     "H5Dread",
-    "H5Dwrite",
-    "H5Sclose", // Dataspace interface
-    "H5Screate",                    "H5Screate_simple",
-    "H5Sget_select_npoints",        "H5Sget_simple_extent_dims",
-    "H5Sget_simple_extent_npoints", "H5Sselect_elements",
-    "H5Sselect_hyperslab",          "H5Sselect_none",
-    "H5Tclose", // Datatype interface
-    "H5Tcopy",                      "H5Tget_class",
-    "H5Tget_size",                  "H5Tset_size",
-    "H5Tcreate",                    "H5Tinsert",
-    "H5Aclose", // Attribute interface
-    "H5Acreate1",                   "H5Acreate2",
-    "H5Aget_name",                  "H5Aget_num_attrs",
-    "H5Aget_space",                 "H5Aget_type",
-    "H5Aopen",                      "H5Aopen_idx",
-    "H5Aopen_name",                 "H5Aread",
-    "H5Awrite",
-    "H5Pclose", // Property List interface
-    "H5Pcreate",                    "H5Pget_chunk",
-    "H5Pget_mdc_config",            "H5Pset_alignment",
-    "H5Pset_chunk",                 "H5Pset_dxpl_mpio",
-    "H5Pset_fapl_core",             "H5Pset_fapl_mpio",
-    "H5Pset_fapl_mpiposix",         "H5Pset_istore_k",
-    "H5Pset_mdc_config",            "H5Pset_meta_block_size",
-    "H5Lexists", // Link interface
-    "H5Lget_val",                   "H5Literate",
-    "H5Oclose", // Object interface
-    "H5Oget_info",                  "H5Oget_info_by_name",
-    "H5Oopen",                      "ENDLIST"};
-
 void get_datatype_name(int class_id, int type, char *string) {
   char *tmp = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
   switch (class_id) {
