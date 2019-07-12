@@ -716,6 +716,8 @@ herr_t RECORDER_DECL(H5Oclose)(hid_t object_id) {
     RECORDER_IMP_CHEN(H5Oclose, herr_t, (object_id), 0, 0, log_text);
 }
 
+/*
+ * Exists in 1.8 not in 1.10, in 1.10 they are H5Oget_info1; H5Oget_info2
 herr_t RECORDER_DECL(H5Oget_info)(hid_t object_id, H5O_info_t *object_info) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Oget_info (%d, %p)", object_id, object_info);
@@ -727,6 +729,7 @@ herr_t RECORDER_DECL(H5Oget_info_by_name)(hid_t loc_id, const char *object_name,
     sprintf(log_text, "H5Oget_info_by_name (%d, %s, %p, %d)", loc_id, object_name, object_info, lapl_id);
     RECORDER_IMP_CHEN(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
 }
+*/
 
 hid_t RECORDER_DECL(H5Oopen)(hid_t loc_id, const char *name, hid_t lapl_id) {
     char log_text[TRACE_LEN];

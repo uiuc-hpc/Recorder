@@ -75,8 +75,8 @@ void write_data_operation(const char *func, const char *filename, double start, 
         .attr2 = count_or_whence
     };
 
-    //write_in_text(start, end, log_text);
-    write_in_binary(&op);
+    write_in_text(start, end, log_text);
+    //write_in_binary(&op);
 }
 
 void logger_init(int rank) {
