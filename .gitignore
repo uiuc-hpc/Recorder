@@ -37,3 +37,4 @@ config.inc
 # Configuration file
 *.inc
 logs/
+tools/otf2-converter
