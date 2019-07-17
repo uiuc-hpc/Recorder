@@ -114,10 +114,10 @@ static inline char* fd2name(int fd) {
     return linkname;
 }
 
-
 int close(int fd) {
     const char *fn = fd2name(fd);
     char log_text[TRACE_LEN];
+    printf("close: %d, %s\n", fd, fn);
     sprintf(log_text, "close (%s)", fn);
     RECORDER_IMP_CHEN(close, int, __real_close(fd), fn, 0, 0, log_text)
 }
@@ -140,21 +140,21 @@ int fdatasync(int fd) {
     const char *fn = fd2name(fd);
     char log_text[TRACE_LEN];
     sprintf(log_text, "fdatasync (%s)", fn);
-    RECORDER_IMP_CHEN(fclose, int, __real_fdatasync(fd), fn, 0, 0, log_text)
+    RECORDER_IMP_CHEN(fdatasync, int, __real_fdatasync(fd), fn, 0, 0, log_text)
 }
 
 // TODO??? not recording this?
 void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
-    void *ret;
-    MAP_OR_FAIL(mmap64);
-    ret = __real_mmap64(addr, length, prot, flags, fd, offset);
-    return (ret);
+    const char *fn = fd2name(fd);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "mmap (%p, %ld, %d, %d, %s, %ld)", addr, length, prot, flags, fn, offset);
+    RECORDER_IMP_CHEN(mmap64, void*, __real_mmap64(addr, length, prot, flags, fd, offset), fn, 0, 0, log_text)
 }
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    void *ret;
-    MAP_OR_FAIL(mmap);
-    ret = __real_mmap(addr, length, prot, flags, fd, offset);
-    return (ret);
+    const char *fn = fd2name(fd);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "mmap (%p, %ld, %d, %d, %s, %ld)", addr, length, prot, flags, fn, offset);
+    RECORDER_IMP_CHEN(mmap, void*, __real_mmap(addr, length, prot, flags, fd, offset), fn, 0, 0, log_text)
 }
 
 int creat(const char *path, mode_t mode) {

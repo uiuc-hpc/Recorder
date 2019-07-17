@@ -62,7 +62,7 @@ static inline void write_in_text(double tstart, double tend, const char* log_tex
 void write_data_operation(const char *func, const char *filename, double start, double end,
                           size_t offset, size_t count_or_whence, const char *log_text) {
 
-    if (__datafh == NULL) return;       // Haven't initialized yet.
+    if (__datafh == NULL) return;       // Haven't initialized yet or have finialized
 
     if (exclude_filename(filename)) return;
 
@@ -106,9 +106,19 @@ void logger_exit() {
         }
     }
 
+    printf("here 1\n");
     hashmap_free(__filename2id_map);
+    __filename2id_map = NULL;
+    printf("here 2\n");
+
 
     MAP_OR_FAIL(fclose)
-    if ( __metafh)  RECORDER_MPI_CALL(fclose) (__metafh);
-    if ( __datafh ) RECORDER_MPI_CALL(fclose) (__datafh);
+    if ( __metafh) {
+        RECORDER_MPI_CALL(fclose) (__metafh);
+        __metafh = NULL;
+    }
+    if ( __datafh ) {
+        RECORDER_MPI_CALL(fclose) (__datafh);
+        __datafh = NULL;
+    }
 }
