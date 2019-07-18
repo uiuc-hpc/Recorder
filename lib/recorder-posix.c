@@ -117,7 +117,6 @@ static inline char* fd2name(int fd) {
 int close(int fd) {
     const char *fn = fd2name(fd);
     char log_text[TRACE_LEN];
-    printf("close: %d, %s\n", fd, fn);
     sprintf(log_text, "close (%s)", fn);
     RECORDER_IMP_CHEN(close, int, __real_close(fd), fn, 0, 0, log_text)
 }

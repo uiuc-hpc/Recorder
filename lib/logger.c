@@ -106,11 +106,8 @@ void logger_exit() {
         }
     }
 
-    printf("here 1\n");
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
-    printf("here 2\n");
-
 
     MAP_OR_FAIL(fclose)
     if ( __metafh) {
