@@ -47,7 +47,8 @@ make
 make install prefix=${HOME}/librecorder
 ```
 
-4. Have fun
+4. Have fun<br>
+mpirun can be changed to your workload manager, e.g. srun.
 ```console
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 ```
