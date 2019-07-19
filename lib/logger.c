@@ -94,14 +94,17 @@ void logger_init(int rank) {
 }
 
 void logger_exit() {
+
     /* Write out the function and filename mappings */
+    struct stat st;     // use to store file status, now we only interested in file sizes
     int i;
     if (hashmap_length(__filename2id_map) > 0 ) {
         for(i = 0; i< __filename2id_map->table_size; i++) {
             if(__filename2id_map->data[i].in_use != 0) {
                 char *filename = __filename2id_map->data[i].key;
                 int id = __filename2id_map->data[i].data;
-                fprintf(__metafh, "%s %d\n", filename, id);
+                stat(filename, &st);
+                fprintf(__metafh, "%s %d %ld\n", filename, id, st.st_size);
             }
         }
     }
