@@ -27,13 +27,30 @@ recording process. The mechanism is the same for the MPI and POSIX layers.
 Installation & Usage
 ------------
 
-    ./config.sh PATH_TO_HDF5 PATH_TO_MPI options
-    // Options can be used to disable one ore more level of traces.
-    // Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
-    make
-    make install prefix=${HOME}/librecorder
-    LD_PRELOAD=/path/to/librecorder.so ./your_app
+1. Get the code.
 
+```console
+git clone https://github.com/uiuc-hpc/Recorder.git
+```
+
+2. Tell Recorder where to find HDF5 and MPI.
+Note that your application and Recorder need to use the same version of HDF5 and MPI.<br>
+Options can be used to disable one ore more level of traces.<br>
+Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
+```console
+./config.sh PATH_TO_HDF5 PATH_TO_MPI options
+```
+
+3. Make and install
+```console
+make
+make install prefix=${HOME}/librecorder
+```
+
+4. Have fun
+```console
+LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
+```
 
 Publication
 -----------
