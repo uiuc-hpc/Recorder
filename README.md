@@ -1,4 +1,4 @@
-Recorder
+Recorder v2.0
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
@@ -12,19 +12,7 @@ I/O. Recorder requires no modification or recompilation of the application and
 users can control what levels are traced.
 
 
-Publication
------------
 
-For a full description of the Recorder library please refer to the following
-paper:
-
-[A Multi-Level Approach for Understanding I/O Activity in HPC
-Applications](http://web.engr.illinois.edu/~bbehza2/files/Babak_Behzad_IASDS_2013_paper.pdf)
-
-Huong Vu Thanh Luu, Babak Behzad, Ruth Aydt, Marianne Winslett
-
-Short Paper, Workshop on Interfaces and Abstractions for Scientific Data Storage
-(IASDS 2013), in conjuction with IEEE Cluster 2013.
 
 
 Description
@@ -49,4 +37,9 @@ Installation & Usage
     make install prefix=${HOME}/librecorder
     LD_PRELOAD=/path/to/librecorder.so ./your_app
 
+
+Publication
+-----------
+
+Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level approach for understanding I/O activity in HPC applications." In 2013 IEEE International Conference on Cluster Computing (CLUSTER), pp. 1-5. IEEE, 2013.
 
