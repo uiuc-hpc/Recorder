@@ -41,13 +41,13 @@ Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
 ./config.sh PATH_TO_HDF5 PATH_TO_MPI options
 ```
 
-3. Make and install
+3. Make and install.
 ```console
 make
 make install prefix=${HOME}/librecorder
 ```
 
-4. Have fun<br>
+4. Have fun.<br>
 mpirun can be changed to your workload manager, e.g. srun.
 ```console
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
