@@ -12,9 +12,6 @@ I/O. Recorder requires no modification or recompilation of the application and
 users can control what levels are traced.
 
 
-
-
-
 Description
 -----------
 
@@ -40,6 +37,14 @@ Installation & Usage
 
 Publication
 -----------
-
 Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level approach for understanding I/O activity in HPC applications." In 2013 IEEE International Conference on Cluster Computing (CLUSTER), pp. 1-5. IEEE, 2013.
 
+Change Log
+----------
+**Recorder v2.0**
+1. Add the binary format output.
+2. Implement a converter that can output OTF2 trace format.
+3. Write a separate  log unit to provide an uniform logging interface. Re-write most of the code to use this new log unit.
+4. Ignore out files (e.g. /sockets) that are not used the application itself.
+5. Add a built-in hashmap to support mappings from function name and filename to integers.
+6. Put all function (that we plan to intercept) signatures in the same header file
