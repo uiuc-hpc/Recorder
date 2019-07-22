@@ -30,8 +30,13 @@ def update_offset(offsets, filename, count, whence):
         offsets[filename] += count
 
 
-
-def init(path):
+'''
+This is the only funciton that will be called from outside
+This returns a Pandas.DataFrame that contains all information
+Each record has the following columns (see create_datafram())
+['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count']
+'''
+def read_traces(path):
     ops = []
 
     log_files = glob.glob(path+"/*.itf")
@@ -78,6 +83,6 @@ def init(path):
                 update_offset(offsets, filename, count, whence)
 
     df = create_dataframe(ops)
-    print(df.describe())
+    min_time =  df['timestamp'].min()
+    df['timestamp'] -= min_time
 
-init(sys.argv[1])
