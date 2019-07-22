@@ -29,7 +29,7 @@ def merge_bars(df:pd.DataFrame):
     return mergedBars
 
 
-def draw_offset_vs_rank(ax, bars, title):
+def offset_vs_rank_subplot(ax, bars, title):
     total_ranks = bars['rank'].max() + 1
     df = bars[bars['filename'] == title]
 
@@ -56,7 +56,7 @@ def draw_offset_vs_rank(ax, bars, title):
     ax.grid(True)
     ax.title.set_text(title.split("/")[-1])
 
-def show_chart(df:pd.DataFrame):
+def offset_vs_rank_plot(df:pd.DataFrame):
 
     filenames = list(set(df['filename']))
     print(filenames, len(filenames))
@@ -74,8 +74,7 @@ def show_chart(df:pd.DataFrame):
                 if rows != 1 and cols != 1: ax_ = ax[i,j]
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
-                draw_offset_vs_rank(ax_, df, filenames[index])
-
+                offset_vs_rank_subplot(ax_, df, filenames[index])
 
     # Add legends
     handles = []

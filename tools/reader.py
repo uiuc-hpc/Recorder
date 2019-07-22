@@ -87,7 +87,3 @@ def read_traces(path):
     df['timestamp'] -= min_time
     return df
 
-
-df = read_traces(sys.argv[1])
-from vis import show_chart
-show_chart(df)
