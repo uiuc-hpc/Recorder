@@ -38,3 +38,9 @@ config.inc
 *.inc
 logs/
 tools/otf2-converter
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
