@@ -86,4 +86,3 @@ def read_traces(path):
     min_time =  df['timestamp'].min()
     df['timestamp'] -= min_time
     return df
-

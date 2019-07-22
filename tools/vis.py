@@ -4,6 +4,52 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import numpy as np
+
+def draw_pie_chart(x, y, title, save_to="/tmp/recorder_tmp.jpg"):
+    fig, ax = plt.subplots()
+    explode = [0] * len(x)
+    explode[0] =  0.1
+    ax.pie(y, labels=x, explode=explode, shadow=True, autopct='%1.1f%%')
+    ax.axis('equal')    # Equal aspect ratio ensures that pie is drawn as a circle.
+    fig.savefig(save_to)
+
+
+'''
+Draw a single bar chart
+x: categories, list of strings
+y: value for each category, list of numbers
+horizontal: draw the chart horizontally
+'''
+def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", horizontal=False, logScale=False, xlabel="", ylabel=""):
+    fig, ax = plt.subplots()
+    x_pos = np.arange(len(x))
+    if horizontal:
+        rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
+        ax.set_yticks(x_pos)
+        ax.set_yticklabels(x)
+        ax.set_title(title)
+    else:
+        rects = ax.bar(x_pos, y, align='center', alpha=0.9)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(x)
+        ax.set_title(title)
+
+
+    if horizontal:
+        for i, v in enumerate(y):
+            text = "%.2f"%(v) if isinstance(v, float) else str(v)
+            ax.text(v, i, text, fontweight='bold')
+    else:
+        for i, v in enumerate(y):
+            text = "%.2f"%(v) if isinstance(v, float) else str(v)
+            ax.text(i-0.15, v, text, fontweight='bold')
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    fig.tight_layout()
+    plt.savefig(save_to)
+
 
 def merge_bars(df:pd.DataFrame):
     mergedBars = []
@@ -52,12 +98,12 @@ def offset_vs_rank_subplot(ax, bars, title):
         yticklabels.append("rank "+str(i))
     ax.set_yticks(yticks)
     ax.set_yticklabels(yticklabels)
+    ax.set_xlabel("File offset")
 
     ax.grid(True)
     ax.title.set_text(title.split("/")[-1])
 
-def offset_vs_rank_plot(df:pd.DataFrame):
-
+def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     filenames = list(set(df['filename']))
     print(filenames, len(filenames))
 
@@ -82,5 +128,4 @@ def offset_vs_rank_plot(df:pd.DataFrame):
     handles.append( mpatches.Patch(color="gray", label="read") )
     handles.append( mpatches.Patch(color="black", label="write") )
     plt.legend(handles=handles)
-    plt.savefig("./tmp.png")
-    plt.show()
+    plt.savefig(save_to)
