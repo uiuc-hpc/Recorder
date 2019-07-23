@@ -92,7 +92,7 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
     for name in fileSizes.keys():
         x.append(name)
         y.append(fileSizes[name]/1024.0)
-    html.fileSizeImage = "./figures/file_size.jpg"
+    html.fileSizeImage = "./figures/file_size.png"
     draw_bar_chart(x, y, title="File Size (KBytes)", save_to=html.fileSizeImage, horizontal=True, logScale=True, xlabel="File size (KBytes)")
 
 
@@ -122,11 +122,11 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
         if func.startswith("MPI"): mpi += sum(functionCounter[func])
         elif func.startswith("H5"): hdf5 += sum(functionCounter[func])
         else: posix += sum(functionCounter[func])
-    html.functionCountImage = "./figures/function_categories.jpg"
+    html.functionCountImage = "./figures/function_categories.png"
     draw_pie_chart(["MPI", "POSIX", "HDF5"], [mpi, posix, hdf5], title="Function Counts", save_to=html.functionCountImage)
 
     # Function access bytes
-    html.ioSizesImage=  "./figures/io_access_sizes.jpg"
+    html.ioSizesImage=  "./figures/io_access_sizes.png"
     df = tr.get_posix_io()
     print(df['count'].describe())   #TODO: put into html
     x = range(0, 128*11, 128)
@@ -139,7 +139,7 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
     # 1. Offset vs Ranks image
-    html.offsetVsRankImage = "./figures/offset_vs_rank.jpg"
+    html.offsetVsRankImage = "./figures/offset_vs_rank.png"
     draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
 
     # 2. Access pattern table, use the sorting algorithm to find the interleave intervals

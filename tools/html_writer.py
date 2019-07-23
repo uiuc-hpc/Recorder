@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from xhtml2pdf import pisa
 
 css_style = """
 <style>
@@ -76,10 +75,11 @@ class HTMLWriter:
         f.write(html_content)
         f.close()
 
-        self.write_pdf(html_content)
+        #self.write_pdf(html_content)
 
 
     def write_pdf(self, html_content):
+        from xhtml2pdf import pisa
         f = open("./simple_report.pdf", "w+b")
         status = pisa.CreatePDF(
             html_content,                # the HTML to convert
