@@ -139,10 +139,11 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
     # 1. Offset vs Ranks image
-    #html.offsetVsRankImage = "./figures/offset_vs_rank.jpg"
-    #draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
+    html.offsetVsRankImage = "./figures/offset_vs_rank.jpg"
+    draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
 
-    # 2. Access pattern table
+    # 2. Access pattern table, use the sorting algorithm to find the interleave intervals
+    # Complexity: O(nlogn) * number of files
     accessPatternTable = PrettyTable()
     accessPatternTable.field_names = ["File", "R->R (self)", "R->R (others)", "R->W (self)", "R->W (others)", \
                                     "W->R (self)", "W->R (others)", "W->W (self)", "W->W (others)"]

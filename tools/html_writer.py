@@ -46,7 +46,7 @@ class HTMLWriter:
                 <h4> 1.2 Access mode of each file </h4>
                 %s
                 <h4>1.3 File Sizes</h4>
-                <img src="%s" alt="File Size" width="500"></img>
+                <img src="%s" alt="File Size" width="600"></img>
 
                 <h2> 2. Function Statistics </h3>
                 <h4> 2.1 Funciton classifications </h4>
@@ -55,7 +55,7 @@ class HTMLWriter:
                 %s
 
                 <h2> 3. Offset VS Rank </h2>
-                <img src="%s" alt="offset vs rank" width="600"></img>
+                <img src="%s" alt="offset vs rank" width="700"></img>
                 %s
 
                 <h2> 4. Percentage of I/O access sizes </h2>
