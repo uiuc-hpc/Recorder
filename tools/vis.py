@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import matplotlib.patches as mpatches
+from matplotlib.cm import get_cmap
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
 import numpy as np
 
-def draw_pie_chart(x, y, title, save_to="/tmp/recorder_tmp.jpg"):
+def draw_pie_chart(x, y, save_to="/tmp/recorder_tmp.jpg"):
     fig, ax = plt.subplots()
     explode = [0] * len(x)
     explode[0] =  0.1
     ax.pie(y, labels=x, explode=explode, shadow=True, autopct='%1.1f%%')
     ax.axis('equal')    # Equal aspect ratio ensures that pie is drawn as a circle.
-    fig.savefig(save_to)
-
+    fig.tight_layout()
+    fig.savefig(save_to, bbox_inches='tight', pad_inches=0)
 
 '''
 Draw a single bar chart
@@ -70,31 +71,9 @@ def merge_bars(df:pd.DataFrame):
     mergedBars.append((start, mergedCount))
     return mergedBars
 
-    '''
-    i = 0
-    while i < len(bars):
-        op1 = bars[i]
-        i = i + 1
-        mergedCount = op1[1]
-        for j in range(i, len(bars)):
-            op2 = bars[j]
-            if op1[0]+op1[1] == op2[0]:
-                i = j + 1
-                mergedCount += op1[1]
-            else:
-                break
-
-        mergedBars.append((op1[0], mergedCount))
-    return mergedBars
-    '''
-
-
 def offset_vs_rank_subplot(ax, bars, title):
     total_ranks = bars['rank'].max() + 1
     df = bars[bars['filename'] == title]
-
-    # Combine operations, i.e. merge those contiguous I/Os
-    # to reduce the rendering time
 
     for rank in range(total_ranks):
         read_df = df[(df['func'].str.contains('read')) & (df['rank']==rank)]
@@ -143,3 +122,45 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     handles.append( mpatches.Patch(color="black", label="write") )
     plt.legend(handles=handles)
     plt.savefig(save_to)
+
+
+def offset_vs_time_subplot(ax, bars, filename):
+    total_ranks = bars['rank'].max() + 1
+    df = bars[bars['filename'] == filename]
+
+    for rank in range(total_ranks):
+        read_df = df[(df['func'].str.contains('read')) & (df['rank']==rank)]
+        write_df = df[(df['func'].str.contains('write')) & (df['rank']==rank)]
+
+        read_bars = read_df[['timestamp', 'duration', 'offset', 'count']].values.tolist()
+        write_bars = write_df[['timestamp', 'duration', 'offset', 'count']].values.tolist()
+        for op in read_bars:
+            ax.broken_barh([(op[0], op[1])], (op[2], op[3]), facecolors="red")
+        for op in write_bars:
+            ax.broken_barh([(op[0], op[1])], (op[2], op[3]), facecolors="green")
+
+    #ax.set_prop_cycle(color = get_cmap("Accent").colors)
+    ax.set_ylabel("Offset")
+    ax.set_xlabel("Time Flow")
+    ax.grid(True)
+    ax.title.set_text(filename.split("/")[-1])
+
+def draw_offset_vs_time(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
+    filenames = list(set(df['filename']))
+
+    rows = math.ceil(len(filenames) / 3)
+    cols = min(len(filenames), 3)
+    print("offset vs time chart: (%d, %d)" %(rows, cols))
+
+    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
+    for i in range(rows):
+        for j in range(cols):
+            index = i*cols + j
+            if index < len(filenames):
+                ax_ = ax
+                if rows != 1 and cols != 1: ax_ = ax[i,j]
+                elif rows == 1: ax_ = ax[j]
+                else: ax_ = ax[i]
+                offset_vs_time_subplot(ax_, df, filenames[index])
+    plt.savefig(save_to)
+

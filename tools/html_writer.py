@@ -19,7 +19,7 @@ css_style = """
     background-color: #fff;
   }
   .content {
-    max-width: 800px;
+    max-width: 1000px;
     margin: auto;
   }
 </style>
@@ -33,8 +33,10 @@ class HTMLWriter:
         self.fileAccessModeTable = ""
         self.fileSizeImage = ""
         self.functionTable = ""
+        self.functionAccessTypeImage = ""
         self.functionCountImage = ""
         self.offsetVsRankImage = ""
+        self.offsetVsTimeImage = ""
         self.accessPatternTable = ""
         self.ioSizesImage = ""
 
@@ -50,25 +52,36 @@ class HTMLWriter:
                 %s
                 <h4>1.3 File Sizes</h4>
                 <img src="%s" alt="File Size" width="600"></img>
+                <hr>
 
                 <h2> 2. Function Statistics </h3>
-                <h4> 2.1 Funciton classifications </h4>
-                <img src="%s" alt="Function Count" width="500"></img>
-                <h4> 2.2 Fcount count </h4>
+                <div>
+                    <div style="display:inline-block">
+                        <h4> 2.1 I/O Layers</h4>
+                        <img src="%s" alt="I/O Layers" height="350"></img>
+                    </div>
+                    <div style="display:inline-block">
+                        <h4> 2.2 POSIX I/O Patterns </h4>
+                        <img src="%s" alt="POSIX I/O Patterns" height="350"></img>
+                    </div>
+                </div>
+                <h4> 2.3 Fcount count </h4>
                 %s
+                <hr>
 
                 <h2> 3. Access Patterns </h2>
                 <h4> 3.1 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="700"></img>
                 <h4> 3.2 File access patterns </h4>
                 %s
+                <hr>
 
                 <h2> 4. Percentage of I/O access sizes </h2>
                 <img src="%s" alt="access sizes" width="500"></img>
             </div></body>
         </html>
         """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \
-                self.functionCountImage, self.functionTable,    \
+                self.functionCountImage, self.functionAccessTypeImage, self.functionTable,    \
                 self.offsetVsRankImage, self.accessPatternTable, self.ioSizesImage)
 
         f = open("./simple_report.html", "w")
