@@ -57,28 +57,38 @@ def read_traces(path):
                 parms = ("".join(fields[2:-1]))[1:-1]
                 parms = parms.split(",")
 
-                whence = -1     # don't change offset
+                whence = -1     # don't change offset by default
 
                 # Get the filename, count for every funciton call
-                if func == "fwrite" or func == "fread":
+                if func == "close" or func == "fclose" or func == "fclose64" or func == "close64" \
+                    or func == "open" or func == "fopen" or func == "fopen64" or func == "open64":
+                    filename = parms[0]
+                    count = 0
+                    whence = 0
+                    offset = 0 if filename not in offsets else offsets[filename]
+                elif func == "fwrite" or func == "fread":
                     filename = parms[3]
                     count = int(parms[1]) * int(parms[2])
                     whence = 1
+                    offset = 0 if filename not in offsets else offsets[filename]
                 elif func == "read" or func == "write":
                     filename, count = parms[0], int(parms[2])
                     whence = 1
+                    offset = 0 if filename not in offsets else offsets[filename]
                 elif func == "pwrite" or func == "pwrite64":
-                    filename, count = parms[0], int(parms[2])
+                    filename, count, offset = parms[0], int(parms[2]), int(parms[3])
                 elif func == "writev" or func == "readv":
                     filename = parms[0]
                     count = int(parms[1].split(":[")[1].split("]")[0])
+                    offset = 0 if filename not in offsets else offsets[filename]
                 elif func == "lseek" or func == "lseek64":
                     filename = parms[0]
                     count, whence = int(parms[1]), int(parms[2])
+                    offset = 0 if filename not in offsets else offsets[filename]
                 else:
                     continue
 
-                offset = 0 if filename not in offsets else offsets[filename]
+                filename = filename.split("/")[-1]
                 ops.append([timestamp, duration, rank, func, filename, offset, count])
                 update_offset(offsets, filename, count, whence)
 
