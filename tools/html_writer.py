@@ -19,6 +19,10 @@ css_style = """
   tr:nth-child(odd) {
     background-color: #fff;
   }
+  .content {
+    max-width: 800px;
+    margin: auto;
+  }
 </style>
 """
 
@@ -39,7 +43,7 @@ class HTMLWriter:
         html_content  = """
         <html>
             <head> %s </head>
-            <body>
+            <body><div class="content">
                 <h2> 1. File Statistics </h2>
                 <h4> 1.1 Number of file access by each rank</h4>
                 %s
@@ -54,13 +58,15 @@ class HTMLWriter:
                 <h4> 2.2 Fcount count </h4>
                 %s
 
-                <h2> 3. Offset VS Rank </h2>
+                <h2> 3. Access Patterns </h2>
+                <h4> 3.1 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="700"></img>
+                <h4> 3.2 File access patterns </h4>
                 %s
 
                 <h2> 4. Percentage of I/O access sizes </h2>
                 <img src="%s" alt="access sizes" width="500"></img>
-            </body>
+            </div></body>
         </html>
         """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \
                 self.functionCountImage, self.functionTable,    \
