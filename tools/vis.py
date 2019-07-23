@@ -51,13 +51,26 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     plt.savefig(save_to)
 
 
+# O(nlogn) to merge the overlapping/contiguous intervals
 def merge_bars(df:pd.DataFrame):
     mergedBars = []
-    if df.shape[0] == 0:
-        return mergedBars
+    if df.shape[0] == 0: return mergedBars
 
     bars = df[['offset', 'count']].values.tolist()
+    from operator import itemgetter
+    bars = sorted(bars, key=itemgetter(0))    # sort by starting position
 
+    start, mergedCount = bars[0][0], bars[0][1]
+    for i in range(1, len(bars)):
+        if sum(bars[i-1]) >= bars[i][0]:   # overlap intervals
+            mergedCount = max(sum(bars[i-1]), sum(bars[i])) - bars[i-1][0]
+        else:
+            mergedBars.append((start, mergedCount))
+            start, mergedCount = bars[i][0], bars[i][1]
+    mergedBars.append((start, mergedCount))
+    return mergedBars
+
+    '''
     i = 0
     while i < len(bars):
         op1 = bars[i]
@@ -73,6 +86,7 @@ def merge_bars(df:pd.DataFrame):
 
         mergedBars.append((op1[0], mergedCount))
     return mergedBars
+    '''
 
 
 def offset_vs_rank_subplot(ax, bars, title):
