@@ -103,6 +103,7 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     rows = math.ceil(len(filenames) / 3)
     cols = min(len(filenames), 3)
     print("show chart: (%d, %d)" %(rows, cols))
+    rows = min(4, rows)
 
     fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
     for i in range(rows):
@@ -137,9 +138,14 @@ def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
     records = df[['timestamp', 'duration', 'rank', 'func', 'offset', 'count']].values.tolist()
     for i in range(len(records)):
         timestamp, duration, rank, func, offset, count = records[i]
+
+        # Remove all computation times and make the smallest I/O also visible
+        duration = max(0.000001, duration)
         if "write" in func:
+            if len(write_patches[rank]) > 0:  timestamp = write_patches[rank][-1].get_x() + write_patches[rank][-1].get_width()
             write_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
         if "read" in func:
+            if len(read_patches[rank]) > 0: timestamp = read_patches[rank][-1].get_x() + read_patches[rank][-1].get_width()
             read_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
 
     for rank in range(total_ranks):
@@ -158,6 +164,7 @@ def draw_offset_vs_time(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     rows = math.ceil(len(filenames) / 3)
     cols = min(len(filenames), 3)
     print("offset vs time chart: (%d, %d)" %(rows, cols))
+    rows = min(4, rows)
 
     fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
     for i in range(rows):
