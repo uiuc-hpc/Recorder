@@ -7,12 +7,17 @@ The report contains the following part:
 2. A full file list with its size
 3. List of function calls and how many times a function was called
 '''
-import glob, sys
+import glob, sys, os
 import reader
 from prettytable import PrettyTable
 from html_writer import HTMLWriter
 from vis import draw_bar_chart, draw_pie_chart
 from vis import draw_offset_vs_rank, draw_offset_vs_time
+
+OUTPUT_DIR = os.getcwd() + "/reports.out"
+
+
+
 
 class TraceReader:
     def __init__(self, path):
@@ -95,7 +100,7 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
     for name in fileSizes.keys():
         x.append(name)
         y.append(fileSizes[name]/1024.0)
-    html.fileSizeImage = "./reports.out/figures/file_size.png"
+    html.fileSizeImage = OUTPUT_DIR+"/figures/file_size.png"
     draw_bar_chart(x, y, title="File Size (KBytes)", save_to=html.fileSizeImage, horizontal=True, logScale=True, xlabel="File size (KBytes)")
 
 
@@ -125,7 +130,7 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
         if func.startswith("MPI"): mpi += sum(functionCounter[func])
         elif func.startswith("H5"): hdf5 += sum(functionCounter[func])
         else: posix += sum(functionCounter[func])
-    html.functionCountImage = "./reports.out/figures/function_categories.png"
+    html.functionCountImage = OUTPUT_DIR+"/figures/function_categories.png"
     draw_pie_chart(["MPI", "POSIX", "HDF5"], [mpi, posix, hdf5], save_to=html.functionCountImage)
 
     # Function count by sequential/consective
@@ -139,7 +144,7 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
         else:
             random += 1
         last_op = op
-    html.functionAccessTypeImage = "./reports.out/figures/function_access_type.png"
+    html.functionAccessTypeImage = OUTPUT_DIR+"/figures/function_access_type.png"
     draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=html.functionAccessTypeImage)
 
     # Function access bytes
@@ -149,16 +154,16 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
     total = df.shape[0]
     for count in x:
         y.append( (df[df['count'] < count].shape[0]) / total )
-    html.ioSizesImage=  "./reports.out/figures/io_access_sizes.png"
+    html.ioSizesImage=  OUTPUT_DIR+"/figures/io_access_sizes.png"
     draw_bar_chart(x, y, title="IO Access Sizes", save_to=html.ioSizesImage, ylabel="Percentage", xlabel="Access size")
 
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
     # 1. Offset vs Ranks image
-    html.offsetVsRankImage = "./reports.out/figures/offset_vs_rank.png"
+    html.offsetVsRankImage = OUTPUT_DIR+"/figures/offset_vs_rank.png"
     draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
 
-    html.offsetVsTimeImage = "./reports.out/figures/offset_vs_time.png"
+    html.offsetVsTimeImage = OUTPUT_DIR+"/figures/offset_vs_time.png"
     draw_offset_vs_time(tr.get_posix_io(), save_to=html.offsetVsTimeImage)
 
     # 2. Access pattern table, use the sorting algorithm to find the interleave intervals

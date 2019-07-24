@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-
 css_style = """
 <style>
   table {
@@ -86,7 +85,7 @@ class HTMLWriter:
                 self.functionCountImage, self.functionAccessTypeImage, self.functionTable,    \
                 self.offsetVsRankImage, self.offsetVsTimeImage, self.accessPatternTable, self.ioSizesImage)
 
-        f = open("./simple_report.html", "w")
+        f = open("./reports.out/simple_report.html", "w")
         f.write(html_content)
         f.close()
 
