@@ -46,4 +46,4 @@ __pycache__/
 # App-specific
 logs/
 tools/otf2-converter
-figures/
+tools/figures/
