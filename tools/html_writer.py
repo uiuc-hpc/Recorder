@@ -78,7 +78,7 @@ class HTMLWriter:
                 <hr>
 
                 <h2> 4. Percentage of I/O access sizes </h2>
-                <img src="%s" alt="access sizes" width="500"></img>
+                <img src="%s" alt="access sizes" width="700"></img>
             </div></body>
         </html>
         """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \

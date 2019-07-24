@@ -11,7 +11,7 @@ import glob, sys, os
 import reader
 from prettytable import PrettyTable
 from html_writer import HTMLWriter
-from vis import draw_bar_chart, draw_pie_chart
+from vis import draw_bar_chart, draw_pie_chart, draw_hist_chart
 from vis import draw_offset_vs_rank, draw_offset_vs_time
 
 OUTPUT_DIR = os.getcwd() + "/reports.out"
@@ -147,15 +147,12 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
     html.functionAccessTypeImage = OUTPUT_DIR+"/figures/function_access_type.png"
     draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=html.functionAccessTypeImage)
 
-    # Function access bytes
-    df = tr.get_posix_io()
-    print(df['count'].describe())   #TODO: put into html
-    x, y = range(0, 128*11, 128), []
-    total = df.shape[0]
-    for count in x:
-        y.append( (df[df['count'] < count].shape[0]) / total )
-    html.ioSizesImage=  OUTPUT_DIR+"/figures/io_access_sizes.png"
-    draw_bar_chart(x, y, title="IO Access Sizes", save_to=html.ioSizesImage, ylabel="Percentage", xlabel="Access size")
+
+    # Cumulative I/O access sizes
+    write_sizes = df['count'][df['func'].str.contains('write')]
+    read_sizes = df['count'][df['func'].str.contains('read')]
+    draw_hist_chart([write_sizes, read_sizes], nbins=50, labels=["write", "read"],
+            title="Cumulative percentage of I/O access sizes", xlabel="I/O size (Bytes)", ylabel="Percentage", save_to=html.ioSizesImage)
 
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):

@@ -8,6 +8,24 @@ import pandas as pd
 import math
 import numpy as np
 
+# plot the cumulative histogram
+# xs: a list of list
+def draw_hist_chart(xs, labels, nbins=50, title="", xlabel="", ylabel="", save_to="/tmp/recorder_temp.png"):
+    #nbins = [128, 256, 512, 1024, 2048, 4096, 10240]
+    fig, ax = plt.subplots(1, len(xs), figsize=(10, 6))
+    #fig, ax = plt.subplots()
+    for index, x in enumerate(xs):
+        if len(x)>0:
+            ax[index].hist(x, nbins, density=True, histtype='step', cumulative=True, label=labels[index])
+            #ax[index].grid(True)
+            ax[index].legend(loc='best')
+            ax[index].set_title(title)
+            ax[index].set_xlabel(xlabel)
+            ax[index].set_ylabel(ylabel)
+    fig.tight_layout()
+    fig.savefig(save_to)
+
+
 def draw_pie_chart(x, y, save_to="/tmp/recorder_tmp.jpg"):
     fig, ax = plt.subplots()
     explode = [0] * len(x)
