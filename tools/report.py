@@ -63,7 +63,10 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
         for record in lines:
             tmp = record.split(" ")
             filename = tmp[0].split('/')[-1]        # filename
-            fileSizes[filename] = int(tmp[2])       # filesize
+            if filename not in fileSizes:
+                fileSizes[filename] = int(tmp[2])       # filesize
+            else:                                   # not all ranks received the same correct file size from stat command
+                fileSizes[filename] = max(fileSizes[filename], int(tmp[2]))
             fileSet.add(filename)
 
         row.append(len(fileSet))
@@ -155,8 +158,8 @@ def offset_statistics(tr: TraceReader, html: HTMLWriter):
     html.offsetVsRankImage = "./figures/offset_vs_rank.png"
     draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
 
-    #html.offsetVsTimeImage = "./figures/offset_vs_time.png"
-    #draw_offset_vs_time(tr.get_posix_io(), save_to=html.offsetVsTimeImage)
+    html.offsetVsTimeImage = "./figures/offset_vs_time.png"
+    draw_offset_vs_time(tr.get_posix_io(), save_to=html.offsetVsTimeImage)
 
     # 2. Access pattern table, use the sorting algorithm to find the interleave intervals
     # Complexity: O(nlogn) * number of files
