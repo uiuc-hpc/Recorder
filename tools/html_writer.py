@@ -72,7 +72,9 @@ class HTMLWriter:
                 <h2> 3. Access Patterns </h2>
                 <h4> 3.1 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="700"></img>
-                <h4> 3.2 File access patterns </h4>
+                <h4> 3.2 Accessed offsets VS time </h4>
+                <img src="%s" alt="offset vs time" width="700"></img>
+                <h4> 3.3 File access patterns </h4>
                 %s
                 <hr>
 
@@ -82,7 +84,7 @@ class HTMLWriter:
         </html>
         """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \
                 self.functionCountImage, self.functionAccessTypeImage, self.functionTable,    \
-                self.offsetVsRankImage, self.accessPatternTable, self.ioSizesImage)
+                self.offsetVsRankImage, self.offsetVsTimeImage, self.accessPatternTable, self.ioSizesImage)
 
         f = open("./simple_report.html", "w")
         f.write(html_content)

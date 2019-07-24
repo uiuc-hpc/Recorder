@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import matplotlib
 import matplotlib.patches as mpatches
-from matplotlib.cm import get_cmap
+from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
@@ -63,8 +64,8 @@ def merge_bars(df:pd.DataFrame):
 
     start, mergedCount = bars[0][0], bars[0][1]
     for i in range(1, len(bars)):
-        if sum(bars[i-1]) >= bars[i][0]:   # overlap intervals
-            mergedCount = max(sum(bars[i-1]), sum(bars[i])) - bars[i-1][0]
+        if start+mergedCount >= bars[i][0]: # overlap intervals
+            mergedCount = max(start+mergedCount, sum(bars[i])) - start
         else:
             mergedBars.append((start, mergedCount))
             start, mergedCount = bars[i][0], bars[i][1]
@@ -98,7 +99,6 @@ def offset_vs_rank_subplot(ax, bars, title):
 
 def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     filenames = list(set(df['filename']))
-    print(filenames, len(filenames))
 
     rows = math.ceil(len(filenames) / 3)
     cols = min(len(filenames), 3)
@@ -124,24 +124,31 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     plt.savefig(save_to)
 
 
-def offset_vs_time_subplot(ax, bars, filename):
+def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
+    colors = ['r', 'g', 'b', 'y']
+
     total_ranks = bars['rank'].max() + 1
+    read_patches, write_patches = [], []
+    for i in range(total_ranks):
+        read_patches.append([])
+        write_patches.append([])
+
     df = bars[bars['filename'] == filename]
+    records = df[['timestamp', 'duration', 'rank', 'func', 'offset', 'count']].values.tolist()
+    for i in range(len(records)):
+        timestamp, duration, rank, func, offset, count = records[i]
+        if "write" in func:
+            write_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
+        if "read" in func:
+            read_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
 
     for rank in range(total_ranks):
-        read_df = df[(df['func'].str.contains('read')) & (df['rank']==rank)]
-        write_df = df[(df['func'].str.contains('write')) & (df['rank']==rank)]
+        ax.add_collection(PatchCollection(read_patches[rank], facecolor=colors[rank], alpha=1.0))
+        ax.add_collection(PatchCollection(write_patches[rank], facecolor=colors[rank], alpha=0.5))
 
-        read_bars = read_df[['timestamp', 'duration', 'offset', 'count']].values.tolist()
-        write_bars = write_df[['timestamp', 'duration', 'offset', 'count']].values.tolist()
-        for op in read_bars:
-            ax.broken_barh([(op[0], op[1])], (op[2], op[3]), facecolors="red")
-        for op in write_bars:
-            ax.broken_barh([(op[0], op[1])], (op[2], op[3]), facecolors="green")
-
-    #ax.set_prop_cycle(color = get_cmap("Accent").colors)
     ax.set_ylabel("Offset")
     ax.set_xlabel("Time Flow")
+    ax.autoscale_view()
     ax.grid(True)
     ax.title.set_text(filename.split("/")[-1])
 
@@ -155,6 +162,7 @@ def draw_offset_vs_time(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
     for i in range(rows):
         for j in range(cols):
+            print(i, j)
             index = i*cols + j
             if index < len(filenames):
                 ax_ = ax
