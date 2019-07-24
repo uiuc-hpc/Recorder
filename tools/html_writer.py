@@ -34,6 +34,7 @@ class HTMLWriter:
         self.functionTable = ""
         self.functionAccessTypeImage = ""
         self.functionCountImage = ""
+        self.overallTimeChart = ""
         self.offsetVsRankImage = ""
         self.offsetVsTimeImage = ""
         self.accessPatternTable = ""
@@ -57,23 +58,26 @@ class HTMLWriter:
                 <div>
                     <div style="display:inline-block">
                         <h4> 2.1 I/O Layers</h4>
-                        <img src="%s" alt="I/O Layers" height="350"></img>
+                        <img src="%s" alt="I/O Layers" height="320"></img>
                     </div>
                     <div style="display:inline-block">
                         <h4> 2.2 POSIX I/O Patterns </h4>
-                        <img src="%s" alt="POSIX I/O Patterns" height="350"></img>
+                        <img src="%s" alt="POSIX I/O Patterns" height="320"></img>
                     </div>
                 </div>
                 <h4> 2.3 Fcount count </h4>
                 %s
                 <hr>
 
+
                 <h2> 3. Access Patterns </h2>
-                <h4> 3.1 Accessed offsets VS ranks </h4>
+                <h4> 3.1 Overall time chart </h4>
+                <img src="%s" alt="offset vs rank" width="500"></img>
+                <h4> 3.2 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="700"></img>
-                <h4> 3.2 Accessed offsets VS time </h4>
+                <h4> 3.3 Accessed offsets VS time </h4>
                 <img src="%s" alt="offset vs time" width="700"></img>
-                <h4> 3.3 File access patterns </h4>
+                <h4> 3.4 File access patterns </h4>
                 %s
                 <hr>
 
@@ -83,7 +87,8 @@ class HTMLWriter:
         </html>
         """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \
                 self.functionCountImage, self.functionAccessTypeImage, self.functionTable,    \
-                self.offsetVsRankImage, self.offsetVsTimeImage, self.accessPatternTable, self.ioSizesImage)
+                self.overallTimeChart, self.offsetVsRankImage, self.offsetVsTimeImage, self.accessPatternTable, \
+                self.ioSizesImage)
 
         f = open("./reports.out/simple_report.html", "w")
         f.write(html_content)

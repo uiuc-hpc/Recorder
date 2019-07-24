@@ -12,7 +12,7 @@ import reader
 from prettytable import PrettyTable
 from html_writer import HTMLWriter
 from vis import draw_bar_chart, draw_pie_chart, draw_hist_chart
-from vis import draw_offset_vs_rank, draw_offset_vs_time
+from vis import draw_overall_time_chart, draw_offset_vs_rank, draw_offset_vs_time
 
 OUTPUT_DIR = os.getcwd() + "/reports.out"
 
@@ -147,8 +147,9 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
     html.functionAccessTypeImage = OUTPUT_DIR+"/figures/function_access_type.png"
     draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=html.functionAccessTypeImage)
 
-
     # Cumulative I/O access sizes
+    html.ioSizesImage= OUTPUT_DIR+"/figures/io_sizes_image.png"
+    df = tr.get_posix_io()
     write_sizes = df['count'][df['func'].str.contains('write')]
     read_sizes = df['count'][df['func'].str.contains('read')]
     draw_hist_chart([write_sizes, read_sizes], nbins=50, labels=["write", "read"],
@@ -156,6 +157,10 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
 
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
+    # 1. Overall time image
+    html.overallTimeChart = OUTPUT_DIR+"/figures/overall_time_chart.png"
+    draw_overall_time_chart(tr.get_posix_io(), save_to=html.overallTimeChart)
+
     # 1. Offset vs Ranks image
     html.offsetVsRankImage = OUTPUT_DIR+"/figures/offset_vs_rank.png"
     draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
