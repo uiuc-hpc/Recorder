@@ -95,7 +95,7 @@ class HTMLWriter:
 
     def write_pdf(self, html_content):
         from xhtml2pdf import pisa
-        f = open("./simple_report.pdf", "w+b")
+        f = open("./reports.out/simple_report.pdf", "w+b")
         status = pisa.CreatePDF(
             html_content,                # the HTML to convert
             dest=f)           # file handle to recieve result
