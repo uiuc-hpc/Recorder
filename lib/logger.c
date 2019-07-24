@@ -17,13 +17,14 @@ static inline unsigned char get_filename_id(const char *filename) {
     if (!filename || !__filename2id_map || strlen(filename) == 0)
         return id;
 
+    char* key = realpath(filename, NULL); // get absolute path
     /* filename already exists */
-    if (hashmap_get(__filename2id_map, filename, &id) == MAP_OK)
+    if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)
         return id;
 
     /* insert filename into the map */
     id = hashmap_length(__filename2id_map);
-    hashmap_put(__filename2id_map, filename, id);
+    hashmap_put(__filename2id_map, key, id);
     return id;
 }
 
