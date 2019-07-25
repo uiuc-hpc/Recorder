@@ -53,6 +53,18 @@ mpirun can be changed to your workload manager, e.g. srun.
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 ```
 
+Visualization
+------------
+
+```console
+cd /path/to/Recorder/tools
+pip install -r requirements.txt
+mkdir -p reports.out/figures
+python report.py /path/to/your_trace_folder/
+```
+The visualization report (simple_report.html) will be written into ./reports.out directory
+
+
 Publication
 -----------
 Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level approach for understanding I/O activity in HPC applications." In 2013 IEEE International Conference on Cluster Computing (CLUSTER), pp. 1-5. IEEE, 2013.
