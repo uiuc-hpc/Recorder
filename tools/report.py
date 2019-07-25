@@ -46,13 +46,12 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
     accessModeTable = PrettyTable()
     accessModeTable.field_names = ["File", "Read Only", "Write Only", "Read & Write"]
     df = tr.get_posix_io()
-    for name in fileSizes.keys():
-        write_only, read_only = True, True
-        if df[(df['filename'] == name) & (df['func'].str.contains("write"))].shape[0] > 0 :
-            read_only = False
-        if df[(df['filename'] == name) & (df['func'].str.contains("read"))].shape[0] > 0 :
-            write_only = False
-        accessModeTable.add_row([name, read_only, write_only, (not read_only) and (not write_only)])
+    for name in tr.files:
+        write_count = df[(df['filename'] == name) & (df['func'].str.contains("write"))].shape[0]
+        read_count = df[(df['filename'] == name) & (df['func'].str.contains("read"))].shape[0]
+        write_only, read_only = write_count > 0 and read_count == 0, read_count > 0 and write_count == 0
+        read_write = False if (read_count == 0 and write_count == 0) else ((not read_only) and (not write_only))
+        accessModeTable.add_row([name.split("/")[-1], read_only, write_only, read_write])
         html.fileAccessModeTable = accessModeTable.get_html_string()
     print(accessModeTable)
 

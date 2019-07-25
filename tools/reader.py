@@ -16,7 +16,7 @@ class TraceReader:
             self.meta.append( self.get_metadata(r) )
             for record in self.get_metadata(r):
                 self.files.add(record.split(" ")[0])
-        self.files = list(self.files)
+        self.files = sorted(list(self.files))
 
     def get_metadata(self, rank):
         if len(self.meta) > rank:
