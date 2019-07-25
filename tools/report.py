@@ -58,7 +58,7 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
 
     # 3. File sizes image
     x, y = [], []
-    for name in fileSizes.keys():
+    for name in sorted(fileSizes.keys()):
         x.append(name)
         y.append(fileSizes[name]/1024.0)
     html.fileSizeImage = OUTPUT_DIR+"/figures/file_size.png"
