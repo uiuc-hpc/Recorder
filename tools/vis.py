@@ -45,16 +45,17 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
+        fig.set_size_inches(7, max(7, len(x)/5.8))
         rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_yticks(x_pos)
         ax.set_yticklabels(x)
         ax.set_title(title)
+        ax.set_ylim(min(x_pos)-1, max(x_pos)+1)
     else:
         rects = ax.bar(x_pos, y, align='center', alpha=0.9)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(x)
         ax.set_title(title)
-
 
     if horizontal:
         for i, v in enumerate(y):
