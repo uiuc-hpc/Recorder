@@ -175,7 +175,8 @@ def offset_statistics(tr: TraceReader, html: HTMLWriter):
                                     "W->R (self)", "W->R (others)", "W->W (self)", "W->W (others)"]
     df = tr.get_posix_io()
     for filename in set(df['filename']):
-        records = df[df['filename']==filename][['timestamp', 'offset','count','func','rank']].values.tolist()
+        mask = (df['filename'] == filename) & ( (df['func'].str.contains("read")) |  (df['func'].str.contains("write")) )
+        records = df[mask][['timestamp', 'offset','count','func','rank']].values.tolist()
         from operator import itemgetter
         records = sorted(records, key=itemgetter(1))    # sort by starting position
 
