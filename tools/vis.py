@@ -169,8 +169,8 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
     plt.savefig(save_to)
 
 
+colors = ['r', 'g', 'b', 'y']
 def offset_vs_time_subplot(ax, tr:TraceReader, filename):
-    colors = ['r', 'g', 'b', 'y']
 
     write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
     read_patches, write_patches = [], []
@@ -228,5 +228,10 @@ def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
                 offset_vs_time_subplot(ax_, tr, tr.files[index])
+
+    handles = []
+    for i, c in enumerate(colors):
+        handles.append(mpatches.Patch(color=c, label='rank '+str(i) ))
+    plt.legend(handles=handles)
     plt.savefig(save_to)
 

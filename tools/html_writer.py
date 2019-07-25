@@ -72,7 +72,7 @@ class HTMLWriter:
 
                 <h2> 3. Access Patterns </h2>
                 <h4> 3.1 Overall I/O activities </h4>
-                <img src="%s" alt="offset vs rank" width="500"></img>
+                <img src="%s" alt="offset vs rank" width="600"></img>
                 <h4> 3.2 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="700"></img>
                 <h4> 3.3 Accessed offsets VS time </h4>
