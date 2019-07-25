@@ -18,6 +18,10 @@ static inline unsigned char get_filename_id(const char *filename) {
         return id;
 
     char* key = realpath(filename, NULL); // get absolute path
+    if ( !key )
+        return id;
+
+
     /* filename already exists */
     if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)
         return id;
