@@ -8,7 +8,7 @@ The report contains the following part:
 3. List of function calls and how many times a function was called
 '''
 import glob, sys, os
-import reader
+from reader import TraceReader
 from prettytable import PrettyTable
 from html_writer import HTMLWriter
 from vis import draw_bar_chart, draw_pie_chart, draw_hist_chart
@@ -16,50 +16,13 @@ from vis import draw_overall_time_chart, draw_offset_vs_rank, draw_offset_vs_tim
 
 OUTPUT_DIR = os.getcwd() + "/reports.out"
 
-
-
-
-class TraceReader:
-    def __init__(self, path):
-        self.path = path                                # path to the log files
-        self.procs = len(glob.glob(path+"/*.itf"))      # total number of processes
-
-        self.data = None                                # trace log for each rank
-        self.meta = None                                # meatadata for each rank
-
-        self.posix_io = None                            # Only POSIX IO records stored in Pandas.DataFrame
-
-    def get_metadata(self, rank):
-        lines = None
-        with open(self.path+"/"+str(rank)+".mt", 'r') as f:
-            lines = f.readlines()
-        lines = list( map(str.strip, lines) )       # remove the trailing newline
-        return lines
-
-    def get_data(self, rank):
-        lines = None
-        with open(self.path+"/"+str(rank)+".itf", 'r') as f:
-            lines = f.readlines()
-        from operator import itemgetter
-        lines = sorted(lines, key=itemgetter(0))    # sort by timestemp
-        lines = list( map(str.strip, lines) )       # remove the trailing newline
-        return lines
-
-    def get_posix_io(self):
-        if self.data is None:
-            from reader import read_traces
-            self.data = read_traces(self.path)
-            return self.data
-        return self.data
-
-
 def file_statistics(tr: TraceReader, html:HTMLWriter):
     # 1. Number of file accessed by rank
     fileTable = PrettyTable()
     header = ["", "Total"]
     for r in range(tr.procs): header.append("Rank "+str(r))
     fileTable.field_names = header
-    row = ["Number of file accessed", 0]
+    row = ["Number of file accessed", len(tr.files)]
 
     fileSizes = {}
     for rank in range(tr.procs):
@@ -73,9 +36,8 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
             else:                                   # not all ranks received the same correct file size from stat command
                 fileSizes[filename] = max(fileSizes[filename], int(tmp[2]))
             fileSet.add(filename)
+        row.append(len(fileSet))                    # number of files accessed by rank
 
-        row.append(len(fileSet))
-    row[1] = len(fileSizes)
     fileTable.add_row(row)
     print(fileTable)
     html.fileTable = fileTable.get_html_string()
@@ -159,14 +121,14 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
     # 1. Overall time image
     html.overallTimeChart = OUTPUT_DIR+"/figures/overall_time_chart.png"
-    draw_overall_time_chart(tr.get_posix_io(), save_to=html.overallTimeChart)
+    draw_overall_time_chart(tr, save_to=html.overallTimeChart)
 
     # 1. Offset vs Ranks image
     html.offsetVsRankImage = OUTPUT_DIR+"/figures/offset_vs_rank.png"
-    draw_offset_vs_rank(tr.get_posix_io(), save_to =html.offsetVsRankImage)
+    draw_offset_vs_rank(tr, save_to =html.offsetVsRankImage)
 
     html.offsetVsTimeImage = OUTPUT_DIR+"/figures/offset_vs_time.png"
-    draw_offset_vs_time(tr.get_posix_io(), save_to=html.offsetVsTimeImage)
+    draw_offset_vs_time(tr, save_to=html.offsetVsTimeImage)
 
     # 2. Access pattern table, use the sorting algorithm to find the interleave intervals
     # Complexity: O(nlogn) * number of files
@@ -174,7 +136,7 @@ def offset_statistics(tr: TraceReader, html: HTMLWriter):
     accessPatternTable.field_names = ["File", "R->R (self)", "R->R (others)", "R->W (self)", "R->W (others)", \
                                     "W->R (self)", "W->R (others)", "W->W (self)", "W->W (others)"]
     df = tr.get_posix_io()
-    for filename in set(df['filename']):
+    for filename in tr.files:
         mask = (df['filename'] == filename) & ( (df['func'].str.contains("read")) |  (df['func'].str.contains("write")) )
         records = df[mask][['timestamp', 'offset','count','func','rank']].values.tolist()
         from operator import itemgetter
@@ -204,7 +166,7 @@ def offset_statistics(tr: TraceReader, html: HTMLWriter):
                     if "write" in op1[3] and "read" in op2[3]:
                         if op1[0] < op2[0]: other_wr = True
                         else: other_rw = True
-        accessPatternTable.add_row([filename, self_rr, other_rr, self_rw, other_rw, self_wr, other_wr, self_ww, other_ww])
+        accessPatternTable.add_row([filename.split("/")[-1], self_rr, other_rr, self_rw, other_rw, self_wr, other_wr, self_ww, other_ww])
     print(accessPatternTable)
     html.accessPatternTable = accessPatternTable.get_html_string()
 

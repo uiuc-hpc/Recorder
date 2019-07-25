@@ -4,7 +4,9 @@ import matplotlib
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
+from reader import TraceReader
 import pandas as pd
+
 import math
 import numpy as np
 
@@ -71,15 +73,15 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig.tight_layout()
     plt.savefig(save_to)
 
-def draw_overall_time_chart(df:pd.DataFrame, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
+def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
+    df = tr.get_posix_io()
     fig, ax = plt.subplots(figsize=(10,5))
 
     yticks, yticklabels = [], []
-    total_ranks = df['rank'].max()+1
-    for rank in range(total_ranks):
+    for rank in range(tr.procs):
         read_bars = df[(df['func'].str.contains("read")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
         write_bars = df[(df['func'].str.contains("write")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
-        ax.broken_barh(read_bars, (rank, 1), facecolors="gray")
+        ax.broken_barh(read_bars, (rank, 1), facecolors="red")
         ax.broken_barh(write_bars, (rank, 1), facecolors="black")
         yticks.append(rank+0.5)
         yticklabels.append("rank "+str(rank))
@@ -89,7 +91,7 @@ def draw_overall_time_chart(df:pd.DataFrame, xlabel="", ylabel="", title="", sav
     ax.set_yticklabels(yticklabels)
     ax.set_xlabel("Time (seconds)")
     handles = []
-    handles.append( mpatches.Patch(color="gray", label="read") )
+    handles.append( mpatches.Patch(color="red", label="read") )
     handles.append( mpatches.Patch(color="black", label="write") )
     fig.tight_layout()
     plt.legend(handles=handles)
@@ -115,11 +117,11 @@ def merge_bars(df:pd.DataFrame):
     mergedBars.append((start, mergedCount))
     return mergedBars
 
-def offset_vs_rank_subplot(ax, bars, title):
-    total_ranks = bars['rank'].max() + 1
-    df = bars[bars['filename'] == title]
+def offset_vs_rank_subplot(ax, tr:TraceReader, filename):
+    df = tr.get_posix_io()
+    df = df[df['filename'] == filename]
 
-    for rank in range(total_ranks):
+    for rank in range(tr.procs):
         read_df = df[(df['func'].str.contains('read')) & (df['rank']==rank)]
         write_df = df[(df['func'].str.contains('write')) & (df['rank']==rank)]
 
@@ -130,7 +132,7 @@ def offset_vs_rank_subplot(ax, bars, title):
         ax.broken_barh(write_bars, (rank*2, 0.5), facecolors="black")
 
     yticks, yticklabels = [], []
-    for i in range(total_ranks):
+    for i in range(tr.procs):
         yticks.append(i * 2 + 0.5)
         yticklabels.append("rank "+str(i))
     ax.set_yticks(yticks)
@@ -138,13 +140,12 @@ def offset_vs_rank_subplot(ax, bars, title):
     ax.set_xlabel("File offset")
 
     ax.grid(True)
-    ax.title.set_text(title.split("/")[-1])
+    ax.title.set_text(filename.split("/")[-1])
 
-def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
-    filenames = list(set(df['filename']))
+def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
-    rows = math.ceil(len(filenames) / 3)
-    cols = min(len(filenames), 3)
+    rows = math.ceil(len(tr.files) / 3)
+    cols = min(len(tr.files), 3)
     print("show chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
@@ -152,12 +153,12 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     for i in range(rows):
         for j in range(cols):
             index = i*cols + j
-            if index < len(filenames):
+            if index < len(tr.files):
                 ax_ = ax
                 if rows != 1 and cols != 1: ax_ = ax[i,j]
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
-                offset_vs_rank_subplot(ax_, df, filenames[index])
+                offset_vs_rank_subplot(ax_, tr, tr.files[index])
 
     # Add legends
     handles = []
@@ -168,13 +169,12 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
     plt.savefig(save_to)
 
 
-def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
+def offset_vs_time_subplot(ax, tr:TraceReader, filename):
     colors = ['r', 'g', 'b', 'y']
 
     write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
-    total_ranks = bars['rank'].max() + 1
     read_patches, write_patches = [], []
-    for i in range(total_ranks):
+    for i in range(tr.procs):
         read_patches.append([])
         write_patches.append([])
         write_dots_x.append([])
@@ -182,8 +182,8 @@ def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
         read_dots_x.append([])
         read_dots_y.append([])
 
-
-    df = bars[bars['filename'] == filename]
+    df = tr.get_posix_io()
+    df = df[df['filename'] == filename]
     records = df[['timestamp', 'duration', 'rank', 'func', 'offset', 'count']].values.tolist()
     for i in range(len(records)):
         timestamp, duration, rank, func, offset, count = records[i]
@@ -198,7 +198,7 @@ def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
             read_dots_x[rank].append(timestamp)
             read_dots_y[rank].append(offset)
 
-    for rank in range(total_ranks):
+    for rank in range(tr.procs):
         ax.add_collection(PatchCollection(read_patches[rank], facecolor=colors[rank], alpha=1.0))
         ax.add_collection(PatchCollection(write_patches[rank], facecolor=colors[rank], alpha=0.5))
         ax.scatter(read_dots_x[rank], read_dots_y[rank], c=colors[rank], alpha=1.0, s=2)
@@ -210,11 +210,10 @@ def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
     ax.grid(True)
     ax.title.set_text(filename.split("/")[-1])
 
-def draw_offset_vs_time(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
-    filenames = list(set(df['filename']))
+def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
-    rows = math.ceil(len(filenames) / 3)
-    cols = min(len(filenames), 3)
+    rows = math.ceil(len(tr.files) / 3)
+    cols = min(len(tr.files), 3)
     print("offset vs time chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
@@ -223,11 +222,11 @@ def draw_offset_vs_time(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
         for j in range(cols):
             print(i, j)
             index = i*cols + j
-            if index < len(filenames):
+            if index < len(tr.files):
                 ax_ = ax
                 if rows != 1 and cols != 1: ax_ = ax[i,j]
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
-                offset_vs_time_subplot(ax_, df, filenames[index])
+                offset_vs_time_subplot(ax_, tr, tr.files[index])
     plt.savefig(save_to)
 
