@@ -75,7 +75,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
 
 def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
     df = tr.get_posix_io()
-    fig, ax = plt.subplots(figsize=(10,5))
+    fig, ax = plt.subplots(figsize=(10,4))
 
     yticks, yticklabels = [], []
     for rank in range(tr.procs):
@@ -144,12 +144,12 @@ def offset_vs_rank_subplot(ax, tr:TraceReader, filename):
 
 def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
-    rows = math.ceil(len(tr.files) / 3)
-    cols = min(len(tr.files), 3)
+    rows = math.ceil(len(tr.files) / 4)
+    cols = min(len(tr.files), 4)
     print("show chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
-    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
+    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(14, 3.3*rows)) # 3.3 inch height per row
     for i in range(rows):
         for j in range(cols):
             index = i*cols + j
@@ -211,13 +211,12 @@ def offset_vs_time_subplot(ax, tr:TraceReader, filename):
     ax.title.set_text(filename.split("/")[-1])
 
 def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
-
-    rows = math.ceil(len(tr.files) / 3)
-    cols = min(len(tr.files), 3)
+    rows = math.ceil(len(tr.files) / 4)
+    cols = min(len(tr.files), 4)
     print("offset vs time chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
-    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(10, 10/3*rows))
+    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(14, 3.3*rows))
     for i in range(rows):
         for j in range(cols):
             print(i, j)

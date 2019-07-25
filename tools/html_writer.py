@@ -74,9 +74,9 @@ class HTMLWriter:
                 <h4> 3.1 Overall I/O activities </h4>
                 <img src="%s" alt="offset vs rank" width="600"></img>
                 <h4> 3.2 Accessed offsets VS ranks </h4>
-                <img src="%s" alt="offset vs rank" width="700"></img>
+                <img src="%s" alt="offset vs rank" width="900"></img>
                 <h4> 3.3 Accessed offsets VS time </h4>
-                <img src="%s" alt="offset vs time" width="700"></img>
+                <img src="%s" alt="offset vs time" width="900"></img>
                 <h4> 3.4 File access patterns </h4>
                 %s
                 <hr>
