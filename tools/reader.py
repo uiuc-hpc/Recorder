@@ -74,7 +74,7 @@ def read_traces(path):
                     filename, count = parms[0].split("/")[-1], int(parms[2])
                     whence = 1
                     offset = 0 if filename not in offsets else offsets[filename]
-                elif func == "pwrite" or func == "pwrite64":
+                elif func == "pwrite" or func == "pwrite64" or func == "pread" or func == "pread64":
                     filename, count, offset = parms[0].split("/")[-1], int(parms[2]), int(parms[3])
                 elif func == "writev" or func == "readv":
                     filename = parms[0].split("/")[-1]

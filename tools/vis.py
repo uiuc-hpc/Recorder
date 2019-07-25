@@ -71,14 +71,14 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     plt.savefig(save_to)
 
 def draw_overall_time_chart(df:pd.DataFrame, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,5))
 
     yticks, yticklabels = [], []
     total_ranks = df['rank'].max()+1
     for rank in range(total_ranks):
         read_bars = df[(df['func'].str.contains("read")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
         write_bars = df[(df['func'].str.contains("write")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
-        ax.broken_barh(read_bars, (rank, 1), facecolors="red")
+        ax.broken_barh(read_bars, (rank, 1), facecolors="gray")
         ax.broken_barh(write_bars, (rank, 1), facecolors="black")
         yticks.append(rank+0.5)
         yticklabels.append("rank "+str(rank))
@@ -88,7 +88,7 @@ def draw_overall_time_chart(df:pd.DataFrame, xlabel="", ylabel="", title="", sav
     ax.set_yticklabels(yticklabels)
     ax.set_xlabel("Time (seconds)")
     handles = []
-    handles.append( mpatches.Patch(color="red", label="read") )
+    handles.append( mpatches.Patch(color="gray", label="read") )
     handles.append( mpatches.Patch(color="black", label="write") )
     fig.tight_layout()
     plt.legend(handles=handles)
@@ -170,14 +170,17 @@ def draw_offset_vs_rank(df:pd.DataFrame, save_to="/tmp/recorder_tmp.jpg"):
 def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
     colors = ['r', 'g', 'b', 'y']
 
+    write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
     total_ranks = bars['rank'].max() + 1
     read_patches, write_patches = [], []
-    write_line_x, write_line_y = [], []
     for i in range(total_ranks):
         read_patches.append([])
         write_patches.append([])
-        write_line_x.append([])
-        write_line_y.append([])
+        write_dots_x.append([])
+        write_dots_y.append([])
+        read_dots_x.append([])
+        read_dots_y.append([])
+
 
     df = bars[bars['filename'] == filename]
     records = df[['timestamp', 'duration', 'rank', 'func', 'offset', 'count']].values.tolist()
@@ -186,18 +189,19 @@ def offset_vs_time_subplot(ax, bars:pd.DataFrame, filename):
 
         # Remove all computation times and make the smallest I/O also visible
         if "write" in func:
-            #if len(write_patches[rank]) > 0:  timestamp = write_patches[rank][-1].get_x() + write_patches[rank][-1].get_width()
             write_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
-            write_line_x[rank].append(timestamp)
-            write_line_y[rank].append(offset)
+            write_dots_x[rank].append(timestamp)
+            write_dots_y[rank].append(offset)
         if "read" in func:
-            #if len(read_patches[rank]) > 0: timestamp = read_patches[rank][-1].get_x() + read_patches[rank][-1].get_width()
             read_patches[rank].append(mpatches.Rectangle((timestamp, offset), duration, count))
+            read_dots_x[rank].append(timestamp)
+            read_dots_y[rank].append(offset)
 
     for rank in range(total_ranks):
         ax.add_collection(PatchCollection(read_patches[rank], facecolor=colors[rank], alpha=1.0))
         ax.add_collection(PatchCollection(write_patches[rank], facecolor=colors[rank], alpha=0.5))
-        ax.plot(write_line_x[rank], write_line_y[rank], color=colors[rank], alpha=0.5)
+        ax.scatter(read_dots_x[rank], read_dots_y[rank], c=colors[rank], alpha=1.0, s=2)
+        ax.scatter(write_dots_x[rank], write_dots_y[rank], c=colors[rank], alpha=0.5, s=2)
 
     ax.set_ylabel("Offset")
     ax.set_xlabel("Time Flow")
