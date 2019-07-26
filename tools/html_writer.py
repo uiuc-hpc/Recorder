@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import os
+
+def relpath(path):
+    return os.path.relpath(path)
 
 css_style = """
 <style>
@@ -24,21 +28,22 @@ css_style = """
 </style>
 """
 
+
 class HTMLWriter:
 
     def __init__(self, path):
         self.path = path
         self.fileTable = ""
         self.fileAccessModeTable = ""
-        self.fileSizeImage = ""
+        self.fileSizeImage = "./figures/file_size.png"
         self.functionTable = ""
-        self.functionAccessTypeImage = ""
-        self.functionCountImage = ""
-        self.overallTimeChart = ""
-        self.offsetVsRankImage = ""
-        self.offsetVsTimeImage = ""
+        self.functionAccessTypeImage = "./figures/function_access_type.png"
+        self.functionCountImage = "./figures/function_categories.png"
+        self.overallTimeChart = "./figures/overall_time_chart.png"
+        self.offsetVsRankImage = "./figures/offset_vs_rank.png"
+        self.offsetVsTimeImage = "./figures/offset_vs_time.png"
         self.accessPatternTable = ""
-        self.ioSizesImage = ""
+        self.ioSizesImage = "./figures/io_sizes_image.png"
 
     def write_html(self):
         html_content  = """
@@ -85,10 +90,10 @@ class HTMLWriter:
                 <img src="%s" alt="access sizes" width="700"></img>
             </div></body>
         </html>
-        """ %(css_style, self.fileTable, self.fileAccessModeTable, self.fileSizeImage,    \
-                self.functionCountImage, self.functionAccessTypeImage, self.functionTable,    \
-                self.overallTimeChart, self.offsetVsRankImage, self.offsetVsTimeImage, self.accessPatternTable, \
-                self.ioSizesImage)
+        """ %(css_style, self.fileTable, self.fileAccessModeTable, relpath(self.fileSizeImage),    \
+                relpath(self.functionCountImage), relpath(self.functionAccessTypeImage), self.functionTable,    \
+                relpath(self.overallTimeChart), relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
+                relpath(self.ioSizesImage))
 
         f = open("./reports.out/simple_report.html", "w")
         f.write(html_content)
@@ -104,4 +109,3 @@ class HTMLWriter:
             html_content,                # the HTML to convert
             dest=f)           # file handle to recieve result
         f.close()
-

@@ -14,7 +14,7 @@ from html_writer import HTMLWriter
 from vis import draw_bar_chart, draw_pie_chart, draw_hist_chart
 from vis import draw_overall_time_chart, draw_offset_vs_rank, draw_offset_vs_time
 
-OUTPUT_DIR = os.getcwd() + "/reports.out"
+OUTPUT_DIR = os.getcwd() + "/reports.out/"
 
 def file_statistics(tr: TraceReader, html:HTMLWriter):
     # 1. Number of file accessed by rank
@@ -61,8 +61,7 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
     for name in sorted(fileSizes.keys()):
         x.append(name)
         y.append(fileSizes[name]/1024.0)
-    html.fileSizeImage = OUTPUT_DIR+"/figures/file_size.png"
-    draw_bar_chart(x, y, title="File Size (KBytes)", save_to=html.fileSizeImage, horizontal=True, logScale=True, xlabel="File size (KBytes)")
+    draw_bar_chart(x, y, title="File Size (KBytes)", save_to=OUTPUT_DIR+html.fileSizeImage, horizontal=True, logScale=True, xlabel="File size (KBytes)")
 
 
 def function_statistics(tr: TraceReader, html:HTMLWriter):
@@ -91,8 +90,7 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
         if func.startswith("MPI"): mpi += sum(functionCounter[func])
         elif func.startswith("H5"): hdf5 += sum(functionCounter[func])
         else: posix += sum(functionCounter[func])
-    html.functionCountImage = OUTPUT_DIR+"/figures/function_categories.png"
-    draw_pie_chart(["MPI", "POSIX", "HDF5"], [mpi, posix, hdf5], save_to=html.functionCountImage)
+    draw_pie_chart(["MPI", "POSIX", "HDF5"], [mpi, posix, hdf5], save_to=OUTPUT_DIR+html.functionCountImage)
 
     # Function count by sequential/consective
     sequential, consecutive, random = 0, 0, 0
@@ -105,29 +103,24 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
         else:
             random += 1
         last_op = op
-    html.functionAccessTypeImage = OUTPUT_DIR+"/figures/function_access_type.png"
-    draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=html.functionAccessTypeImage)
+    draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=OUTPUT_DIR+html.functionAccessTypeImage)
 
     # Cumulative I/O access sizes
-    html.ioSizesImage= OUTPUT_DIR+"/figures/io_sizes_image.png"
     df = tr.get_posix_io()
     write_sizes = df['count'][df['func'].str.contains('write')]
     read_sizes = df['count'][df['func'].str.contains('read')]
     draw_hist_chart([write_sizes, read_sizes], nbins=50, labels=["write", "read"],
-            title="Cumulative percentage of I/O access sizes", xlabel="I/O size (Bytes)", ylabel="Percentage", save_to=html.ioSizesImage)
+            title="Cumulative percentage of I/O access sizes", xlabel="I/O size (Bytes)", ylabel="Percentage", save_to=OUTPUT_DIR+html.ioSizesImage)
 
 
 def offset_statistics(tr: TraceReader, html: HTMLWriter):
     # 1. Overall time image
-    html.overallTimeChart = OUTPUT_DIR+"/figures/overall_time_chart.png"
-    draw_overall_time_chart(tr, save_to=html.overallTimeChart)
+    draw_overall_time_chart(tr, save_to=OUTPUT_DIR+html.overallTimeChart)
 
     # 1. Offset vs Ranks image
-    html.offsetVsRankImage = OUTPUT_DIR+"/figures/offset_vs_rank.png"
-    draw_offset_vs_rank(tr, save_to =html.offsetVsRankImage)
+    draw_offset_vs_rank(tr, save_to =OUTPUT_DIR+html.offsetVsRankImage)
 
-    html.offsetVsTimeImage = OUTPUT_DIR+"/figures/offset_vs_time.png"
-    draw_offset_vs_time(tr, save_to=html.offsetVsTimeImage)
+    draw_offset_vs_time(tr, save_to=OUTPUT_DIR+html.offsetVsTimeImage)
 
     # 2. Access pattern table, use the sorting algorithm to find the interleave intervals
     # Complexity: O(nlogn) * number of files
