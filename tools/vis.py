@@ -12,17 +12,25 @@ import numpy as np
 
 # plot the cumulative histogram
 # xs: a list of list
-def draw_hist_chart(xs, labels, nbins=50, title="", xlabel="", ylabel="", save_to="/tmp/recorder_temp.png"):
-    fig, ax = plt.subplots(1, len(xs), figsize=(10, 6))
-    #fig, ax = plt.subplots()
+def draw_multi_bar_chart(xs, ys, titles=[""], xlabel="", ylabel="", logScale=False, save_to="/tmp/recorder_temp.png"):
+    figsize = (10, 6) if len(xs[0])+len(xs[1]) < 30 else (15,6)
+    fig, axes = plt.subplots(1, len(xs), figsize=figsize)
     for index, x in enumerate(xs):
         if len(x)>0:
-            ax[index].hist(x, nbins, density=True, histtype='step', cumulative=True, label=labels[index])
-            #ax[index].grid(True)
-            ax[index].legend(loc='best')
-            ax[index].set_title(title)
-            ax[index].set_xlabel(xlabel)
-            ax[index].set_ylabel(ylabel)
+            ax = axes[index]
+            y = ys[index]
+            x_pos = np.arange(len(x))
+            rects = ax.bar(x_pos, y, align='center', alpha=0.9, log=logScale)
+            ax.set_xticks(x_pos)
+            if len(x) > 10:
+                ax.xaxis.set_tick_params(rotation=90)
+            ax.set_xticklabels(x)
+            for i, v in enumerate(y):
+                text = "%.2f"%(v) if isinstance(v, float) else str(v)
+                ax.text(i-0.15, v, text, fontweight='bold')
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_title(titles[index])
     fig.tight_layout()
     fig.savefig(save_to)
 
@@ -39,22 +47,22 @@ def draw_pie_chart(x, y, save_to="/tmp/recorder_tmp.jpg"):
 
 '''
 Draw a single bar chart
-x: categories, list of strings
-y: value for each category, list of numbers
+x: list of strings, where each entry a category
+y: list of numbers - value for each category
 horizontal: draw the chart horizontally
 '''
 def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", horizontal=False, logScale=False, xlabel="", ylabel=""):
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
-        fig.set_size_inches(7, 0.5*len(x))
+        fig.set_size_inches(7, max(0.25*len(x), 4))
         rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_yticks(x_pos)
         ax.set_yticklabels(x)
         ax.set_title(title)
         ax.set_ylim(min(x_pos)-1, max(x_pos)+1)
     else:
-        rects = ax.bar(x_pos, y, align='center', alpha=0.9)
+        rects = ax.bar(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(x)
         ax.set_title(title)
