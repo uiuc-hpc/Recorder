@@ -205,7 +205,7 @@ def offset_vs_time_subplot(ax, tr:TraceReader, filename):
         ax.scatter(write_dots_x[rank], write_dots_y[rank], c=colors[rank], alpha=0.5, s=2)
 
     ax.set_ylabel("Offset")
-    ax.set_xlabel("Time Flow")
+    ax.set_xlabel("Time")
     ax.autoscale_view()
     ax.grid(True)
     ax.title.set_text(filename.split("/")[-1])

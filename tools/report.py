@@ -94,15 +94,19 @@ def function_statistics(tr: TraceReader, html:HTMLWriter):
 
     # Function count by sequential/consective
     sequential, consecutive, random = 0, 0, 0
-    last_op = tr.get_posix_io().iloc[0]
-    for index, op in tr.get_posix_io().iloc[1:].iterrows():
-        if ( op['offset'] == last_op['offset'] + last_op['count'] ):
-            consecutive += 1
-        elif ( op['offset'] > last_op['offset'] + last_op['count'] ):
-            sequential += 1
-        else:
-            random += 1
-        last_op = op
+    for filename in tr.files:
+        df = tr.get_posix_io()
+        df = df[tr.get_posix_io()['filename'] == filename]
+        if df.shape[0] == 0: continue
+        last_op = df.iloc[0]
+        for index, op in df.iloc[1:].iterrows():
+            if ( op['offset'] == last_op['offset'] + last_op['count'] ):
+                consecutive += 1
+            elif ( op['offset'] > last_op['offset'] + last_op['count'] ):
+                sequential += 1
+            else:
+                random += 1
+            last_op = op
     draw_pie_chart(["Sequential", "Consecutive", "Random"], [sequential, consecutive, random], save_to=OUTPUT_DIR+html.functionAccessTypeImage)
 
     # Cumulative I/O access sizes
@@ -163,6 +167,9 @@ def offset_statistics(tr: TraceReader, html: HTMLWriter):
     html.accessPatternTable = accessPatternTable.get_html_string()
 
 if __name__ == "__main__":
+    # 1. Create output directory
+    os.system("mkdir -p "+OUTPUT_DIR+"/figures")
+
     html = HTMLWriter("./simple_report.html")
     tr = TraceReader(sys.argv[1])
     file_statistics(tr, html)
