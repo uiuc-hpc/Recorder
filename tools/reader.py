@@ -7,10 +7,11 @@ import numpy as np
 class TraceReader:
     def __init__(self, path):
         self.path = path                                # path to the log files
+        self.start_time = 0
+        self.end_time = 0
         self.procs = len(glob.glob(path+"/*.itf"))      # total number of processes
         self.data = None                                # trace log for each rank
         self.meta = []                                  # meatadata for each rank
-        self.posix_io = None                            # Only POSIX IO records stored in Pandas.DataFrame
         self.files = set()                              # All the files ever accessed
         for r in range(self.procs):
             self.meta.append( self.get_metadata(r) )
@@ -38,7 +39,7 @@ class TraceReader:
 
     def get_posix_io(self):
         if self.data is None:
-            self.data = read_traces(self.path)
+            self.data, self.start_time, self.end_time = read_traces(self.path)
             return self.data
         return self.data
 
@@ -78,6 +79,7 @@ Each record has the following columns (see create_datafram())
 '''
 def read_traces(path):
     ops = []
+    start_time, end_time = 10e12, 0
 
     log_files = glob.glob(path+"/*.itf")
 
@@ -89,6 +91,8 @@ def read_traces(path):
         with open(path, 'r') as f:
             lines = f.readlines()
             lines = sort_records(lines)
+            start_time = min(start_time, float(lines[0].split(" ")[0]))
+            end_time = max(end_time, float(lines[-1].split(" ")[0]))
             for line in lines:
                 fields = line.split(" ")
                 timestamp = float(fields[0])
@@ -131,6 +135,5 @@ def read_traces(path):
                 update_offset(offsets, filename, count, whence)
 
     df = create_dataframe(ops)
-    min_time =  df['timestamp'].min()
-    df['timestamp'] -= min_time
-    return df
+    df['timestamp'] -= start_time
+    return df, start_time, end_time

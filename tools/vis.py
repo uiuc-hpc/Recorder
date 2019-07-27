@@ -87,19 +87,34 @@ def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save
 
     yticks, yticklabels = [], []
     for rank in range(tr.procs):
-        read_bars = df[(df['func'].str.contains("read")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
-        write_bars = df[(df['func'].str.contains("write")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
-        ax.broken_barh(read_bars, (rank, 1), facecolors="red")
-        ax.broken_barh(write_bars, (rank, 1), facecolors="black")
-        yticks.append(rank+0.5)
+        #read_bars = df[(df['func'].str.contains("read")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
+        #write_bars = df[(df['func'].str.contains("write")) & (df['rank']==rank)][['timestamp', 'duration']].values.tolist()
+        #ax.broken_barh(read_bars, (rank, 1), facecolors="red")
+        #ax.broken_barh(write_bars, (rank, 1), facecolors="black")
+        yticks.append(rank)
         yticklabels.append("rank "+str(rank))
 
+    write_ops = df[(df['func'].str.contains("write"))][['timestamp', 'rank']].values.tolist()
+    write_bar_x, write_bar_y = [], []
+    for op in write_ops:
+        write_bar_x.append(op[0])
+        write_bar_y.append(op[1])
+    read_ops = df[(df['func'].str.contains("read"))][['timestamp', 'rank']].values.tolist()
+    read_bar_x, read_bar_y = [], []
+    for op in read_ops:
+        read_bar_x.append(op[0])
+        read_bar_y.append(op[1])
+
+    ax.scatter(write_bar_x, write_bar_y, alpha=1.0, marker=".", s=20, c="black")
+    ax.scatter(read_bar_x, read_bar_y, alpha=1.0, marker="x", s=20, c="gray")
+
+    ax.set_xlim(0, tr.end_time-tr.start_time)
     ax.grid(True)
     ax.set_yticks(yticks)
     ax.set_yticklabels(yticklabels)
     ax.set_xlabel("Time (seconds)")
     handles = []
-    handles.append( mpatches.Patch(color="red", label="read") )
+    handles.append( mpatches.Patch(color="gray", label="read") )
     handles.append( mpatches.Patch(color="black", label="write") )
     fig.tight_layout()
     plt.legend(handles=handles)
