@@ -142,7 +142,6 @@ int fdatasync(int fd) {
     RECORDER_IMP_CHEN(fdatasync, int, __real_fdatasync(fd), fn, 0, 0, log_text)
 }
 
-// TODO??? not recording this?
 void *mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
     const char *fn = fd2name(fd);
     char log_text[TRACE_LEN];
@@ -210,83 +209,47 @@ FILE *fopen(const char *path, const char *mode) {
     RECORDER_IMP_CHEN(fopen, FILE*, __real_fopen(path, mode), path, 0, 0, log_text)
 }
 
-int __xstat64(int vers, const char *path, struct stat64 *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__xstat64);
-  tm1 = recorder_wtime();
-  ret = __real___xstat64(vers, path, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
-}
 
-int __lxstat64(int vers, const char *path, struct stat64 *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__lxstat64);
-  tm1 = recorder_wtime();
-  ret = __real___lxstat64(vers, path, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
-}
-
-int __fxstat64(int vers, int fd, struct stat64 *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__fxstat64);
-  tm1 = recorder_wtime();
-  ret = __real___fxstat64(vers, fd, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
-}
-
+/**
+ * From http://refspecs.linuxbase.org/LSB_3.0.0/LSB-PDA/LSB-PDA/baselib-xstat-1.html:
+ * The functions __xstat(), __lxstat(), and __fxstat() shall implement the ISO POSIX (2003) functions stat(), lstat(), and fstat() respectively
+ *
+ * This means stat(), lstat(), fstat() are just wrappers in GLIC and dlsym() is not able to hook them.
+ * So wee need to hook __xstat(), __lxstat(), and __fxstat()
+ */
 int __xstat(int vers, const char *path, struct stat *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__xstat);
-  tm1 = recorder_wtime();
-  ret = __real___xstat(vers, path, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "stat (%s, %p)", path, buf);
+    RECORDER_IMP_CHEN(__xstat, int, __real___xstat(vers, path, buf), path, 0, 0, log_text)
 }
-
+int __xstat64(int vers, const char *path, struct stat64 *buf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "stat64 (%s, %p)", path, buf);
+    RECORDER_IMP_CHEN(__xstat64, int, __real___xstat64(vers, path, buf), path, 0, 0, log_text)
+}
 int __lxstat(int vers, const char *path, struct stat *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__lxstat);
-  tm1 = recorder_wtime();
-  ret = __real___lxstat(vers, path, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "lstat (%s, %p)", path, buf);
+    RECORDER_IMP_CHEN(__lxstat, int, __real___lxstat(vers, path, buf), path, 0, 0, log_text)
+}
+int __lxstat64(int vers, const char *path, struct stat64 *buf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "lstat64 (%s, %p)", path, buf);
+    RECORDER_IMP_CHEN(__lxstat, int, __real___lxstat64(vers, path, buf), path, 0, 0, log_text)
+}
+int __fxstat(int vers, int fd, struct stat *buf) {
+    const char *fn = fd2name(fd);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fstat (%s, %p)", fn, buf);
+    RECORDER_IMP_CHEN(__fxstat, int, __real___fxstat(vers, fd, buf), fn, 0, 0, log_text)
+}
+int __fxstat64(int vers, int fd, struct stat64 *buf) {
+    const char *fn = fd2name(fd);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fstat64 (%s, %p)", fn, buf);
+    RECORDER_IMP_CHEN(__fxstat64, int, __real___fxstat64(vers, fd, buf), fn, 0, 0, log_text)
 }
 
-int __fxstat(int vers, int fd, struct stat *buf) {
-  int ret;
-  struct recorder_file_runtime *file;
-  double tm1, tm2;
-  MAP_OR_FAIL(__fxstat);
-  tm1 = recorder_wtime();
-  ret = __real___fxstat(vers, fd, buf);
-  tm2 = recorder_wtime();
-  if (ret < 0 || !S_ISREG(buf->st_mode))
-    return (ret);
-  return (ret);
-}
 
 ssize_t pread64(int fd, void *buf, size_t count, off64_t offset) {
     const char *fn = fd2name(fd);

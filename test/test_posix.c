@@ -9,6 +9,7 @@ int main() {
 
     struct stat buf;
     int res;
+
     res = stat("./workfile.out", &buf);
 
     res = lstat("./workfile.out", &buf);

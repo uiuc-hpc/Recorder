@@ -43,9 +43,11 @@
 #ifndef __RECORDER_H
 #define __RECORDER_H
 
-#include <unistd.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sys/uio.h>
 #include <stdint.h>
 #include <mpi.h>
@@ -123,12 +125,16 @@ RECORDER_FORWARD_DECL(pwrite, ssize_t, (int fd, const void *buf, size_t count, o
 RECORDER_FORWARD_DECL(pwrite64, ssize_t, (int fd, const void *buf, size_t count, off64_t offset));
 RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
 RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
-RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
-RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
-RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
+
+// stat/fstat/lstat are wrappers in GLIBC and dlsym can not hook them.
+// Instead, xstat/lxstat/fxstat are their implementations so we can hook them.
 RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
 RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
+RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
+RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
+RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
+RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
+
 RECORDER_FORWARD_DECL(mmap, void *, (void *addr, size_t length, int prot, int flags, int fd, off_t offset));
 RECORDER_FORWARD_DECL(mmap64, void *, (void *addr, size_t length, int prot, int flags, int fd, off64_t offset));
 RECORDER_FORWARD_DECL(fopen, FILE *, (const char *path, const char *mode));
