@@ -84,6 +84,11 @@ void write_data_operation(const char *func, const char *filename, double start, 
 }
 
 void logger_init(int rank) {
+    // Map the functions we will use later
+    MAP_OR_FAIL(fopen)
+    MAP_OR_FAIL(fclose)
+    MAP_OR_FAIL(fwrite)
+
     __filename2id_map = hashmap_new();
 
     mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -111,6 +116,7 @@ void logger_exit() {
             }
         }
     }
+
 
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
