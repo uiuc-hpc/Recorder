@@ -54,9 +54,15 @@
 #include "recorder.h"
 
 void recorder_init(int *argc, char ***argv) {
-    int rank, nprocs;
+    // These functions are used by ourself, so map them first
     MAP_OR_FAIL(PMPI_Comm_size)
     MAP_OR_FAIL(PMPI_Comm_rank)
+    MAP_OR_FAIL(fopen)      // by logger.c
+    MAP_OR_FAIL(fclose)     // by logger.c
+    MAP_OR_FAIL(fwrite)     // by logger.c
+    MAP_OR_FAIL(fileno)     // by recorder-posix.c
+
+    int rank, nprocs;
     RECORDER_MPI_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 

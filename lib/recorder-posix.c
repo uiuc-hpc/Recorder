@@ -122,7 +122,7 @@ int close(int fd) {
 }
 
 int fclose(FILE *fp) {
-    const char *fn = fd2name(fileno(fp));
+    const char *fn = fd2name(__real_fileno(fp));
     char log_text[TRACE_LEN];
     sprintf(log_text, "fclose (%s)", fn);
     RECORDER_IMP_CHEN(fclose, int, __real_fclose(fp), fn, 0, 0, log_text)
@@ -304,7 +304,7 @@ ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
 }
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = fd2name(__real_fileno(stream));
     char log_text[TRACE_LEN];
     sprintf(log_text, "fread (%p, %ld, %ld, %s)", ptr, size, nmemb, fn);
     RECORDER_IMP_CHEN(fread, size_t, __real_fread(ptr, size, nmemb, stream), fn, size, nmemb, log_text)
@@ -329,7 +329,7 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
     // int aligned_flag = 0;
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = fd2name(__real_fileno(stream));
     char log_text[TRACE_LEN];
     sprintf(log_text, "fwrite (%p, %ld, %ld, %s)", ptr, size, nmemb, fn);
     RECORDER_IMP_CHEN(fwrite, size_t, __real_fwrite(ptr, size, nmemb, stream), fn, size, nmemb, log_text)
@@ -350,7 +350,7 @@ off_t lseek(int fd, off_t offset, int whence) {
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = fd2name(__real_fileno(stream));
     char log_text[TRACE_LEN];
     sprintf(log_text, "fseek (%s, %ld, %d)", fn, offset, whence);
     RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), fn, offset, whence, log_text)

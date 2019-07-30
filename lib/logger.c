@@ -56,7 +56,6 @@ static inline int exclude_filename(const char *filename) {
 }
 
 static inline void write_in_binary(IoOperation_t *op) {
-    MAP_OR_FAIL(fwrite)
     RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
 }
 
@@ -87,7 +86,6 @@ void write_data_operation(const char *func, const char *filename, double start, 
 void logger_init(int rank) {
     __filename2id_map = hashmap_new();
 
-    MAP_OR_FAIL(fopen)
     mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     char logfile_name[100];
@@ -117,7 +115,6 @@ void logger_exit() {
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
 
-    MAP_OR_FAIL(fclose)
     if ( __metafh) {
         RECORDER_MPI_CALL(fclose) (__metafh);
         __metafh = NULL;
