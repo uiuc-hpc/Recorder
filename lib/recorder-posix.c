@@ -89,10 +89,22 @@ int depth;
             write_data_operation(#func, filename, tm1, tm2, attr1, attr2, log);             \
             depth--;                                                                        \
             return res;
+        // functions with void return type
+        #define RECORDER_IMP_CHEN_VOID(func, real_func_call, filename, attr1, attr2, log)   \
+            MAP_OR_FAIL(func)                                                               \
+            depth++;                                                                        \
+            double tm1 = recorder_wtime();                                                  \
+            real_func_call;                                                                 \
+            double tm2 = recorder_wtime();                                                  \
+            write_data_operation(#func, filename, tm1, tm2, attr1, attr2, log);             \
+            depth--;
     #else
         #define RECORDER_IMP_CHEN(func, ret, real_func_call, filename, attr1, attr2, log)   \
             MAP_OR_FAIL(func)                                                               \
             return real_func_call;
+        #define RECORDER_IMP_CHEN_VOID(func, real_func_call, filename, attr1, attr2, log)   \
+            MAP_OR_FAIL(func)                                                               \
+            real_func_call;
     #endif
 
 #endif
@@ -313,7 +325,7 @@ ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
 }
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = stream2name(stream);
     char log_text[TRACE_LEN];
     sprintf(log_text, "fread (%p, %ld, %ld, %s)", ptr, size, nmemb, fn);
     RECORDER_IMP_CHEN(fread, size_t, __real_fread(ptr, size, nmemb, stream), fn, size, nmemb, log_text)
@@ -338,7 +350,7 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
     // int aligned_flag = 0;
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = stream2name(stream);
     char log_text[TRACE_LEN];
     sprintf(log_text, "fwrite (%p, %ld, %ld, %s)", ptr, size, nmemb, fn);
     RECORDER_IMP_CHEN(fwrite, size_t, __real_fwrite(ptr, size, nmemb, stream), fn, size, nmemb, log_text)
@@ -359,11 +371,135 @@ off_t lseek(int fd, off_t offset, int whence) {
 }
 
 int fseek(FILE *stream, long offset, int whence) {
-    const char *fn = fd2name(fileno(stream));
+    const char *fn = stream2name(stream);
     char log_text[TRACE_LEN];
     sprintf(log_text, "fseek (%s, %ld, %d)", fn, offset, whence);
     RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), fn, offset, whence, log_text)
 }
+
+
+
+/* Below are non File-I/O related function calls */
+char* getcwd(char *buf, size_t size) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "getcwd %p %ld", buf, size);
+    RECORDER_IMP_CHEN(getcwd, char*, __real_getcwd(buf, size), NULL, 0, 0, log_text)
+}
+
+int mkdir(const char *pathname, mode_t mode) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "mkdir %s %p", pathname, mode);   // TODO: mode
+    RECORDER_IMP_CHEN(mkdir, int, __real_mkdir(pathname, mode), NULL, 0, 0, log_text)
+}
+int rmdir(const char *pathname) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "rmdir %s", pathname);
+    RECORDER_IMP_CHEN(rmdir, int, __real_rmdir(pathname), NULL, 0, 0, log_text)
+}
+int chdir(const char *path) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "chdir %s", path);
+    RECORDER_IMP_CHEN(chdir, int, __real_chdir(path), NULL, 0, 0, log_text)
+}
+int link(const char *oldpath, const char *newpath) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "link %s %s", oldpath, newpath);
+    RECORDER_IMP_CHEN(link, int, __real_link(oldpath, newpath), NULL, 0, 0, log_text)
+}
+int unlink(const char *pathname) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "unlink %s", pathname);
+    RECORDER_IMP_CHEN(unlink, int, __real_unlink(pathname), NULL, 0, 0, log_text)
+}
+int rename(const char *oldpath, const char *newpath) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "rename %s %s", oldpath, newpath);
+    RECORDER_IMP_CHEN(rename, int, __real_rename(oldpath, newpath), NULL, 0, 0, log_text)
+}
+int chmod(const char *path, mode_t mode) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "chmod %s %p", path, mode);  // TODO: mode
+    RECORDER_IMP_CHEN(chmod, int, __real_chmod(path, mode), NULL, 0, 0, log_text)
+}
+int chown(const char *path, uid_t owner, gid_t group) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "chown %s %d %d", path, owner, group);
+    RECORDER_IMP_CHEN(chown, int, __real_chown(path, owner, group), NULL, 0, 0, log_text)
+}
+int utime(const char *filename, const struct utimbuf *buf) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "utime %s %p", filename, buf);
+    RECORDER_IMP_CHEN(utime, int, __real_utime(filename, buf), NULL, 0, 0, log_text)
+}
+DIR* opendir(const char *name) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "opendir %s", name);
+    RECORDER_IMP_CHEN(opendir, DIR*, __real_opendir(name), NULL, 0, 0, log_text)
+}
+struct dirent* readdir(DIR *dir) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "readdir %p", dir);
+    RECORDER_IMP_CHEN(readdir, struct dirent*, __real_readdir(dir), NULL, 0, 0, log_text)
+}
+int closedir(DIR *dir) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "closedir %p", dir);
+    RECORDER_IMP_CHEN(closedir, int, __real_closedir(dir), NULL, 0, 0, log_text)
+}
+void rewinddir(DIR *dir) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "rewinddir %p", dir);
+    RECORDER_IMP_CHEN_VOID(rewinddir, __real_rewinddir(dir), NULL, 0, 0, log_text)
+}
+// Advanced File Operations
+/* TODO: third argument
+int fcntl(int fd, int cmd, ...) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fcntl %d %d", fd, cmd);
+    RECORDER_IMP_CHEN(fcntl, int, __real_fcntl(fd, cmd), NULL, 0, 0, log_text)
+}
+*/
+int dup(int oldfd) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "dup %d", oldfd);
+    RECORDER_IMP_CHEN(dup, int, __real_dup(oldfd), NULL, 0, 0, log_text)
+}
+int dup2(int oldfd, int newfd) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "dup2 %d %d", oldfd, newfd);
+    RECORDER_IMP_CHEN(dup2, int, __real_dup2(oldfd, newfd), NULL, 0, 0, log_text)
+}
+int pipe(int pipefd[2]) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "pipe %d %d", pipefd[0], pipefd[1]);
+    RECORDER_IMP_CHEN(pipe, int, __real_pipe(pipefd), NULL, 0, 0, log_text)
+}
+int mkfifo(const char *pathname, mode_t mode) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "mkfifo %s %p", pathname, mode);    // TODO: mode
+    RECORDER_IMP_CHEN(mkfifo, int, __real_mkfifo(pathname, mode), NULL, 0, 0, log_text)
+}
+mode_t umask(mode_t mask) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "umask %p", mask);    // TODO: mode
+    RECORDER_IMP_CHEN(umask, mode_t, __real_umask(mask), NULL, 0, 0, log_text)
+}
+FILE* fdopen(int fd, const char *mode) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fdopen %d %c", fd, mode);    // TODO: mode
+    RECORDER_IMP_CHEN(fdopen, FILE*, __real_fdopen(fd, mode), NULL, 0, 0, log_text)
+}
+int fileno(FILE *stream) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fileno %p", stream);
+    RECORDER_IMP_CHEN(fileno, int, __real_fileno(stream), NULL, 0, 0, log_text)
+}
+
+
+
+
+
+
 
 double recorder_wtime(void) {
   struct timeval time;

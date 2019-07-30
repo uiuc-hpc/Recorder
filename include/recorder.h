@@ -47,6 +47,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <utime.h>
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <stdint.h>
@@ -125,9 +127,8 @@ RECORDER_FORWARD_DECL(pwrite, ssize_t, (int fd, const void *buf, size_t count, o
 RECORDER_FORWARD_DECL(pwrite64, ssize_t, (int fd, const void *buf, size_t count, off64_t offset));
 RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
 RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-
 // stat/fstat/lstat are wrappers in GLIBC and dlsym can not hook them.
-// Instead, xstat/lxstat/fxstat are their implementations so we can hook them.
+// Instead, xstat/lxstat/fxstat are their GLIBC implementations so we can hook them.
 RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
 RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
 RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
@@ -145,6 +146,33 @@ RECORDER_FORWARD_DECL(fwrite, size_t, (const void *ptr, size_t size, size_t nmem
 RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
 RECORDER_FORWARD_DECL(fsync, int, (int fd));
 RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
+
+/* Other POSIX Function Calls, not directly related to I/O */
+// Files and Directories
+RECORDER_FORWARD_DECL(getcwd, char*, (char *buf, size_t size));
+RECORDER_FORWARD_DECL(mkdir, int, (const char *pathname, mode_t mode));
+RECORDER_FORWARD_DECL(rmdir, int, (const char *pathname));
+RECORDER_FORWARD_DECL(chdir, int, (const char *path));
+RECORDER_FORWARD_DECL(link, int, (const char *oldpath, const char *newpath));
+RECORDER_FORWARD_DECL(unlink, int, (const char *pathname));
+RECORDER_FORWARD_DECL(rename, int, (const char *oldpath, const char *newpath));
+RECORDER_FORWARD_DECL(chmod, int, (const char *path, mode_t mode));
+RECORDER_FORWARD_DECL(chown, int, (const char *path, uid_t owner, gid_t group));
+RECORDER_FORWARD_DECL(utime, int, (const char *filename, const struct utimbuf *buf));
+RECORDER_FORWARD_DECL(opendir, DIR*, (const char *name));
+RECORDER_FORWARD_DECL(readdir, struct dirent*, (DIR *dir));
+RECORDER_FORWARD_DECL(closedir, int, (DIR *dir));
+RECORDER_FORWARD_DECL(rewinddir, void, (DIR *dir));
+// Advanced File Operations
+RECORDER_FORWARD_DECL(fcntl, int, (int fd, int cmd, ...));
+RECORDER_FORWARD_DECL(dup, int, (int oldfd));
+RECORDER_FORWARD_DECL(dup2, int, (int oldfd, int newfd));
+RECORDER_FORWARD_DECL(pipe, int, (int pipefd[2]));
+RECORDER_FORWARD_DECL(mkfifo, int, (const char *pathname, mode_t mode));
+RECORDER_FORWARD_DECL(umask, mode_t, (mode_t mask));
+RECORDER_FORWARD_DECL(fdopen, FILE*, (int fd, const char *mode));
+RECORDER_FORWARD_DECL(fileno, int, (FILE *stream));
+
 
 /* MPI I/O */
 RECORDER_FORWARD_DECL(PMPI_File_close, int, (MPI_File * fh));
