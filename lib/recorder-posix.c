@@ -440,6 +440,11 @@ int chown(const char *path, uid_t owner, gid_t group) {
     sprintf(log_text, "chown (%s, %d, %d)", path, owner, group);
     RECORDER_IMP_CHEN(chown, int, __real_chown(path, owner, group), NULL, 0, 0, log_text)
 }
+int lchown(const char *path, uid_t owner, gid_t group) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "lchown (%s, %d, %d)", path, owner, group);
+    RECORDER_IMP_CHEN(lchown, int, __real_lchown(path, owner, group), NULL, 0, 0, log_text)
+}
 int utime(const char *filename, const struct utimbuf *buf) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "utime (%s, %p)", filename, buf);

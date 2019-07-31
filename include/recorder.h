@@ -161,6 +161,7 @@ RECORDER_FORWARD_DECL(symlinkat, int, (const char *path1, int fd, const char *pa
 RECORDER_FORWARD_DECL(rename, int, (const char *oldpath, const char *newpath));
 RECORDER_FORWARD_DECL(chmod, int, (const char *path, mode_t mode));
 RECORDER_FORWARD_DECL(chown, int, (const char *path, uid_t owner, gid_t group));
+RECORDER_FORWARD_DECL(lchown, int, (const char *path, uid_t owner, gid_t group));
 RECORDER_FORWARD_DECL(utime, int, (const char *filename, const struct utimbuf *buf));
 RECORDER_FORWARD_DECL(opendir, DIR*, (const char *name));
 RECORDER_FORWARD_DECL(readdir, struct dirent*, (DIR *dir));
