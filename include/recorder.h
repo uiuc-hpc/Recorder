@@ -163,10 +163,8 @@ RECORDER_FORWARD_DECL(opendir, DIR*, (const char *name));
 RECORDER_FORWARD_DECL(readdir, struct dirent*, (DIR *dir));
 RECORDER_FORWARD_DECL(closedir, int, (DIR *dir));
 RECORDER_FORWARD_DECL(rewinddir, void, (DIR *dir));
-
 RECORDER_FORWARD_DECL(mknod, int, (const char *path, mode_t mode, dev_t dev));
 RECORDER_FORWARD_DECL(mknodat, int, (int fd, const char *path, mode_t mode, dev_t dev));
-
 // Advanced File Operations
 RECORDER_FORWARD_DECL(fcntl, int, (int fd, int cmd, ...));
 RECORDER_FORWARD_DECL(dup, int, (int oldfd));
@@ -176,6 +174,14 @@ RECORDER_FORWARD_DECL(mkfifo, int, (const char *pathname, mode_t mode));
 RECORDER_FORWARD_DECL(umask, mode_t, (mode_t mask));
 RECORDER_FORWARD_DECL(fdopen, FILE*, (int fd, const char *mode));
 RECORDER_FORWARD_DECL(fileno, int, (FILE *stream));
+RECORDER_FORWARD_DECL(access, int, (const char *path, int amode));
+RECORDER_FORWARD_DECL(faccessat, int, (int fd, const char *path, int amode, int flag));
+
+// Others
+//int statfs(const char *path, struct statfs *buf);
+//int fstatfs(int fd, struct statfs *buf);
+
+
 
 
 /* MPI I/O */

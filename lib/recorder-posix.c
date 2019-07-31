@@ -506,6 +506,16 @@ int fileno(FILE *stream) {
     sprintf(log_text, "fileno (%s)", stream2name(stream));
     RECORDER_IMP_CHEN(fileno, int, __real_fileno(stream), NULL, 0, 0, log_text)
 }
+int access(const char *path, int amode) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "access (%s %d)", path, amode);   // TODO: mode
+    RECORDER_IMP_CHEN(access, int, __real_access(path, amode), NULL, 0, 0, log_text)
+}
+int faccessat(int fd, const char *path, int amode, int flag) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "faccessat (%s %s %d %d)", fd2name(fd), path, amode, flag);   // TODO: mode
+    RECORDER_IMP_CHEN(faccessat, int, __real_faccessat(fd, path, amode, flag), NULL, 0, 0, log_text)
+}
 
 
 
