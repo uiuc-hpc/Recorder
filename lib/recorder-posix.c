@@ -519,7 +519,12 @@ int faccessat(int fd, const char *path, int amode, int flag) {
 FILE *tmpfile(void) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "tmpfile ()");
-    RECORDER_IMP_CHEN(faccessat, FILE*, __real_tmpfile(), NULL, 0, 0, log_text)
+    RECORDER_IMP_CHEN(tmpfile, FILE*, __real_tmpfile(), NULL, 0, 0, log_text)
+}
+int remove(const char *path) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "remove (%s)", path);
+    RECORDER_IMP_CHEN(remove, int, __real_remove(path), NULL, 0, 0, log_text)
 }
 
 
