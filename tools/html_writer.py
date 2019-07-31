@@ -33,6 +33,7 @@ class HTMLWriter:
 
     def __init__(self, path):
         self.path = path
+        self.performanceTable = ""
         self.fileTable = ""
         self.fileAccessModeTable = ""
         self.fileSizeImage = "./figures/file_size.png"
@@ -50,6 +51,8 @@ class HTMLWriter:
         <html>
             <head> %s </head>
             <body><div class="content">
+                <h2> 0. Performance </h2>
+                %s
                 <h2> 1. File Statistics </h2>
                 <h4> 1.1 Number of file access by each rank</h4>
                 %s
@@ -90,7 +93,7 @@ class HTMLWriter:
                 <img src="%s" alt="access sizes" width="700"></img>
             </div></body>
         </html>
-        """ %(css_style, self.fileTable, self.fileAccessModeTable, relpath(self.fileSizeImage),    \
+        """ %(css_style, self.performanceTable, self.fileTable, self.fileAccessModeTable, relpath(self.fileSizeImage),    \
                 relpath(self.functionCountImage), relpath(self.functionAccessTypeImage), self.functionTable,    \
                 relpath(self.overallTimeChart), relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
                 relpath(self.ioSizesImage))
