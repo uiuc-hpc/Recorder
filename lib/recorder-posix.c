@@ -114,16 +114,21 @@ static int recorder_mem_alignment = 1;
 
 static inline char* fd2name(int fd) {
     size_t len = 256;
-    struct stat sb;
     char fdname[len];
     sprintf(fdname, "/proc/self/fd/%d", fd);
+    /*
+    struct stat sb;
     if (lstat(fdname, &sb) == -1)
         return NULL;
+    */
 
-    char *linkname = malloc(len);
-    int r = readlink(fdname, linkname, len);
-    linkname[r] = '\x00';
-    return linkname;
+    MAP_OR_FAIL(readlink)
+    char *realname = malloc(len);
+    int ret = RECORDER_MPI_CALL(readlink(fdname, realname, len));
+    if(ret <  0)
+        return NULL;
+    realname[ret] = '\x00'; // readlink does not append a null byte
+    return realname;
 }
 
 static inline char* stream2name(FILE *fp) {
@@ -356,6 +361,21 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
     RECORDER_IMP_CHEN(fwrite, size_t, __real_fwrite(ptr, size, nmemb, stream), fn, size, nmemb, log_text)
 }
 
+int fseek(FILE *stream, long offset, int whence) {
+    const char *fn = stream2name(stream);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "fseek (%s, %ld, %d)", fn, offset, whence);
+    RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), fn, offset, whence, log_text)
+}
+
+long ftell(FILE *stream) {
+    const char *fn = stream2name(stream);
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "ftell (%s)", fn);
+    RECORDER_IMP_CHEN(ftell, long, __real_ftell(stream), fn, 0, 0, log_text)
+}
+
+
 off64_t lseek64(int fd, off64_t offset, int whence) {
     const char *fn = fd2name(fd);
     char log_text[TRACE_LEN];
@@ -368,13 +388,6 @@ off_t lseek(int fd, off_t offset, int whence) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "lseek (%s, %ld, %d)", fn, offset, whence);
     RECORDER_IMP_CHEN(lseek, off_t, __real_lseek(fd, offset, whence), fn, offset, whence, log_text)
-}
-
-int fseek(FILE *stream, long offset, int whence) {
-    const char *fn = stream2name(stream);
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "fseek (%s, %ld, %d)", fn, offset, whence);
-    RECORDER_IMP_CHEN(fseek, int, __real_fseek(stream, offset, whence), fn, offset, whence, log_text)
 }
 
 

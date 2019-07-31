@@ -55,6 +55,16 @@ static inline int exclude_filename(const char *filename) {
     return 0;
 }
 
+static inline long get_file_size(char *filename) {
+    FILE* f = RECORDER_MPI_CALL(fopen(filename, "r"));
+    if(f == NULL) return -1;
+    RECORDER_MPI_CALL(fseek(f, 0L, SEEK_END));
+    long size = RECORDER_MPI_CALL(ftell(f));
+    RECORDER_MPI_CALL(fclose(f));
+    return size;
+}
+
+
 static inline void write_in_binary(IoOperation_t *op) {
     RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
 }
@@ -88,6 +98,8 @@ void logger_init(int rank) {
     MAP_OR_FAIL(fopen)
     MAP_OR_FAIL(fclose)
     MAP_OR_FAIL(fwrite)
+    MAP_OR_FAIL(ftell)
+    MAP_OR_FAIL(fseek)
 
     __filename2id_map = hashmap_new();
 
@@ -111,16 +123,14 @@ void logger_exit() {
             if(__filename2id_map->data[i].in_use != 0) {
                 char *filename = __filename2id_map->data[i].key;
                 int id = __filename2id_map->data[i].data;
-                stat(filename, &st);
-                fprintf(__metafh, "%s %d %ld\n", filename, id, st.st_size);
+                fprintf(__metafh, "%s %d %ld\n", filename, id, get_file_size(filename));
+
             }
         }
     }
 
-
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
-
     if ( __metafh) {
         RECORDER_MPI_CALL(fclose) (__metafh);
         __metafh = NULL;

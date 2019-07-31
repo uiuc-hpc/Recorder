@@ -143,6 +143,7 @@ RECORDER_FORWARD_DECL(fopen64, FILE *, (const char *path, const char *mode));
 RECORDER_FORWARD_DECL(fclose, int, (FILE * fp));
 RECORDER_FORWARD_DECL(fread, size_t, (void *ptr, size_t size, size_t nmemb, FILE *stream));
 RECORDER_FORWARD_DECL(fwrite, size_t, (const void *ptr, size_t size, size_t nmemb, FILE *stream));
+RECORDER_FORWARD_DECL(ftell, long, (FILE *stream));
 RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
 RECORDER_FORWARD_DECL(fsync, int, (int fd));
 RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
