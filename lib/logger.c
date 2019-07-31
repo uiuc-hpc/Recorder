@@ -42,7 +42,7 @@ static inline int exclude_filename(const char *filename) {
 
     /* these are paths that we will not trace */
     // TODO put these in configuration file?
-    static const char *exclusions[] = {"/dev/", "/proc", "/sys", "/etc", "/usr/tce/packages"
+    static const char *exclusions[] = {"/dev/", "/proc", "/sys", "/etc", "/usr/tce/packages",
                         "pipe:[", "anon_inode:[", "socket:[", NULL};
     int i = 0;
     // Need to make sure both parameters for strncmp are not NULL, otherwise its gonna crash
