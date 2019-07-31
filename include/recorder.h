@@ -176,6 +176,7 @@ RECORDER_FORWARD_DECL(fdopen, FILE*, (int fd, const char *mode));
 RECORDER_FORWARD_DECL(fileno, int, (FILE *stream));
 RECORDER_FORWARD_DECL(access, int, (const char *path, int amode));
 RECORDER_FORWARD_DECL(faccessat, int, (int fd, const char *path, int amode, int flag));
+RECORDER_FORWARD_DECL(tmpfile, FILE*, (void));
 
 // Others
 //int statfs(const char *path, struct statfs *buf);

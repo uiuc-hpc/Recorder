@@ -516,6 +516,11 @@ int faccessat(int fd, const char *path, int amode, int flag) {
     sprintf(log_text, "faccessat (%s %s %d %d)", fd2name(fd), path, amode, flag);   // TODO: mode
     RECORDER_IMP_CHEN(faccessat, int, __real_faccessat(fd, path, amode, flag), NULL, 0, 0, log_text)
 }
+FILE *tmpfile(void) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "tmpfile ()");
+    RECORDER_IMP_CHEN(faccessat, FILE*, __real_tmpfile(), NULL, 0, 0, log_text)
+}
 
 
 
