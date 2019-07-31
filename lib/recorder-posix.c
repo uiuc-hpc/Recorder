@@ -410,6 +410,11 @@ int unlink(const char *pathname) {
     sprintf(log_text, "unlink (%s)", pathname);
     RECORDER_IMP_CHEN(unlink, int, __real_unlink(pathname), NULL, 0, 0, log_text)
 }
+int linkat(int fd1, const char *path1, int fd2, const char *path2, int flag) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "linkat (%s, %s, %s, %s, %d)", fd2name(fd1), path1, fd2name(fd2), path2, flag);
+    RECORDER_IMP_CHEN(linkat, int, __real_linkat(fd1, path1, fd2, path2, flag), NULL, 0, 0, log_text)
+}
 int symlink(const char *path1, const char *path2) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "symlink (%s, %s)", path1, path2);
