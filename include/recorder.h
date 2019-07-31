@@ -158,6 +158,8 @@ RECORDER_FORWARD_DECL(linkat, int, (int fd1, const char *path1, int fd2, const c
 RECORDER_FORWARD_DECL(unlink, int, (const char *pathname));
 RECORDER_FORWARD_DECL(symlink, int, (const char *path1, const char *path2));
 RECORDER_FORWARD_DECL(symlinkat, int, (const char *path1, int fd, const char *path2));
+RECORDER_FORWARD_DECL(readlink, ssize_t, (const char *path, char *buf, size_t bufsize));
+RECORDER_FORWARD_DECL(readlinkat, ssize_t, (int fd, const char *path, char *buf, size_t bufsize));
 RECORDER_FORWARD_DECL(rename, int, (const char *oldpath, const char *newpath));
 RECORDER_FORWARD_DECL(chmod, int, (const char *path, mode_t mode));
 RECORDER_FORWARD_DECL(chown, int, (const char *path, uid_t owner, gid_t group));

@@ -425,6 +425,21 @@ int symlinkat(const char *path1, int fd, const char *path2) {
     sprintf(log_text, "symlinkat (%s, %s, %s)", path1, fd2name(fd), path2);
     RECORDER_IMP_CHEN(symlinkat, int, __real_symlinkat(path1, fd, path2), NULL, 0, 0, log_text)
 }
+ssize_t readlink(const char *path, char *buf, size_t bufsize) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "readlink (%s, %p, %ld)", path, buf, bufsize);
+    RECORDER_IMP_CHEN(readlink, int, __real_readlink(path, buf, bufsize), NULL, 0, 0, log_text)
+}
+
+ssize_t readlinkat(int fd, const char *path, char *buf, size_t bufsize) {
+    char log_text[TRACE_LEN];
+    sprintf(log_text, "readlinkat (%s, %s, %p, %ld)", fd2name(fd), path, buf, bufsize);
+    RECORDER_IMP_CHEN(readlinkat, int, __real_readlinkat(fd, path, buf, bufsize), NULL, 0, 0, log_text)
+}
+
+
+
+
 int rename(const char *oldpath, const char *newpath) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "rename (%s, %s)", oldpath, newpath);
