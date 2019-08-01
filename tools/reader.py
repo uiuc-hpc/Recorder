@@ -39,7 +39,7 @@ class TraceReader:
 
     def get_posix_io(self):
         if self.data is None:
-            self.data, self.start_time, self.end_time = read_traces(self.path)
+            self.data, self.start_time, self.end_time = read_traces(self.path, self)
             return self.data
         return self.data
 
@@ -70,14 +70,13 @@ def update_offset(offsets, filename, count, whence):
     elif whence == 1:       # SEEK_CUR, current + offset
         offsets[filename] += count
 
-
 '''
 This is the only funciton that will be called from outside
 This returns a Pandas.DataFrame that contains all information
 Each record has the following columns (see create_datafram())
 ['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count']
 '''
-def read_traces(path):
+def read_traces(path, tr:TraceReader):
     ops = []
     start_time, end_time = 10e12, 0
 
@@ -124,13 +123,14 @@ def read_traces(path):
                     filename = parms[0]
                     count = int(parms[1].split(":[")[1].split("]")[0])
                     offset = 0 if filename not in offsets else offsets[filename]
-                elif func == "lseek" or func == "lseek64":
+                elif func == "lseek" or func == "lseek64" or func == "fseek":
                     filename = parms[0]
                     offset = int(parms[1])
                     count, whence = int(parms[1]), int(parms[2])
                 else:
                     continue
 
+                if filename not in tr.files: continue   # in case Recorder failed to filter out some
                 ops.append([timestamp, duration, rank, func, filename, offset, count])
                 update_offset(offsets, filename, count, whence)
 
