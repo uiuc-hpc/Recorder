@@ -172,7 +172,8 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
     print("show chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
-    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(14, 3.3*rows)) # 3.3 inch height per row
+    height = max(0.2*tr.procs*rows, 3.3*rows) # at least 3.3 inch height per row
+    fig, ax = plt.subplots(rows, cols, constrained_layout=True, figsize=(14, height))
     for i in range(rows):
         for j in range(cols):
             index = i*cols + j
@@ -194,6 +195,11 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
 colors = ['r', 'g', 'b', 'y']
 def offset_vs_time_subplot(ax, tr:TraceReader, filename):
+    def get_cmap(n, name='hsv'):
+        '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
+        RGB color; the keyword argument name must be a standard mpl colormap name.'''
+        return plt.cm.get_cmap(name, n)
+
 
     write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
     read_patches, write_patches = [], []
@@ -221,11 +227,12 @@ def offset_vs_time_subplot(ax, tr:TraceReader, filename):
             read_dots_x[rank].append(timestamp)
             read_dots_y[rank].append(offset)
 
+    cmap = plt.cm.get_cmap("hsv", tr.procs+1)
     for rank in range(tr.procs):
-        ax.add_collection(PatchCollection(read_patches[rank], facecolor=colors[rank], alpha=1.0))
-        ax.add_collection(PatchCollection(write_patches[rank], facecolor=colors[rank], alpha=0.5))
-        ax.scatter(read_dots_x[rank], read_dots_y[rank], c=colors[rank], alpha=1.0, s=2)
-        ax.scatter(write_dots_x[rank], write_dots_y[rank], c=colors[rank], alpha=0.5, s=2)
+        ax.add_collection(PatchCollection(read_patches[rank], facecolor=cmap(rank), alpha=1.0))
+        ax.add_collection(PatchCollection(write_patches[rank], facecolor=cmap(rank), alpha=0.5))
+        ax.scatter(read_dots_x[rank], read_dots_y[rank], c=cmap(rank), alpha=1.0, s=2)
+        ax.scatter(write_dots_x[rank], write_dots_y[rank], c=cmap(rank), alpha=0.5, s=2)
 
     ax.set_ylabel("Offset")
     ax.set_xlabel("Time")

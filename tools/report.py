@@ -20,6 +20,7 @@ def performance(tr:TraceReader, html:HTMLWriter):
     df = tr.get_posix_io()
     write_df = df[df['func'].str.contains('write')]
     read_df = df[df['func'].str.contains('read')]
+    print(read_df);
     M = 1024 * 1024.0
     write_bytes = write_df['count'].sum()
     read_bytes = read_df['count'].sum()
