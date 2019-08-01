@@ -134,6 +134,8 @@ static inline char* fd2name(int fd) {
 static inline char* stream2name(FILE *fp) {
     // Need to map the fileno funciton, because here - this file
     // may be invoked even before MPI_Init in recorder-mpi-initialize.c
+    // also note that if fileno causes segmentation fault if fp is NULL
+    if (fp == NULL) return NULL;
     MAP_OR_FAIL(fileno)
     int fd = RECORDER_MPI_CALL(fileno(fp));
     return fd2name(fd);
@@ -574,10 +576,6 @@ int remove(const char *path) {
     sprintf(log_text, "remove (%s)", path);
     RECORDER_IMP_CHEN(remove, int, __real_remove(path), NULL, 0, 0, log_text)
 }
-
-
-
-
 
 
 
