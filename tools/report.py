@@ -24,10 +24,13 @@ def performance(tr:TraceReader, html:HTMLWriter):
     M = 1024 * 1024.0
     write_bytes = write_df['count'].sum()
     read_bytes = read_df['count'].sum()
-    write_duration = write_df['duration'].sum()
-    read_duration = read_df['duration'].sum()
-    write_bandwidth = write_bytes / write_duration
-    read_bandwidth = read_bytes / read_duration
+    write_duration, read_duration = 0, 0
+    for rank in range(tr.procs):
+        write_duration = max(write_df[write_df['rank'] == rank]['duration'].sum(), write_duration)
+        read_duration = max(read_df[read_df['rank'] == rank]['duration'].sum(), read_duration)
+    write_bandwidth = write_bytes / write_df['duration'].sum()
+    read_bandwidth = read_bytes / read_df['duration'].sum()
+    print(write_duration, read_duration)
     performanceTable = PrettyTable()
     performanceTable.field_names = ["", "Total MBytes", "Avg Bandwidth (MB/s)", "Cost (percentage of run time)"]
     performanceTable.add_row(["write", "%.2f" %(write_bytes/M), "%.2f" %(write_bandwidth/M), "%.2f%%" %(100*write_duration/(tr.end_time-tr.start_time))])

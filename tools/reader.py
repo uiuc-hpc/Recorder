@@ -90,8 +90,6 @@ def read_traces(path, tr:TraceReader):
         with open(path, 'r') as f:
             lines = f.readlines()
             lines = sort_records(lines)
-            start_time = min(start_time, float(lines[0].split(" ")[0]))
-            end_time = max(end_time, float(lines[-1].split(" ")[0]))
             for line in lines:
                 fields = line.split(" ")
                 timestamp = float(fields[0])
@@ -133,6 +131,10 @@ def read_traces(path, tr:TraceReader):
                 if filename not in tr.files: continue   # in case Recorder failed to filter out some
                 ops.append([timestamp, duration, rank, func, filename, offset, count])
                 update_offset(offsets, filename, count, whence)
+
+                start_time = min(start_time, timestamp)
+                end_time = max(end_time, timestamp+duration)
+
 
     df = create_dataframe(ops)
     df['timestamp'] -= start_time
