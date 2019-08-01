@@ -195,12 +195,6 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
 colors = ['r', 'g', 'b', 'y']
 def offset_vs_time_subplot(ax, tr:TraceReader, filename):
-    def get_cmap(n, name='hsv'):
-        '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
-        RGB color; the keyword argument name must be a standard mpl colormap name.'''
-        return plt.cm.get_cmap(name, n)
-
-
     write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
     read_patches, write_patches = [], []
     for i in range(tr.procs):
@@ -259,8 +253,9 @@ def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
                 offset_vs_time_subplot(ax_, tr, tr.files[index])
 
     handles = []
-    for i, c in enumerate(colors):
-        handles.append(mpatches.Patch(color=c, label='rank '+str(i) ))
+    cmap = plt.cm.get_cmap("hsv", tr.procs+1)
+    for rank in range(tr.procs):
+        handles.append(mpatches.Patch(color=cmap(rank), label='rank '+str(rank) ))
     plt.legend(handles=handles)
     plt.savefig(save_to)
 
