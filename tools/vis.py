@@ -55,7 +55,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
-        fig.set_size_inches(7, max(0.25*len(x), 4))
+        fig.set_size_inches(7, max(0.2*len(x), 4))
         rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_yticks(x_pos)
         ax.set_yticklabels(x)
@@ -83,7 +83,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
 
 def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
     df = tr.get_posix_io()
-    fig, ax = plt.subplots(figsize=(10,4))
+    fig, ax = plt.subplots(figsize=(10,max(4, 0.2*tr.procs)))
 
     yticks, yticklabels = [], []
     for rank in range(tr.procs):
