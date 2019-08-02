@@ -263,7 +263,7 @@ int __lxstat(int vers, const char *path, struct stat *buf) {
 int __lxstat64(int vers, const char *path, struct stat64 *buf) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "lstat64 (%s, %p)", path, buf);
-    RECORDER_IMP_CHEN(__lxstat, int, __real___lxstat64(vers, path, buf), path, 0, 0, log_text)
+    RECORDER_IMP_CHEN(__lxstat64, int, __real___lxstat64(vers, path, buf), path, 0, 0, log_text)
 }
 int __fxstat(int vers, int fd, struct stat *buf) {
     const char *fn = fd2name(fd);
