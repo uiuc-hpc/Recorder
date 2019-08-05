@@ -548,7 +548,7 @@ mode_t umask(mode_t mask) {
 }
 FILE* fdopen(int fd, const char *mode) {
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fdopen (%s, %c)", fd2name(fd), mode);    // TODO: mode
+    sprintf(log_text, "fdopen (%s, %s)", fd2name(fd), mode);    // TODO: mode
     RECORDER_IMP_CHEN(fdopen, FILE*, __real_fdopen(fd, mode), NULL, 0, 0, log_text)
 }
 int fileno(FILE *stream) {
