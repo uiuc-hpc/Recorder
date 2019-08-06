@@ -10,7 +10,7 @@ import pandas as pd
 import math
 import numpy as np
 
-# plot the cumulative histogram
+# Draw two sub bar plots
 # xs: a list of list
 def draw_multi_bar_chart(xs, ys, titles=[""], xlabel="", ylabel="", logScale=False, save_to="/tmp/recorder_temp.png"):
     figsize = (10, 6) if len(xs[0])+len(xs[1]) < 30 else (15,6)
@@ -55,7 +55,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
-        fig.set_size_inches(7, max(0.2*len(x), 4))
+        fig.set_size_inches(8, max(0.2*len(x), 4))
         rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_yticks(x_pos)
         ax.set_yticklabels(x)
@@ -166,9 +166,15 @@ def offset_vs_rank_subplot(ax, tr:TraceReader, filename):
     ax.title.set_text(filename.split("/")[-1])
 
 def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
+    io_files = [] # files have I/O operations
+    df = tr.get_posix_io()
+    for filename in tr.files:
+        mask = (df['filename'] == filename)
+        mask = mask & ((df['func'].str.contains("write")) | (df['func'].str.contains("read")))
+        if np.any(mask): io_files.append(filename)
 
-    rows = math.ceil(len(tr.files) / 4)
-    cols = min(len(tr.files), 4)
+    rows = math.ceil(len(io_files) / 4)
+    cols = min(len(io_files), 4)
     print("show chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
@@ -177,12 +183,12 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
     for i in range(rows):
         for j in range(cols):
             index = i*cols + j
-            if index < len(tr.files):
+            if index < len(io_files):
                 ax_ = ax
                 if rows != 1 and cols != 1: ax_ = ax[i,j]
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
-                offset_vs_rank_subplot(ax_, tr, tr.files[index])
+                offset_vs_rank_subplot(ax_, tr, io_files[index])
 
     # Add legends
     handles = []
@@ -235,8 +241,15 @@ def offset_vs_time_subplot(ax, tr:TraceReader, filename):
     ax.title.set_text(filename.split("/")[-1])
 
 def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
-    rows = math.ceil(len(tr.files) / 4)
-    cols = min(len(tr.files), 4)
+    io_files = [] # files have I/O operations
+    df = tr.get_posix_io()
+    for filename in tr.files:
+        mask = (df['filename'] == filename)
+        mask = mask & ((df['func'].str.contains("write")) | (df['func'].str.contains("read")))
+        if np.any(mask): io_files.append(filename)
+
+    rows = math.ceil(len(io_files) / 4)
+    cols = min(len(io_files), 4)
     print("offset vs time chart: (%d, %d)" %(rows, cols))
     rows = min(4, rows)
 
@@ -245,12 +258,12 @@ def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
         for j in range(cols):
             print(i, j)
             index = i*cols + j
-            if index < len(tr.files):
+            if index < len(io_files):
                 ax_ = ax
                 if rows != 1 and cols != 1: ax_ = ax[i,j]
                 elif rows == 1: ax_ = ax[j]
                 else: ax_ = ax[i]
-                offset_vs_time_subplot(ax_, tr, tr.files[index])
+                offset_vs_time_subplot(ax_, tr, io_files[index])
 
     handles = []
     cmap = plt.cm.get_cmap("hsv", tr.procs+1)
