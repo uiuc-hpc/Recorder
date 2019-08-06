@@ -11,16 +11,16 @@ FILE *__metafh;
 /* filename to id map */
 hashmap_map *__filename2id_map;
 
-/* Map filename to Integer in binary format */
+/*
+ * Map filename to Integer in binary format
+ * The filename must be absolute pathname
+ */
 static inline unsigned char get_filename_id(const char *filename) {
     int id = -1;
     if (!filename || !__filename2id_map || strlen(filename) == 0)
         return id;
 
-    char* key = realpath(filename, NULL); // get absolute path
-    if ( !key )
-        return id;
-
+    const char *key = filename;
 
     /* filename already exists */
     if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)

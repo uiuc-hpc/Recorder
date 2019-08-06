@@ -141,6 +141,15 @@ static inline char* stream2name(FILE *fp) {
     return fd2name(fd);
 }
 
+// My implementation to replace realrealpath() system call
+static inline char* realrealpath(const char *path) {
+    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
+    realpath(path, real_pathname);
+    if (real_pathname == NULL)
+        strcpy(real_pathname, path);
+    return real_pathname;
+}
+
 
 int close(int fd) {
     const char *fn = fd2name(fd);
@@ -184,57 +193,63 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 }
 
 int creat(const char *path, mode_t mode) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "creat (%s, %d)", path, mode);
-    RECORDER_IMP_CHEN(creat, int, __real_creat(path, mode), path, mode, 0, log_text)
+    sprintf(log_text, "creat (%s, %d)", filename, mode);
+    RECORDER_IMP_CHEN(creat, int, __real_creat(path, mode), filename, mode, 0, log_text)
 }
 
 int creat64(const char *path, mode_t mode) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "creat64 (%s, %d)", path, mode);
-    RECORDER_IMP_CHEN(creat64, int, __real_creat64(path, mode), path, mode, 0, log_text)
+    sprintf(log_text, "creat64 (%s, %d)", filename, mode);
+    RECORDER_IMP_CHEN(creat64, int, __real_creat64(path, mode), filename, mode, 0, log_text)
 }
 
 int open64(const char *path, int flags, ...) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "open64 (%s, %d)", path, flags);
+    sprintf(log_text, "open64 (%s, %d)", filename, flags);
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
-        RECORDER_IMP_CHEN(open64, int, __real_open64(path, flags, mode), path, flags, mode, log_text)
+        RECORDER_IMP_CHEN(open64, int, __real_open64(path, flags, mode), filename, flags, mode, log_text)
     } else {
-        RECORDER_IMP_CHEN(open64, int, __real_open64(path, flags), path, flags, 0, log_text)
+        RECORDER_IMP_CHEN(open64, int, __real_open64(path, flags), filename, flags, 0, log_text)
     }
 }
 
 int open(const char *path, int flags, ...) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "open (%s, %d)", path, flags);
+    sprintf(log_text, "open (%s, %d)", filename, flags);
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
-        RECORDER_IMP_CHEN(open, int, __real_open(path, flags, mode), path, flags, mode, log_text)
+        RECORDER_IMP_CHEN(open, int, __real_open(path, flags, mode), filename, flags, mode, log_text)
     } else {
-        RECORDER_IMP_CHEN(open, int, __real_open(path, flags), path, flags, 0, log_text)
+        RECORDER_IMP_CHEN(open, int, __real_open(path, flags), filename, flags, 0, log_text)
     }
 }
 
 FILE *fopen64(const char *path, const char *mode) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fopen64 (%s, %s)", path, mode);
+    sprintf(log_text, "fopen64 (%s, %s)", filename, mode);
     // TODO: mode
-    RECORDER_IMP_CHEN(fopen64, FILE*, __real_fopen64(path, mode), path, 0, 0, log_text)
+    RECORDER_IMP_CHEN(fopen64, FILE*, __real_fopen64(path, mode), filename, 0, 0, log_text)
 }
 
 FILE *fopen(const char *path, const char *mode) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "fopen (%s, %s)", path, mode);
+    sprintf(log_text, "fopen (%s, %s)", filename, mode);
     // TODO: mode
-    RECORDER_IMP_CHEN(fopen, FILE*, __real_fopen(path, mode), path, 0, 0, log_text)
+    RECORDER_IMP_CHEN(fopen, FILE*, __real_fopen(path, mode), filename, 0, 0, log_text)
 }
 
 
@@ -246,24 +261,28 @@ FILE *fopen(const char *path, const char *mode) {
  * So wee need to hook __xstat(), __lxstat(), and __fxstat()
  */
 int __xstat(int vers, const char *path, struct stat *buf) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "stat (%s, %p)", path, buf);
-    RECORDER_IMP_CHEN(__xstat, int, __real___xstat(vers, path, buf), path, 0, 0, log_text)
+    sprintf(log_text, "stat (%s, %p)", filename, buf);
+    RECORDER_IMP_CHEN(__xstat, int, __real___xstat(vers, path, buf), filename, 0, 0, log_text)
 }
 int __xstat64(int vers, const char *path, struct stat64 *buf) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "stat64 (%s, %p)", path, buf);
-    RECORDER_IMP_CHEN(__xstat64, int, __real___xstat64(vers, path, buf), path, 0, 0, log_text)
+    sprintf(log_text, "stat64 (%s, %p)", filename, buf);
+    RECORDER_IMP_CHEN(__xstat64, int, __real___xstat64(vers, path, buf), filename, 0, 0, log_text)
 }
 int __lxstat(int vers, const char *path, struct stat *buf) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "lstat (%s, %p)", path, buf);
-    RECORDER_IMP_CHEN(__lxstat, int, __real___lxstat(vers, path, buf), path, 0, 0, log_text)
+    sprintf(log_text, "lstat (%s, %p)", filename, buf);
+    RECORDER_IMP_CHEN(__lxstat, int, __real___lxstat(vers, path, buf), filename, 0, 0, log_text)
 }
 int __lxstat64(int vers, const char *path, struct stat64 *buf) {
+    char *filename = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "lstat64 (%s, %p)", path, buf);
-    RECORDER_IMP_CHEN(__lxstat64, int, __real___lxstat64(vers, path, buf), path, 0, 0, log_text)
+    sprintf(log_text, "lstat64 (%s, %p)", filename, buf);
+    RECORDER_IMP_CHEN(__lxstat64, int, __real___lxstat64(vers, path, buf), filename, 0, 0, log_text)
 }
 int __fxstat(int vers, int fd, struct stat *buf) {
     const char *fn = fd2name(fd);
@@ -401,88 +420,127 @@ char* getcwd(char *buf, size_t size) {
     RECORDER_IMP_CHEN(getcwd, char*, __real_getcwd(buf, size), NULL, 0, 0, log_text)
 }
 int mkdir(const char *pathname, mode_t mode) {
+    char *real_pathname = realrealpath(pathname);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "mkdir (%s, %p)", pathname, mode);   // TODO: mode
+    sprintf(log_text, "mkdir (%s, %p)", real_pathname, mode);   // TODO: mode
+    free(real_pathname);
     RECORDER_IMP_CHEN(mkdir, int, __real_mkdir(pathname, mode), NULL, 0, 0, log_text)
 }
 int rmdir(const char *pathname) {
+    char *real_pathname = realrealpath(pathname);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "rmdir (%s)", pathname);
+    sprintf(log_text, "rmdir (%s)", real_pathname);
+    free(real_pathname);
     RECORDER_IMP_CHEN(rmdir, int, __real_rmdir(pathname), NULL, 0, 0, log_text)
 }
 int chdir(const char *path) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "chdir (%s)", path);
+    sprintf(log_text, "chdir (%s)", real_pathname);
+    free(real_pathname);
     RECORDER_IMP_CHEN(chdir, int, __real_chdir(path), NULL, 0, 0, log_text)
 }
 int link(const char *oldpath, const char *newpath) {
+    char *real_oldpath = realrealpath(oldpath);
+    char *real_newpath = realrealpath(newpath);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "link (%s, %s)", oldpath, newpath);
+    sprintf(log_text, "link (%s, %s)", real_oldpath, real_newpath);
+    free(real_oldpath);
+    free(real_newpath);
     RECORDER_IMP_CHEN(link, int, __real_link(oldpath, newpath), NULL, 0, 0, log_text)
 }
 int unlink(const char *pathname) {
+    char *real_pathname = realrealpath(pathname);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "unlink (%s)", pathname);
+    sprintf(log_text, "unlink (%s)", real_pathname);
+    free(real_pathname);
     RECORDER_IMP_CHEN(unlink, int, __real_unlink(pathname), NULL, 0, 0, log_text)
 }
 int linkat(int fd1, const char *path1, int fd2, const char *path2, int flag) {
+    char *real_path1 = realrealpath(path1);
+    char *real_path2 = realrealpath(path2);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "linkat (%s, %s, %s, %s, %d)", fd2name(fd1), path1, fd2name(fd2), path2, flag);
+    sprintf(log_text, "linkat (%s, %s, %s, %s, %d)", fd2name(fd1), real_path1, fd2name(fd2), real_path2, flag);
+    free(real_path1);
+    free(real_path2);
     RECORDER_IMP_CHEN(linkat, int, __real_linkat(fd1, path1, fd2, path2, flag), NULL, 0, 0, log_text)
 }
 int symlink(const char *path1, const char *path2) {
+    char *real_path1 = realrealpath(path1);
+    char *real_path2 = realrealpath(path2);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "symlink (%s, %s)", path1, path2);
+    sprintf(log_text, "symlink (%s, %s)", real_path1, real_path2);
+    free(real_path1);
+    free(real_path2);
     RECORDER_IMP_CHEN(symlink, int, __real_symlink(path1, path2), NULL, 0, 0, log_text)
 }
 int symlinkat(const char *path1, int fd, const char *path2) {
+    char *real_path1 = realrealpath(path1);
+    char *real_path2 = realrealpath(path2);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "symlinkat (%s, %s, %s)", path1, fd2name(fd), path2);
+    sprintf(log_text, "symlinkat (%s, %s, %s)", real_path1, fd2name(fd), real_path2);
+    free(real_path1);
+    free(real_path2);
     RECORDER_IMP_CHEN(symlinkat, int, __real_symlinkat(path1, fd, path2), NULL, 0, 0, log_text)
 }
 ssize_t readlink(const char *path, char *buf, size_t bufsize) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "readlink (%s, %p, %ld)", path, buf, bufsize);
+    sprintf(log_text, "readlink (%s, %p, %ld)", real_pathname, buf, bufsize);
+    free(real_pathname);
     RECORDER_IMP_CHEN(readlink, int, __real_readlink(path, buf, bufsize), NULL, 0, 0, log_text)
 }
 
 ssize_t readlinkat(int fd, const char *path, char *buf, size_t bufsize) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "readlinkat (%s, %s, %p, %ld)", fd2name(fd), path, buf, bufsize);
+    sprintf(log_text, "readlinkat (%s, %s, %p, %ld)", fd2name(fd), real_pathname, buf, bufsize);
+    free(real_pathname);
     RECORDER_IMP_CHEN(readlinkat, int, __real_readlinkat(fd, path, buf, bufsize), NULL, 0, 0, log_text)
 }
 
-
-
-
 int rename(const char *oldpath, const char *newpath) {
+    char *real_oldpath = realrealpath(oldpath);
+    char *real_newpath = realrealpath(newpath);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "rename (%s, %s)", oldpath, newpath);
+    sprintf(log_text, "rename (%s, %s)", real_oldpath, real_newpath);
+    free(real_oldpath);
+    free(real_newpath);
     RECORDER_IMP_CHEN(rename, int, __real_rename(oldpath, newpath), NULL, 0, 0, log_text)
 }
 int chmod(const char *path, mode_t mode) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "chmod (%s, %p)", path, mode);  // TODO: mode
+    sprintf(log_text, "chmod (%s, %p)", real_pathname, mode);  // TODO: mode
+    free(real_pathname);
     RECORDER_IMP_CHEN(chmod, int, __real_chmod(path, mode), NULL, 0, 0, log_text)
 }
 int chown(const char *path, uid_t owner, gid_t group) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "chown (%s, %d, %d)", path, owner, group);
+    sprintf(log_text, "chown (%s, %d, %d)", real_pathname, owner, group);
+    free(real_pathname);
     RECORDER_IMP_CHEN(chown, int, __real_chown(path, owner, group), NULL, 0, 0, log_text)
 }
 int lchown(const char *path, uid_t owner, gid_t group) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "lchown (%s, %d, %d)", path, owner, group);
+    sprintf(log_text, "lchown (%s, %d, %d)", real_pathname, owner, group);
+    free(real_pathname);
     RECORDER_IMP_CHEN(lchown, int, __real_lchown(path, owner, group), NULL, 0, 0, log_text)
 }
 int utime(const char *filename, const struct utimbuf *buf) {
+    char *real_filename = realrealpath(filename);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "utime (%s, %p)", filename, buf);
+    sprintf(log_text, "utime (%s, %p)", real_filename, buf);
+    free(real_filename);
     RECORDER_IMP_CHEN(utime, int, __real_utime(filename, buf), NULL, 0, 0, log_text)
 }
 DIR* opendir(const char *name) {
+    char *real_pathname = realrealpath(name);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "opendir (%s)", name);
+    sprintf(log_text, "opendir (%s)", real_pathname);
+    free(real_pathname);
     RECORDER_IMP_CHEN(opendir, DIR*, __real_opendir(name), NULL, 0, 0, log_text)
 }
 struct dirent* readdir(DIR *dir) {
@@ -501,13 +559,17 @@ void rewinddir(DIR *dir) {
     RECORDER_IMP_CHEN_VOID(rewinddir, __real_rewinddir(dir), NULL, 0, 0, log_text)
 }
 int mknod(const char *path, mode_t mode, dev_t dev) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "mknod (%s, %d, %p)", path, mode, dev);
+    sprintf(log_text, "mknod (%s, %d, %p)", real_pathname, mode, dev);
+    free(real_pathname);
     RECORDER_IMP_CHEN(mknod, int, __real_mknod(path, mode, dev), NULL, 0, 0, log_text)
 }
 int mknodat(int fd, const char *path, mode_t mode, dev_t dev) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "mknodat (%s, %s, %d, %p)", fd2name(fd), path, mode, dev);
+    sprintf(log_text, "mknodat (%s, %s, %d, %p)", fd2name(fd), real_pathname, mode, dev);
+    free(real_pathname);
     RECORDER_IMP_CHEN(mknodat, int, __real_mknodat(fd, path, mode, dev), NULL, 0, 0, log_text)
 }
 
@@ -537,9 +599,11 @@ int pipe(int pipefd[2]) {
     RECORDER_IMP_CHEN(pipe, int, __real_pipe(pipefd), NULL, 0, 0, log_text)
 }
 int mkfifo(const char *pathname, mode_t mode) {
+    char *real_pathname = realrealpath(pathname);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "mkfifo (%s, %p)", pathname, mode);    // TODO: mode
+    sprintf(log_text, "mkfifo (%s, %p)", real_pathname, mode);    // TODO: mode
     RECORDER_IMP_CHEN(mkfifo, int, __real_mkfifo(pathname, mode), NULL, 0, 0, log_text)
+    free(real_pathname);
 }
 mode_t umask(mode_t mask) {
     char log_text[TRACE_LEN];
@@ -557,13 +621,17 @@ int fileno(FILE *stream) {
     RECORDER_IMP_CHEN(fileno, int, __real_fileno(stream), NULL, 0, 0, log_text)
 }
 int access(const char *path, int amode) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "access (%s %d)", path, amode);   // TODO: mode
+    sprintf(log_text, "access (%s %d)", real_pathname, amode);   // TODO: mode
+    free(real_pathname);
     RECORDER_IMP_CHEN(access, int, __real_access(path, amode), NULL, 0, 0, log_text)
 }
 int faccessat(int fd, const char *path, int amode, int flag) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "faccessat (%s %s %d %d)", fd2name(fd), path, amode, flag);   // TODO: mode
+    sprintf(log_text, "faccessat (%s %s %d %d)", fd2name(fd), real_pathname, amode, flag);   // TODO: mode
+    free(real_pathname);
     RECORDER_IMP_CHEN(faccessat, int, __real_faccessat(fd, path, amode, flag), NULL, 0, 0, log_text)
 }
 FILE *tmpfile(void) {
@@ -572,8 +640,10 @@ FILE *tmpfile(void) {
     RECORDER_IMP_CHEN(tmpfile, FILE*, __real_tmpfile(), NULL, 0, 0, log_text)
 }
 int remove(const char *path) {
+    char *real_pathname = realrealpath(path);
     char log_text[TRACE_LEN];
-    sprintf(log_text, "remove (%s)", path);
+    sprintf(log_text, "remove (%s)", real_pathname);
+    free(real_pathname);
     RECORDER_IMP_CHEN(remove, int, __real_remove(path), NULL, 0, 0, log_text)
 }
 
