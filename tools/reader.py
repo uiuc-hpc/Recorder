@@ -58,7 +58,7 @@ The input must have the following fomrat:
 
 '''
 def create_dataframe(ops):
-    df = pd.DataFrame(ops, columns =['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count'])
+    df = pd.DataFrame(ops, columns =['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count', 'other'])
     return df
 
 
@@ -74,7 +74,8 @@ def update_offset(offsets, filename, count, whence):
 This is the only funciton that will be called from outside
 This returns a Pandas.DataFrame that contains all information
 Each record has the following columns (see create_datafram())
-['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count']
+['timestamp', 'duration', 'rank', 'func', 'filename', 'offset', 'count', 'oterh']
+Currently, the 'other' field only be used by open/open64 to store flag
 '''
 def read_traces(path, tr:TraceReader):
     ops = []
@@ -98,6 +99,7 @@ def read_traces(path, tr:TraceReader):
                 parms = ("".join(fields[2:-1]))[1:-1]
                 parms = parms.split(",")
                 whence = -1     # don't change offset by default
+                other = 0
 
                 # Get the filename, count for every funciton call
                 if func == "close" or func == "fclose" or func == "fclose64" or func == "close64" \
@@ -106,6 +108,7 @@ def read_traces(path, tr:TraceReader):
                     count = 0
                     whence = 0
                     offset = 0 if filename not in offsets else offsets[filename]
+                    if "open" in func: other = parms[1]     # put the flags/mode in other field
                 elif func == "fwrite" or func == "fread":
                     filename = parms[3]
                     count = int(parms[1]) * int(parms[2])
@@ -129,7 +132,7 @@ def read_traces(path, tr:TraceReader):
                     continue
 
                 if filename not in tr.files: continue   # in case Recorder failed to filter out some
-                ops.append([timestamp, duration, rank, func, filename, offset, count])
+                ops.append([timestamp, duration, rank, func, filename, offset, count, other])
                 update_offset(offsets, filename, count, whence)
 
                 start_time = min(start_time, timestamp)

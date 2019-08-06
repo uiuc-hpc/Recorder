@@ -63,19 +63,46 @@ def file_statistics(tr: TraceReader, html:HTMLWriter):
     print(fileTable)
     html.fileTable = fileTable.get_html_string()
 
+    # 2.helper function: Flags of open function
+    def get_open_flags(tr:TraceReader, filename):
+        df = tr.get_posix_io()
+        f = {}
+        f["O_RDONLY"], f["O_WRONLY"], f["O_RDWR"], f["O_NONBLOCK"], f["O_APPEND"] = 0x000, 0x0001, 0x0002, 0x0004, 0x0008
+        f["O_SHLOCK"], f["O_EXLOCK"], f["O_ASYNC"], f["O_FSYNC"] = 0x0010, 0x0020, 0x0040, 0x0080
+        f["O_CREAT"], f["O_TRUNC"], f["O_EXCL"] = 0x0200, 0x0400, 0x0800
+        flags_count = {}
+        open_df = df[(df['func'].str.match("open")) & (df['filename'] == filename)]     # open/open64
+        fopen_df = df[(df['func'].str.match("fopen")) & (df['filename'] == filename)]   # fopen/fopen64
+        for idx, op in open_df.iterrows():
+            flag_int = int(op['other'])
+            flags = ""
+            for flag_name in f.keys():
+                if flag_int & f[flag_name] > 0:
+                    flags += (" | " + flag_name)
+            if flags == "": flags = "O_RDONLY"  # flag_int = 0x0000
+            else: flags = flags[3:]
+            if flags not in flags_count:
+                flags_count[flags] = 0
+            flags_count[flags] += 1
+        for idx, op in fopen_df.iterrows():
+            flag = op['other']
+            if flag not in flags_count:
+                flags_count[flag] = 0
+            flags_count[flag] += 1
+        return str(flags_count)
+
     # 2. File access mode
     accessModeTable = PrettyTable()
-    accessModeTable.field_names = ["File", "Read Only", "Write Only", "Read & Write"]
+    accessModeTable.field_names = ["File", "Read Only", "Write Only", "Read & Write", "Open Flags"]
     df = tr.get_posix_io()
     for name in tr.files:
         write_count = df[(df['filename'] == name) & (df['func'].str.contains("write"))].shape[0]
         read_count = df[(df['filename'] == name) & (df['func'].str.contains("read"))].shape[0]
         write_only, read_only = write_count > 0 and read_count == 0, read_count > 0 and write_count == 0
         read_write = False if (read_count == 0 and write_count == 0) else ((not read_only) and (not write_only))
-        accessModeTable.add_row([name.split("/")[-1], read_only, write_only, read_write])
+        accessModeTable.add_row([name.split("/")[-1], read_only, write_only, read_write, get_open_flags(tr,name)])
         html.fileAccessModeTable = accessModeTable.get_html_string()
     print(accessModeTable)
-
 
     # 3. File sizes image
     x, y = [], []
