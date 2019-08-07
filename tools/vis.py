@@ -39,7 +39,7 @@ def draw_pie_chart(x, y, save_to="/tmp/recorder_tmp.jpg"):
     fig, ax = plt.subplots()
     explode = [0] * len(x)
     explode[0] =  0.1
-    wedges, texts, autotexts = ax.pie(y, explode=explode, shadow=True, autopct='%1.1f%%')
+    wedges, texts, autotexts = ax.pie(y, explode=explode, shadow=True, autopct='%1.1f%%', textprops={'size': 'x-large', 'weight':'bold'},)
     ax.axis('equal')    # Equal aspect ratio ensures that pie is drawn as a circle.
     ax.legend(wedges, x)
     fig.tight_layout()
@@ -55,7 +55,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
-        fig.set_size_inches(8, max(0.2*len(x), 4))
+        fig.set_size_inches(10, max(0.2*len(x), 4))
         rects = ax.barh(x_pos, y, align='center', alpha=0.9, log=logScale)
         ax.set_yticks(x_pos)
         ax.set_yticklabels(x)
