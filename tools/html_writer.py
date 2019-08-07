@@ -66,11 +66,11 @@ class HTMLWriter:
                 <div>
                     <div style="display:inline-block">
                         <h4> 2.1 I/O Layers</h4>
-                        <img src="%s" alt="I/O Layers" height="320"></img>
+                        <img src="%s" alt="I/O Layers" height="280"></img>
                     </div>
                     <div style="display:inline-block">
                         <h4> 2.2 POSIX I/O Patterns </h4>
-                        <img src="%s" alt="POSIX I/O Patterns" height="320"></img>
+                        <img src="%s" alt="POSIX I/O Patterns" height="280"></img>
                     </div>
                 </div>
                 <h4> 2.3 Fcount count </h4>

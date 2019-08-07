@@ -13,7 +13,7 @@ import numpy as np
 # Draw two sub bar plots
 # xs: a list of list
 def draw_multi_bar_chart(xs, ys, titles=[""], xlabel="", ylabel="", logScale=False, save_to="/tmp/recorder_temp.png"):
-    figsize = (10, 6) if len(xs[0])+len(xs[1]) < 30 else (15,6)
+    figsize = (10, 4) if len(xs[0])+len(xs[1]) < 30 else (15, 7)
     fig, axes = plt.subplots(1, len(xs), figsize=figsize)
     for index, x in enumerate(xs):
         if len(x)>0:
@@ -83,7 +83,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
 
 def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
     df = tr.get_posix_io()
-    fig, ax = plt.subplots(figsize=(10,max(4, 0.2*tr.procs)))
+    fig, ax = plt.subplots(figsize=(9, max(4, 0.2*tr.procs)))
 
     yticks, yticklabels = [], []
     for rank in range(tr.procs):
