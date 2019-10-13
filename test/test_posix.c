@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -17,6 +18,10 @@ int main() {
 
     int fd = open("./workfile.out", O_RDONLY);
     res = fstat(fd, &buf);
+    close(fd);
+
+    fd = open64("./workfile.out", O_RDONLY);
+    printf("%d\n", fd);
     close(fd);
 
     MPI_Finalize();
