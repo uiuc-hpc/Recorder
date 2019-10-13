@@ -81,7 +81,7 @@ void write_data_operation(const char *func, const char *filename, double start, 
      */
     #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args;
 
-    /* Point __read_func to the real funciton using dlsym() */
+    /* Point __real_func to the real funciton using dlsym() */
     #define MAP_OR_FAIL(func)                                                   \
         if (!(__real_##func)) {                                                 \
             __real_##func = dlsym(RTLD_NEXT, #func);                            \
@@ -91,22 +91,20 @@ void write_data_operation(const char *func, const char *filename, double start, 
         }
     /*
      * Call the real funciton
-     * Before call the real function, we need to make sure its mapped
-     * which means, every time we use this marco directly, we need to call MAP_OR_FAIL before it
+     * Before call the real function, we need to make sure its mapped by dlsym()
+     * So, every time we use this marco directly, we need to call MAP_OR_FAIL before it
      */
     #define RECORDER_MPI_CALL(func) __real_##func
 
-    /*
-     * Overwrite the real function calls
-     * This is a convienent marco so that
-     * we do not intercept functions if RECORDER_PRELOAD is not defined
-     */
+    // Intercept functions if RECORDER_PRELOAD is defined
+    // Compare with same the MARCO in else
     #define RECORDER_DECL(func) func
 
 #else
     #define RECORDER_FORWARD_DECL(name, ret, args)
     #define MAP_OR_FAIL(func)
     #define RECORDER_MPI_CALL(func) func
+    // Do not intercept functions if RECORDER_PRELOAD is not defined
     #define RECORDER_DECL(func) __warp_##func
 #endif
 
