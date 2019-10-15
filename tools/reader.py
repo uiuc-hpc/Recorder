@@ -23,14 +23,14 @@ class TraceReader:
         if len(self.meta) > rank:
             return self.meta[rank]
         lines = None
-        with open(self.path+"/"+str(rank)+".mt", 'r') as f:
+        with open(self.path+"/"+str(rank)+".mt", 'r', errors='ignore') as f:
             lines = f.readlines()
         lines = list( map(str.strip, lines) )       # remove the trailing newline
         return lines
 
     def get_data(self, rank):
         lines = None
-        with open(self.path+"/"+str(rank)+".itf", 'r') as f:
+        with open(self.path+"/"+str(rank)+".itf", 'r', errors='ignore') as f:
             lines = f.readlines()
         from operator import itemgetter
         lines = sorted(lines, key=itemgetter(0))    # sort by timestemp
@@ -88,7 +88,7 @@ def read_traces(path, tr:TraceReader):
 
         offsets = {}    # offsets[filename] keeps current offset
 
-        with open(path, 'r') as f:
+        with open(path, 'r', errors='ignore') as f:
             lines = f.readlines()
             lines = sort_records(lines)
             for line in lines:
