@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 char** str_split(char* a_str, const char a_delim, size_t *size) {
     char** result    = 0;
     char* tmp        = a_str;
@@ -41,10 +42,13 @@ char** str_split(char* a_str, const char a_delim, size_t *size) {
     return result;
 }
 
+
 #define TICK 0.000001
 double START_TIMESTAMP = 0;
 
 void write_record(FILE *f, int tstart, int tdur, short func_id, char **parameters, size_t param_count) {
+    char status = '0';
+    fwrite(&status, sizeof(char), 1, f);
     fwrite(&tstart, sizeof(int), 1, f);
     fwrite(&tdur, sizeof(int), 1, f);
     fwrite(&func_id, sizeof(short), 1, f);
@@ -52,6 +56,20 @@ void write_record(FILE *f, int tstart, int tdur, short func_id, char **parameter
         fwrite(parameters[i], strlen(parameters[i]), 1, f);
     }
 }
+void write_compressed_record(FILE *f, int tstart, int tdur, int arg_count, ...) {
+    char status = '0';
+    fwrite(&status, sizeof(char), 1, f);
+    fwrite(&tstart, sizeof(int), 1, f);
+    fwrite(&tdur, sizeof(int), 1, f);
+    char *arg;
+    va_list valist;
+    va_start(valist, arg_count);
+    for(int i = 0; i < arg_count; i++) {
+        arg = va_arg(valist, char*);
+        fwrite(&arg, strlen(arg), 1, f);
+    }
+}
+
 
 int main(int argc, char **argv) {
     FILE *file = fopen("./sedov_1.itf", "r");
@@ -62,6 +80,8 @@ int main(int argc, char **argv) {
     char **arr;
     int tstart, tdur;
 
+    char** window[3];
+
     // First line
     if ((ret = getline(&line, &len, file)) != -1) {
         arr = str_split(line, ' ', &count);
@@ -69,6 +89,7 @@ int main(int argc, char **argv) {
         tstart = (atof(arr[0]) - START_TIMESTAMP) / TICK;
         tdur = atof(arr[count-1]) / TICK;
         printf("%d %d\n", tstart, tdur);
+        window[0] = arr;
     }
     write_record(out, tstart, tdur, 1, arr, count);
 
@@ -78,7 +99,11 @@ int main(int argc, char **argv) {
         tstart = (atof(arr[0]) - START_TIMESTAMP) / TICK;
         tdur = atof(arr[count-1]) / TICK;
         write_record(out, tstart, tdur, 1, arr, count);
+        window[2] = window[1];
+        window[1] = window[0];
+        window[0] = arr;
     }
+
     fclose(file);
     fclose(out);
 }
