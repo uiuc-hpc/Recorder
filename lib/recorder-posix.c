@@ -81,6 +81,7 @@ int depth;
             depth--;                                                                        \
             Record record = {                                                               \
                 .tstart = tstart,                                                           \
+                .func_id = #func,                                                           \
                 .tdur = tend - tstart,                                                      \
                 .arg_count = _arg_count,                                                    \
                 .args = args                                                                \
@@ -226,10 +227,10 @@ int open(const char *path, int flags, ...) {
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
-        char** args = assemble_args_list(3, path, itoa(flags), itoa(mode));
+        char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
         RECORDER_IMP_WANG(open, int, __real_open(path, flags, mode), 3, args)
     } else {
-        char** args = assemble_args_list(2, path, itoa(flags));
+        char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
         RECORDER_IMP_WANG(open, int, __real_open(path, flags), 2, args)
     }
 }
