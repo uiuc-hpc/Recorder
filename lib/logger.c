@@ -93,6 +93,23 @@ void write_data_operation(const char *func, const char *filename, double start, 
     //write_in_binary(&op);
 }
 
+void write_uncompressed_record(FILE *f, Record record) {
+    char status = '0';
+    fwrite(&status, sizeof(char), 1, f);
+    fwrite(&(record.tstart), sizeof(int), 1, f);
+    fwrite(&(record.tdur), sizeof(int), 1, f);
+    fwrite(record.func_id, sizeof(short), 1, f);
+    for(size_t i = 0; i < record.arg_count; i++) {
+        fprintf(f, " ");
+        fwrite(record.args[i], strlen(record.args[i]), 1, f);
+    }
+    fprintf(f, "\n");
+}
+
+void write_record(Record record) {
+    write_uncompressed_record(__datafh, record);
+}
+
 void logger_init(int rank) {
     // Map the functions we will use later
     MAP_OR_FAIL(fopen)

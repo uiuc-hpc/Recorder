@@ -96,8 +96,10 @@ void write_data_operation(const char *func, const char *filename, double start, 
      */
     #define RECORDER_MPI_CALL(func) __real_##func
 
-    // Intercept functions if RECORDER_PRELOAD is defined
-    // Compare with same the MARCO in else
+    /*
+     * Intercept functions if RECORDER_PRELOAD is defined
+     * Compare with same the MARCO in else
+     */
     #define RECORDER_DECL(func) func
 
 #else

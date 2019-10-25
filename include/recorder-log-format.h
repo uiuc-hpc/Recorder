@@ -91,6 +91,14 @@ typedef struct IoOperation {
     size_t attr2;
 } IoOperation_t;
 
+
+typedef struct Record_t {
+    int tstart, tdur;
+    char *func_id;
+    int arg_count;
+    char **args;
+} Record;
+
 static const char* my_func_list[] = {
     // POSIX I/O
     "creat", /* 0 */        "creat64",  /* 1 */
