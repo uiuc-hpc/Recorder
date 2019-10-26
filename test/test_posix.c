@@ -19,11 +19,6 @@ int main() {
     int fd = open("./workfile.out", O_RDONLY);
     res = fstat(fd, &buf);
     close(fd);
-
-    fd = open64("./workfile.out", O_RDONLY);
-    printf("%d\n", fd);
-    close(fd);
-
     MPI_Finalize();
     return 0;
 }

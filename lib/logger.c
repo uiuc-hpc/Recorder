@@ -95,18 +95,22 @@ void write_data_operation(const char *func, const char *filename, double start, 
 
 void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
-    fwrite(&status, sizeof(char), 1, f);
-    fwrite(&(record.tstart), sizeof(int), 1, f);
-    fwrite(&(record.tdur), sizeof(int), 1, f);
-    fwrite(record.func_id, sizeof(short), 1, f);
+    /*
+    RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
+    RECORDER_MPI_CALL(fwrite) (&(record.tstart), sizeof(int), 1, f);
+    RECORDER_MPI_CALL(fwrite) (&(record.tdur), sizeof(int), 1, f);
+    RECORDER_MPI_CALL(fwrite) (&(record.func_id), sizeof(short), 1, f);
+    */
+    fprintf(f, "%d %d %s", record.tstart, record.tdur, record.func_id);
     for(size_t i = 0; i < record.arg_count; i++) {
         fprintf(f, " ");
-        fwrite(record.args[i], strlen(record.args[i]), 1, f);
+        RECORDER_MPI_CALL(fwrite) (record.args[i], strlen(record.args[i]), 1, f);
     }
     fprintf(f, "\n");
 }
 
 void write_record(Record record) {
+    if (__datafh == NULL) return;
     write_uncompressed_record(__datafh, record);
 }
 
