@@ -65,34 +65,6 @@ static inline long get_file_size(char *filename) {
 }
 
 
-static inline void write_in_binary(IoOperation_t *op) {
-    RECORDER_MPI_CALL(fwrite) (op, sizeof(IoOperation_t), 1, __datafh);
-}
-
-static inline void write_in_text(double tstart, double tend, const char* log_text) {
-    fprintf(__datafh, "%.6f %s %.6f\n", tstart, log_text, tend-tstart);
-}
-
-void write_data_operation(const char *func, const char *filename, double start, double end,
-                          size_t offset, size_t count_or_whence, const char *log_text) {
-
-    if (__datafh == NULL) return;       // Haven't initialized yet or have finialized
-
-    if (exclude_filename(filename)) return;
-
-    IoOperation_t op = {
-        .func_id = get_function_id_by_name(func),
-        .filename_id = get_filename_id(filename),
-        .start_time = start,
-        .end_time = end,
-        .attr1 = offset,
-        .attr2 = count_or_whence
-    };
-
-    write_in_text(start, end, log_text);
-    //write_in_binary(&op);
-}
-
 void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
     char invalid_str[] = "???";
