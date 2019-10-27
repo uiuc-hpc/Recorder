@@ -95,6 +95,7 @@ void write_data_operation(const char *func, const char *filename, double start, 
 
 void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
+    char invalid_str[] = "???";
     /*
     RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
     RECORDER_MPI_CALL(fwrite) (&(record.tstart), sizeof(int), 1, f);
@@ -103,8 +104,12 @@ void write_uncompressed_record(FILE *f, Record record) {
     */
     fprintf(f, "%d %d %s", record.tstart, record.tdur, record.func_id);
     for(size_t i = 0; i < record.arg_count; i++) {
-        fprintf(f, " ");
-        RECORDER_MPI_CALL(fwrite) (record.args[i], strlen(record.args[i]), 1, f);
+        if(record.args[i]) {
+            fprintf(f, " ");
+            RECORDER_MPI_CALL(fwrite) (record.args[i], strlen(record.args[i]), 1, f);
+        } else {
+            RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
+        }
     }
     fprintf(f, "\n");
 }
@@ -121,6 +126,7 @@ void logger_init(int rank) {
     MAP_OR_FAIL(fwrite)
     MAP_OR_FAIL(ftell)
     MAP_OR_FAIL(fseek)
+    // We did not intercept fprintf
 
     __filename2id_map = hashmap_new();
 

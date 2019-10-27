@@ -8,14 +8,11 @@
 #define TICK 0.000001
 double START_TIMESTAMP = 0;
 
-typedef struct Arguments_t {
-    int count;
-    char** args;
-} Arguments;
 typedef struct Record_t {
     int tstart, tdur;
     char *func_id;
-    Arguments args;
+    int arg_count;
+    char **args;
 } Record;
 
 
@@ -41,9 +38,9 @@ Record parse_record(char *args_str) {
 
     /* Add space for the last token. */
     count += last_comma < (args_str + strlen(args_str) - 1);
-    count = count - 3;  // minus tstart, tdur, func_id
+    record.arg_count = count - 3;   // minus tstart, tdur, func_id
 
-    record.args.args = malloc(sizeof(char*) * count);
+    record.args = malloc(sizeof(char*) * count);
     size_t idx  = 0;
 
     // Record.tstart
@@ -53,13 +50,15 @@ Record parse_record(char *args_str) {
     }
     record.tstart = (atof(token) - START_TIMESTAMP) / TICK;
     // Record.tdur
-    token = strtok(args_str, delim);
+    token = strtok(0, delim);
     record.tdur = atof(token) / TICK;
     // Record.func_id
-    token = strtok(args_str, delim);
+    token = strtok(0, delim);
+    record.func_id = strdup(token);
     // All arguments
+    token = strtok(0, delim);
     while (token) {
-        *(record.args.args + idx++) = strdup(token);
+        *(record.args + idx++) = strdup(token);
         token = strtok(0, delim);
     }
 
@@ -73,10 +72,16 @@ void write_uncompressed_record(FILE *f, Record record) {
     fwrite(&status, sizeof(char), 1, f);
     fwrite(&(record.tstart), sizeof(int), 1, f);
     fwrite(&(record.tdur), sizeof(int), 1, f);
-    fwrite(record.func_id, strlen(record.func_id), 1, f);
-    for(size_t i = 0; i < record.args.count; i++) {
-        fwrite(record.args.args[i], strlen(record.args.args[i]), 1, f);
+    //fwrite(record.func_id, strlen(record.func_id), 1, f);
+    fwrite(record.func_id, sizeof(short), 1, f);
+    for(size_t i = 0; i < record.arg_count; i++) {
+        fprintf(f, " ");
+        if (record.args[i][0] == '/')   // it's a path
+            fwrite(record.args[i], 2, 1, f);
+        else
+            fwrite(record.args[i], strlen(record.args[i]), 1, f);
     }
+    fprintf(f, "\n");
 }
 void write_compressed_record(FILE *f, char ref_id, Record record){
     char status = '0';
@@ -84,41 +89,63 @@ void write_compressed_record(FILE *f, char ref_id, Record record){
     fwrite(&(record.tstart), sizeof(int), 1, f);
     fwrite(&(record.tdur), sizeof(int), 1, f);
     fwrite(&ref_id, sizeof(char), 1, f);
-    for(int i = 0; i < record.args.count; i++) {
-        fwrite(record.args.args[i], strlen(record.args.args[i]), 1, f);
+    for(int i = 0; i < record.arg_count; i++) {
+        fprintf(f, " ");
+        if (record.args[i][0] == '/')   // it's a path
+            fwrite(record.args[i], 2, 1, f);
+        else
+            fwrite(record.args[i], strlen(record.args[i]), 1, f);
     }
+    fprintf(f, "\n");
 }
 
-int count_difference(Arguments args1, Arguments args2) {
-    int count = 0;
+Record get_diff_record(Record old_record, Record new_record) {
+    Record diff_record;
+    diff_record.arg_count = 999;
+
     // Same function should normally have the same number of arguments
-    if (args1.count != args2.count)
-        return max(args1.count, args2.count);
-    for(int i = 0; i < args1.count; i++) {
-        if(strcmp(args1.args[i], args2.args[i]) !=0)
+    if (old_record.arg_count != new_record.arg_count)
+        return diff_record;
+
+    // Get the number of different arguments
+    int count = 0;
+    for(int i = 0; i < old_record.arg_count; i++)
+        if(strcmp(old_record.args[i], new_record.args[i]) !=0)
             count++;
-    }
-    return count;
+
+    // Record.args store only the different arguments
+    diff_record.arg_count = count;
+    int idx = 0;
+    diff_record.args = malloc(sizeof(char *) * count);
+    for(int i = 0; i < old_record.arg_count; i++)
+        if(strcmp(old_record.args[i], new_record.args[i]) !=0)
+            diff_record.args[idx++] = new_record.args[i];
+    return diff_record;
 }
 
 void write_record(FILE *f, Record window[3], Record new_record) {
-    char *diff[8];
-    int compress = 0, min_diff_count = 999;
+    Record diff_record;
+    int compress = 0;
+    int min_diff_count = 999;
     char ref_window_id = -1;
     for(int i = 0; i < 3; i++) {
         Record record = window[i];
-        if ((strcmp(record.func_id, new_record.func_id)==0) && (new_record.args.count < 8)) {
-            int diff_count = count_difference(record.args, new_record.args);
-            if(diff_count < 8 && diff_count < min_diff_count) {
-                min_diff_count = diff_count;
+        if ((strcmp(record.func_id, new_record.func_id)==0) && (new_record.arg_count < 8)) {
+            Record tmp_record = get_diff_record(record, new_record);
+            if(tmp_record.arg_count < 8 && tmp_record.arg_count < min_diff_count) {
+                min_diff_count = tmp_record.arg_count;
                 ref_window_id = i;
                 compress = 1;
+                diff_record = tmp_record;
             }
         }
     }
 
     if(compress) {
-        write_compressed_record(f, ref_window_id, new_record);
+        diff_record.tstart = new_record.tstart;
+        diff_record.tdur = new_record.tdur;
+        diff_record.func_id = new_record.func_id;
+        write_compressed_record(f, ref_window_id, diff_record);
     } else {
         write_uncompressed_record(f, new_record);
     }
@@ -127,25 +154,30 @@ void write_record(FILE *f, Record window[3], Record new_record) {
 
 
 int main(int argc, char **argv) {
-    FILE *file = fopen("./sedov_1.itf", "r");
-    FILE *out = fopen("./sedov_1.itf.out", "wb");
+    FILE *file = fopen(argv[1], "r");
+    FILE *out = fopen("./1.out", "wb");
     char *line = malloc(sizeof(char) * 255);
-    size_t ret, len, count;
+    size_t ret, len;
 
     Record window[3];
     Record record;
 
     // First line
     if ((ret = getline(&line, &len, file)) != -1) {
+        if(line[ret-1] == '\n') line[ret-1] = 0;
         record = parse_record(line);
+        write_uncompressed_record(out, record);
         window[0] = record;
+        window[1] = record;
+        window[2] = record;
     }
-    write_record(out, window, record);
 
     // The rest
     while ((ret = getline(&line, &len, file)) != -1) {
+        if(line[ret-1] == '\n') line[ret-1] = 0;
         record = parse_record(line);
         write_record(out, window, record);
+        //write_uncompressed_record(out, record);
         window[2] = window[1];
         window[1] = window[0];
         window[0] = record;

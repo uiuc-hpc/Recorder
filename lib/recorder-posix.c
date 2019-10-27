@@ -84,7 +84,7 @@ int depth;
                 .func_id = #func,                                                           \
                 .tdur = tend - tstart,                                                      \
                 .arg_count = _arg_count,                                                    \
-                .args = args                                                                \
+                .args = _args                                                               \
             };                                                                              \
             write_record(record);                                                           \
             return res;
@@ -117,20 +117,17 @@ static inline char** assemble_args_list(int arg_count, ...) {
 
 static inline char* fd2name(int fd) {
     size_t len = 256;
-    char fdname[len];
+    char *fdname = malloc(sizeof(char) * len);
     sprintf(fdname, "/proc/self/fd/%d", fd);
-    /*
-    struct stat sb;
-    if (lstat(fdname, &sb) == -1)
-        return NULL;
-    */
+
+    // when opena file that does not exist, fd will be -1
+    if(fd < 0) return fdname;
 
     MAP_OR_FAIL(readlink)
     char *realname = malloc(len);
     int ret = RECORDER_MPI_CALL(readlink(fdname, realname, len));
-    if(ret <  0)
-        return NULL;
-    realname[ret] = '\x00'; // readlink does not append a null byte
+    if(ret <  0) return fdname;
+    realname[ret] = 0; // readlink does not append a null byte
     return realname;
 }
 

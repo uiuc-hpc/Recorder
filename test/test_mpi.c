@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
     char rbuf[MPI_MAX_PROCESSOR_NAME];
     TEST_MPI_CALL(MPI_Alltoall, (sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD));
 
-
     /* IO-Realted MPI Calls */
     MPI_File fh;
     MPI_Status status;
