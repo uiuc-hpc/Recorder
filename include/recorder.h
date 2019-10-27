@@ -230,6 +230,8 @@ RECORDER_FORWARD_DECL(PMPI_Init_thread, int, (int *argc, char ***argv, int requi
 RECORDER_FORWARD_DECL(PMPI_Wtime, double, ());
 RECORDER_FORWARD_DECL(PMPI_Comm_rank, int, (MPI_Comm comm, int *rank));
 RECORDER_FORWARD_DECL(PMPI_Comm_size, int, (MPI_Comm comm, int *size));
+RECORDER_FORWARD_DECL(PMPI_Get_processor_name, int, (char *name, int *resultlen));
+RECORDER_FORWARD_DECL(PMPI_Comm_set_errhandler, int, (MPI_Comm comm, MPI_Errhandler errhandler));
 RECORDER_FORWARD_DECL(PMPI_Barrier, int, (MPI_Comm comm));
 RECORDER_FORWARD_DECL(PMPI_Bcast, int, (void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm));
 RECORDER_FORWARD_DECL(PMPI_Gather, int, (CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm));
@@ -253,7 +255,6 @@ RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
 RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
 RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
 RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype));
-RECORDER_FORWARD_DECL(PMPI_Get_processor_name, int, (char *name, int *resultlen));
 
 
 
