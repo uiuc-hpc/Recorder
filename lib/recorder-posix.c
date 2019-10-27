@@ -42,7 +42,6 @@
 
 #define _XOPEN_SOURCE 500
 #define _GNU_SOURCE
-#define TRACE_LEN 256
 
 #include <stdio.h>
 #include <unistd.h>
@@ -157,7 +156,7 @@ static inline char* itoa(int val) {
     return str;
 }
 /* Pointer to string */
-static inline char* ptoa(void *ptr) {
+static inline char* ptoa(const void *ptr) {
     char *str = malloc(sizeof(char) * 16);
     sprintf(str, "%p", ptr);
     return str;
@@ -447,11 +446,11 @@ void rewinddir(DIR *dir) {
     */
 }
 int mknod(const char *path, mode_t mode, dev_t dev) {
-    char** args = assemble_args_list(3, realrealpath(path), itoa(mode), ptoa(dev));
+    char** args = assemble_args_list(3, realrealpath(path), itoa(mode), itoa(dev));
     RECORDER_IMP_WANG(mknod, int, __real_mknod(path, mode, dev), 3, args)
 }
 int mknodat(int fd, const char *path, mode_t mode, dev_t dev) {
-    char** args = assemble_args_list(4, fd2name(fd), realrealpath(path), itoa(mode), ptoa(dev));
+    char** args = assemble_args_list(4, fd2name(fd), realrealpath(path), itoa(mode), itoa(dev));
     RECORDER_IMP_WANG(mknodat, int, __real_mknodat(fd, path, mode, dev), 4, args)
 }
 
@@ -487,7 +486,7 @@ mode_t umask(mode_t mask) {
     RECORDER_IMP_WANG(umask, mode_t, __real_umask(mask), 1, args)
 }
 FILE* fdopen(int fd, const char *mode) {
-    char** args = assemble_args_list(2, fd2name(fd), itoa(mode));
+    char** args = assemble_args_list(2, fd2name(fd), ptoa(mode));
     RECORDER_IMP_WANG(fdopen, FILE*, __real_fdopen(fd, mode), 2, args)
 }
 int fileno(FILE *stream) {

@@ -70,7 +70,7 @@ double recorder_wtime(void);
 
 void logger_init(int rank);
 void logger_exit();
-void write_data_operation(const char *func, const char *filename, double start, double end, size_t attr1, size_t attr2, const char *log);
+void write_record(Record record);
 
 
 #ifdef RECORDER_PRELOAD

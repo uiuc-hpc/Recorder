@@ -74,13 +74,10 @@
 
 int depth;
 
-#define TRACE_LEN 256
-
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
     #ifndef DISABLE_MPIO_TRACE
         #define RECORDER_IMP_WANG(ret, func, real_args, record_arg_count, record_args)      \
-            printf("%s %d\n", #func, record_arg_count);\
             MAP_OR_FAIL(func)                                                               \
             depth++;                                                                        \
             double tstart = recorder_wtime();                                               \
@@ -139,7 +136,7 @@ static inline char* itoa(int val) {
     return str;
 }
 /* Pointer to string */
-static inline char* ptoa(void *ptr) {
+static inline char* ptoa(const void *ptr) {
     char *str = malloc(sizeof(char) * 16);
     sprintf(str, "%p", ptr);
     return str;
@@ -199,7 +196,7 @@ int MPI_Gatherv(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         CONST int *rcount, CONST int *displs, MPI_Datatype rtype, int root, MPI_Comm comm) {
     // TODO: *displs
     char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype), ptoa(rbuf),
-                                        itoa(rcount), ptoa(displs), type2name(rtype), itoa(root), comm2name(comm));
+                                        ptoa(rcount), ptoa(displs), type2name(rtype), itoa(root), comm2name(comm));
     RECORDER_IMP_WANG(int, PMPI_Gatherv, (sbuf, scount, stype, rbuf, rcount, displs, rtype, root, comm), 9, args)
 }
 
@@ -227,7 +224,7 @@ int MPI_Allgatherv(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
 int MPI_Alltoall(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         int rcount, MPI_Datatype rtype, MPI_Comm comm) {
     char **args = assemble_args_list(7, ptoa(sbuf), itoa(scount), type2name(stype),
-                                        ptoa(rbuf), ptoa(rcount), type2name(rtype), comm2name(comm));
+                                        ptoa(rbuf), itoa(rcount), type2name(rtype), comm2name(comm));
     RECORDER_IMP_WANG(int, PMPI_Alltoall, (sbuf, scount, stype, rbuf, rcount, rtype, comm), 7, args)
 }
 
@@ -359,7 +356,7 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 int MPI_File_write(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
     char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
-    RECORDER_IMP_WANG(int, PMPI_File_write, (fh, buf, count, datatype, status), 5, status)
+    RECORDER_IMP_WANG(int, PMPI_File_write, (fh, buf, count, datatype, status), 5, args)
 }
 
 int MPI_File_write_at(MPI_File fh, MPI_Offset offset, CONST void *buf,
@@ -410,19 +407,19 @@ int MPI_File_write_ordered_begin(MPI_File fh, CONST void *buf, int count, MPI_Da
 
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char **args = assemble_args_list(6, toa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
+    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
     RECORDER_IMP_WANG(int, PMPI_File_iwrite_at, (fh, offset, buf, count, datatype, request), 6, args)
 }
 
 int MPI_File_iwrite(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char **args = assemble_args_list(5, toa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
     RECORDER_IMP_WANG(int, PMPI_File_iwrite, (fh, buf, count, datatype, request), 5, args)
 }
 
 int MPI_File_iwrite_shared(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, __D_MPI_REQUEST *request) {
-    char **args = assemble_args_list(5, toa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(request));
     RECORDER_IMP_WANG(int, PMPI_File_iwrite_shared, (fh, buf, count, datatype, request), 5, args)
 }
 

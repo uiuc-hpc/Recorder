@@ -45,6 +45,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <pthread.h>
 #include <string.h>
 #include <limits.h>
@@ -56,24 +57,28 @@
 #define SMALL_BUF_SIZE 128
 #define LARGE_BUF_SIZE 1024
 
-
-#define TRACE_LEN 256
-
 #ifdef RECORDER_PRELOAD
     #ifndef DISABLE_HDF5_TRACE
-        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)      \
-            MAP_OR_FAIL(func)                                                   \
-            depth++;                                                            \
-            double tm1 = recorder_wtime();                                      \
-            ret res = RECORDER_MPI_CALL(func) args ;                            \
-            double tm2 = recorder_wtime();                                      \
-            write_data_operation(#func, "", tm1, tm2, attr1, attr2, log_text);  \
-            depth--;                                                            \
+        #define RECORDER_IMP_WANG(ret, func, real_args, record_arg_count, record_args)      \
+            MAP_OR_FAIL(func)                                                               \
+            depth++;                                                                        \
+            double tstart = recorder_wtime();                                               \
+            ret res = RECORDER_MPI_CALL(func) real_args ;                                   \
+            double tend = recorder_wtime();                                                 \
+            depth--;                                                                        \
+            Record record = {                                                               \
+                .tstart = tstart,                                                           \
+                .func_id = #func,                                                           \
+                .tdur = tend - tstart,                                                      \
+                .arg_count = record_arg_count,                                              \
+                .args = record_args                                                         \
+            };                                                                              \
+            write_record(record);                                                           \
             return res;
     #else
-        #define RECORDER_IMP_CHEN(func, ret, args, attr1, attr2, log_text)  \
-            MAP_OR_FAIL(func)                                               \
-            return RECORDER_MPI_CALL(func) args ;
+        #define RECORDER_IMP_WANG(ret, func, real_args, record_arg_count, record_args)      \
+            MAP_OR_FAIL(func)                                                               \
+            return RECORDER_MPI_CALL(func) real_args ;
     #endif
 #endif
 
@@ -268,383 +273,342 @@ void get_op_name(H5S_seloper_t op, char *string) {
 //static struct recorder_file_runtime *recorder_file_by_hid(int hid);
 
 
+static inline char** assemble_args_list(int arg_count, ...) {
+    char** args = malloc(sizeof(char*) * arg_count);
+    int i;
+    va_list valist;
+    va_start(valist, arg_count);
+    for(i = 0; i < arg_count; i++)
+        args[i] = va_arg(valist, char*);
+    va_end(valist);
+    return args;
+}
+/* Integer to stirng */
+static inline char* itoa(int val) {
+    char *str = malloc(sizeof(char) * 16);
+    sprintf(str, "%d", val);
+    return str;
+}
+/* Pointer to string */
+static inline char* ptoa(const void *ptr) {
+    char *str = malloc(sizeof(char) * 16);
+    sprintf(str, "%p", ptr);
+    return str;
+}
+// My implementation to replace realrealpath() system call
+static inline char* realrealpath(const char *path) {
+    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
+    realpath(path, real_pathname);
+    if (real_pathname == NULL)
+        strcpy(real_pathname, path);
+    return real_pathname;
+}
+
+static inline char *comm2name(MPI_Comm comm) {
+    char *tmp = malloc(128);
+    int len;
+    PMPI_Comm_get_name(comm, tmp, &len);
+    tmp[len] = 0;
+    if(len == 0) strcpy(tmp, "MPI_COMM_UNKNOWN");
+    return tmp;
+}
+
 hid_t RECORDER_DECL(H5Fcreate)(const char *filename, unsigned flags, hid_t create_plist, hid_t access_plist) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Fcreate (%s, %d, %d, %d)", filename, flags, create_plist, access_plist);
-  RECORDER_IMP_CHEN(H5Fcreate, hid_t, (filename, flags, create_plist, access_plist), flags, 0, log_text);
+    char **args = assemble_args_list(4, realrealpath(filename), itoa(flags), itoa(create_plist), itoa(access_plist));
+    RECORDER_IMP_WANG(hid_t, H5Fcreate, (filename, flags, create_plist, access_plist), 4, args)
 }
 
 hid_t RECORDER_DECL(H5Fopen)(const char *filename, unsigned flags, hid_t access_plist) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Fopen (%s, %d, %d)", filename, flags, access_plist);
-  RECORDER_IMP_CHEN(H5Fopen, hid_t, (filename, flags, access_plist), flags, 0, log_text);
+    char **args = assemble_args_list(3, realrealpath(filename), itoa(flags), itoa(access_plist));
+    RECORDER_IMP_WANG(hid_t, H5Fopen, (filename, flags, access_plist), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Fclose)(hid_t file_id) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Fclose (%d)", file_id);
-  RECORDER_IMP_CHEN(H5Fclose, herr_t, (file_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(file_id));
+    RECORDER_IMP_WANG(herr_t, H5Fclose, (file_id), 1, args)
 }
 
 // Group Interface
 herr_t RECORDER_DECL(H5Gclose)(hid_t group_id) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Gclose (%d)", group_id);
-  RECORDER_IMP_CHEN(H5Gclose, herr_t, (group_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(group_id));
+    RECORDER_IMP_WANG(herr_t, H5Gclose, (group_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Gcreate1)(hid_t loc_id, const char *name, size_t size_hint) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Gcreate1 (%d, %s, %ld)", loc_id, name, size_hint);
-  RECORDER_IMP_CHEN(H5Gcreate1, hid_t, (loc_id, name, size_hint), size_hint, 0, log_text);
+    char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(size_hint));
+    RECORDER_IMP_WANG(hid_t, H5Gcreate1, (loc_id, name, size_hint), 3, args)
 }
 
 hid_t RECORDER_DECL(H5Gcreate2)(hid_t loc_id, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id) {
-  char log_text[TRACE_LEN];
-  sprintf(log_text, "H5Gcreate2 (%d, %s, %d, %d, %d)", loc_id, name, lcpl_id, gcpl_id, gapl_id);
-  RECORDER_IMP_CHEN(H5Gcreate2, hid_t, (loc_id, name, lcpl_id, gcpl_id, gapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(5, itoa(loc_id), strdup(name), itoa(lcpl_id), itoa(gcpl_id), itoa(gapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Gcreate2, (loc_id, name, lcpl_id, gcpl_id, gapl_id), 5, args)
 }
 
 herr_t RECORDER_DECL(H5Gget_objinfo)(hid_t loc_id, const char *name, hbool_t follow_link, H5G_stat_t *statbuf) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Gget_objinfo (%d, %s, %d, %p)", loc_id, name, follow_link, statbuf);
-    RECORDER_IMP_CHEN(H5Gget_objinfo, herr_t, (loc_id, name, follow_link, statbuf), 0, 0, log_text);
+    char **args = assemble_args_list(4, itoa(loc_id), strdup(name), itoa(follow_link), ptoa(statbuf));
+    RECORDER_IMP_WANG(herr_t, H5Gget_objinfo, (loc_id, name, follow_link, statbuf), 4, args)
 }
 
 int RECORDER_DECL(H5Giterate)(hid_t loc_id, const char *name, int *idx, H5G_iterate_t operator, void *operator_data) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Giterate (%d, %s, %p, %d, %p)", loc_id, name, idx, operator, operator_data);
-    RECORDER_IMP_CHEN(H5Giterate, int, (loc_id, name, idx, operator, operator_data), 0, 0, log_text);
+    char **args = assemble_args_list(4, itoa(loc_id), strdup(name), ptoa(&operator), ptoa(operator_data));
+    RECORDER_IMP_WANG(int, H5Giterate, (loc_id, name, idx, operator, operator_data), 4, args)
 }
 
 hid_t RECORDER_DECL(H5Gopen1)(hid_t loc_id, const char *name) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Gopen1 (%d, %s)", loc_id, name);
-    RECORDER_IMP_CHEN(H5Gopen1, hid_t, (loc_id, name), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
+    RECORDER_IMP_WANG(hid_t, H5Gopen1, (loc_id, name), 2, args)
 }
 
 
 hid_t RECORDER_DECL(H5Gopen2)(hid_t loc_id, const char *name, hid_t gapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Gopen2 (%d, %s, %d)", loc_id, name, gapl_id);
-    RECORDER_IMP_CHEN(H5Gopen2, hid_t, (loc_id, name, gapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(gapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Gopen2, (loc_id, name, gapl_id), 3, args)
 }
 
 // Dataset interface
 herr_t RECORDER_DECL(H5Dclose)(hid_t dataset_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dclose (%d)", dataset_id);
-    RECORDER_IMP_CHEN(H5Dclose, herr_t, (dataset_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dataset_id));
+    RECORDER_IMP_WANG(herr_t, H5Dclose, (dataset_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Dcreate1)(hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t dcpl_id) {
-    char log_text[TRACE_LEN];
-    char datatype_name[64];
-    get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    sprintf(log_text, "H5Dcreate1 (%d, %s, %s, %d, %d)", loc_id, name, datatype_name, space_id, dcpl_id);
-    RECORDER_IMP_CHEN(H5Dcreate1, hid_t, (loc_id, name, type_id, space_id, dcpl_id), 0, 0, log_text);
+    char **args = assemble_args_list(5, itoa(loc_id), strdup(name), itoa(type_id), itoa(space_id), itoa(dcpl_id));
+    RECORDER_IMP_WANG(hid_t, H5Dcreate1, (loc_id, name, type_id, space_id, dcpl_id), 5, args)
 }
 
 hid_t RECORDER_DECL(H5Dcreate2)(hid_t loc_id, const char *name, hid_t dtype_id, hid_t space_id, hid_t lcpl_id, hid_t dcpl_id, hid_t dapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dcreate2 (%d, %s, %d, %d, %d, %d, %d)", loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id);
-    RECORDER_IMP_CHEN(H5Dcreate2, hid_t, (loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(7, itoa(loc_id), strdup(name), itoa(dtype_id), itoa(space_id), itoa(lcpl_id), itoa(dcpl_id), itoa(dapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Dcreate2, (loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id), 7, args)
 }
 
 hid_t RECORDER_DECL(H5Dget_create_plist)(hid_t dataset_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dget_create_plist (%d)", dataset_id);
-    RECORDER_IMP_CHEN(H5Dget_create_plist, hid_t, (dataset_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dataset_id));
+    RECORDER_IMP_WANG(hid_t, H5Dget_create_plist, (dataset_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Dget_space)(hid_t dataset_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dget_space (%d)", dataset_id);
-    RECORDER_IMP_CHEN(H5Dget_space, hid_t, (dataset_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dataset_id));
+    RECORDER_IMP_WANG(hid_t, H5Dget_space, (dataset_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Dget_type)(hid_t dataset_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dget_type (%d)", dataset_id);
-    RECORDER_IMP_CHEN(H5Dget_type, hid_t, (dataset_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dataset_id));
+    RECORDER_IMP_WANG(hid_t, H5Dget_type, (dataset_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Dopen1)(hid_t loc_id, const char *name) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dopen1 (%d, %s)", loc_id, name);
-    RECORDER_IMP_CHEN(H5Dopen1, hid_t, (loc_id, name), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
+    RECORDER_IMP_WANG(hid_t, H5Dopen1, (loc_id, name), 2, args)
 }
 
 hid_t RECORDER_DECL(H5Dopen2)(hid_t loc_id, const char *name, hid_t dapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dopen2 (%d, %s, %d)", loc_id, name, dapl_id);
-    RECORDER_IMP_CHEN(H5Dopen2, hid_t, (loc_id, name, dapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(dapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Dopen2, (loc_id, name, dapl_id), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Dread)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dread (%d, %d, %d, %d, %d, %p)", dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf);
-    RECORDER_IMP_CHEN(H5Dread, hid_t, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 0, 0, log_text);
+    char **args = assemble_args_list(6, itoa(dataset_id), itoa(mem_type_id), itoa(mem_space_id), itoa(file_space_id), itoa(xfer_plist_id), ptoa(buf));
+    RECORDER_IMP_WANG(hid_t, H5Dread, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 6, args)
 }
 
 herr_t RECORDER_DECL(H5Dwrite)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Dwrite (%d, %d, %d, %d, %d, %p)", dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf);
-    RECORDER_IMP_CHEN(H5Dwrite, hid_t, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 0, 0, log_text);
+    char **args = assemble_args_list(6, itoa(dataset_id), itoa(mem_type_id), itoa(mem_space_id), itoa(file_space_id), itoa(xfer_plist_id), ptoa(buf));
+    RECORDER_IMP_WANG(hid_t, H5Dwrite, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 6, args)
 }
 
 herr_t RECORDER_DECL(H5Sclose)(hid_t space_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sclose (%d)", space_id);
-    RECORDER_IMP_CHEN(H5Sclose, herr_t, (space_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(space_id));
+    RECORDER_IMP_WANG(herr_t, H5Sclose, (space_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Screate)(H5S_class_t type) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Screate (%d)", type);
-    RECORDER_IMP_CHEN(H5Screate, hid_t, (type), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(type));
+    RECORDER_IMP_WANG(hid_t, H5Screate, (type), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Screate_simple)(int rank, const hsize_t *current_dims, const hsize_t *maximum_dims) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Screate_simple (%d, %p, %p)", rank, current_dims, maximum_dims);
-    RECORDER_IMP_CHEN(H5Screate_simple, hid_t, (rank, current_dims, maximum_dims), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(rank), ptoa(current_dims), ptoa(maximum_dims));
+    RECORDER_IMP_WANG(hid_t, H5Screate_simple, (rank, current_dims, maximum_dims), 3, args)
 }
 
 hssize_t RECORDER_DECL(H5Sget_select_npoints)(hid_t space_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sget_select_npoints (%d)", space_id);
-    RECORDER_IMP_CHEN(H5Sget_select_npoints, hssize_t, (space_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(space_id));
+    RECORDER_IMP_WANG(hssize_t, H5Sget_select_npoints, (space_id), 1, args)
 }
 
 int RECORDER_DECL(H5Sget_simple_extent_dims)(hid_t space_id, hsize_t *dims, hsize_t *maxdims) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sget_simple_extent_dims (%d, %p, %p)", space_id, dims, maxdims);
-    RECORDER_IMP_CHEN(H5Sget_simple_extent_dims, int, (space_id, dims, maxdims), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(space_id), ptoa(dims), ptoa(maxdims));
+    RECORDER_IMP_WANG(int, H5Sget_simple_extent_dims, (space_id, dims, maxdims), 3, args)
 }
 
 hssize_t RECORDER_DECL(H5Sget_simple_extent_npoints)(hid_t space_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sget_simple_extent_npoints (%d)", space_id);
-    RECORDER_IMP_CHEN(H5Sget_simple_extent_npoints, hssize_t, (space_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(space_id));
+    RECORDER_IMP_WANG(hssize_t, H5Sget_simple_extent_npoints, (space_id), 1, args)
 }
 
 herr_t RECORDER_DECL(H5Sselect_elements)(hid_t space_id, H5S_seloper_t op, size_t num_elements, const hsize_t *coord) {
-    char op_name[32];
-    char log_text[TRACE_LEN];
-    get_op_name(op, op_name);
-    sprintf(log_text, "H5Sselect_elements (%d, %s, %ld, %p)", space_id, op_name, num_elements, coord);
-    RECORDER_IMP_CHEN(H5Sselect_elements, herr_t, (space_id, op, num_elements, coord), 0, 0, log_text);
+    char **args = assemble_args_list(4, itoa(space_id), itoa(op), itoa(num_elements), ptoa(coord));
+    RECORDER_IMP_WANG(herr_t, H5Sselect_elements, (space_id, op, num_elements, coord), 4, args)
 }
 
 herr_t RECORDER_DECL(H5Sselect_hyperslab)(hid_t space_id, H5S_seloper_t op, const hsize_t *start, const hsize_t *stride, const hsize_t *count, const hsize_t *block) {
-    char op_name[32];
-    char log_text[TRACE_LEN];
-    get_op_name(op, op_name);
-    sprintf(log_text, "H5Sselect_hyperslab (%d, %s, %p, %p, %p, %p)", space_id, op_name, start, stride, count, block);
-    RECORDER_IMP_CHEN(H5Sselect_hyperslab, herr_t, (space_id, op, start, stride, count, block), 0, 0, log_text);
+    char **args = assemble_args_list(6, itoa(space_id), itoa(op), ptoa(start), ptoa(stride), ptoa(count), ptoa(block));
+    RECORDER_IMP_WANG(herr_t, H5Sselect_hyperslab, (space_id, op, start, stride, count, block), 6, args)
 }
 
 herr_t RECORDER_DECL(H5Sselect_none)(hid_t space_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Sselect_none (%d)", space_id);
-    RECORDER_IMP_CHEN(H5Sselect_none, herr_t, (space_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(space_id));
+    RECORDER_IMP_WANG(herr_t, H5Sselect_none, (space_id), 1, args)
 }
 
 herr_t RECORDER_DECL(H5Tclose)(hid_t dtype_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tclose (%d)", dtype_id);
-    RECORDER_IMP_CHEN(H5Tclose, herr_t, (dtype_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dtype_id));
+    RECORDER_IMP_WANG(herr_t, H5Tclose, (dtype_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Tcopy)(hid_t dtype_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tcopy (%d)", dtype_id);
-    RECORDER_IMP_CHEN(H5Tcopy, hid_t , (dtype_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dtype_id));
+    RECORDER_IMP_WANG(hid_t, H5Tcopy, (dtype_id), 1, args)
 }
 
 H5T_class_t RECORDER_DECL(H5Tget_class)(hid_t dtype_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tget_class (%d)", dtype_id);
-    RECORDER_IMP_CHEN(H5Tget_class, H5T_class_t, (dtype_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dtype_id));
+    RECORDER_IMP_WANG(H5T_class_t, H5Tget_class, (dtype_id), 1, args)
 }
 
 size_t RECORDER_DECL(H5Tget_size)(hid_t dtype_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tget_size (%d)", dtype_id);
-    RECORDER_IMP_CHEN(H5Tget_size, size_t, (dtype_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(dtype_id));
+    RECORDER_IMP_WANG(size_t, H5Tget_size, (dtype_id), 1, args)
 }
 
 herr_t RECORDER_DECL(H5Tset_size)(hid_t dtype_id, size_t size) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tset_size (%d, %ld)", dtype_id, size);
-    RECORDER_IMP_CHEN(H5Tset_size, herr_t, (dtype_id, size), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(dtype_id), itoa(size));
+    RECORDER_IMP_WANG(herr_t, H5Tset_size, (dtype_id, size), 2, args)
 }
 
 hid_t RECORDER_DECL(H5Tcreate)(H5T_class_t class, size_t size) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tcreate (%d, %ld)", class, size);
-    RECORDER_IMP_CHEN(H5Tcreate, hid_t, (class, size), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(class), itoa(size));
+    RECORDER_IMP_WANG(hid_t, H5Tcreate, (class, size), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Tinsert)(hid_t dtype_id, const char *name, size_t offset, hid_t field_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Tinsert (%d, %s, %ld, %d)", dtype_id, name, offset, field_id);
-    RECORDER_IMP_CHEN(H5Tinsert, herr_t, (dtype_id, name, offset, field_id), 0, 0, log_text);
+    char **args = assemble_args_list(4, itoa(dtype_id), strdup(name), itoa(offset), itoa(field_id));
+    RECORDER_IMP_WANG(herr_t, H5Tinsert, (dtype_id, name, offset, field_id), 4, args)
 }
 
 herr_t RECORDER_DECL(H5Aclose)(hid_t attr_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aclose (%d)", attr_id);
-    RECORDER_IMP_CHEN(H5Aclose, herr_t, (attr_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(attr_id));
+    RECORDER_IMP_WANG(herr_t, H5Aclose, (attr_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Acreate1)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id) {
-    char log_text[TRACE_LEN];
-    char datatype_name[64];
-    get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    sprintf(log_text, "H5Acreate1 (%d, %s, %s, %d, %d)", loc_id, attr_name, datatype_name, space_id, acpl_id);
-    RECORDER_IMP_CHEN(H5Acreate1, hid_t, (loc_id, attr_name, type_id, space_id, acpl_id), 0, 0, log_text);
+    char **args = assemble_args_list(5, itoa(loc_id), strdup(attr_name), itoa(type_id), itoa(space_id), itoa(acpl_id));
+    RECORDER_IMP_WANG(hid_t, H5Acreate1, (loc_id, attr_name, type_id, space_id, acpl_id), 5, args)
 }
 
 hid_t RECORDER_DECL(H5Acreate2)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id) {
-    char log_text[TRACE_LEN];
-    char datatype_name[64];
-    get_datatype_name(H5Tget_class(type_id), type_id, datatype_name);
-    sprintf(log_text, "H5Acreate2 (%d, %s, %s, %d, %d, %d)", loc_id, attr_name, datatype_name, space_id, acpl_id, aapl_id);
-    RECORDER_IMP_CHEN(H5Acreate2, hid_t, (loc_id, attr_name, type_id, space_id, acpl_id, aapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(6, itoa(loc_id), strdup(attr_name), itoa(type_id), itoa(space_id), itoa(acpl_id), itoa(aapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Acreate2, (loc_id, attr_name, type_id, space_id, acpl_id, aapl_id), 6, args)
 }
 
 ssize_t RECORDER_DECL(H5Aget_name)(hid_t attr_id, size_t buf_size, char *buf) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aget_name (%d, %ld, %p)", attr_id, buf_size, buf);
-    RECORDER_IMP_CHEN(H5Aget_name, ssize_t, (attr_id, buf_size, buf), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(attr_id), itoa(buf_size), ptoa(buf));
+    RECORDER_IMP_WANG(ssize_t, H5Aget_name, (attr_id, buf_size, buf), 3, args)
 }
 
 int RECORDER_DECL(H5Aget_num_attrs)(hid_t loc_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aget_num_attrs (%d)", loc_id);
-    RECORDER_IMP_CHEN(H5Aget_num_attrs, int, (loc_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(loc_id));
+    RECORDER_IMP_WANG(int, H5Aget_num_attrs, (loc_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Aget_space)(hid_t attr_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aget_space (%d)", attr_id);
-    RECORDER_IMP_CHEN(H5Aget_space, hid_t, (attr_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(attr_id));
+    RECORDER_IMP_WANG(hid_t, H5Aget_space, (attr_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Aget_type)(hid_t attr_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aget_type (%d)", attr_id);
-    RECORDER_IMP_CHEN(H5Aget_type, hid_t, (attr_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(attr_id));
+    RECORDER_IMP_WANG(hid_t, H5Aget_type, (attr_id), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Aopen)(hid_t obj_id, const char *attr_name, hid_t aapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aopen (%d, %s, %d)", obj_id, attr_name, aapl_id);
-    RECORDER_IMP_CHEN(H5Aopen, hid_t, (obj_id, attr_name, aapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(obj_id), strdup(attr_name), itoa(aapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Aopen, (obj_id, attr_name, aapl_id), 3, args)
 }
 
 hid_t RECORDER_DECL(H5Aopen_idx)(hid_t loc_id, unsigned int idx) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aopen_idx (%d, %d)", loc_id, idx);
-    RECORDER_IMP_CHEN(H5Aopen_idx, hid_t, (loc_id,idx), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(loc_id), itoa(idx));
+    RECORDER_IMP_WANG(hid_t, H5Aopen_idx, (loc_id,idx), 2, args)
 }
 
 hid_t RECORDER_DECL(H5Aopen_name)(hid_t loc_id, const char *name) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Aopen_name (%d, %s)", loc_id, name);
-    RECORDER_IMP_CHEN(H5Aopen_name, hid_t, (loc_id, name), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
+    RECORDER_IMP_WANG(hid_t, H5Aopen_name, (loc_id, name), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Aread)(hid_t attr_id, hid_t mem_type_id, void *buf) {
-    char log_text[TRACE_LEN];
-    char datatype_name[64];
-    get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    sprintf(log_text, "H5Aread (%d, %s, %p", attr_id, datatype_name, buf);
-    RECORDER_IMP_CHEN(H5Aread, herr_t, (attr_id, mem_type_id, buf), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(attr_id), itoa(mem_type_id), ptoa(buf));
+    RECORDER_IMP_WANG(herr_t, H5Aread, (attr_id, mem_type_id, buf), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Awrite)(hid_t attr_id, hid_t mem_type_id, const void *buf) {
-    char log_text[TRACE_LEN];
-    char datatype_name[64];
-    get_datatype_name(H5Tget_class(mem_type_id), mem_type_id, datatype_name);
-    sprintf(log_text, "H5Awrite (%d, %s, %p", attr_id, datatype_name, buf);
-    RECORDER_IMP_CHEN(H5Awrite, herr_t, (attr_id, mem_type_id, buf), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(attr_id), itoa(mem_type_id), ptoa(buf));
+    RECORDER_IMP_WANG(herr_t, H5Awrite, (attr_id, mem_type_id, buf), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pclose)(hid_t plist) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pclose (%d)", plist);
-    RECORDER_IMP_CHEN(H5Pclose, herr_t, (plist), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(plist));
+    RECORDER_IMP_WANG(herr_t, H5Pclose, (plist), 1, args)
 }
 
 hid_t RECORDER_DECL(H5Pcreate)(hid_t cls_id) {
-    char prop_list_cls_name[SMALL_BUF_SIZE];
-    char log_text[TRACE_LEN];
-    get_prop_list_cls_name(cls_id, prop_list_cls_name);
-    sprintf(log_text, "H5Pcreate (%s)", prop_list_cls_name);
-    RECORDER_IMP_CHEN(H5Pcreate, hid_t, (cls_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(cls_id));
+    RECORDER_IMP_WANG(hid_t, H5Pcreate, (cls_id), 1, args)
 }
 
 int RECORDER_DECL(H5Pget_chunk)(hid_t plist, int max_ndims, hsize_t *dims) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pget_chunk (%d, %d, %p)", plist, max_ndims, dims);
-    RECORDER_IMP_CHEN(H5Pget_chunk, int, (plist, max_ndims, dims), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(plist), itoa(max_ndims), ptoa(dims));
+    RECORDER_IMP_WANG(int, H5Pget_chunk, (plist, max_ndims, dims), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pget_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pget_mdc_config (%d, %p)", plist_id, config_ptr);
-    RECORDER_IMP_CHEN(H5Pget_mdc_config, herr_t, (plist_id, config_ptr), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(plist_id), ptoa(config_ptr));
+    RECORDER_IMP_WANG(herr_t, H5Pget_mdc_config, (plist_id, config_ptr), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_alignment)(hid_t plist, hsize_t threshold, hsize_t alignment) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_alignment (%d, %d, %d)", plist, threshold, alignment);
-    RECORDER_IMP_CHEN(H5Pset_alignment, herr_t, (plist, threshold, alignment), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(plist), itoa(threshold), itoa(alignment));
+    RECORDER_IMP_WANG(herr_t, H5Pset_alignment, (plist, threshold, alignment), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_chunk)(hid_t plist, int ndims, const hsize_t *dim) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_chunk (%d, %d, %p)", plist, ndims, dim);
-    RECORDER_IMP_CHEN(H5Pset_chunk, herr_t, (plist, ndims, dim), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(plist), itoa(ndims), ptoa(dim));
+    RECORDER_IMP_WANG(herr_t, H5Pset_chunk, (plist, ndims, dim), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_dxpl_mpio)(hid_t dxpl_id, H5FD_mpio_xfer_t xfer_mode) {
-
-    char log_text[TRACE_LEN];
-    if (xfer_mode == H5FD_MPIO_INDEPENDENT)
-        sprintf(log_text, "H5Pset_dxpl_mpio (%d, H5FD_MPIO_INDEPENDENT)", dxpl_id);
-    else if (xfer_mode == H5FD_MPIO_COLLECTIVE)
-        sprintf(log_text, "H5Pset_dxpl_mpio (%d, H5FD_MPIO_COLLECTIVE)", dxpl_id);
-    else
-        sprintf(log_text, "H5Pset_dxpl_mpio (%d, %d)", dxpl_id, xfer_mode);
-    RECORDER_IMP_CHEN(H5Pset_dxpl_mpio, herr_t, (dxpl_id, xfer_mode), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(dxpl_id), itoa(xfer_mode));
+    RECORDER_IMP_WANG(herr_t, H5Pset_dxpl_mpio, (dxpl_id, xfer_mode), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_fapl_core)(hid_t fapl_id, size_t increment, hbool_t backing_store) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_fapl_core (%d, %d, %p)", fapl_id, increment, backing_store);
-    RECORDER_IMP_CHEN(H5Pset_fapl_core, herr_t, (fapl_id, increment, backing_store), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(fapl_id), itoa(increment), itoa(backing_store));
+    RECORDER_IMP_WANG(herr_t, H5Pset_fapl_core, (fapl_id, increment, backing_store), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm, MPI_Info info) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_fapl_mpio (%d, %p, %p)", fapl_id, comm, info);
-    RECORDER_IMP_CHEN(H5Pset_fapl_mpio, herr_t, (fapl_id, comm, info), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(fapl_id), comm2name(comm), ptoa(&info));
+    RECORDER_IMP_WANG(herr_t, H5Pset_fapl_mpio, (fapl_id, comm, info), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_fapl_mpiposix)(hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_fapl_mpiposix (%d, %p, %d)", fapl_id, comm, use_gpfs_hints);
-    RECORDER_IMP_CHEN(H5Pset_fapl_mpiposix, herr_t, (fapl_id, comm, use_gpfs_hints), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(fapl_id), comm2name(comm), itoa(use_gpfs_hints));
+    RECORDER_IMP_WANG(herr_t, H5Pset_fapl_mpiposix, (fapl_id, comm, use_gpfs_hints), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_istore_k)(hid_t plist, unsigned ik) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_istore_k (%d, %d)", plist, ik);
-    RECORDER_IMP_CHEN(H5Pset_istore_k, herr_t, (plist, ik), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(plist), itoa(ik));
+    RECORDER_IMP_WANG(herr_t, H5Pset_istore_k, (plist, ik), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
@@ -664,7 +628,7 @@ herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t *con
     // size_t max_decrement, int epochs_before_eviction, hbool_t
     // apply_empty_reserve, double empty_reserve
     // int dirty_bytes_threshold, int metadata_write_strategy
-
+    /*
     char log_text[1024];
     sprintf(log_text, "H5Pset_mdc_config (%d, [%d;%d;%d;%d;%s;%d;%d;%d;%f;%d;%d;%ld;%d;%f;%f;% d;%d;%d;%f;%f;%d;%f;%f;%d;%d;%d;%d;%f;%d;%d])",
             plist_id, config_ptr->version, config_ptr->rpt_fcn_enabled,
@@ -683,37 +647,34 @@ herr_t RECORDER_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t *con
             config_ptr->apply_empty_reserve, config_ptr->empty_reserve,
             config_ptr->dirty_bytes_threshold,
             config_ptr->metadata_write_strategy);
-    RECORDER_IMP_CHEN(H5Pset_mdc_config, herr_t, (plist_id, config_ptr), 0, 0, log_text);
+    */
+    char **args = assemble_args_list(2, itoa(plist_id), ptoa(config_ptr));
+    RECORDER_IMP_WANG(herr_t, H5Pset_mdc_config, (plist_id, config_ptr), 2, args)
 }
 
 herr_t RECORDER_DECL(H5Pset_meta_block_size)(hid_t fapl_id, hsize_t size) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Pset_meta_block_size (%d, %d)", fapl_id, size);
-    RECORDER_IMP_CHEN(H5Pset_meta_block_size, herr_t, (fapl_id, size), 0, 0, log_text);
+    char **args = assemble_args_list(2, itoa(fapl_id), itoa(size));
+    RECORDER_IMP_WANG(herr_t, H5Pset_meta_block_size, (fapl_id, size), 2, args)
 }
 
 htri_t RECORDER_DECL(H5Lexists)(hid_t loc_id, const char *name, hid_t lapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Lexists (%d, %s, %d)", loc_id, name, lapl_id);
-    RECORDER_IMP_CHEN(H5Lexists, htri_t, (loc_id, name, lapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(lapl_id));
+    RECORDER_IMP_WANG(htri_t, H5Lexists, (loc_id, name, lapl_id), 3, args)
 }
 
 herr_t RECORDER_DECL(H5Lget_val)(hid_t link_loc_id, const char *link_name, void *linkval_buff, size_t size, hid_t lapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Lget_val (%d, %s, %p, %d, %d)", link_loc_id, link_name, linkval_buff, size, lapl_id);
-    RECORDER_IMP_CHEN(H5Lget_val, herr_t, (link_loc_id, link_name, linkval_buff, size, lapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(5, itoa(link_loc_id), strdup(link_name), ptoa(linkval_buff), itoa(size), itoa(lapl_id));
+    RECORDER_IMP_WANG(herr_t, H5Lget_val, (link_loc_id, link_name, linkval_buff, size, lapl_id), 5, args)
 }
 
 herr_t RECORDER_DECL(H5Literate)(hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t *idx, H5L_iterate_t op, void *op_data) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Literate (%d, %d, %d, %p, %d, %p)", group_id, index_type, order, idx, op, op_data);
-    RECORDER_IMP_CHEN(H5Literate, htri_t, (group_id, index_type, order, idx, op, op_data), 0, 0, log_text);
+    char **args = assemble_args_list(6, itoa(group_id), itoa(index_type), itoa(order), ptoa(idx), ptoa(op), ptoa(op_data));
+    RECORDER_IMP_WANG(htri_t, H5Literate, (group_id, index_type, order, idx, op, op_data), 6, args)
 }
 
 herr_t RECORDER_DECL(H5Oclose)(hid_t object_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Oclose (%d)", object_id);
-    RECORDER_IMP_CHEN(H5Oclose, herr_t, (object_id), 0, 0, log_text);
+    char **args = assemble_args_list(1, itoa(object_id));
+    RECORDER_IMP_WANG(herr_t, H5Oclose, (object_id), 1, args)
 }
 
 /*
@@ -721,18 +682,17 @@ herr_t RECORDER_DECL(H5Oclose)(hid_t object_id) {
 herr_t RECORDER_DECL(H5Oget_info)(hid_t object_id, H5O_info_t *object_info) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Oget_info (%d, %p)", object_id, object_info);
-    RECORDER_IMP_CHEN(H5Oget_info, herr_t, (object_id, object_info), 0, 0, log_text);
+    RECORDER_IMP_WANG(H5Oget_info, herr_t, (object_id, object_info), 0, 0, log_text);
 }
 
 herr_t RECORDER_DECL(H5Oget_info_by_name)(hid_t loc_id, const char *object_name, H5O_info_t *object_info, hid_t lapl_id) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Oget_info_by_name (%d, %s, %p, %d)", loc_id, object_name, object_info, lapl_id);
-    RECORDER_IMP_CHEN(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
+    RECORDER_IMP_WANG(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
 }
 */
 
 hid_t RECORDER_DECL(H5Oopen)(hid_t loc_id, const char *name, hid_t lapl_id) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "H5Oopen (%d, %s, %d)", loc_id, name, lapl_id);
-    RECORDER_IMP_CHEN(H5Oopen, hid_t, (loc_id, name, lapl_id), 0, 0, log_text);
+    char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(lapl_id));
+    RECORDER_IMP_WANG(hid_t, H5Oopen, (loc_id, name, lapl_id), 3, args)
 }
