@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
 
     TEST_MPI_CALL(MPI_Comm_rank, (MPI_COMM_WORLD, &rank));
 
+    MPI_Datatype type = MPI_LONG_INT;
+    TEST_MPI_CALL(MPI_Type_commit, (&type));
+
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
     TEST_MPI_CALL(MPI_Get_processor_name, (processor_name, &name_len));

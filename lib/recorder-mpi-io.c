@@ -80,6 +80,7 @@ int depth;
     #include <dlfcn.h>
     #ifndef DISABLE_MPIO_TRACE
         #define RECORDER_IMP_WANG(ret, func, real_args, record_arg_count, record_args)      \
+            printf("%s %d\n", #func, record_arg_count);\
             MAP_OR_FAIL(func)                                                               \
             depth++;                                                                        \
             double tstart = recorder_wtime();                                               \
@@ -261,7 +262,7 @@ int MPI_Type_create_darray(int size, int rank, int ndims, CONST int array_of_gsi
 }
 
 int MPI_Type_commit(MPI_Datatype *datatype) {
-    char args = assemble_args_list(1, ptoa(datatype));
+    char **args = assemble_args_list(1, ptoa(datatype));
     RECORDER_IMP_WANG(int, PMPI_Type_commit, (datatype), 1, args)
 }
 
