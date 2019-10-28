@@ -76,7 +76,7 @@
 
 
 typedef struct Record_t {
-    int tstart, tdur;
+    double tstart, tend;
     char *func_id;
     int arg_count;
     char **args;

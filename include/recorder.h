@@ -147,7 +147,7 @@ void write_record(Record record);
     Record record = {                                                               \
         .tstart = tstart,                                                           \
         .func_id = #func,                                                           \
-        .tdur = tend - tstart,                                                      \
+        .tend = tend,                                                      \
         .arg_count = record_arg_count,                                              \
         .args = record_args                                                         \
     };                                                                              \

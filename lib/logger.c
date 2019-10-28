@@ -4,12 +4,15 @@
 #include <dlfcn.h>
 #include "recorder.h"
 
-/* Global handle for the local trace log */
+/* Global file handler (per rank) for the local trace log file */
 FILE *__datafh;
 FILE *__metafh;
-
-/* filename to id map */
+/* Starting timestamp of each rank */
+double START_TIMESTAMP;
+double TIME_RESOLUTION = 0.000001;
+/* Filename to integer map */
 hashmap_map *__filename2id_map;
+
 
 /*
  * Map filename to Integer in binary format
@@ -64,17 +67,16 @@ static inline long get_file_size(char *filename) {
     return size;
 }
 
-
 void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
     char invalid_str[] = "???";
     /*
     RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
     RECORDER_MPI_CALL(fwrite) (&(record.tstart), sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&(record.tdur), sizeof(int), 1, f);
+    RECORDER_MPI_CALL(fwrite) (&(record.tend), sizeof(int), 1, f);
     RECORDER_MPI_CALL(fwrite) (&(record.func_id), sizeof(short), 1, f);
     */
-    fprintf(f, "%d %d %s", record.tstart, record.tdur, record.func_id);
+    fprintf(f, "%f %f %s", record.tstart, record.tend, record.func_id);
     for(size_t i = 0; i < record.arg_count; i++) {
         if(record.args[i]) {
             fprintf(f, " ");
@@ -87,33 +89,35 @@ void write_uncompressed_record(FILE *f, Record record) {
 }
 
 void write_record(Record record) {
-    if (__datafh == NULL) return;
+    if (__datafh == NULL) return;   // have not initialized yet
     write_uncompressed_record(__datafh, record);
 }
 
 void logger_init(int rank) {
     // Map the functions we will use later
+    // We did not intercept fprintf
     MAP_OR_FAIL(fopen)
     MAP_OR_FAIL(fclose)
     MAP_OR_FAIL(fwrite)
     MAP_OR_FAIL(ftell)
     MAP_OR_FAIL(fseek)
-    // We did not intercept fprintf
 
+    // Initialize the global values
     __filename2id_map = hashmap_new();
 
     mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-    char logfile_name[100];
-    char metafile_name[100];
+    char logfile_name[256];
+    char metafile_name[256];
     sprintf(logfile_name, "logs/%d.itf", rank);
     sprintf(metafile_name, "logs/%d.mt", rank);
     __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "wb");
     __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
+
+    START_TIMESTAMP = recorder_wtime();
 }
 
-void logger_exit() {
 
+void logger_exit() {
     /* Write out the function and filename mappings */
     struct stat st;     // use to store file status, now we only interested in file sizes
     int i;
