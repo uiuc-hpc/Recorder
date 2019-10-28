@@ -68,33 +68,6 @@ typedef int64_t off64_t;
 
 int depth;
 
-#ifdef RECORDER_PRELOAD
-    extern double (*__real_PMPI_Wtime)(void);
-    #ifndef DISABLE_POSIX_TRACE
-        #define RECORDER_IMP_WANG(ret, func, func_args, record_arg_count, record_args)      \
-            MAP_OR_FAIL(func)                                                               \
-            depth++;                                                                        \
-            double tstart = recorder_wtime();                                               \
-            ret res = RECORDER_MPI_CALL(func) func_args ;                                   \
-            double tend = recorder_wtime();                                                 \
-            depth--;                                                                        \
-            Record record = {                                                               \
-                .tstart = tstart,                                                           \
-                .func_id = #func,                                                           \
-                .tdur = tend - tstart,                                                      \
-                .arg_count = record_arg_count,                                              \
-                .args = record_args                                                         \
-            };                                                                              \
-            write_record(record);                                                           \
-            return res;
-    #else
-        #define RECORDER_IMP_WANG(ret, func, func_args, record_arg_count, record_args)      \
-            MAP_OR_FAIL(func)                                                               \
-            return RECORDER_MPI_CALL(func) func_args ;
-    #endif
-#endif
-
-
 static int recorder_mem_alignment = 1;
 
 double recorder_wtime(void) {
@@ -166,41 +139,41 @@ static inline char* ptoa(const void *ptr) {
 
 int RECORDER_POSIX_DECL(close)(int fd) {
     char** args = assemble_args_list(1, fd2name(fd));
-    RECORDER_IMP_WANG(int, close, (fd), 1, args);
+    RECORDER_INTERCEPTOR(int, close, (fd), 1, args);
 }
 
 int RECORDER_POSIX_DECL(fclose)(FILE *fp) {
     char** args = assemble_args_list(1, stream2name(fp));
-    RECORDER_IMP_WANG(int, fclose, (fp), 1, args)
+    RECORDER_INTERCEPTOR(int, fclose, (fp), 1, args)
 }
 
 int RECORDER_POSIX_DECL(fsync)(int fd) {
     char** args = assemble_args_list(1, fd2name(fd));
-    RECORDER_IMP_WANG(int, fsync, (fd), 1, args)
+    RECORDER_INTERCEPTOR(int, fsync, (fd), 1, args)
 }
 
 int RECORDER_POSIX_DECL(fdatasync)(int fd) {
     char** args = assemble_args_list(1, fd2name(fd));
-    RECORDER_IMP_WANG(int, fdatasync, (fd), 1, args)
+    RECORDER_INTERCEPTOR(int, fdatasync, (fd), 1, args)
 }
 
 void* RECORDER_POSIX_DECL(mmap64)(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), fd2name(fd), itoa(offset));
-    RECORDER_IMP_WANG(void*, mmap64, (addr, length, prot, flags, fd, offset), 6, args)
+    RECORDER_INTERCEPTOR(void*, mmap64, (addr, length, prot, flags, fd, offset), 6, args)
 }
 void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), fd2name(fd), itoa(offset));
-    RECORDER_IMP_WANG(void*, mmap, (addr, length, prot, flags, fd, offset), 6, args)
+    RECORDER_INTERCEPTOR(void*, mmap, (addr, length, prot, flags, fd, offset), 6, args)
 }
 
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, path, itoa(mode));
-    RECORDER_IMP_WANG(int, creat, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR(int, creat, (path, mode), 2, args)
 }
 
 int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, path, itoa(mode));
-    RECORDER_IMP_WANG(int, creat64, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR(int, creat64, (path, mode), 2, args)
 }
 
 int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
@@ -210,10 +183,10 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
         int mode = va_arg(arg, int);
         va_end(arg);
         char** args = assemble_args_list(3, path, itoa(flags), itoa(mode));
-        RECORDER_IMP_WANG(int, open64, (path, flags, mode), 3, args)
+        RECORDER_INTERCEPTOR(int, open64, (path, flags, mode), 3, args)
     } else {
         char** args = assemble_args_list(2, path, itoa(flags));
-        RECORDER_IMP_WANG(int, open64, (path, flags), 2, args)
+        RECORDER_INTERCEPTOR(int, open64, (path, flags), 2, args)
     }
 }
 
@@ -224,21 +197,21 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
         int mode = va_arg(arg, int);
         va_end(arg);
         char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
-        RECORDER_IMP_WANG(int, open, (path, flags, mode), 3, args)
+        RECORDER_INTERCEPTOR(int, open, (path, flags, mode), 3, args)
     } else {
         char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
-        RECORDER_IMP_WANG(int, open, (path, flags), 2, args)
+        RECORDER_INTERCEPTOR(int, open, (path, flags), 2, args)
     }
 }
 
 FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
     char** args = assemble_args_list(2, path, mode);
-    RECORDER_IMP_WANG(FILE*, fopen64, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR(FILE*, fopen64, (path, mode), 2, args)
 }
 
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
     char** args = assemble_args_list(2, path, mode);
-    RECORDER_IMP_WANG(FILE*, fopen, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR(FILE*, fopen, (path, mode), 2, args)
 }
 
 
@@ -251,45 +224,45 @@ FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
  */
 int RECORDER_POSIX_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
-    RECORDER_IMP_WANG(int, __xstat, (vers, path, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __xstat, (vers, path, buf), 3, args)
 }
 int RECORDER_POSIX_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
-    RECORDER_IMP_WANG(int, __xstat64, (vers, path, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __xstat64, (vers, path, buf), 3, args)
 }
 int RECORDER_POSIX_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
-    RECORDER_IMP_WANG(int, __lxstat, (vers, path, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __lxstat, (vers, path, buf), 3, args)
 }
 int RECORDER_POSIX_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
-    RECORDER_IMP_WANG(int, __lxstat64, (vers, path, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __lxstat64, (vers, path, buf), 3, args)
 }
 int RECORDER_POSIX_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
     char** args = assemble_args_list(3, itoa(vers), fd2name(fd), ptoa(buf));
-    RECORDER_IMP_WANG(int, __fxstat, (vers, fd, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __fxstat, (vers, fd, buf), 3, args)
 }
 int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
     char** args = assemble_args_list(3, itoa(vers), fd2name(fd), ptoa(buf));
-    RECORDER_IMP_WANG(int, __fxstat64, (vers, fd, buf), 3, args)
+    RECORDER_INTERCEPTOR(int, __fxstat64, (vers, fd, buf), 3, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
     char** args = assemble_args_list(4, fd2name(fd), ptoa(buf), itoa(count), itoa(offset));
-    RECORDER_IMP_WANG(ssize_t, pread64, (fd, buf, count, offset), 4, args)
+    RECORDER_INTERCEPTOR(ssize_t, pread64, (fd, buf, count, offset), 4, args)
 }
 ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
     char** args = assemble_args_list(4, fd2name(fd), ptoa(buf), itoa(count), itoa(offset));
-    RECORDER_IMP_WANG(ssize_t, pread, (fd, buf, count, offset), 4, args)
+    RECORDER_INTERCEPTOR(ssize_t, pread, (fd, buf, count, offset), 4, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(pwrite64)(int fd, const void *buf, size_t count, off64_t offset) {
     char** args = assemble_args_list(4, fd2name(fd), ptoa(buf), itoa(count), itoa(offset));
-    RECORDER_IMP_WANG(ssize_t, pwrite64, (fd, buf, count, offset), 4, args)
+    RECORDER_INTERCEPTOR(ssize_t, pwrite64, (fd, buf, count, offset), 4, args)
 }
 ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
     char** args = assemble_args_list(4, fd2name(fd), ptoa(buf), itoa(count), itoa(offset));
-    RECORDER_IMP_WANG(ssize_t, pwrite, (fd, buf, count, offset), 4, args)
+    RECORDER_INTERCEPTOR(ssize_t, pwrite, (fd, buf, count, offset), 4, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) {
@@ -299,7 +272,7 @@ ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) 
         n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
     */
     char** args = assemble_args_list(3, fd2name(fd), ptoa(iov), itoa(iovcnt));
-    RECORDER_IMP_WANG(ssize_t, readv, (fd, iov, iovcnt), 3, args)
+    RECORDER_INTERCEPTOR(ssize_t, readv, (fd, iov, iovcnt), 3, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(writev)(int fd, const struct iovec *iov, int iovcnt) {
@@ -309,12 +282,12 @@ ssize_t RECORDER_POSIX_DECL(writev)(int fd, const struct iovec *iov, int iovcnt)
         n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
     */
     char** args = assemble_args_list(3, fd2name(fd), ptoa(iov), itoa(iovcnt));
-    RECORDER_IMP_WANG(ssize_t, writev, (fd, iov, iovcnt), 3, args)
+    RECORDER_INTERCEPTOR(ssize_t, writev, (fd, iov, iovcnt), 3, args)
 }
 
 size_t RECORDER_POSIX_DECL(fread)(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), stream2name(stream));
-    RECORDER_IMP_WANG(size_t, fread, (ptr, size, nmemb, stream), 4, args)
+    RECORDER_INTERCEPTOR(size_t, fread, (ptr, size, nmemb, stream), 4, args)
 }
 
 size_t RECORDER_POSIX_DECL(fwrite)(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
@@ -323,135 +296,135 @@ size_t RECORDER_POSIX_DECL(fwrite)(const void *ptr, size_t size, size_t nmemb, F
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
     char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), stream2name(stream));
-    RECORDER_IMP_WANG(size_t, fwrite, (ptr, size, nmemb, stream), 4, args)
+    RECORDER_INTERCEPTOR(size_t, fwrite, (ptr, size, nmemb, stream), 4, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(read)(int fd, void *buf, size_t count) {
     char** args = assemble_args_list(3, fd2name(fd), ptoa(buf), itoa(count));
-    RECORDER_IMP_WANG(ssize_t, read, (fd, buf, count), 3, args)
+    RECORDER_INTERCEPTOR(ssize_t, read, (fd, buf, count), 3, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(write)(int fd, const void *buf, size_t count) {
     char** args = assemble_args_list(3, fd2name(fd), ptoa(buf), itoa(count));
-    RECORDER_IMP_WANG(ssize_t, write, (fd, buf, count), 3, args)
+    RECORDER_INTERCEPTOR(ssize_t, write, (fd, buf, count), 3, args)
 }
 
 int RECORDER_POSIX_DECL(fseek)(FILE *stream, long offset, int whence) {
     char** args = assemble_args_list(3, stream2name(stream), itoa(offset), itoa(whence));
-    RECORDER_IMP_WANG(int, fseek, (stream, offset, whence), 3, args)
+    RECORDER_INTERCEPTOR(int, fseek, (stream, offset, whence), 3, args)
 }
 
 long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
     char** args = assemble_args_list(1, stream2name(stream));
-    RECORDER_IMP_WANG(long, ftell, (stream), 1, args)
+    RECORDER_INTERCEPTOR(long, ftell, (stream), 1, args)
 }
 
 off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
     char** args = assemble_args_list(3, fd2name(fd), itoa(offset), itoa(whence));
-    RECORDER_IMP_WANG(off64_t, lseek64, (fd, offset, whence), 3, args)
+    RECORDER_INTERCEPTOR(off64_t, lseek64, (fd, offset, whence), 3, args)
 }
 
 off_t RECORDER_POSIX_DECL(lseek)(int fd, off_t offset, int whence) {
     char** args = assemble_args_list(3, fd2name(fd), itoa(offset), itoa(whence));
-    RECORDER_IMP_WANG(off_t, lseek, (fd, offset, whence), 3, args)
+    RECORDER_INTERCEPTOR(off_t, lseek, (fd, offset, whence), 3, args)
 }
 
 
 /* Below are non File-I/O related function calls */
 char* RECORDER_POSIX_DECL(getcwd)(char *buf, size_t size) {
     char** args = assemble_args_list(2, ptoa(buf), itoa(size));
-    RECORDER_IMP_WANG(char*, getcwd, (buf, size), 2, args)
+    RECORDER_INTERCEPTOR(char*, getcwd, (buf, size), 2, args)
 }
 int RECORDER_POSIX_DECL(mkdir)(const char *pathname, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(pathname), itoa(mode));
-    RECORDER_IMP_WANG(int, mkdir, (pathname, mode), 2, args)
+    RECORDER_INTERCEPTOR(int, mkdir, (pathname, mode), 2, args)
 }
 int RECORDER_POSIX_DECL(rmdir)(const char *pathname) {
     char** args = assemble_args_list(1, realrealpath(pathname));
-    RECORDER_IMP_WANG(int, rmdir, (pathname), 1, args)
+    RECORDER_INTERCEPTOR(int, rmdir, (pathname), 1, args)
 }
 int RECORDER_POSIX_DECL(chdir)(const char *path) {
     char** args = assemble_args_list(1, realrealpath(path));
-    RECORDER_IMP_WANG(int, chdir, (path), 1, args)
+    RECORDER_INTERCEPTOR(int, chdir, (path), 1, args)
 }
 int RECORDER_POSIX_DECL(link)(const char *oldpath, const char *newpath) {
     char** args = assemble_args_list(2, realrealpath(oldpath), realrealpath(newpath));
-    RECORDER_IMP_WANG(int, link, (oldpath, newpath), 2, args)
+    RECORDER_INTERCEPTOR(int, link, (oldpath, newpath), 2, args)
 }
 int RECORDER_POSIX_DECL(unlink)(const char *pathname) {
     char** args = assemble_args_list(1, realrealpath(pathname));
-    RECORDER_IMP_WANG(int, unlink, (pathname), 1, args)
+    RECORDER_INTERCEPTOR(int, unlink, (pathname), 1, args)
 }
 int RECORDER_POSIX_DECL(linkat)(int fd1, const char *path1, int fd2, const char *path2, int flag) {
     char** args = assemble_args_list(5, fd2name(fd1), realrealpath(path1), fd2name(fd2), realrealpath(path2), itoa(flag));
-    RECORDER_IMP_WANG(int, linkat, (fd1, path1, fd2, path2, flag), 5, args)
+    RECORDER_INTERCEPTOR(int, linkat, (fd1, path1, fd2, path2, flag), 5, args)
 }
 int RECORDER_POSIX_DECL(symlink)(const char *path1, const char *path2) {
     char** args = assemble_args_list(2, realrealpath(path1), realrealpath(path2));
-    RECORDER_IMP_WANG(int, symlink, (path1, path2), 2, args)
+    RECORDER_INTERCEPTOR(int, symlink, (path1, path2), 2, args)
 }
 int RECORDER_POSIX_DECL(symlinkat)(const char *path1, int fd, const char *path2) {
     char** args = assemble_args_list(3, realrealpath(path1), itoa(fd), realrealpath(path2));
-    RECORDER_IMP_WANG(int, symlinkat, (path1, fd, path2), 3, args)
+    RECORDER_INTERCEPTOR(int, symlinkat, (path1, fd, path2), 3, args)
 }
 ssize_t RECORDER_POSIX_DECL(readlink)(const char *path, char *buf, size_t bufsize) {
     char** args = assemble_args_list(3, realrealpath(path), ptoa(buf), itoa(bufsize));
-    RECORDER_IMP_WANG(int, readlink, (path, buf, bufsize), 3, args)
+    RECORDER_INTERCEPTOR(int, readlink, (path, buf, bufsize), 3, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(readlinkat)(int fd, const char *path, char *buf, size_t bufsize) {
     char** args = assemble_args_list(4, fd2name(fd), realrealpath(path), ptoa(buf), itoa(bufsize));
-    RECORDER_IMP_WANG(int, readlinkat, (fd, path, buf, bufsize), 4, args)
+    RECORDER_INTERCEPTOR(int, readlinkat, (fd, path, buf, bufsize), 4, args)
 }
 
 int RECORDER_POSIX_DECL(rename)(const char *oldpath, const char *newpath) {
     char** args = assemble_args_list(2, realrealpath(oldpath), realrealpath(newpath));
-    RECORDER_IMP_WANG(int, rename, (oldpath, newpath), 2, args)
+    RECORDER_INTERCEPTOR(int, rename, (oldpath, newpath), 2, args)
 }
 int RECORDER_POSIX_DECL(chmod)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
-    RECORDER_IMP_WANG(int, chmod, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR(int, chmod, (path, mode), 2, args)
 }
 int RECORDER_POSIX_DECL(chown)(const char *path, uid_t owner, gid_t group) {
     char** args = assemble_args_list(3, realrealpath(path), itoa(owner), itoa(group));
-    RECORDER_IMP_WANG(int, chown, (path, owner, group), 3, args)
+    RECORDER_INTERCEPTOR(int, chown, (path, owner, group), 3, args)
 }
 int RECORDER_POSIX_DECL(lchown)(const char *path, uid_t owner, gid_t group) {
     char** args = assemble_args_list(3, realrealpath(path), itoa(owner), itoa(group));
-    RECORDER_IMP_WANG(int, lchown, (path, owner, group), 3, args)
+    RECORDER_INTERCEPTOR(int, lchown, (path, owner, group), 3, args)
 }
 int RECORDER_POSIX_DECL(utime)(const char *filename, const struct utimbuf *buf) {
     char** args = assemble_args_list(2, realrealpath(filename), ptoa(buf));
-    RECORDER_IMP_WANG(int, utime, (filename, buf), 2, args)
+    RECORDER_INTERCEPTOR(int, utime, (filename, buf), 2, args)
 }
 DIR* RECORDER_POSIX_DECL(opendir)(const char *name) {
     char** args = assemble_args_list(1, realrealpath(name));
-    RECORDER_IMP_WANG(DIR*, opendir, (name), 1, args)
+    RECORDER_INTERCEPTOR(DIR*, opendir, (name), 1, args)
 }
 struct dirent* RECORDER_POSIX_DECL(readdir)(DIR *dir) {
     // TODO: DIR - get path
     char** args = assemble_args_list(1, ptoa(dir));
-    RECORDER_IMP_WANG(struct dirent*, readdir, (dir), 1, args)
+    RECORDER_INTERCEPTOR(struct dirent*, readdir, (dir), 1, args)
 }
 int RECORDER_POSIX_DECL(closedir)(DIR *dir) {
     char** args = assemble_args_list(1, ptoa(dir));
-    RECORDER_IMP_WANG(int, closedir, (dir), 1, args)
+    RECORDER_INTERCEPTOR(int, closedir, (dir), 1, args)
 }
 /*
 void RECORDER_POSIX_DECL(rewinddir)(DIR *dir) {
     // TODO
     char log_text[TRACE_LEN];
     sprintf(log_text, "rewinddir (%p)", dir);
-    RECORDER_IMP_WANG(rewinddir, NULL, (dir), NULL, 0, 0, log_text)
+    RECORDER_INTERCEPTOR(rewinddir, NULL, (dir), NULL, 0, 0, log_text)
 }
 */
 int RECORDER_POSIX_DECL(mknod)(const char *path, mode_t mode, dev_t dev) {
     char** args = assemble_args_list(3, realrealpath(path), itoa(mode), itoa(dev));
-    RECORDER_IMP_WANG(int, mknod, (path, mode, dev), 3, args)
+    RECORDER_INTERCEPTOR(int, mknod, (path, mode, dev), 3, args)
 }
 int RECORDER_POSIX_DECL(mknodat)(int fd, const char *path, mode_t mode, dev_t dev) {
     char** args = assemble_args_list(4, fd2name(fd), realrealpath(path), itoa(mode), itoa(dev));
-    RECORDER_IMP_WANG(int, mknodat, (fd, path, mode, dev), 4, args)
+    RECORDER_INTERCEPTOR(int, mknodat, (fd, path, mode, dev), 4, args)
 }
 
 
@@ -461,53 +434,53 @@ int RECORDER_POSIX_DECL(mknodat)(int fd, const char *path, mode_t mode, dev_t de
 int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "fcntl %d %d", fd, cmd);
-    RECORDER_IMP_WANG(fcntl, int, (fd, cmd), NULL, 0, 0, log_text)
+    RECORDER_INTERCEPTOR(fcntl, int, (fd, cmd), NULL, 0, 0, log_text)
 }
 */
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
     char** args = assemble_args_list(1, fd2name(oldfd));
-    RECORDER_IMP_WANG(int, dup, (oldfd), 1, args)
+    RECORDER_INTERCEPTOR(int, dup, (oldfd), 1, args)
 }
 int RECORDER_POSIX_DECL(dup2)(int oldfd, int newfd) {
     char** args = assemble_args_list(2, fd2name(oldfd), fd2name(newfd));
-    RECORDER_IMP_WANG(int, dup2, (oldfd, newfd), 2, args)
+    RECORDER_INTERCEPTOR(int, dup2, (oldfd, newfd), 2, args)
 }
 int RECORDER_POSIX_DECL(pipe)(int pipefd[2]) {
     // TODO: pipefd?
     char** args = assemble_args_list(2, fd2name(pipefd[0]), fd2name(pipefd[1]));
-    RECORDER_IMP_WANG(int, pipe, (pipefd), 2, args)
+    RECORDER_INTERCEPTOR(int, pipe, (pipefd), 2, args)
 }
 int RECORDER_POSIX_DECL(mkfifo)(const char *pathname, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(pathname), itoa(mode));
-    RECORDER_IMP_WANG(int, mkfifo, (pathname, mode), 2, args)
+    RECORDER_INTERCEPTOR(int, mkfifo, (pathname, mode), 2, args)
 }
 mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
     char** args = assemble_args_list(1, itoa(mask));
-    RECORDER_IMP_WANG(mode_t, umask, (mask), 1, args)
+    RECORDER_INTERCEPTOR(mode_t, umask, (mask), 1, args)
 }
 FILE* RECORDER_POSIX_DECL(fdopen)(int fd, const char *mode) {
     char** args = assemble_args_list(2, fd2name(fd), ptoa(mode));
-    RECORDER_IMP_WANG(FILE*, fdopen, (fd, mode), 2, args)
+    RECORDER_INTERCEPTOR(FILE*, fdopen, (fd, mode), 2, args)
 }
 int RECORDER_POSIX_DECL(fileno)(FILE *stream) {
     char** args = assemble_args_list(1, stream2name(stream));
-    RECORDER_IMP_WANG(int, fileno, (stream), 1, args)
+    RECORDER_INTERCEPTOR(int, fileno, (stream), 1, args)
 }
 int RECORDER_POSIX_DECL(access)(const char *path, int amode) {
     char** args = assemble_args_list(2, realrealpath(path), itoa(amode));
-    RECORDER_IMP_WANG(int, access, (path, amode), 2, args)
+    RECORDER_INTERCEPTOR(int, access, (path, amode), 2, args)
 }
 int RECORDER_POSIX_DECL(faccessat)(int fd, const char *path, int amode, int flag) {
     char** args = assemble_args_list(4, fd2name(fd), realrealpath(path), itoa(amode), itoa(flag));
-    RECORDER_IMP_WANG(int, faccessat, (fd, path, amode, flag), 4, args)
+    RECORDER_INTERCEPTOR(int, faccessat, (fd, path, amode, flag), 4, args)
 }
 FILE* RECORDER_POSIX_DECL(tmpfile)(void) {
     char **args = NULL;
-    RECORDER_IMP_WANG(FILE*, tmpfile, (), 0, args)
+    RECORDER_INTERCEPTOR(FILE*, tmpfile, (), 0, args)
 }
 int RECORDER_POSIX_DECL(remove)(const char *path) {
     char** args = assemble_args_list(1, realrealpath(path));
-    RECORDER_IMP_WANG(int, remove, (path), 1, args)
+    RECORDER_INTERCEPTOR(int, remove, (path), 1, args)
 }
 
 
