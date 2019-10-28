@@ -76,8 +76,8 @@ void write_record(Record record);
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
     /*
-     * Declare the function signature for real functions
-     * e.g. The real function point to fwrite would be defined as __real_fwrite
+     * Declare the function signatures for real functions
+     * i.e. The real function point to fwrite would be defined as __real_fwrite
      */
     #define RECORDER_FORWARD_DECL(name, ret, args) ret(*__real_##name) args;
 
@@ -130,6 +130,14 @@ void write_record(Record record);
 #endif
 
 
+/**
+ * I/O Intercepter
+ * We intercept functions (e.g., from recorder-posix.c) and then
+ * call this interception funciton. In this function, we construct
+ * a [struct Record] for each function call and then write it to
+ * log file using the logging unit.
+ */
+
 
 
 
@@ -149,15 +157,6 @@ RECORDER_FORWARD_DECL(pwrite, ssize_t, (int fd, const void *buf, size_t count, o
 RECORDER_FORWARD_DECL(pwrite64, ssize_t, (int fd, const void *buf, size_t count, off64_t offset));
 RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
 RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
-// stat/fstat/lstat are wrappers in GLIBC and dlsym can not hook them.
-// Instead, xstat/lxstat/fxstat are their GLIBC implementations so we can hook them.
-RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
-RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
-RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
-RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
-RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
-RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
-
 RECORDER_FORWARD_DECL(mmap, void *, (void *addr, size_t length, int prot, int flags, int fd, off_t offset));
 RECORDER_FORWARD_DECL(mmap64, void *, (void *addr, size_t length, int prot, int flags, int fd, off64_t offset));
 RECORDER_FORWARD_DECL(fopen, FILE *, (const char *path, const char *mode));
@@ -169,7 +168,14 @@ RECORDER_FORWARD_DECL(ftell, long, (FILE *stream));
 RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
 RECORDER_FORWARD_DECL(fsync, int, (int fd));
 RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
-
+// stat/fstat/lstat are wrappers in GLIBC and dlsym can not hook them.
+// Instead, xstat/lxstat/fxstat are their GLIBC implementations so we can hook them.
+RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
+RECORDER_FORWARD_DECL(__xstat64, int, (int vers, const char *path, struct stat64 *buf));
+RECORDER_FORWARD_DECL(__lxstat, int, (int vers, const char *path, struct stat *buf));
+RECORDER_FORWARD_DECL(__lxstat64, int, (int vers, const char *path, struct stat64 *buf));
+RECORDER_FORWARD_DECL(__fxstat, int, (int vers, int fd, struct stat *buf));
+RECORDER_FORWARD_DECL(__fxstat64, int, (int vers, int fd, struct stat64 *buf));
 /* Other POSIX Function Calls, not directly related to I/O */
 // Files and Directories
 RECORDER_FORWARD_DECL(getcwd, char*, (char *buf, size_t size));
@@ -207,7 +213,6 @@ RECORDER_FORWARD_DECL(access, int, (const char *path, int amode));
 RECORDER_FORWARD_DECL(faccessat, int, (int fd, const char *path, int amode, int flag));
 RECORDER_FORWARD_DECL(tmpfile, FILE*, (void));
 RECORDER_FORWARD_DECL(remove, int, (const char *pathname));
-
 // Others
 //int statfs(const char *path, struct statfs *buf);
 //int fstatfs(int fd, struct statfs *buf);
@@ -215,7 +220,7 @@ RECORDER_FORWARD_DECL(remove, int, (const char *pathname));
 
 
 
-/* MPI I/O */
+/* MPI Function Calls */
 RECORDER_FORWARD_DECL(PMPI_File_close, int, (MPI_File * fh));
 RECORDER_FORWARD_DECL(PMPI_File_set_size, int, (MPI_File fh, MPI_Offset size));
 RECORDER_FORWARD_DECL(PMPI_File_iread_at, int, (MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, __D_MPI_REQUEST *request));
@@ -286,7 +291,6 @@ RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndi
 RECORDER_FORWARD_DECL(H5Fcreate, hid_t, (const char *filename, unsigned flags, hid_t create_plist, hid_t access_plist));
 RECORDER_FORWARD_DECL(H5Fopen, hid_t, (const char *filename, unsigned flags, hid_t access_plist));
 RECORDER_FORWARD_DECL(H5Fclose, herr_t, (hid_t file_id));
-
 /* Group Interface */
 RECORDER_FORWARD_DECL(H5Gclose, herr_t, (hid_t group_id));
 RECORDER_FORWARD_DECL(H5Gcreate1, hid_t, (hid_t loc_id, const char *name, size_t size_hint));
@@ -295,7 +299,6 @@ RECORDER_FORWARD_DECL(H5Gget_objinfo, herr_t, (hid_t loc_id, const char *name, h
 RECORDER_FORWARD_DECL(H5Giterate, int, (hid_t loc_id, const char *name, int *idx, H5G_iterate_t operator, void *operator_data));
 RECORDER_FORWARD_DECL(H5Gopen1, hid_t, (hid_t loc_id, const char *name));
 RECORDER_FORWARD_DECL(H5Gopen2, hid_t, (hid_t loc_id, const char *name, hid_t gapl_id));
-
 /* Dataset Interface  */
 RECORDER_FORWARD_DECL(H5Dclose, herr_t, (hid_t dataset_id));
 RECORDER_FORWARD_DECL(H5Dcreate1, hid_t, (hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t dcpl_id));
@@ -307,11 +310,9 @@ RECORDER_FORWARD_DECL(H5Dopen1, hid_t, (hid_t loc_id, const char *name));
 RECORDER_FORWARD_DECL(H5Dopen2, hid_t, (hid_t loc_id, const char *name, hid_t dapl_id));
 RECORDER_FORWARD_DECL(H5Dread, herr_t, (hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf));
 RECORDER_FORWARD_DECL(H5Dwrite, herr_t, (hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf));
-
 /* Dataspace Interface */
 RECORDER_FORWARD_DECL(H5Sclose, herr_t, (hid_t space_id));
 RECORDER_FORWARD_DECL(H5Screate, hid_t, (H5S_class_t type));
-
 RECORDER_FORWARD_DECL(H5Screate_simple, hid_t, (int rank, const hsize_t *current_dims, const hsize_t *maximum_dims));
 RECORDER_FORWARD_DECL(H5Sget_select_npoints, hssize_t, (hid_t space_id));
 RECORDER_FORWARD_DECL(H5Sget_simple_extent_dims, int, (hid_t space_id, hsize_t * dims, hsize_t * maxdims));
@@ -319,7 +320,6 @@ RECORDER_FORWARD_DECL(H5Sget_simple_extent_npoints, hssize_t, (hid_t space_id));
 RECORDER_FORWARD_DECL(H5Sselect_elements, herr_t, (hid_t space_id, H5S_seloper_t op, size_t num_elements, const hsize_t *coord));
 RECORDER_FORWARD_DECL(H5Sselect_hyperslab, herr_t, (hid_t space_id, H5S_seloper_t op, const hsize_t *start, const hsize_t *stride, const hsize_t *count, const hsize_t *block));
 RECORDER_FORWARD_DECL(H5Sselect_none, herr_t, (hid_t space_id));
-
 /* Datatype Interface */
 RECORDER_FORWARD_DECL(H5Tclose, herr_t, (hid_t dtype_id));
 RECORDER_FORWARD_DECL(H5Tcopy, hid_t, (hid_t dtype_id));
@@ -328,7 +328,6 @@ RECORDER_FORWARD_DECL(H5Tget_size, size_t, (hid_t dtype_id));
 RECORDER_FORWARD_DECL(H5Tset_size, herr_t, (hid_t dtype_id, size_t size));
 RECORDER_FORWARD_DECL(H5Tcreate, hid_t, (H5T_class_t class, size_t size));
 RECORDER_FORWARD_DECL(H5Tinsert, herr_t, (hid_t dtype_id, const char *name, size_t offset, hid_t field_id));
-
 /* Attribute Interface */
 RECORDER_FORWARD_DECL(H5Aclose, herr_t, (hid_t attr_id));
 RECORDER_FORWARD_DECL(H5Acreate1, hid_t, (hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id));
@@ -342,7 +341,6 @@ RECORDER_FORWARD_DECL(H5Aopen_idx, hid_t, (hid_t loc_id, unsigned int idx));
 RECORDER_FORWARD_DECL(H5Aopen_name, hid_t, (hid_t loc_id, const char *name));
 RECORDER_FORWARD_DECL(H5Aread, herr_t, (hid_t attr_id, hid_t mem_type_id, void *buf));
 RECORDER_FORWARD_DECL(H5Awrite, herr_t, (hid_t attr_id, hid_t mem_type_id, const void *buf));
-
 /* Property List Interface */
 RECORDER_FORWARD_DECL(H5Pclose, herr_t, (hid_t plist));
 RECORDER_FORWARD_DECL(H5Pcreate, hid_t, (hid_t cls_id));
@@ -357,17 +355,14 @@ RECORDER_FORWARD_DECL(H5Pset_fapl_mpiposix, herr_t, (hid_t fapl_id, MPI_Comm com
 RECORDER_FORWARD_DECL(H5Pset_istore_k, herr_t, (hid_t plist, unsigned ik));
 RECORDER_FORWARD_DECL(H5Pset_mdc_config, herr_t, (hid_t plist_id, H5AC_cache_config_t * config_ptr));
 RECORDER_FORWARD_DECL(H5Pset_meta_block_size, herr_t, (hid_t fapl_id, hsize_t size));
-
 /* Link Interface */
 RECORDER_FORWARD_DECL(H5Lexists, htri_t, (hid_t loc_id, const char *name, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Lget_val, herr_t, (hid_t link_loc_id, const char *link_name, void *linkval_buff, size_t size, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Literate, herr_t, (hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t * idx, H5L_iterate_t op, void *op_data));
-
 /* Object Interface */
 RECORDER_FORWARD_DECL(H5Oclose, herr_t, (hid_t object_id));
 RECORDER_FORWARD_DECL(H5Oget_info, herr_t, (hid_t object_id, H5O_info_t * object_info));
 RECORDER_FORWARD_DECL(H5Oget_info_by_name, herr_t, (hid_t loc_id, const char *object_name, H5O_info_t *object_info, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Oopen, hid_t, (hid_t loc_id, const char *name, hid_t lapl_id));
-
 
 #endif /* __RECORDER_H */
