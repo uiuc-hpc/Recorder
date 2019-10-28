@@ -95,20 +95,42 @@ void write_record(Record record);
      * So, every time we use this marco directly, we need to call MAP_OR_FAIL before it
      */
     #define RECORDER_MPI_CALL(func) __real_##func
-
-    /*
-     * Intercept functions if RECORDER_PRELOAD is defined
-     * Compare with same the MARCO in else
-     */
-    #define RECORDER_DECL(func) func
-
 #else
     #define RECORDER_FORWARD_DECL(name, ret, args)
     #define MAP_OR_FAIL(func)
     #define RECORDER_MPI_CALL(func) func
-    // Do not intercept functions if RECORDER_PRELOAD is not defined
-    #define RECORDER_DECL(func) __warp_##func
 #endif
+
+
+/**
+ * Decide wether to intercept (override) funciton calls
+ */
+#ifdef RECORDER_PRELOAD
+    #ifndef DISABLE_MPIO_TRACE
+        #define RECORDER_MPI_DECL(func) func
+    #else
+        #define RECORDER_MPI_DECL(func) __warp_##func
+    #endif
+
+    #ifndef DISABLE_POSIX_TRACE
+        #define RECORDER_POSIX_DECL(func) func
+    #else
+        #define RECORDER_POSIX_DECL(func) __warp_##func
+    #endif
+
+    #ifndef DISABLE_HDF5_TRACE
+        #define RECORDER_HDF5_DECL(func) func
+    #else
+        #define RECORDER_HDF5_DECL(func) __warp_##func
+    #endif
+#else
+    #define RECORDER_MPI_DECL(func) func
+    #define RECORDER_POSIX_DECL(func) func
+    #define RECORDER_HDF5_DECL(func) func
+#endif
+
+
+
 
 
 /* POSIX I/O */
