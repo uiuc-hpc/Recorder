@@ -77,7 +77,7 @@
 
 typedef struct Record_t {
     double tstart, tend;
-    char *func_id;
+    unsigned char func_id;      // we have about 200 functions in total
     int arg_count;
     char **args;
 } Record;
@@ -113,14 +113,15 @@ static const char* func_list[] = {
     "PMPI_File_write_ordered",      "PMPI_File_write_shared",   "PMPI_Finalize",
     "PMPI_Finalized",               "PMPI_Init",                "PMPI_Init_thread",
     "PMPI_Wtime",                   "PMPI_Comm_rank",           "PMPI_Comm_size",
-    "PMPI_Get_processor_name",      "PMPI_Get_processor_name",  "PMPI_Barrier",
-    "PMPI_Bcast",                   "PMPI_Gather",              "PMPI_Gatherv",
-    "PMPI_Scatter",                 "PMPI_Scatterv",            "PMPI_Allgather",
-    "PMPI_Allgatherv",              "PMPI_Alltoall",            "PMPI_Reduce",
-    "PMPI_Allreduce",               "PMPI_Reduce_scatter",      "PMPI_Scan",
-    "PMPI_Type_commit",             "PMPI_Type_contiguous",     "PMPI_Type_extent",
-    "PMPI_Type_free",               "PMPI_Type_hindexed",       "PMPI_Op_create",
-    "PMPI_Op_free",                 "PMPI_Type_get_envelope",   "PMPI_Type_size",
+    "PMPI_Get_processor_name",      "PMPI_Get_processor_name",  "PMPI_Comm_set_errhandler",
+    "PMPI_Barrier",                 "PMPI_Bcast",               "PMPI_Gather",
+    "PMPI_Gatherv",                 "PMPI_Scatter",             "PMPI_Scatterv",
+    "PMPI_Allgather",               "PMPI_Allgatherv",          "PMPI_Alltoall",
+    "PMPI_Reduce",                  "PMPI_Allreduce",           "PMPI_Reduce_scatter",
+    "PMPI_Scan",                    "PMPI_Type_commit",         "PMPI_Type_contiguous",
+    "PMPI_Type_extent",             "PMPI_Type_free",           "PMPI_Type_hindexed",
+    "PMPI_Op_create",               "PMPI_Op_free",             "PMPI_Type_get_envelope",
+    "PMPI_Type_size",
 
 
     // HDF5 I/O
@@ -167,17 +168,17 @@ static const char* func_list[] = {
 };
 
 static inline const char* get_function_name_by_id(int id) {
-    if (id < 0 || id > 90) return "WRONG_FUNCTION_ID";
+    if (id < 0 || id > 255) return "WRONG_FUNCTION_ID";
     return func_list[id];
 }
-static inline int get_function_id_by_name(const char* name) {
+static unsigned char get_function_id_by_name(const char* name) {
     size_t len = sizeof(func_list) / sizeof(char *);
-    int i;
+    unsigned char i;
     for(i = 0; i < len; i++) {
         if (strcmp(func_list[i], name) == 0)
             return i;
     }
-    return -1;
+    return 255;
 }
 
 
