@@ -146,8 +146,8 @@ void write_record(Record record);
     depth--;                                                                        \
     Record record = {                                                               \
         .tstart = tstart,                                                           \
-        .func_id = #func,                                                           \
-        .tend = tend,                                                      \
+        .func_id = get_function_id_by_name(#func),                                  \
+        .tend = tend,                                                               \
         .arg_count = record_arg_count,                                              \
         .args = record_args                                                         \
     };                                                                              \

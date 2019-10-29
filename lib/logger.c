@@ -12,6 +12,8 @@ double START_TIMESTAMP;
 double TIME_RESOLUTION = 0.000001;
 /* Filename to integer map */
 hashmap_map *__filename2id_map;
+/* Hold several previous records for compression */
+Record __record_window[3];
 
 
 /*
@@ -70,23 +72,27 @@ static inline long get_file_size(char *filename) {
 void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
     char invalid_str[] = "???";
-    /*
-    RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&(record.tstart), sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&(record.tend), sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&(record.func_id), sizeof(short), 1, f);
-    */
-    fprintf(f, "%f %f %s", record.tstart, record.tend, record.func_id);
-    for(size_t i = 0; i < record.arg_count; i++) {
-        if(record.args[i]) {
+
+    if (0) {    // write in binary enconding
+        int tstart = (record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
+        int tend   = (record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
+        RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
+        RECORDER_MPI_CALL(fwrite) (&tstart, sizeof(int), 1, f);
+        RECORDER_MPI_CALL(fwrite) (&tend, sizeof(int), 1, f);
+        RECORDER_MPI_CALL(fwrite) (&(record.func_id), sizeof(unsigned char), 1, f);
+    } else {    // write in plain text
+        fprintf(f, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
+        for(size_t i = 0; i < record.arg_count; i++) {
             fprintf(f, " ");
-            RECORDER_MPI_CALL(fwrite) (record.args[i], strlen(record.args[i]), 1, f);
-        } else {
-            RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
+            if(record.args[i])
+                RECORDER_MPI_CALL(fwrite) (record.args[i], strlen(record.args[i]), 1, f);
+            else
+                RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
         }
     }
     fprintf(f, "\n");
 }
+
 
 void write_record(Record record) {
     if (__datafh == NULL) return;   // have not initialized yet
