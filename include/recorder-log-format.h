@@ -82,79 +82,48 @@ typedef struct Record_t {
     char **args;
 } Record;
 
-static const char* my_func_list[] = {
-    // POSIX I/O
-    "creat", /* 0 */        "creat64",  /* 1 */
-    "open",  /* 2 */        "open64",   /* 3 */     "close",    /* ... */
-    "write",                "read",
-    "lseek",                "lseek64",
-    "pread",                "pread64",
-    "pwrite",               "pwrite64",
-    "readv",                "writev",
-    "mmap",                 "mmap64",
-    "fopen",                "fopen64",              "fclose"
-    "fwrite",               "fread",
-    "fseek",                "fsync",                "fdatasync",
 
-    // MPI I/O
-    "MPI_File_close",                       /* 25 */
-    "MPI_File_set_size",
-    "MPI_File_iread_at",
-    "MPI_File_iread",
-    "MPI_File_iread_shared",
-    "MPI_File_iwrite_at",
-    "MPI_File_iwrite",
-    "MPI_File_iwrite_shared",
-    "MPI_File_open",
-    "MPI_File_read_all_begin",
-    "MPI_File_read_all",
-    "MPI_File_read_at_all",
-    "MPI_File_read_at_all_begin",
-    "MPI_File_read_at",
-    "MPI_File_read",
-    "MPI_File_read_ordered_begin",
-    "MPI_File_read_ordered",
-    "MPI_File_read_shared",
-    "MPI_File_set_view",
-    "MPI_File_sync",
-    "MPI_File_write_all_begin",
-    "MPI_File_write_all",
-    "MPI_File_write_at_all_begin",
-    "MPI_File_write_at_all",
-    "MPI_File_write_at",
-    "MPI_File_write",
-    "MPI_File_write_ordered_begin",
-    "MPI_File_write_ordered",
-    "MPI_File_write_shared"
-    "MPI_Finalize",
-    "MPI_Init",
-    "MPI_Init_thread",
-    "MPI_Wtime",
-    "MPI_Comm_rank",
-    "MPI_Comm_size",
-    "MPI_Barrier",
-    "MPI_Bcast",
-    "MPI_Gather",
-    "MPI_Gatherv",
-    "MPI_Scatter",
-    "MPI_Scatterv",
-    "MPI_Allgather",
-    "MPI_Allgatherv",
-    "MPI_Alltoall",
-    "MPI_Reduce",
-    "MPI_Allreduce",
-    "MPI_Reduce_scatter",
-    "MPI_Scan",
-    "MPI_Type_commit",
-    "MPI_Type_contiguous",
-    "MPI_Type_extent",
-    "MPI_Type_free",
-    "MPI_Type_hindexed",
-    "MPI_Op_create",
-    "MPI_Op_free",
-    "MPI_Type_get_envelope",
-    "MPI_Type_size",                        /* 81 */
+static const char* func_list[] = {
+    // POSIX I/O - 66 functions
+    "creat",        "creat64",      "open",         "open64",   "close",
+    "write",        "read",         "lseek",        "lseek64",  "pread",
+    "pread64",      "pwrite",       "pwrite64",     "readv",    "writev",
+    "mmap",         "mmap64",       "fopen",        "fopen64",  "fclose"
+    "fwrite",       "fread",        "ftell",        "fseek",    "fsync",
+    "fdatasync",    "__xstat",      "__xstat64",    "__lxstat", "__lxstat64",
+    "__fxstat",     "__fxstat64",   "getcwd",       "mkdir",    "rmdir",
+    "chdir",        "link",         "linkat",       "unlink",   "symlink",
+    "symlinkat",    "readlink",     "readlinkat",   "rename",   "chmod",
+    "chown",        "lchown",       "utime",        "opendir",  "readdir",
+    "closedir",     "rewinddir",    "mknod",        "mknodat",  "fcntl",
+    "dup",          "dup2",         "pipe",         "mkfifo",   "umask",
+    "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
+    "remove",
 
+    // MPI I/O  - 60 functions
+    "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
+    "PMPI_File_iread",              "PMPI_File_iread_shared",   "PMPI_File_iwrite_at",
+    "PMPI_File_iwrite",             "PMPI_File_iwrite_shared",  "PMPI_File_open",
+    "PMPI_File_read_all_begin",     "PMPI_File_read_all",       "PMPI_File_read_at_all",
+    "PMPI_File_read_at_all_begin",  "PMPI_File_read_at",        "PMPI_File_read",
+    "PMPI_File_read_ordered_begin", "PMPI_File_read_ordered",   "PMPI_File_read_shared",
+    "PMPI_File_set_view",           "PMPI_File_sync",           "PMPI_File_write_all_begin",
+    "PMPI_File_write_all",          "PMPI_File_write_at_all_begin", "PMPI_File_write_at_all",
+    "PMPI_File_write_at",           "PMPI_File_write",          "PMPI_File_write_ordered_begin",
+    "PMPI_File_write_ordered",      "PMPI_File_write_shared",   "PMPI_Finalize",
+    "PMPI_Finalized",               "PMPI_Init",                "PMPI_Init_thread",
+    "PMPI_Wtime",                   "PMPI_Comm_rank",           "PMPI_Comm_size",
+    "PMPI_Get_processor_name",      "PMPI_Get_processor_name",  "PMPI_Barrier",
+    "PMPI_Bcast",                   "PMPI_Gather",              "PMPI_Gatherv",
+    "PMPI_Scatter",                 "PMPI_Scatterv",            "PMPI_Allgather",
+    "PMPI_Allgatherv",              "PMPI_Alltoall",            "PMPI_Reduce",
+    "PMPI_Allreduce",               "PMPI_Reduce_scatter",      "PMPI_Scan",
+    "PMPI_Type_commit",             "PMPI_Type_contiguous",     "PMPI_Type_extent",
+    "PMPI_Type_free",               "PMPI_Type_hindexed",       "PMPI_Op_create",
+    "PMPI_Op_free",                 "PMPI_Type_get_envelope",   "PMPI_Type_size",
+
+
+    // HDF5 I/O
     "H5Fcreate", // File interface
     "H5Fopen",                      "H5Fclose",
     "H5Gclose", // Group interface
@@ -199,13 +168,13 @@ static const char* my_func_list[] = {
 
 static inline const char* get_function_name_by_id(int id) {
     if (id < 0 || id > 90) return "WRONG_FUNCTION_ID";
-    return my_func_list[id];
+    return func_list[id];
 }
 static inline int get_function_id_by_name(const char* name) {
-    size_t len = sizeof(my_func_list) / sizeof(char *);
+    size_t len = sizeof(func_list) / sizeof(char *);
     int i;
     for(i = 0; i < len; i++) {
-        if (strcmp(my_func_list[i], name) == 0)
+        if (strcmp(func_list[i], name) == 0)
             return i;
     }
     return -1;
