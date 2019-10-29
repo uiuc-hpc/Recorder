@@ -71,6 +71,7 @@ double recorder_wtime(void);
 void logger_init(int rank);
 void logger_exit();
 void write_record(Record record);
+int get_filename_id(const char *filename);
 
 
 #ifdef RECORDER_PRELOAD

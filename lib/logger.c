@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <errno.h>
 #include "recorder.h"
 
 /* Global file handler (per rank) for the local trace log file */
@@ -20,7 +21,7 @@ Record __record_window[3];
  * Map filename to Integer in binary format
  * The filename must be absolute pathname
  */
-static inline unsigned char get_filename_id(const char *filename) {
+int get_filename_id(const char *filename) {
     int id = -1;
     if (!filename || !__filename2id_map || strlen(filename) == 0)
         return id;
@@ -61,12 +62,21 @@ static inline int exclude_filename(const char *filename) {
 }
 
 static inline long get_file_size(char *filename) {
+    struct stat sb;
+    int res = stat(filename, &sb);
+    if (res != 0 ) return -1;               // file not exist or some other error
+
+    int is_regular_file = S_ISREG(sb.st_mode);
+    if (!is_regular_file) return -1;        // is directory
+    return sb.st_size;
+    /*
     FILE* f = RECORDER_MPI_CALL(fopen(filename, "r"));
     if(f == NULL) return -1;
     RECORDER_MPI_CALL(fseek(f, 0L, SEEK_END));
     long size = RECORDER_MPI_CALL(ftell(f));
     RECORDER_MPI_CALL(fclose(f));
     return size;
+    */
 }
 
 void write_uncompressed_record(FILE *f, Record record) {
@@ -124,8 +134,15 @@ void logger_init(int rank) {
 
 
 void logger_exit() {
-    /* Write out the function and filename mappings */
-    struct stat st;     // use to store file status, now we only interested in file sizes
+    /* Close the log file */
+    if ( __datafh ) {
+        RECORDER_MPI_CALL(fclose) (__datafh);
+        __datafh = NULL;
+    }
+
+    /* Write out filename mappings, we call stat() to get file size
+     * since __datafh is already closed (null), the stat() function
+     * won't be intercepted. */
     int i;
     if (hashmap_length(__filename2id_map) > 0 ) {
         for(i = 0; i< __filename2id_map->table_size; i++) {
@@ -137,15 +154,10 @@ void logger_exit() {
             }
         }
     }
-
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
     if ( __metafh) {
         RECORDER_MPI_CALL(fclose) (__metafh);
         __metafh = NULL;
-    }
-    if ( __datafh ) {
-        RECORDER_MPI_CALL(fclose) (__datafh);
-        __datafh = NULL;
     }
 }

@@ -76,6 +76,21 @@ double recorder_wtime(void) {
   return (time.tv_sec + ((double)time.tv_usec / 1000000));
 }
 
+/* Integer to stirng */
+static inline char* itoa(int val) {
+    char *str = malloc(sizeof(char) * 16);
+    sprintf(str, "%d", val);
+    return str;
+}
+
+/* Pointer to string */
+static inline char* ptoa(const void *ptr) {
+    char *str = malloc(sizeof(char) * 16);
+    sprintf(str, "%p", ptr);
+    return str;
+}
+
+
 static inline char** assemble_args_list(int arg_count, ...) {
     char** args = malloc(sizeof(char*) * arg_count);
     int i;
@@ -87,20 +102,29 @@ static inline char** assemble_args_list(int arg_count, ...) {
     return args;
 }
 
+static inline char* get_file_id_by_name(char *filename) {
+    int id = get_filename_id(filename);
+    return itoa(id);
+}
+
 static inline char* fd2name(int fd) {
     size_t len = 256;
-    char *fdname = malloc(sizeof(char) * len);
+    char *fdname = malloc(sizeof(char)*len);
     sprintf(fdname, "/proc/self/fd/%d", fd);
 
     // when opena file that does not exist, fd will be -1
     if(fd < 0) return fdname;
 
     MAP_OR_FAIL(readlink)
-    char *realname = malloc(len);
+    char *realname = malloc(sizeof(char)*len);
     int ret = RECORDER_MPI_CALL(readlink(fdname, realname, len));
     if(ret <  0) return fdname;
     realname[ret] = 0; // readlink does not append a null byte
-    return realname;
+
+    char *id_str = get_file_id_by_name(realname);
+    free(fdname);
+    free(realname);
+    return id_str;
 }
 
 static inline char* stream2name(FILE *fp) {
@@ -119,20 +143,9 @@ static inline char* realrealpath(const char *path) {
     realpath(path, real_pathname);
     if (real_pathname == NULL)
         strcpy(real_pathname, path);
-    return real_pathname;
-}
-
-/* Integer to stirng */
-static inline char* itoa(int val) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%d", val);
-    return str;
-}
-/* Pointer to string */
-static inline char* ptoa(const void *ptr) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%p", ptr);
-    return str;
+    char* id_str = get_file_id_by_name(real_pathname);
+    free(real_pathname);
+    return id_str;
 }
 
 
