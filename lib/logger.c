@@ -18,14 +18,21 @@ hashmap_map *__filename2id_map;
 Record __record_window[RECORD_WINDOW_SIZE];
 
 
+int startsWith(const char *pre, const char *str) {
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
+}
+
 
 static inline void write_record_args(FILE* f, int arg_count, char** args) {
     char invalid_str[] = "???";
     for(int i = 0; i < arg_count; i++) {
         fprintf(f, " ");
-        if(args[i])
-            RECORDER_MPI_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
-        else
+        if(args[i]) {
+            if (!startsWith("0x", args[i]))
+                RECORDER_MPI_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
+        } else
             RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
     }
     fprintf(f, "\n");
@@ -106,7 +113,6 @@ void write_record(Record new_record) {
         }
     }
 
-    compress = 0;
     if (compress) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
