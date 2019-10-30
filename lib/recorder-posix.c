@@ -48,9 +48,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdarg.h>
 #include <string.h>
 #include <sys/time.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/uio.h>
@@ -70,22 +70,6 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-static inline char** assemble_args_list(int arg_count, ...) {
-    char** args = malloc(sizeof(char*) * arg_count);
-    int i;
-    va_list valist;
-    va_start(valist, arg_count);
-    for(i = 0; i < arg_count; i++)
-        args[i] = va_arg(valist, char*);
-    va_end(valist);
-    return args;
-}
-
-static inline char* get_file_id_by_name(char *filename) {
-    int id = get_filename_id(filename);
-    return itoa(id);
-}
-
 static inline char* fd2name(int fd) {
     size_t len = 256;
     char *fdname = malloc(sizeof(char)*len);
@@ -100,7 +84,7 @@ static inline char* fd2name(int fd) {
     if(ret <  0) return fdname;
     realname[ret] = 0; // readlink does not append a null byte
 
-    char *id_str = get_file_id_by_name(realname);
+    char *id_str = get_filename_id(realname);
     free(fdname);
     free(realname);
     return id_str;
@@ -122,7 +106,7 @@ static inline char* realrealpath(const char *path) {
     realpath(path, real_pathname);
     if (real_pathname == NULL)
         strcpy(real_pathname, path);
-    char* id_str = get_file_id_by_name(real_pathname);
+    char* id_str = get_filename_id(real_pathname);
     free(real_pathname);
     return id_str;
 }

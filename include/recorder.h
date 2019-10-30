@@ -74,13 +74,13 @@ void logger_exit();
 void write_record(Record record);
 
 /* util.c */
-int get_filename_id(const char *filename);      // map filename to an integer
+char* get_filename_id(const char *filename);    // map filename to an integer
 long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
 char* itoa(int val);                            // convert a integer to string
 char* ptoa(const void* ptr);                    // convert a pointer to string
-
+char** assemble_args_list(int arg_count, ...);
 
 
 #ifdef RECORDER_PRELOAD

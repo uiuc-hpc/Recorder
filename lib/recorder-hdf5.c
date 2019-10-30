@@ -45,7 +45,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <pthread.h>
 #include <string.h>
 #include <limits.h>
@@ -247,17 +246,6 @@ void get_op_name(H5S_seloper_t op, char *string) {
 // TODO: not used?
 //static struct recorder_file_runtime *recorder_file_by_hid(int hid);
 
-
-static inline char** assemble_args_list(int arg_count, ...) {
-    char** args = malloc(sizeof(char*) * arg_count);
-    int i;
-    va_list valist;
-    va_start(valist, arg_count);
-    for(i = 0; i < arg_count; i++)
-        args[i] = va_arg(valist, char*);
-    va_end(valist);
-    return args;
-}
 
 // My implementation to replace realrealpath() system call
 static inline char* realrealpath(const char *path) {

@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
-#include <sys/time.h>
+#include <sys/time.h>   // for gettimeofday()
+#include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
-
 
 /*
  * Map filename to Integer in binary format
@@ -10,21 +10,21 @@
  * in recorder.h, initialized in logger.c
  */
 hashmap_map* __filename2id_map;
-inline int get_filename_id(const char *filename) {
+inline char* get_filename_id(const char *filename) {
     int id = -1;
     if (!filename || !__filename2id_map || strlen(filename) == 0)
-        return id;
+        return itoa(id);
 
     const char *key = filename;
 
     /* filename already exists */
     if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)
-        return id;
+        return itoa(id);
 
     /* insert filename into the map */
     id = hashmap_length(__filename2id_map);
     hashmap_put(__filename2id_map, key, id);
-    return id;
+    return itoa(id);
 }
 
 
@@ -53,7 +53,7 @@ inline int exclude_filename(const char *filename) {
 
 inline long get_file_size(const char *filename) {
     struct stat sb;
-    int res = stat(filename, &sb);          // careful here, need to be sure stat() is not intercepted
+    int res = stat(filename, &sb);          // careful here, make sure stat() is not intercepted
     if (res != 0 ) return -1;               // file not exist or some other error
 
     int is_regular_file = S_ISREG(sb.st_mode);
@@ -61,7 +61,7 @@ inline long get_file_size(const char *filename) {
     return sb.st_size;
 }
 
-double recorder_wtime(void) {
+inline double recorder_wtime(void) {
   struct timeval time;
   gettimeofday(&time, NULL);
   return (time.tv_sec + ((double)time.tv_usec / 1000000));
@@ -79,5 +79,17 @@ inline char* ptoa(const void *ptr) {
     char *str = malloc(sizeof(char) * 16);
     sprintf(str, "%p", ptr);
     return str;
+}
+
+/* Put many arguments (char *) in a list (char**) */
+inline char** assemble_args_list(int arg_count, ...) {
+    char** args = malloc(sizeof(char*) * arg_count);
+    int i;
+    va_list valist;
+    va_start(valist, arg_count);
+    for(i = 0; i < arg_count; i++)
+        args[i] = va_arg(valist, char*);
+    va_end(valist);
+    return args;
 }
 
