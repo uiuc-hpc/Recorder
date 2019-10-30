@@ -195,10 +195,10 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
-        char** args = assemble_args_list(3, path, itoa(flags), itoa(mode));
+        char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
         RECORDER_INTERCEPTOR(int, open64, (path, flags, mode), 3, args)
     } else {
-        char** args = assemble_args_list(2, path, itoa(flags));
+        char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
         RECORDER_INTERCEPTOR(int, open64, (path, flags), 2, args)
     }
 }
