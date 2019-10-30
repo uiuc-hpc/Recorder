@@ -70,27 +70,6 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-double recorder_wtime(void) {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return (time.tv_sec + ((double)time.tv_usec / 1000000));
-}
-
-/* Integer to stirng */
-static inline char* itoa(int val) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%d", val);
-    return str;
-}
-
-/* Pointer to string */
-static inline char* ptoa(const void *ptr) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%p", ptr);
-    return str;
-}
-
-
 static inline char** assemble_args_list(int arg_count, ...) {
     char** args = malloc(sizeof(char*) * arg_count);
     int i;

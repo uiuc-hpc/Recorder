@@ -64,14 +64,23 @@
 #define CONST
 #endif
 
-extern int depth;                   /* funciton call depth */
+extern int depth;                           /* funciton call depth */
+extern hashmap_map *__filename2id_map;      /* map <filename, integer> */
 
-double recorder_wtime(void);
 
+/* logger.c */
 void logger_init(int rank);
 void logger_exit();
 void write_record(Record record);
-int get_filename_id(const char *filename);
+
+/* util.c */
+int get_filename_id(const char *filename);      // map filename to an integer
+long get_file_size(const char *filename);       // return the size of a file
+int exclude_filename(const char *filename);     // if include the file in trace
+double recorder_wtime(void);                    // return the timestamp
+char* itoa(int val);                            // convert a integer to string
+char* ptoa(const void* ptr);                    // convert a pointer to string
+
 
 
 #ifdef RECORDER_PRELOAD

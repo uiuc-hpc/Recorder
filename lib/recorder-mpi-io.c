@@ -103,20 +103,6 @@ static inline char** assemble_args_list(int arg_count, ...) {
 }
 
 
-/* Integer to stirng */
-static inline char* itoa(int val) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%d", val);
-    return str;
-}
-/* Pointer to string */
-static inline char* ptoa(const void *ptr) {
-    char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%p", ptr);
-    return str;
-}
-
-
 /**
  * Intercept the following functions
  */

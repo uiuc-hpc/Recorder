@@ -18,67 +18,6 @@ hashmap_map *__filename2id_map;
 Record __record_window[RECORD_WINDOW_SIZE];
 
 
-/*
- * Map filename to Integer in binary format
- * The filename must be absolute pathname
- */
-int get_filename_id(const char *filename) {
-    int id = -1;
-    if (!filename || !__filename2id_map || strlen(filename) == 0)
-        return id;
-
-    const char *key = filename;
-
-    /* filename already exists */
-    if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)
-        return id;
-
-    /* insert filename into the map */
-    id = hashmap_length(__filename2id_map);
-    hashmap_put(__filename2id_map, key, id);
-    return id;
-}
-
-/*
- * Some of functions are not made by the application
- * And they are operating on wierd files
- * We should not include them in the trace file
- */
-static inline int exclude_filename(const char *filename) {
-    if (filename == NULL) return 0; // pass
-
-    /* these are paths that we will not trace */
-    // TODO put these in configuration file?
-    static const char *exclusions[] = {"/dev/", "/proc", "/sys", "/etc", "/usr/tce/packages",
-                        "pipe:[", "anon_inode:[", "socket:[", NULL};
-    int i = 0;
-    // Need to make sure both parameters for strncmp are not NULL, otherwise its gonna crash
-    while(exclusions[i] != NULL) {
-        int find = strncmp(exclusions[i], filename, strlen(exclusions[i]));
-        if (find == 0)      // find it. should ignore this filename
-            return 1;
-        i++;
-    }
-    return 0;
-}
-
-static inline long get_file_size(char *filename) {
-    struct stat sb;
-    int res = stat(filename, &sb);
-    if (res != 0 ) return -1;               // file not exist or some other error
-
-    int is_regular_file = S_ISREG(sb.st_mode);
-    if (!is_regular_file) return -1;        // is directory
-    return sb.st_size;
-    /*
-    FILE* f = RECORDER_MPI_CALL(fopen(filename, "r"));
-    if(f == NULL) return -1;
-    RECORDER_MPI_CALL(fseek(f, 0L, SEEK_END));
-    long size = RECORDER_MPI_CALL(ftell(f));
-    RECORDER_MPI_CALL(fclose(f));
-    return size;
-    */
-}
 
 static inline void write_record_args(FILE* f, int arg_count, char** args) {
     char invalid_str[] = "???";
@@ -147,7 +86,8 @@ Record get_diff_record(Record old_record, Record new_record) {
 void write_record(Record new_record) {
     if (__datafh == NULL) return;   // have not initialized yet
 
-    //write_record_in_text(__datafh, record);
+    write_record_in_text(__datafh, new_record);
+    return;
 
     int compress = 0;
     Record diff_record;
@@ -166,6 +106,7 @@ void write_record(Record new_record) {
         }
     }
 
+    compress = 0;
     if (compress) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
