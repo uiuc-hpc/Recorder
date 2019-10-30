@@ -86,8 +86,8 @@ Record get_diff_record(Record old_record, Record new_record) {
 void write_record(Record new_record) {
     if (__datafh == NULL) return;   // have not initialized yet
 
-    write_record_in_text(__datafh, new_record);
-    return;
+    //write_record_in_text(__datafh, new_record);
+    //return;
 
     int compress = 0;
     Record diff_record;
