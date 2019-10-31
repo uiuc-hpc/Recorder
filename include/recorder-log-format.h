@@ -88,7 +88,7 @@ static const char* func_list[] = {
     "creat",        "creat64",      "open",         "open64",   "close",
     "write",        "read",         "lseek",        "lseek64",  "pread",
     "pread64",      "pwrite",       "pwrite64",     "readv",    "writev",
-    "mmap",         "mmap64",       "fopen",        "fopen64",  "fclose"
+    "mmap",         "mmap64",       "fopen",        "fopen64",  "fclose",
     "fwrite",       "fread",        "ftell",        "fseek",    "fsync",
     "fdatasync",    "__xstat",      "__xstat64",    "__lxstat", "__lxstat64",
     "__fxstat",     "__fxstat64",   "getcwd",       "mkdir",    "rmdir",
@@ -190,7 +190,8 @@ static char filename_arg_pos[] = {
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001, // readdir
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000001, // fcntl
     0b00000001,  0b00000011,  0b00000000,  0b00000001,  0b00000000, // umask
-    0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000001, // remove
+    0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000000, // tmpfile
+    0b00000001                                                      // remove
 };
 
 #endif /* __RECORDER_LOG_FORMAT_H */
