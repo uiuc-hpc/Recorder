@@ -74,7 +74,6 @@
 #endif
 #endif
 
-
 typedef struct Record_t {
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
@@ -167,5 +166,30 @@ static const char* func_list[] = {
     "H5Oopen"
 };
 
+
+/*
+ * Position of the filename(fd, stream) arugment in the arguments list for each function
+ * Used to convert from binary encoding to text format
+ * The function index here should be the same as func_list above
+ * e.g, for renmae, it's 0b00000011, which means the first and second arguments are filenames
+ * 0b00000000 means no filename argument, e.g. umask()
+ *
+ */
+static char filename_arg_pos[] = {
+    // POSIX - 66 functions
+    0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
+    0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
+    0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
+    0b00010000,  0b00010000,  0b00000001,  0b00000001,  0b00000001,
+    0b00001000,  0b00001000,  0b00000001,  0b00000001,  0b00000001,
+    0b00000001,  0b00000010,  0b00000010,  0b00000010,  0b00000010,
+    0b00000010,  0b00000010,  0b00000000,  0b00000001,  0b00000001, // rmdir
+    0b00000001,  0b00000011,  0b00001111,  0b00000001,  0b00000011, // symlink
+    0b00000111,  0b00000001,  0b00000011,  0b00000011,  0b00000001, // chmod
+    0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001, // readdir
+    0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000001, // fcntl
+    0b00000001,  0b00000011,  0b00000000,  0b00000001,  0b00000000, // umask
+    0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000001, // remove
+};
 
 #endif /* __RECORDER_LOG_FORMAT_H */
