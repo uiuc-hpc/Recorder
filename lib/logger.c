@@ -65,7 +65,7 @@ static inline void write_record_in_text(FILE *f, Record record) {
     write_record_args(f, record.arg_count, record.args);
 }
 
-Record get_diff_record(Record old_record, Record new_record) {
+static inline Record get_diff_record(Record old_record, Record new_record) {
     Record diff_record;
     diff_record.arg_count = 999;
 
@@ -168,7 +168,6 @@ void logger_exit() {
                 char *filename = __filename2id_map->data[i].key;
                 int id = __filename2id_map->data[i].data;
                 fprintf(__metafh, "%s %d %ld\n", filename, id, get_file_size(filename));
-
             }
         }
     }

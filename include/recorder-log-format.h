@@ -167,21 +167,5 @@ static const char* func_list[] = {
     "H5Oopen"
 };
 
-/*
-static inline const char* get_function_name_by_id(int id) {
-    if (id < 0 || id > 255) return "WRONG_FUNCTION_ID";
-    return func_list[id];
-}
-static unsigned char get_function_id_by_name(const char* name) {
-    size_t len = sizeof(func_list) / sizeof(char *);
-    unsigned char i;
-    for(i = 0; i < len; i++) {
-        if (strcmp(func_list[i], name) == 0)
-            return i;
-    }
-    return 255;
-}
-*/
-
 
 #endif /* __RECORDER_LOG_FORMAT_H */
