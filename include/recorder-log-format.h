@@ -83,6 +83,13 @@ typedef struct Record_t {
 } Record;
 
 
+typedef struct RecorderGlobalDef_t {
+    double start_timestamp;
+    double time_resolution;
+    int total_ranks;
+} RecorderGlobalDef;
+
+
 static const char* func_list[] = {
     // POSIX I/O - 66 functions
     "creat",        "creat64",      "open",         "open64",   "close",

@@ -18,6 +18,7 @@ hashmap_map *__filename2id_map;
 Record __record_window[RECORD_WINDOW_SIZE];
 
 
+
 int startsWith(const char *pre, const char *str) {
     size_t lenpre = strlen(pre),
            lenstr = strlen(str);
@@ -153,10 +154,13 @@ void logger_init(int rank, int nprocs) {
 
     // Global metadata, include starting timestamp, time resolution
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_MPI_CALL(fopen) ("logs/recorder.mt", "w");
-        fprintf(global_metafh, "START_TIMESTAMP %f\n", START_TIMESTAMP);
-        fprintf(global_metafh, "TIME_RESOLUTION %f\n", TIME_RESOLUTION);
-        fprintf(global_metafh, "NPROCS %d\n", nprocs);
+        FILE* global_metafh = RECORDER_MPI_CALL(fopen) ("logs/recorder.mt", "wb");
+        RecorderGlobalDef global_def = {
+            .start_timestamp = START_TIMESTAMP,
+            .time_resolution = TIME_RESOLUTION,
+            .total_ranks = nprocs
+        };
+        RECORDER_MPI_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
         RECORDER_MPI_CALL(fclose)(global_metafh);
     }
 }
