@@ -120,7 +120,7 @@ void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_d
     while( read_record(in_file, global_def, &record) == 0) {
 
         // convert filename id to filename string
-        if (record.func_id < 120) { // for POSIX and MPI only now
+        if (record.func_id < 200) {
             for(int idx = 0; idx < 8; idx++) {
                 char pos = 0b00000001 << idx;
                 if (pos & filename_arg_pos[record.func_id]) {
