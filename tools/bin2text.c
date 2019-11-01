@@ -16,7 +16,7 @@ char** read_metadata(const char* path) {
     printf("lines: %d\n", lines);
     char **filenames = malloc(sizeof(char*) * lines);
     char filename[256], id[256], size[256];
-    int i = 0, count = 0;
+    int i = 0;
     enum Field {FIELD_FILE, FIELD_ID, FIELD_SIZE};
     enum Field current_field = FIELD_FILE;
 
@@ -27,7 +27,7 @@ char** read_metadata(const char* path) {
             size[i] = 0;
             i = 0;
             current_field = FIELD_FILE;
-            filenames[count++] = strdup(filename);
+            filenames[atoi(id)] = strdup(filename);
             printf("%s, %s, %s\n", filename, id, size);
         } else if (ch == ' ') {
             if(current_field == FIELD_FILE)
@@ -114,14 +114,14 @@ void read_logfile(const char* path, char** filenames) {
             }
         }
 
-        printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
+        //printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         fprintf(out_file, "%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         for(int i = 0; i < record.arg_count; i++) {
-            printf(" %s", record.args[i]);
+            //printf(" %s", record.args[i]);
             fprintf(out_file, " %s", record.args[i]);
             free(record.args[i]);
         }
-        printf("\n");
+        //printf("\n");
         fprintf(out_file, "\n");
         free(record.args);
     }
