@@ -3,6 +3,12 @@
 #include <string.h>
 #include "../include/recorder-log-format.h"
 
+void read_global_metadata(const char *path, RecorderGlobalDef *global_def) {
+    FILE* f = fopen(path, "rb");
+    fread(global_def, sizeof(RecorderGlobalDef), 1, f);
+    fclose(f);
+}
+
 char** read_metadata(const char* path) {
     int lines = 0;
     char ch;
@@ -49,20 +55,21 @@ char** read_metadata(const char* path) {
     return filenames;
 }
 
+
 /*
- * in: FILE*
+ * in: FILE*, RecorderGlobalDef
  * out: record
  * return 0 on success, -1 if read EOF
  */
-int read_record(FILE *f, Record *record) {
+int read_record(FILE *f, RecorderGlobalDef global_def, Record *record) {
     int tstart, tend;
     fread(&(record->status), sizeof(char), 1, f);
     fread(&tstart, sizeof(int), 1, f);
     fread(&tend, sizeof(int), 1, f);
     fread(&(record->func_id), sizeof(unsigned char), 1, f);
     record->arg_count = 0;
-    record->tstart = tstart;
-    record->tend = tstart;
+    record->tstart = tstart * global_def.time_resolution + global_def.start_timestamp;
+    record->tend = tstart * global_def.time_resolution + global_def.start_timestamp;
 
     char buffer[1024];
     char* ret = fgets(buffer, 1024, f);     // read a line
@@ -92,14 +99,14 @@ int read_record(FILE *f, Record *record) {
     return 0;
 }
 
-void read_logfile(const char* path, char** filenames) {
+void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def) {
     char text_logfile_path[256];
     sprintf(text_logfile_path, "%s.txt", path);
     FILE* out_file = fopen(text_logfile_path, "w");
     FILE* in_file = fopen(path, "rb");
 
     Record record;
-    while( read_record(in_file, &record) == 0) {
+    while( read_record(in_file, global_def, &record) == 0) {
 
         // convert filename id to filename string
         if (record.func_id < 66) {
@@ -132,13 +139,18 @@ void read_logfile(const char* path, char** filenames) {
 
 int main(int argc, char **argv) {
     char* log_dir_path = argv[1];
-    char metadata_path[256], logfile_path[256];
-    int ranks = 1;
-    for(int i = 0; i < ranks; i++) {
-        sprintf(metadata_path, "%s/%d.mt" , log_dir_path, i);
+    char global_metadata_path[256], local_metadata_path[256], logfile_path[256];
+    RecorderGlobalDef global_def;
+
+
+    sprintf(global_metadata_path, "%s/recorder.mt", log_dir_path);
+    read_global_metadata(global_metadata_path, &global_def);
+
+    for(int i = 0; i < global_def.total_ranks ; i++) {
+        sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
         sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
-        char** filenames = read_metadata(metadata_path);
-        read_logfile(logfile_path, filenames);
+        char** filenames = read_metadata(local_metadata_path);
+        read_logfile(logfile_path, filenames, global_def);
         free(filenames);
     }
 
