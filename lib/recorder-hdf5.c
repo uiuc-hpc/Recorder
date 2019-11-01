@@ -247,15 +247,6 @@ void get_op_name(H5S_seloper_t op, char *string) {
 //static struct recorder_file_runtime *recorder_file_by_hid(int hid);
 
 
-// My implementation to replace realrealpath() system call
-static inline char* realrealpath(const char *path) {
-    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
-    realpath(path, real_pathname);
-    if (real_pathname == NULL)
-        strcpy(real_pathname, path);
-    return real_pathname;
-}
-
 static inline char *comm2name(MPI_Comm comm) {
     char *tmp = malloc(128);
     int len;

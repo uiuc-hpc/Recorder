@@ -214,7 +214,7 @@ int RECORDER_MPI_DECL(MPI_Type_commit)(MPI_Datatype *datatype) {
 
 int RECORDER_MPI_DECL(MPI_File_open)(MPI_Comm comm, CONST char *filename, int amode, MPI_Info info, MPI_File *fh) {
     // TODO: filename
-    char **args = assemble_args_list(5, comm2name(comm), strdup(filename), itoa(amode), ptoa(&info), ptoa(fh));
+    char **args = assemble_args_list(5, comm2name(comm), realrealpath(filename), itoa(amode), ptoa(&info), ptoa(fh));
     RECORDER_INTERCEPTOR(int, PMPI_File_open, (comm, filename, amode, info, fh), 5, args)
 }
 

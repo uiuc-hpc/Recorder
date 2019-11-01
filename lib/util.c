@@ -112,3 +112,17 @@ unsigned char get_function_id_by_name(const char* name) {
     return 255;
 }
 
+/*
+ * My implementation to replace realpath() system call
+ * return the filename id from the hashmap
+ */
+inline char* realrealpath(const char *path) {
+    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
+    realpath(path, real_pathname);      // we do not intercept realpath()
+    if (real_pathname == NULL)          // realpath() could return NULL on error
+        strcpy(real_pathname, path);
+    char* id_str = get_filename_id(real_pathname);
+    free(real_pathname);
+    return id_str;
+}
+

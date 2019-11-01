@@ -83,6 +83,7 @@ char* ptoa(const void* ptr);                    // convert a pointer to string
 char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);
 unsigned char get_function_id_by_name(const char* name);
+char* realrealpath(const char* path);           // return the absolute path (mapped to id in string)
 
 
 

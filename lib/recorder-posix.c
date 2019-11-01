@@ -93,24 +93,12 @@ static inline char* fd2name(int fd) {
 static inline char* stream2name(FILE *fp) {
     // Need to map the fileno funciton, because here - this file
     // may be invoked even before MPI_Init in recorder-mpi-initialize.c
-    // also note that if fileno causes segmentation fault if fp is NULL
+    // also note that fileno causes segmentation fault if fp is NULL
     if (fp == NULL) return NULL;
     MAP_OR_FAIL(fileno)
     int fd = RECORDER_MPI_CALL(fileno(fp));
     return fd2name(fd);
 }
-
-// My implementation to replace realrealpath() system call
-static inline char* realrealpath(const char *path) {
-    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
-    realpath(path, real_pathname);
-    if (real_pathname == NULL)
-        strcpy(real_pathname, path);
-    char* id_str = get_filename_id(real_pathname);
-    free(real_pathname);
-    return id_str;
-}
-
 
 
 int RECORDER_POSIX_DECL(close)(int fd) {
