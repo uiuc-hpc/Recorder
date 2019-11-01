@@ -107,7 +107,7 @@ static const char* func_list[] = {
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
     "remove",
 
-    // MPI I/O  - 60 functions
+    // MPI I/O  - 61 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
     "PMPI_File_iread",              "PMPI_File_iread_shared",   "PMPI_File_iwrite_at",
     "PMPI_File_iwrite",             "PMPI_File_iwrite_shared",  "PMPI_File_open",
@@ -198,7 +198,31 @@ static char filename_arg_pos[] = {
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000001, // fcntl
     0b00000001,  0b00000011,  0b00000000,  0b00000001,  0b00000000, // umask
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000000, // tmpfile
-    0b00000001                                                      // remove
+    0b00000001,                                                     // remove
+
+    // MPI I/O - 61 functions
+    // Only MPI_File_open has the filename argument
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000010,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000
 };
 
 #endif /* __RECORDER_LOG_FORMAT_H */
