@@ -128,7 +128,7 @@ void write_record(Record new_record) {
     __record_window[0] = new_record;
 }
 
-void logger_init(int rank) {
+void logger_init(int rank, int nprocs) {
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen)
@@ -150,6 +150,15 @@ void logger_init(int rank) {
     __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
 
     START_TIMESTAMP = recorder_wtime();
+
+    // Global metadata, include starting timestamp, time resolution
+    if (rank == 0) {
+        FILE* global_metafh = RECORDER_MPI_CALL(fopen) ("logs/recorder.mt", "w");
+        fprintf(global_metafh, "START_TIMESTAMP %f\n", START_TIMESTAMP);
+        fprintf(global_metafh, "TIME_RESOLUTION %f\n", TIME_RESOLUTION);
+        fprintf(global_metafh, "NPROCS %d\n", nprocs);
+        RECORDER_MPI_CALL(fclose)(global_metafh);
+    }
 }
 
 

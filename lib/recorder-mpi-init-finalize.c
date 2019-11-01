@@ -61,7 +61,7 @@ void recorder_init(int *argc, char ***argv) {
     RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 
     depth = 0;
-    logger_init(rank);
+    logger_init(rank, nprocs);
 }
 
 void recorder_exit() {

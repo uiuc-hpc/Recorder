@@ -69,7 +69,7 @@ extern hashmap_map *__filename2id_map;      /* map <filename, integer> */
 
 
 /* logger.c */
-void logger_init(int rank);
+void logger_init(int rank, int nprocs);
 void logger_exit();
 void write_record(Record record);
 
