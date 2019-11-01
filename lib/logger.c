@@ -30,8 +30,8 @@ static inline void write_record_args(FILE* f, int arg_count, char** args) {
     for(int i = 0; i < arg_count; i++) {
         fprintf(f, " ");
         if(args[i]) {
-            if (!startsWith("0x", args[i]))
-                RECORDER_MPI_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
+            //if (!startsWith("0x", args[i]))
+            RECORDER_MPI_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
         } else
             RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
     }
@@ -113,6 +113,7 @@ void write_record(Record new_record) {
         }
     }
 
+    compress = 0;
     if (compress) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
@@ -135,11 +136,12 @@ void logger_init(int rank) {
     MAP_OR_FAIL(fwrite)
     MAP_OR_FAIL(ftell)
     MAP_OR_FAIL(fseek)
+    MAP_OR_FAIL(mkdir)
 
     // Initialize the global values
     __filename2id_map = hashmap_new();
 
-    mkdir("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    RECORDER_MPI_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     char logfile_name[256];
     char metafile_name[256];
     sprintf(logfile_name, "logs/%d.itf", rank);
