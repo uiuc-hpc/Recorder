@@ -80,7 +80,7 @@ static inline char* fd2name(int fd) {
 
     MAP_OR_FAIL(readlink)
     char *realname = malloc(sizeof(char)*len);
-    int ret = RECORDER_MPI_CALL(readlink(fdname, realname, len));
+    int ret = RECORDER_REAL_CALL(readlink(fdname, realname, len));
     if(ret <  0) return fdname;
     realname[ret] = 0; // readlink does not append a null byte
 
@@ -96,7 +96,7 @@ static inline char* stream2name(FILE *fp) {
     // also note that fileno causes segmentation fault if fp is NULL
     if (fp == NULL) return NULL;
     MAP_OR_FAIL(fileno)
-    int fd = RECORDER_MPI_CALL(fileno(fp));
+    int fd = RECORDER_REAL_CALL(fileno(fp));
     return fd2name(fd);
 }
 

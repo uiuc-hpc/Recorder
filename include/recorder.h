@@ -108,11 +108,11 @@ char* realrealpath(const char* path);           // return the absolute path (map
      * Before call the real function, we need to make sure its mapped by dlsym()
      * So, every time we use this marco directly, we need to call MAP_OR_FAIL before it
      */
-    #define RECORDER_MPI_CALL(func) __real_##func
+    #define RECORDER_REAL_CALL(func) __real_##func
 #else
     #define RECORDER_FORWARD_DECL(name, ret, args)
     #define MAP_OR_FAIL(func)
-    #define RECORDER_MPI_CALL(func) func
+    #define RECORDER_REAL_CALL(func) func
 #endif
 
 
@@ -155,7 +155,7 @@ char* realrealpath(const char* path);           // return the absolute path (map
     MAP_OR_FAIL(func)                                                               \
     depth++;                                                                        \
     double tstart = recorder_wtime();                                               \
-    ret res = RECORDER_MPI_CALL(func) real_args ;                                   \
+    ret res = RECORDER_REAL_CALL(func) real_args ;                                   \
     double tend = recorder_wtime();                                                 \
     depth--;                                                                        \
     Record record = {                                                               \

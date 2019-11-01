@@ -32,9 +32,9 @@ static inline void write_record_args(FILE* f, int arg_count, char** args) {
         fprintf(f, " ");
         if(args[i]) {
             //if (!startsWith("0x", args[i]))
-            RECORDER_MPI_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
+            RECORDER_REAL_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
         } else
-            RECORDER_MPI_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
+            RECORDER_REAL_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
     }
     fprintf(f, "\n");
 }
@@ -43,10 +43,10 @@ static inline void write_compressed_record(FILE* f, char ref_window_id, Record d
     char status = '0';
     int tstart = (diff_record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
     int tend   = (diff_record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
-    RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&tstart, sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&tend, sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&ref_window_id, sizeof(char), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&status, sizeof(char), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&ref_window_id, sizeof(char), 1, f);
     write_record_args(f, diff_record.arg_count, diff_record.args);
 }
 
@@ -54,10 +54,10 @@ static inline void write_uncompressed_record(FILE *f, Record record) {
     char status = '0';
     int tstart = (record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
     int tend   = (record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
-    RECORDER_MPI_CALL(fwrite) (&status, sizeof(char), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&tstart, sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&tend, sizeof(int), 1, f);
-    RECORDER_MPI_CALL(fwrite) (&(record.func_id), sizeof(unsigned char), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&status, sizeof(char), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
+    RECORDER_REAL_CALL(fwrite) (&(record.func_id), sizeof(unsigned char), 1, f);
     write_record_args(f, record.arg_count, record.args);
 }
 
@@ -142,26 +142,26 @@ void logger_init(int rank, int nprocs) {
     // Initialize the global values
     __filename2id_map = hashmap_new();
 
-    RECORDER_MPI_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    RECORDER_REAL_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     char logfile_name[256];
     char metafile_name[256];
     sprintf(logfile_name, "logs/%d.itf", rank);
     sprintf(metafile_name, "logs/%d.mt", rank);
-    __datafh = RECORDER_MPI_CALL(fopen) (logfile_name, "wb");
-    __metafh = RECORDER_MPI_CALL(fopen) (metafile_name, "w");
+    __datafh = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
+    __metafh = RECORDER_REAL_CALL(fopen) (metafile_name, "w");
 
     START_TIMESTAMP = recorder_wtime();
 
     // Global metadata, include starting timestamp, time resolution
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_MPI_CALL(fopen) ("logs/recorder.mt", "wb");
+        FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("logs/recorder.mt", "wb");
         RecorderGlobalDef global_def = {
             .start_timestamp = START_TIMESTAMP,
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs
         };
-        RECORDER_MPI_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
-        RECORDER_MPI_CALL(fclose)(global_metafh);
+        RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
+        RECORDER_REAL_CALL(fclose)(global_metafh);
     }
 }
 
@@ -169,7 +169,7 @@ void logger_init(int rank, int nprocs) {
 void logger_exit() {
     /* Close the log file */
     if ( __datafh ) {
-        RECORDER_MPI_CALL(fclose) (__datafh);
+        RECORDER_REAL_CALL(fclose) (__datafh);
         __datafh = NULL;
     }
 
@@ -189,7 +189,7 @@ void logger_exit() {
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
     if ( __metafh) {
-        RECORDER_MPI_CALL(fclose) (__metafh);
+        RECORDER_REAL_CALL(fclose) (__metafh);
         __metafh = NULL;
     }
 }

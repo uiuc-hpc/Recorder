@@ -57,8 +57,8 @@ void recorder_init(int *argc, char ***argv) {
     int rank, nprocs;
     MAP_OR_FAIL(PMPI_Comm_size)
     MAP_OR_FAIL(PMPI_Comm_rank)
-    RECORDER_MPI_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
-    RECORDER_MPI_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+    RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
+    RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 
     depth = 0;
     logger_init(rank, nprocs);
@@ -70,21 +70,21 @@ void recorder_exit() {
 
 int PMPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init)
-    int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
+    int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init)
-    int ret = RECORDER_MPI_CALL(PMPI_Init) (argc, argv);
+    int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
     MAP_OR_FAIL(PMPI_Init_thread)
-    int ret = RECORDER_MPI_CALL(PMPI_Init_thread) (argc, argv, required, provided);
+    int ret = RECORDER_REAL_CALL(PMPI_Init_thread) (argc, argv, required, provided);
     recorder_init(argc, argv);
     return ret;
 }
@@ -92,13 +92,13 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
 int PMPI_Finalize(void) {
     recorder_exit();
     MAP_OR_FAIL(PMPI_Finalize)
-    int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
+    int ret = RECORDER_REAL_CALL(PMPI_Finalize) ();
     return ret;
 }
 
 int MPI_Finalize(void) {
     recorder_exit();
     MAP_OR_FAIL(PMPI_Finalize)
-    int ret = RECORDER_MPI_CALL(PMPI_Finalize) ();
+    int ret = RECORDER_REAL_CALL(PMPI_Finalize) ();
     return ret;
 }
