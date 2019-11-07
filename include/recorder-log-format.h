@@ -83,11 +83,16 @@ typedef struct Record_t {
     char **args;                // Store all arguments in array
 } Record;
 
+
+// Compression method, use peephole compression by default
+enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_PEEPHOLE=2, COMP_ZLIB=3 };
+typedef enum CompressionMode_t CompressionMode;
 typedef struct RecorderGlobalDef_t {
     double time_resolution;
     int total_ranks;
-    int compression_type;
+    CompressionMode compression_mode;
 } RecorderGlobalDef;
+
 
 typedef struct RecorderLocalDef_t {
     double start_timestamp;
