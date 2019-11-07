@@ -4,6 +4,9 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include "recorder.h"
+#include "zlib.h"
+
+
 
 /* Global file handler (per rank) for the local trace log file */
 FILE *__datafh;
@@ -13,9 +16,14 @@ double START_TIMESTAMP;
 double TIME_RESOLUTION = 0.000001;
 /* Filename to integer map */
 hashmap_map *__filename2id_map;
-/* Hold several previous records for compression */
+
+/* A sliding window for peephole compression */
 #define RECORD_WINDOW_SIZE 3
 Record __record_window[RECORD_WINDOW_SIZE];
+
+/* For zlib compression */
+#define ZLIB_BUF_SIZE 4096
+z_stream __zlib_stream;
 
 
 
@@ -61,10 +69,59 @@ static inline void write_uncompressed_record(FILE *f, Record record) {
     write_record_args(f, record.arg_count, record.args);
 }
 
+/* Write record in plan text format */
 static inline void write_record_in_text(FILE *f, Record record) {
     fprintf(f, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
     write_record_args(f, record.arg_count, record.args);
 }
+
+/* Compress the text with zlib and write it out */
+static inline void write_record_in_zlib(FILE *f, Record record) {
+    char in_buf[ZLIB_BUF_SIZE];
+    char out_buf[ZLIB_BUF_SIZE];
+    sprintf(in_buf, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
+    for(int i = 0; i < record.arg_count; i++) {
+        strcat(in_buf, " ");
+        if(record.args[i])
+            strcat(in_buf, record.args[i]);
+        else
+            strcat(in_buf, "???");
+    }
+    strcat(in_buf, "\n");
+
+    __zlib_stream.avail_in = strlen(in_buf);
+    __zlib_stream.next_in = in_buf;
+    do {
+        __zlib_stream.avail_out = ZLIB_BUF_SIZE;
+        __zlib_stream.next_out = out_buf;
+        int ret = deflate(&__zlib_stream, Z_NO_FLUSH);    /* no bad return value */
+        unsigned have = ZLIB_BUF_SIZE - __zlib_stream.avail_out;
+        RECORDER_REAL_CALL(fwrite) (out_buf, 1, have, f);
+    } while (__zlib_stream.avail_out == 0);
+}
+
+void zlib_init() {
+    /* allocate deflate state */
+    __zlib_stream.zalloc = Z_NULL;
+    __zlib_stream.zfree = Z_NULL;
+    __zlib_stream.opaque = Z_NULL;
+    deflateInit(&__zlib_stream, Z_DEFAULT_COMPRESSION);
+}
+void zlib_exit() {
+    // Write out everythin zlib's buffer
+    char out_buf[ZLIB_BUF_SIZE];
+    do {
+
+        __zlib_stream.avail_out = ZLIB_BUF_SIZE;
+        __zlib_stream.next_out = out_buf;
+        int ret = deflate(&__zlib_stream, Z_FINISH);    /* no bad return value */
+        unsigned have = ZLIB_BUF_SIZE - __zlib_stream.avail_out;
+        RECORDER_REAL_CALL(fwrite) (out_buf, 1, have, __datafh);
+    } while (__zlib_stream.avail_out == 0);
+    // Clean up and end the Zlib
+    (void)deflateEnd(&__zlib_stream);
+}
+
 
 static inline Record get_diff_record(Record old_record, Record new_record) {
     Record diff_record;
@@ -95,6 +152,7 @@ void write_record(Record new_record) {
     if (__datafh == NULL) return;   // have not initialized yet
 
     //write_record_in_text(__datafh, new_record);
+    //write_record_in_zlib(__datafh, new_record);
     //return;
 
     int compress = 0;
@@ -114,7 +172,7 @@ void write_record(Record new_record) {
         }
     }
 
-    compress = 0;
+    //compress = 0;
     if (compress) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
@@ -130,6 +188,8 @@ void write_record(Record new_record) {
 }
 
 void logger_init(int rank, int nprocs) {
+    zlib_init();
+
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen)
@@ -142,23 +202,22 @@ void logger_init(int rank, int nprocs) {
     // Initialize the global values
     __filename2id_map = hashmap_new();
 
+    START_TIMESTAMP = recorder_wtime();
+
     RECORDER_REAL_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     char logfile_name[256];
     char metafile_name[256];
     sprintf(logfile_name, "logs/%d.itf", rank);
     sprintf(metafile_name, "logs/%d.mt", rank);
     __datafh = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
-    __metafh = RECORDER_REAL_CALL(fopen) (metafile_name, "w");
-
-    START_TIMESTAMP = recorder_wtime();
-
+    __metafh = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
     // Global metadata, include starting timestamp, time resolution
     if (rank == 0) {
         FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("logs/recorder.mt", "wb");
         RecorderGlobalDef global_def = {
-            .start_timestamp = START_TIMESTAMP,
             .time_resolution = TIME_RESOLUTION,
-            .total_ranks = nprocs
+            .total_ranks = nprocs,
+            .compression_type = 1
         };
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
         RECORDER_REAL_CALL(fclose)(global_metafh);
@@ -167,22 +226,40 @@ void logger_init(int rank, int nprocs) {
 
 
 void logger_exit() {
+    /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
+    zlib_exit();
+
     /* Close the log file */
     if ( __datafh ) {
         RECORDER_REAL_CALL(fclose) (__datafh);
         __datafh = NULL;
     }
 
+
+    /* Write out local metadata information */
+    RecorderLocalDef local_def = {
+        .start_timestamp = START_TIMESTAMP,
+        .end_timestamp = recorder_wtime(),
+        .num_files = hashmap_length(__filename2id_map)
+    };
+    printf("num files: %d\n", local_def.num_files);
+    fwrite(&local_def, sizeof(local_def), 1, __metafh);
+
     /* Write out filename mappings, we call stat() to get file size
      * since __datafh is already closed (null), the stat() function
      * won't be intercepted. */
-    int i;
     if (hashmap_length(__filename2id_map) > 0 ) {
-        for(i = 0; i< __filename2id_map->table_size; i++) {
+        for(int i = 0; i< __filename2id_map->table_size; i++) {
             if(__filename2id_map->data[i].in_use != 0) {
                 char *filename = __filename2id_map->data[i].key;
                 int id = __filename2id_map->data[i].data;
-                fprintf(__metafh, "%s %d %ld\n", filename, id, get_file_size(filename));
+                size_t file_size = get_file_size(filename);
+                int filename_len = strlen(filename);
+                fwrite(&id, sizeof(id), 1, __metafh);
+                fwrite(&file_size, sizeof(file_size), 1, __metafh);
+                fwrite(&filename_len, sizeof(filename_len), 1, __metafh);
+                fwrite(filename, sizeof(char), filename_len, __metafh);
+                //fprintf(__metafh, "%s %d %ld\n", filename, id, get_file_size(filename));
             }
         }
     }

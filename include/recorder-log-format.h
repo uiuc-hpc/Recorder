@@ -74,20 +74,27 @@
 #endif
 #endif
 
+/* For each function call in the trace file */
 typedef struct Record_t {
     char status;
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
     int arg_count;
-    char **args;
+    char **args;                // Store all arguments in array
 } Record;
 
-
 typedef struct RecorderGlobalDef_t {
-    double start_timestamp;
     double time_resolution;
     int total_ranks;
+    int compression_type;
 } RecorderGlobalDef;
+
+typedef struct RecorderLocalDef_t {
+    double start_timestamp;
+    double end_timestamp;
+    int num_files;                  // number of files accessed by the rank
+} RecorderLocalDef;
+
 
 
 static const char* func_list[] = {
