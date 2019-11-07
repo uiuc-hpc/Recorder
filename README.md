@@ -38,7 +38,7 @@ Note that your application and Recorder need to use the same version of HDF5 and
 Options can be used to disable one ore more level of traces.<br>
 Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
 ```console
-./config.sh PATH_TO_HDF5 PATH_TO_MPI options
+./config.sh PATH_TO_HDF5 PATH_TO_MPI [options]
 ```
 
 3. Make and install.
@@ -73,7 +73,7 @@ Change Log
 ----------
 **Recorder v2.1** Nov 7, 2019
 1. Implement compressed peephole encoding schema.
-2. Intergrated zlib as another compression choice
+2. Intergrat zlib as another compression choice.
 3. Users can choose compression modes by setting a environment variable.
 
 **Recorder v2.0** Jul 19, 2019
