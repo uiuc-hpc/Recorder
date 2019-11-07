@@ -15,48 +15,23 @@ void read_global_metadata(const char *path, RecorderGlobalDef *global_def) {
 /*
  * Read one local metadata file (one rank)
  */
-char** read_local_metadata(const char* path) {
-    int lines = 0;
-    char ch;
+char** read_local_metadata(const char* path, RecorderLocalDef *local_def) {
+    FILE* f = fopen(path, "rb");
+    fread(local_def, sizeof(RecorderLocalDef), 1, f);
+    char **filenames = malloc(sizeof(char*) * local_def->num_files);
 
-    FILE* f = fopen(path, "r");
-    while(!feof(f)) {
-        ch = fgetc(f);
-        if(ch == '\n')
-            lines++;
+    int id;
+    size_t file_size;
+    int filename_len;
+    for(int i = 0; i < local_def->num_files; i++) {
+        fread(&id, sizeof(id), 1, f);
+        fread(&file_size, sizeof(file_size), 1, f);
+        fread(&filename_len, sizeof(filename_len), 1, f);
+        filenames[id] = malloc(sizeof(char) * (filename_len+1));
+        fread(filenames[id], sizeof(char), filename_len, f);
+        filenames[id][filename_len] = 0;
     }
-    printf("lines: %d\n", lines);
-    char **filenames = malloc(sizeof(char*) * lines);
-    char filename[256], id[256], size[256];
-    int i = 0;
-    enum Field {FIELD_FILE, FIELD_ID, FIELD_SIZE};
-    enum Field current_field = FIELD_FILE;
 
-    fseek(f, 0, SEEK_SET);
-    while(!feof(f)) {
-        ch = fgetc(f);
-        if (ch == '\n') {
-            size[i] = 0;
-            i = 0;
-            current_field = FIELD_FILE;
-            filenames[atoi(id)] = strdup(filename);
-            printf("%s, %s, %s\n", filename, id, size);
-        } else if (ch == ' ') {
-            if(current_field == FIELD_FILE)
-                filename[i] = 0;
-            if(current_field == FIELD_ID)
-                id[i] = 0;
-            i = 0;
-            current_field = (current_field == FIELD_FILE) ? FIELD_ID : FIELD_SIZE;
-        } else {
-            if (current_field == FIELD_FILE)
-                filename[i++] = ch;
-            if (current_field == FIELD_ID)
-                id[i++] = ch;
-            if (current_field == FIELD_SIZE)
-                size[i++] = ch;
-        }
-    }
     fclose(f);
     return filenames;
 }
@@ -69,15 +44,15 @@ char** read_local_metadata(const char* path) {
  * in: RecorderGlobalDef global_def
  * out: record
  */
-int read_record(FILE *f, RecorderGlobalDef global_def, Record *record) {
+int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_def, Record *record) {
     int tstart, tend;
     fread(&(record->status), sizeof(char), 1, f);
     fread(&tstart, sizeof(int), 1, f);
     fread(&tend, sizeof(int), 1, f);
     fread(&(record->func_id), sizeof(unsigned char), 1, f);
     record->arg_count = 0;
-    record->tstart = tstart * global_def.time_resolution + global_def.start_timestamp;
-    record->tend = tstart * global_def.time_resolution + global_def.start_timestamp;
+    record->tstart = tstart * global_def.time_resolution + local_def.start_timestamp;
+    record->tend = tstart * global_def.time_resolution + local_def.start_timestamp;
 
     char buffer[1024];
     char* ret = fgets(buffer, 1024, f);     // read a line
@@ -110,15 +85,14 @@ int read_record(FILE *f, RecorderGlobalDef global_def, Record *record) {
 /*
  * Read one log file (for one  rank)
  */
-void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def) {
+void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
     char text_logfile_path[256];
     sprintf(text_logfile_path, "%s.txt", path);
     FILE* out_file = fopen(text_logfile_path, "w");
     FILE* in_file = fopen(path, "rb");
 
     Record record;
-    while( read_record(in_file, global_def, &record) == 0) {
-
+    while( read_record(in_file, global_def, local_def, &record) == 0) {
         // convert filename id to filename string
         if (record.func_id < 200) {
             for(int idx = 0; idx < 8; idx++) {
@@ -132,14 +106,14 @@ void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_d
             }
         }
 
-        //printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
+        printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         fprintf(out_file, "%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         for(int i = 0; i < record.arg_count; i++) {
-            //printf(" %s", record.args[i]);
+            printf(" %s", record.args[i]);
             fprintf(out_file, " %s", record.args[i]);
             free(record.args[i]);
         }
-        //printf("\n");
+        printf("\n");
         fprintf(out_file, "\n");
         free(record.args);
     }
@@ -152,7 +126,7 @@ int main(int argc, char **argv) {
     char* log_dir_path = argv[1];
     char global_metadata_path[256], local_metadata_path[256], logfile_path[256];
     RecorderGlobalDef global_def;
-
+    RecorderLocalDef local_def;
 
     sprintf(global_metadata_path, "%s/recorder.mt", log_dir_path);
     read_global_metadata(global_metadata_path, &global_def);
@@ -160,8 +134,8 @@ int main(int argc, char **argv) {
     for(int i = 0; i < global_def.total_ranks ; i++) {
         sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
         sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
-        char** filenames = read_local_metadata(local_metadata_path);
-        read_logfile(logfile_path, filenames, global_def);
+        char** filenames = read_local_metadata(local_metadata_path, &local_def);
+        read_logfile(logfile_path, filenames, global_def, local_def);
         free(filenames);
     }
 
