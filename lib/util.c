@@ -3,6 +3,8 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
 
+int __recording;
+
 /*
  * Map filename to Integer in binary format
  * The filename must be absolute pathname
@@ -12,7 +14,7 @@
 hashmap_map* __filename2id_map;
 inline char* get_filename_id(const char *filename) {
     int id = -1;
-    if (!filename || !__filename2id_map || strlen(filename) == 0)
+    if (!__recording || !filename || !__filename2id_map || strlen(filename) == 0)
         return itoa(id);
 
     const char *key = filename;

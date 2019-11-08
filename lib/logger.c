@@ -16,6 +16,7 @@ double START_TIMESTAMP;
 double TIME_RESOLUTION = 0.000001;
 /* Filename to integer map */
 hashmap_map *__filename2id_map;
+int __recording;
 
 /* A sliding window for peephole compression */
 #define RECORD_WINDOW_SIZE 3
@@ -161,7 +162,7 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 
 
 void write_record(Record new_record) {
-    if (__datafh == NULL) return;   // have not initialized yet
+    if (!__recording) return;       // have not initialized yet
 
     __total_records++;
 
@@ -265,10 +266,14 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
         RECORDER_REAL_CALL(fclose)(global_metafh);
     }
+
+    __recording = 1;
 }
 
 
 void logger_exit() {
+    __recording = 0;
+
     /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
     if (__compression_mode == COMP_ZLIB)
         zlib_exit();
@@ -305,6 +310,7 @@ void logger_exit() {
             }
         }
     }
+
     hashmap_free(__filename2id_map);
     __filename2id_map = NULL;
     if ( __metafh) {

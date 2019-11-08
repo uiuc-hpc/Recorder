@@ -65,6 +65,7 @@
 #endif
 
 extern int depth;                           /* funciton call depth */
+extern int __recording;                     /* Only true after init() before exit() so we won't track unwanted functions and files*/
 extern hashmap_map *__filename2id_map;      /* map <filename, integer> */
 
 
