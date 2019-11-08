@@ -76,7 +76,7 @@
 
 /* For each function call in the trace file */
 typedef struct Record_t {
-    char status;
+    char status;                // peephole compressed or not
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
     int arg_count;

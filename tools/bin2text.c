@@ -63,7 +63,6 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
     buffer[strlen(buffer)-1] = 0;           // remove the trailing '\n'
     if (strlen(buffer) == 0 ) return 0;     // no arguments
 
-    //printf("strlen: %ld, %s\n", strlen(buffer), buffer);
     for(int i = 0; i < strlen(buffer); i++) {
         if(buffer[i] == ' ')
             record->arg_count++;
@@ -89,6 +88,8 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
  * Read one log file (for one  rank)
  */
 void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+    Record record_window[3];    // sliding window for decompression
+
     char text_logfile_path[256];
     sprintf(text_logfile_path, "%s.txt", path);
     FILE* out_file = fopen(text_logfile_path, "w");
@@ -96,6 +97,19 @@ void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_d
 
     Record record;
     while( read_record(in_file, global_def, local_def, &record) == 0) {
+        if (record.status & 0b10000000) {   // decompress peephole compressed record
+            int ref_id = record.func_id;
+            char **diff_args = record.args;
+            record.func_id = record_window[ref_id].func_id;
+            record.arg_count = record_window[ref_id].arg_count;
+            record.args = record_window[ref_id].args;
+            for(int idx = 0; idx < 7; idx++) {      // set the different arguments
+                char diff_bit = 0b00000001 << idx;
+                if (diff_bit & record.status)
+                    record.args[idx] = diff_args[idx];
+            }
+        }
+
         // convert filename id to filename string
         if (record.func_id < 200) {
             for(int idx = 0; idx < 8; idx++) {
@@ -109,16 +123,21 @@ void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_d
             }
         }
 
-        //printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
+        printf("%d %f %f %s %d", record.status, record.tstart, record.tend, func_list[record.func_id], record.arg_count);
         fprintf(out_file, "%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         for(int i = 0; i < record.arg_count; i++) {
-            //printf(" %s", record.args[i]);
+            printf(" %s", record.args[i]);
             fprintf(out_file, " %s", record.args[i]);
-            free(record.args[i]);
+            //free(record.args[i]);
         }
-        //printf("\n");
+        printf("\n");
         fprintf(out_file, "\n");
-        free(record.args);
+        //free(record.args);
+
+        // Update the sliding window
+        record_window[2] = record_window[1];
+        record_window[1] = record_window[0];
+        record_window[0]  = record;
     }
 
     fclose(out_file);
