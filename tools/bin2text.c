@@ -87,7 +87,7 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
 }
 
 /*
- * Read one rank's log file
+ * Write all records to text file
  */
 void write_to_textfile(const char* path, Record *records, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
     FILE* out_file = fopen(path, "w");
@@ -149,6 +149,49 @@ Record* read_logfile(const char* logfile_path, RecorderGlobalDef global_def, Rec
 }
 
 
+void bandwidth(Record *records, RecorderLocalDef local_def) {
+    size_t total_bytes_read = 0, total_bytes_written = 0;
+    for(int i = 0; i < local_def.total_records; i++) {
+        size_t size = 0;
+        Record record = records[i];
+        if(record.func_id == 6) {               // read(int fd, void *buf, size_t count);
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 9) {        // pread(int fd, void *buf, size_t count, off_t offset);
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 10) {       // pread64 same as pread
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 13) {       // readv(int fd, const struct iovec *iov, int iovcnt);
+            // readv and write we store the total bytes as second arguments
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 21) {       // fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+            size_t nmemb;
+            sscanf(record.args[1], "%zu", &size);
+            sscanf(record.args[2], "%zu", &nmemb);
+            size = nmemb * size;
+        }
+        total_bytes_read += size;
+
+        size = 0;
+        if(record.func_id == 5) {           // write(int fd, const void *buf, size_t count);
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 11) {   // pwrite(int fd, const void *buf, size_t count, off_t offset);
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 12) {   // pwrite64
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 14) {   // writev(int fd, const struct iovec *iov, int iovcnt);
+            sscanf(record.args[2], "%zu", &size);
+        } else if(record.func_id == 20) {   // fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+            size_t nmemb;
+            sscanf(record.args[1], "%zu", &size);
+            sscanf(record.args[2], "%zu", &nmemb);
+            size = nmemb * size;
+        }
+        total_bytes_written += size;
+    }
+    printf("total bytes read: %zu, total bytes written: %zu\n", total_bytes_read, total_bytes_written);
+}
+
+
 int main(int argc, char **argv) {
     char* log_dir_path = argv[1];
     char global_metadata_path[256], local_metadata_path[256], logfile_path[256],  textfile_path[256];
@@ -164,8 +207,9 @@ int main(int argc, char **argv) {
         sprintf(textfile_path, "%s/%d.itf.txt" , log_dir_path, i);
         char** filenames = read_local_metadata(local_metadata_path, &local_def);
         Record *records = read_logfile(logfile_path, global_def, local_def);
-        write_to_textfile(textfile_path, records, filenames, global_def, local_def);
-        //free(filenames);
+        //write_to_textfile(textfile_path, records, filenames, global_def, local_def);
+        bandwidth(records, local_def);
+        free(filenames);
     }
 
     return 0;
