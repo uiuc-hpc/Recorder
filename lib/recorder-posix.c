@@ -230,22 +230,20 @@ ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t
 }
 
 ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) {
-    /* TODO: IOV
-    int n = 0; int i = 0;
+    // TODO: IOV
+    int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
-        n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
-    */
-    char** args = assemble_args_list(3, fd2name(fd), ptoa(iov), itoa(iovcnt));
+        total += iov[i].iov_len;
+    char** args = assemble_args_list(3, fd2name(fd), itoa(total), itoa(iovcnt));
     RECORDER_INTERCEPTOR(ssize_t, readv, (fd, iov, iovcnt), 3, args)
 }
 
 ssize_t RECORDER_POSIX_DECL(writev)(int fd, const struct iovec *iov, int iovcnt) {
-    /* TODO: IOV
-    int n = 0; int i = 0;
+    // TODO: IOV
+    int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
-        n += sprintf(&iov_str[n], "%d ", iov[i].iov_len);
-    */
-    char** args = assemble_args_list(3, fd2name(fd), ptoa(iov), itoa(iovcnt));
+        total += iov[i].iov_len;
+    char** args = assemble_args_list(3, fd2name(fd), itoa(total), itoa(iovcnt));
     RECORDER_INTERCEPTOR(ssize_t, writev, (fd, iov, iovcnt), 3, args)
 }
 
