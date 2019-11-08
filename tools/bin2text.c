@@ -14,6 +14,8 @@ void read_global_metadata(const char *path, RecorderGlobalDef *global_def) {
 
 /*
  * Read one local metadata file (one rank)
+ * And output in local_def
+ * Also return the map of filenames to integersk
  */
 char** read_local_metadata(const char* path, RecorderLocalDef *local_def) {
     FILE* f = fopen(path, "rb");
@@ -30,6 +32,7 @@ char** read_local_metadata(const char* path, RecorderLocalDef *local_def) {
         filenames[id] = malloc(sizeof(char) * (filename_len+1));
         fread(filenames[id], sizeof(char), filename_len, f);
         filenames[id][filename_len] = 0;
+        printf("%d %s\n", i, filenames[id]);
     }
 
     fclose(f);
@@ -106,14 +109,14 @@ void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_d
             }
         }
 
-        printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
+        //printf("%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         fprintf(out_file, "%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
         for(int i = 0; i < record.arg_count; i++) {
-            printf(" %s", record.args[i]);
+            //printf(" %s", record.args[i]);
             fprintf(out_file, " %s", record.args[i]);
             free(record.args[i]);
         }
-        printf("\n");
+        //printf("\n");
         fprintf(out_file, "\n");
         free(record.args);
     }

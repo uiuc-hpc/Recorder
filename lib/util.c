@@ -6,7 +6,7 @@
 /*
  * Map filename to Integer in binary format
  * The filename must be absolute pathname
- * __filename2id_map is a gobal variable defined
+ * __filename2id_map is a extern gobal variable defined
  * in recorder.h, initialized in logger.c
  */
 hashmap_map* __filename2id_map;
@@ -32,6 +32,8 @@ inline char* get_filename_id(const char *filename) {
  * Some of functions are not made by the application
  * And they are operating on wierd files
  * We should not include them in the trace file
+ *
+ * return 1 if we should ignore the file
  */
 inline int exclude_filename(const char *filename) {
     if (filename == NULL) return 0; // pass

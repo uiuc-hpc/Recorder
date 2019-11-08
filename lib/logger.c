@@ -253,14 +253,13 @@ void logger_exit() {
         __datafh = NULL;
     }
 
-
     /* Write out local metadata information */
     RecorderLocalDef local_def = {
         .start_timestamp = START_TIMESTAMP,
         .end_timestamp = recorder_wtime(),
         .num_files = hashmap_length(__filename2id_map)
     };
-    fwrite(&local_def, sizeof(local_def), 1, __metafh);
+    RECORDER_REAL_CALL(fwrite) (&local_def, sizeof(local_def), 1, __metafh);
 
     /* Write out filename mappings, we call stat() to get file size
      * since __datafh is already closed (null), the stat() function
@@ -272,10 +271,10 @@ void logger_exit() {
                 int id = __filename2id_map->data[i].data;
                 size_t file_size = get_file_size(filename);
                 int filename_len = strlen(filename);
-                fwrite(&id, sizeof(id), 1, __metafh);
-                fwrite(&file_size, sizeof(file_size), 1, __metafh);
-                fwrite(&filename_len, sizeof(filename_len), 1, __metafh);
-                fwrite(filename, sizeof(char), filename_len, __metafh);
+                RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __metafh);
+                RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, __metafh);
+                RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, __metafh);
+                RECORDER_REAL_CALL(fwrite) (filename, sizeof(char), filename_len, __metafh);
             }
         }
     }
