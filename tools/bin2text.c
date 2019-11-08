@@ -88,7 +88,7 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
  * Read one log file (for one  rank)
  */
 void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
-    Record record_window[3];    // sliding window for decompression
+    Record record_window[global_def.peephole_window_size];    // sliding window for decompression
 
     char text_logfile_path[256];
     sprintf(text_logfile_path, "%s.txt", path);

@@ -254,7 +254,8 @@ void logger_init(int rank, int nprocs) {
         RecorderGlobalDef global_def = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
-            .compression_mode = __compression_mode
+            .compression_mode = __compression_mode,
+            .peephole_window_size = RECORD_WINDOW_SIZE
         };
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
         RECORDER_REAL_CALL(fclose)(global_metafh);

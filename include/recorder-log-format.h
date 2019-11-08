@@ -87,10 +87,13 @@ typedef struct Record_t {
 // Compression method, use peephole compression by default
 enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_PEEPHOLE=2, COMP_ZLIB=3 };
 typedef enum CompressionMode_t CompressionMode;
+
+
 typedef struct RecorderGlobalDef_t {
     double time_resolution;
     int total_ranks;
     CompressionMode compression_mode;
+    int peephole_window_size;
 } RecorderGlobalDef;
 
 
