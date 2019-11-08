@@ -18,6 +18,14 @@ int main() {
 
     int fd = open("./workfile.out", O_RDONLY);
     res = fstat(fd, &buf);
+
+    char data[] = "hello world";
+    write(fd, &data, sizeof(char)*5);
+    res = fstat(fd, &buf);
+    write(fd, &data, sizeof(char)*5);
+    res = fstat(fd, &buf);
+    write(fd, &data, sizeof(char)*7);
+
     close(fd);
     MPI_Finalize();
     return 0;
