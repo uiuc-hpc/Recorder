@@ -28,6 +28,9 @@ z_stream __zlib_stream;
 /* compression mode */
 CompressionMode __compression_mode = COMP_ZLIB;
 
+// Total number of records we have written
+static int __total_records = 0;
+
 
 static inline int startsWith(const char *pre, const char *str) {
     size_t lenpre = strlen(pre),
@@ -160,6 +163,8 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 void write_record(Record new_record) {
     if (__datafh == NULL) return;   // have not initialized yet
 
+    __total_records++;
+
     if (__compression_mode == COMP_TEXT) {
         write_record_in_text(__datafh, new_record);
         return;
@@ -278,7 +283,8 @@ void logger_exit() {
     RecorderLocalDef local_def = {
         .start_timestamp = START_TIMESTAMP,
         .end_timestamp = recorder_wtime(),
-        .num_files = hashmap_length(__filename2id_map)
+        .num_files = hashmap_length(__filename2id_map),
+        .total_records = __total_records
     };
     RECORDER_REAL_CALL(fwrite) (&local_def, sizeof(local_def), 1, __metafh);
 

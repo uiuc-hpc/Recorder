@@ -12,6 +12,7 @@ void read_global_metadata(const char *path, RecorderGlobalDef *global_def) {
     fclose(f);
 }
 
+
 /*
  * Read one local metadata file (one rank)
  * And output in local_def
@@ -34,6 +35,7 @@ char** read_local_metadata(const char* path, RecorderLocalDef *local_def) {
         filenames[id][filename_len] = 0;
         printf("%d %s\n", i, filenames[id]);
     }
+    printf("total records: %d\n", local_def->total_records);
 
     fclose(f);
     return filenames;
@@ -80,73 +82,76 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
         } else
             record->args[arg_idx][pos++] = buffer[i];
     }
-    record->args[arg_idx][pos] = 0; // the last argument
+    record->args[arg_idx][pos] = 0;         // the last argument
     return 0;
 }
 
 /*
- * Read one log file (for one  rank)
+ * Read one rank's log file
  */
-void read_logfile(const char* path, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
-    Record record_window[global_def.peephole_window_size];    // sliding window for decompression
+void write_to_textfile(const char* path, Record *records, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+    FILE* out_file = fopen(path, "w");
 
-    char text_logfile_path[256];
-    sprintf(text_logfile_path, "%s.txt", path);
-    FILE* out_file = fopen(text_logfile_path, "w");
-    FILE* in_file = fopen(path, "rb");
+    for(int i = 0; i < local_def.total_records; i++) {
+        Record *record = &(records[i]);             // Use pointer to directly modify record in array
 
-    Record record;
-    while( read_record(in_file, global_def, local_def, &record) == 0) {
-        if (record.status & 0b10000000) {   // decompress peephole compressed record
-            int ref_id = record.func_id;
-            char **diff_args = record.args;
-            record.func_id = record_window[ref_id].func_id;
-            record.arg_count = record_window[ref_id].arg_count;
-            record.args = record_window[ref_id].args;
+        // decompress peephole compressed record
+        if (record->status & 0b10000000) {
+            int ref_id = record->func_id;
+            char **diff_args = record->args;
+            record->func_id = records[i-1-ref_id].func_id;
+            record->arg_count = records[i-1-ref_id].arg_count;
+            record->args = records[i-1-ref_id].args;
             for(int idx = 0; idx < 7; idx++) {      // set the different arguments
                 char diff_bit = 0b00000001 << idx;
-                if (diff_bit & record.status)
-                    record.args[idx] = diff_args[idx];
+                if (diff_bit & record->status)
+                    record->args[idx] = diff_args[idx];
             }
         }
 
+        // Decode
         // convert filename id to filename string
-        if (record.func_id < 200) {
-            for(int idx = 0; idx < 8; idx++) {
-                char pos = 0b00000001 << idx;
-                if (pos & filename_arg_pos[record.func_id]) {
-                    int filename_id = atoi(record.args[idx]);
-                    char* filename = filenames[filename_id];
-                    free(record.args[idx]);
-                    record.args[idx] = strdup(filename);
-                }
+        for(int idx = 0; idx < 8; idx++) {
+            char pos = 0b00000001 << idx;
+            if (pos & filename_arg_pos[record->func_id]) {
+                int filename_id = atoi(record->args[idx]);
+                char* filename = filenames[filename_id];
+                free(record->args[idx]);
+                record->args[idx] = strdup(filename);
             }
         }
 
-        printf("%d %f %f %s %d", record.status, record.tstart, record.tend, func_list[record.func_id], record.arg_count);
-        fprintf(out_file, "%d %f %f %s", record.status, record.tstart, record.tend, func_list[record.func_id]);
-        for(int i = 0; i < record.arg_count; i++) {
-            printf(" %s", record.args[i]);
-            fprintf(out_file, " %s", record.args[i]);
-            //free(record.args[i]);
+        printf("%d %f %f %s %d", record->status, record->tstart, record->tend, func_list[record->func_id], record->arg_count);
+        fprintf(out_file, "%f %f %s", record->tstart, record->tend, func_list[record->func_id]);
+        for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+            printf(" %s", record->args[arg_id]);
+            fprintf(out_file, " %s", record->args[arg_id]);
         }
         printf("\n");
         fprintf(out_file, "\n");
-        //free(record.args);
-
-        // Update the sliding window
-        record_window[2] = record_window[1];
-        record_window[1] = record_window[0];
-        record_window[0]  = record;
     }
-
     fclose(out_file);
-    fclose(in_file);
 }
+
+
+/*
+ * Read one rank's log file
+ * This function does not perform decoding and decompression
+ * return array of records in the file
+ */
+Record* read_logfile(const char* logfile_path, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+    Record *records = malloc(sizeof(Record) * local_def.total_records);
+    FILE* in_file = fopen(logfile_path, "rb");
+    for(int i = 0; i < local_def.total_records; i++)
+        read_record(in_file, global_def, local_def, &(records[i]));
+    fclose(in_file);
+    return records;
+}
+
 
 int main(int argc, char **argv) {
     char* log_dir_path = argv[1];
-    char global_metadata_path[256], local_metadata_path[256], logfile_path[256];
+    char global_metadata_path[256], local_metadata_path[256], logfile_path[256],  textfile_path[256];
     RecorderGlobalDef global_def;
     RecorderLocalDef local_def;
 
@@ -156,9 +161,11 @@ int main(int argc, char **argv) {
     for(int i = 0; i < global_def.total_ranks ; i++) {
         sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
         sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
+        sprintf(textfile_path, "%s/%d.itf.txt" , log_dir_path, i);
         char** filenames = read_local_metadata(local_metadata_path, &local_def);
-        read_logfile(logfile_path, filenames, global_def, local_def);
-        free(filenames);
+        Record *records = read_logfile(logfile_path, global_def, local_def);
+        write_to_textfile(textfile_path, records, filenames, global_def, local_def);
+        //free(filenames);
     }
 
     return 0;
