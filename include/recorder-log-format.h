@@ -102,6 +102,7 @@ typedef struct RecorderLocalDef_t {
     double end_timestamp;
     int num_files;                  // number of files accessed by the rank
     int total_records;              // total number of records we have written
+    char **filemap;                 // mapping of filenames and integer ids. only set when read the local def file
 } RecorderLocalDef;
 
 

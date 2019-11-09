@@ -289,7 +289,7 @@ void logger_exit() {
         .start_timestamp = START_TIMESTAMP,
         .end_timestamp = recorder_wtime(),
         .num_files = hashmap_length(__filename2id_map),
-        .total_records = __total_records
+        .total_records = __total_records,
     };
     RECORDER_REAL_CALL(fwrite) (&local_def, sizeof(local_def), 1, __metafh);
 
