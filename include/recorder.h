@@ -156,7 +156,7 @@ char* realrealpath(const char* path);           // return the absolute path (map
     MAP_OR_FAIL(func)                                                               \
     depth++;                                                                        \
     double tstart = recorder_wtime();                                               \
-    ret res = RECORDER_REAL_CALL(func) real_args ;                                   \
+    ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
     double tend = recorder_wtime();                                                 \
     depth--;                                                                        \
     Record record = {                                                               \
