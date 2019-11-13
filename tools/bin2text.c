@@ -1,205 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/recorder-log-format.h"
-
-/*
- * Read the global metada file and write the information in global_def
- */
-void read_global_metadata(const char *path, RecorderGlobalDef *global_def) {
-    FILE* f = fopen(path, "rb");
-    fread(global_def, sizeof(RecorderGlobalDef), 1, f);
-    fclose(f);
-}
+#include "reader.h"
 
 
 /*
- * Read one local metadata file (one rank)
- * And output in local_def
- * Also return the map of filenames to integersk
+ * Write all original records (encoded and compressed) to text file
  */
-char** read_local_metadata(const char* path, RecorderLocalDef *local_def) {
-    FILE* f = fopen(path, "rb");
-    fread(local_def, sizeof(RecorderLocalDef), 1, f);
-    char **filenames = malloc(sizeof(char*) * local_def->num_files);
-
-    int id;
-    size_t file_size;
-    int filename_len;
-    for(int i = 0; i < local_def->num_files; i++) {
-        fread(&id, sizeof(id), 1, f);
-        fread(&file_size, sizeof(file_size), 1, f);
-        fread(&filename_len, sizeof(filename_len), 1, f);
-        filenames[id] = malloc(sizeof(char) * filename_len);
-        fread(filenames[id], sizeof(char), filename_len, f);
-        filenames[id][filename_len] = 0;
-        printf("%d %zu %d %s\n", i, file_size, filename_len, filenames[id]);
-    }
-    printf("total records: %d\n", local_def->total_records);
-    fclose(f);
-    return filenames;
-}
-
-
-/*
- * Read one record (one line) from the trace file FILE* f
- * return 0 on success, -1 if read EOF
- * in: FILE* f
- * in: RecorderGlobalDef global_def
- * out: record
- */
-int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_def, Record *record) {
-    int tstart, tend;
-    fread(&(record->status), sizeof(char), 1, f);
-    fread(&tstart, sizeof(int), 1, f);
-    fread(&tend, sizeof(int), 1, f);
-    fread(&(record->func_id), sizeof(unsigned char), 1, f);
-    record->arg_count = 0;
-    record->tstart = tstart * global_def.time_resolution + local_def.start_timestamp;
-    record->tend = tstart * global_def.time_resolution + local_def.start_timestamp;
-
-    char buffer[1024];
-    char* ret = fgets(buffer, 1024, f);     // read a line
-    if (!ret) return -1;                    // EOF is read
-    buffer[strlen(buffer)-1] = 0;           // remove the trailing '\n'
-    if (strlen(buffer) == 0 ) return 0;     // no arguments
-
-    for(int i = 0; i < strlen(buffer); i++) {
-        if(buffer[i] == ' ')
-            record->arg_count++;
-    }
-
-    record->args = malloc(sizeof(char*) * record->arg_count);
-    int arg_idx = -1, pos = 0;
-    for(int i = 0; i < strlen(buffer); i++) {
-        if (buffer[i] == ' ') {
-            if ( arg_idx >= 0 )
-                record->args[arg_idx][pos] = 0;
-            arg_idx++;
-            pos = 0;
-            record->args[arg_idx] = malloc(sizeof(char) * 64);
-        } else
-            record->args[arg_idx][pos++] = buffer[i];
-    }
-    record->args[arg_idx][pos] = 0;         // the last argument
-    return 0;
-}
-
-/*
- * Write all records to text file
- */
-void write_to_textfile(const char* path, Record *records, char** filenames, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+void write_to_textfile(const char* path, Record *records, RecorderLocalDef local_def) {
     FILE* out_file = fopen(path, "w");
-
     for(int i = 0; i < local_def.total_records; i++) {
-        Record *record = &(records[i]);             // Use pointer to directly modify record in array
-
-        // decompress peephole compressed record
-        if (record->status & 0b10000000) {
-            int ref_id = record->func_id;
-            char **diff_args = record->args;                // diff_args only have the different arguments
-            int diff_arg_id = 0;
-            record->func_id = records[i-1-ref_id].func_id;
-            record->arg_count = records[i-1-ref_id].arg_count;
-            record->args = records[i-1-ref_id].args;
-            for(int arg_pos= 0; arg_pos < 7; arg_pos++) {   // set the different arguments
-                char diff_bit = 0b00000001 << arg_pos;
-                if (diff_bit & record->status) {
-                    record->args[arg_pos] = diff_args[diff_arg_id++];
-                }
-            }
-        }
-
-        // Decode
-        // convert filename id to filename string
-        for(int idx = 0; idx < 8; idx++) {
-            char pos = 0b00000001 << idx;
-            if (pos & filename_arg_pos[record->func_id]) {
-                // 1. !record->status, then this record is not compressed, need to map the filename
-                // 2. pos & record.status = true so that the filename is not the same as the refered record
-                //    otherwise the filename has already been set by the referred record
-                if ((!record->status) || (pos & record->status)) {
-                    int filename_id = atoi(record->args[idx]);
-                    char* filename = filenames[filename_id];
-                    free(record->args[idx]);
-                    record->args[idx] = strdup(filename);
-                }
-            }
-        }
-
-
+        Record record = records[i];
         //printf("%d %f %f %s %d", record->status, record->tstart, record->tend, func_list[record->func_id], record->arg_count);
-        fprintf(out_file, "%f %f %s", record->tstart, record->tend, func_list[record->func_id]);
-        for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+        fprintf(out_file, "%f %f %s", record.tstart, record.tend, func_list[record.func_id]);
+        for(int arg_id = 0; arg_id < record.arg_count; arg_id++) {
             //printf(" %s", record->args[arg_id]);
-            fprintf(out_file, " %s", record->args[arg_id]);
+            fprintf(out_file, " %s", record.args[arg_id]);
         }
         //printf("\n");
         fprintf(out_file, "\n");
     }
     fclose(out_file);
 }
-
-
-/*
- * Read one rank's log file
- * This function does not perform decoding and decompression
- * return array of records in the file
- */
-Record* read_logfile(const char* logfile_path, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
-    Record *records = malloc(sizeof(Record) * local_def.total_records);
-    FILE* in_file = fopen(logfile_path, "rb");
-    for(int i = 0; i < local_def.total_records; i++) {
-        read_record(in_file, global_def, local_def, &(records[i]));
-        //printf("%d %f %f %s %d", records[i].status, records[i].tstart, records[i].tend, func_list[records[i].func_id], records[i].arg_count);
-    }
-    fclose(in_file);
-    return records;
-}
-
-
-void bandwidth(Record *records, RecorderLocalDef local_def) {
-    size_t total_bytes_read = 0, total_bytes_written = 0;
-    for(int i = 0; i < local_def.total_records; i++) {
-        size_t size = 0;
-        Record record = records[i];
-        if(record.func_id == 6) {               // read(int fd, void *buf, size_t count);
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 9) {        // pread(int fd, void *buf, size_t count, off_t offset);
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 10) {       // pread64 same as pread
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 13) {       // readv(int fd, const struct iovec *iov, int iovcnt);
-            // readv and write we store the total bytes as second arguments
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 21) {       // fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
-            size_t nmemb;
-            sscanf(record.args[1], "%zu", &size);
-            sscanf(record.args[2], "%zu", &nmemb);
-            size = nmemb * size;
-        }
-        total_bytes_read += size;
-
-        size = 0;
-        if(record.func_id == 5) {           // write(int fd, const void *buf, size_t count);
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 11) {   // pwrite(int fd, const void *buf, size_t count, off_t offset);
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 12) {   // pwrite64
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 14) {   // writev(int fd, const struct iovec *iov, int iovcnt);
-            sscanf(record.args[2], "%zu", &size);
-        } else if(record.func_id == 20) {   // fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-            size_t nmemb;
-            sscanf(record.args[1], "%zu", &size);
-            sscanf(record.args[2], "%zu", &nmemb);
-            size = nmemb * size;
-        }
-        total_bytes_written += size;
-    }
-    printf("total bytes read: %zu, total bytes written: %zu\n", total_bytes_read, total_bytes_written);
-}
-
 
 int main(int argc, char **argv) {
     char* log_dir_path = argv[1];
@@ -214,11 +36,14 @@ int main(int argc, char **argv) {
         sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
         sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
         sprintf(textfile_path, "%s/%d.itf.txt" , log_dir_path, i);
-        char** filenames = read_local_metadata(local_metadata_path, &local_def);
+
+        printf("RANK %d\n", i);
+        read_local_metadata(local_metadata_path, &local_def);
         Record *records = read_logfile(logfile_path, global_def, local_def);
-        write_to_textfile(textfile_path, records, filenames, global_def, local_def);
-        //bandwidth(records, local_def);
-        free(filenames);
+        decode(records, global_def, local_def);
+        write_to_textfile(textfile_path, records, local_def);
+
+        //free(local_def.filemap);
     }
 
     return 0;
