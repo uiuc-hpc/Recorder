@@ -77,7 +77,7 @@ class HTMLWriter:
                         <img src="%s" alt="POSIX I/O Patterns" height="280"></img>
                     </div>
                 </div>
-                <h4> 2.3 Fcount count </h4>
+                <h4> 2.3 Function count </h4>
                 %s
                 <hr>
 
