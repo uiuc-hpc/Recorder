@@ -58,10 +58,10 @@ inline int exclude_filename(const char *filename) {
 inline long get_file_size(const char *filename) {
     struct stat sb;
     int res = stat(filename, &sb);          // careful here, make sure stat() is not intercepted
-    if (res != 0 ) return -1;               // file not exist or some other error
+    if (res != 0 ) return 0;               // file not exist or some other error
 
     int is_regular_file = S_ISREG(sb.st_mode);
-    if (!is_regular_file) return -1;        // is directory
+    if (!is_regular_file) return 0;        // is directory
     return sb.st_size;
 }
 
