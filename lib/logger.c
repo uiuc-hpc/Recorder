@@ -29,8 +29,8 @@ z_stream __zlib_stream;
 /* compression mode */
 CompressionMode __compression_mode = COMP_ZLIB;
 
-// Total number of records we have written
-static int __total_records = 0;
+
+RecorderLocalDef __local_def;
 
 
 static inline int startsWith(const char *pre, const char *str) {
@@ -164,7 +164,7 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 void write_record(Record new_record) {
     if (!__recording) return;       // have not initialized yet
 
-    __total_records++;
+    __local_def.total_records++;
 
     if (__compression_mode == COMP_TEXT) {
         write_record_in_text(__datafh, new_record);
@@ -285,13 +285,10 @@ void logger_exit() {
     }
 
     /* Write out local metadata information */
-    RecorderLocalDef local_def = {
-        .start_timestamp = START_TIMESTAMP,
-        .end_timestamp = recorder_wtime(),
-        .num_files = hashmap_length(__filename2id_map),
-        .total_records = __total_records,
-    };
-    RECORDER_REAL_CALL(fwrite) (&local_def, sizeof(local_def), 1, __metafh);
+    __local_def.num_files = hashmap_length(__filename2id_map),
+    __local_def.start_timestamp = START_TIMESTAMP,
+    __local_def.end_timestamp = recorder_wtime(),
+    RECORDER_REAL_CALL(fwrite) (&__local_def, sizeof(__local_def), 1, __metafh);
 
     /* Write out filename mappings, we call stat() to get file size
      * since __datafh is already closed (null), the stat() function
