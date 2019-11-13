@@ -165,6 +165,7 @@ void write_record(Record new_record) {
     if (!__recording) return;       // have not initialized yet
 
     __local_def.total_records++;
+    __local_def.function_count[new_record.func_id]++;
 
     if (__compression_mode == COMP_TEXT) {
         write_record_in_text(__datafh, new_record);
