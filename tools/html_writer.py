@@ -7,12 +7,16 @@ def relpath(path):
 
 css_style = """
 <style>
+  html { font-size: 12px; }
+  h2 { font-size: 14px; }
+  h4 { font-size: 12px; }
   table {
+    font-size: 12px;
     border-collapse: collapse;
   }
   th, td {
     border: 1px solid #ccc;
-    padding: 8px;
+    padding: 4px;
     text-align: left;
   }
   tr:nth-child(even) {
