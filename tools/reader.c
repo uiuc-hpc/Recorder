@@ -25,13 +25,13 @@ void read_local_metadata(const char* path, RecorderLocalDef *local_def) {
     FILE* f = fopen(path, "rb");
     fread(local_def, sizeof(RecorderLocalDef), 1, f);
     char **filemap = malloc(sizeof(char*) * local_def->num_files);
+    size_t *file_sizes = malloc(sizeof(size_t) * local_def->num_files);
 
     int id;
-    size_t file_size;
     int filename_len;
     for(int i = 0; i < local_def->num_files; i++) {
         fread(&id, sizeof(id), 1, f);
-        fread(&file_size, sizeof(file_size), 1, f);
+        fread(&(file_sizes[id]), sizeof(size_t), 1, f);
         fread(&filename_len, sizeof(filename_len), 1, f);
         filemap[id] = malloc(sizeof(char) * filename_len);
         fread(filemap[id], sizeof(char), filename_len, f);
@@ -39,6 +39,7 @@ void read_local_metadata(const char* path, RecorderLocalDef *local_def) {
         //printf("%d %zu %d %s\n", i, file_size, filename_len, filemap[id]);
     }
     local_def->filemap = filemap;
+    local_def->file_sizes = file_sizes;
     printf("total records: %d\n", local_def->total_records);
     fclose(f);
 }
@@ -93,6 +94,15 @@ int read_record(FILE *f, RecorderGlobalDef global_def, RecorderLocalDef local_de
 /*
  * Write all original records (encoded and compressed) to text file
  */
+static inline char** copy_args(char** args, int count) {
+    char **new_args = malloc(sizeof(char*) * count);
+    for(int i = 0; i < count; i++) {
+        new_args[i] = malloc(sizeof(char) * (strlen(args[i])+1));
+        strcpy(new_args[i], args[i]);
+    }
+    return new_args;
+
+}
 void decode(Record *records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
     for(int i = 0; i < local_def.total_records; i++) {
         Record *record = &(records[i]);             // Use pointer to directly modify record in array
@@ -104,10 +114,11 @@ void decode(Record *records, RecorderGlobalDef global_def, RecorderLocalDef loca
             int diff_arg_id = 0;
             record->func_id = records[i-1-ref_id].func_id;
             record->arg_count = records[i-1-ref_id].arg_count;
-            record->args = records[i-1-ref_id].args;
-            for(int arg_pos= 0; arg_pos < 7; arg_pos++) {   // set the different arguments
+            record->args = copy_args(records[i-1-ref_id].args, record->arg_count);
+            for(int arg_pos = 0; arg_pos < 7; arg_pos++) {   // set the different arguments
                 char diff_bit = 0b00000001 << arg_pos;
                 if (diff_bit & record->status) {
+                    free(record->args[arg_pos]);
                     record->args[arg_pos] = diff_args[diff_arg_id++];
                 }
             }
@@ -115,6 +126,7 @@ void decode(Record *records, RecorderGlobalDef global_def, RecorderLocalDef loca
 
         // Decode
         // convert filename id to filename string
+        /*
         for(int idx = 0; idx < 8; idx++) {
             char pos = 0b00000001 << idx;
             if (pos & filename_arg_pos[record->func_id]) {
@@ -129,6 +141,7 @@ void decode(Record *records, RecorderGlobalDef global_def, RecorderLocalDef loca
                 }
             }
         }
+        */
     }
 }
 
@@ -161,6 +174,21 @@ int is_write_function(Record record) {
         return 1;
     return 0;
 }
+
+void get_io_filename(Record record, char* filename) {
+    for(int idx = 0; idx < 8; idx++) {
+        char pos = 0b00000001 << idx;
+        if (pos & filename_arg_pos[record.func_id]) {
+            strcpy(filename, record.args[idx]);
+            return;
+        }
+    }
+}
+
+
+/**
+ * Get the io size of one decoded/decompressed record
+ */
 size_t get_io_size(Record record) {
     size_t size = 0;
     size_t nmemb;
@@ -187,11 +215,18 @@ size_t get_io_size(Record record) {
     return size;
 }
 
-size_t get_io_offset() {
-    return 0;
+const char* get_function_name(unsigned char id) {
+    return func_list[id];
 }
 
-int get_open_flag(Record record, char*filename, char* flag_str) {
+
+
+/**
+ * Get open flags for one decoded/decompressed record
+ * return 1 if is a open function, 0 otherwise
+ * output in: filename, flag_str
+ */
+int get_open_flag(Record record, char* flag_str) {
     // in POSIX standard open() page
     #define FLAG_COUNT 22
     static int all_flags[FLAG_COUNT] = {
@@ -212,7 +247,6 @@ int get_open_flag(Record record, char*filename, char* flag_str) {
     switch(record.func_id) {
         case 2:     // open
         case 3:     // open64
-            //flag_str = calloc(128, sizeof(char));
             flags = atoi(record.args[1]);
             flag_str[0] = 0;
             for(int i = 0; i < FLAG_COUNT; i++) {
@@ -223,28 +257,24 @@ int get_open_flag(Record record, char*filename, char* flag_str) {
             }
             if(strlen(flag_str) > 3)
                 flag_str[strlen(flag_str)-3] = 0;
-            filename = strcpy(filename, record.args[0]);
             return 1;
         case 17:    // fopen
         case 18:    // fopen64
         case 60:    // fdopen
-            //flag_str = calloc(128, sizeof(char));
             mode_str = record.args[1];
-            if(strstr(mode_str, "r") != NULL) {
-                strcpy(flag_str, "O_RDONLY");
-            } else if(strstr(mode_str, "w") != NULL) {
-                strcpy(flag_str, "O_WRONLY | O_CREAT | O_TRUNC");
-            } else if(strstr(mode_str, "a") != NULL) {
-                strcpy(flag_str, "O_WRONLY | O_CREAT | O_APPEND");
-            } else if(strstr(mode_str, "r+") != NULL) {
+            if(strstr(mode_str, "r+") != NULL) {
                 strcpy(flag_str, "O_RDWR");
             } else if(strstr(mode_str, "w+") != NULL) {
                 strcpy(flag_str, "O_RDWR | O_CREAT | O_TRUNC");
             } else if(strstr(mode_str, "a+") != NULL) {
                 strcpy(flag_str, "O_RDWR | O_CREAT | O_APPEND");
+            } else if(strstr(mode_str, "r") != NULL) {
+                strcpy(flag_str, "O_RDONLY");
+            } else if(strstr(mode_str, "w") != NULL) {
+                strcpy(flag_str, "O_WRONLY | O_CREAT | O_TRUNC");
+            } else if(strstr(mode_str, "a") != NULL) {
+                strcpy(flag_str, "O_WRONLY | O_CREAT | O_APPEND");
             }
-            //printf("here: %s\n", flag_str);
-            filename = strcpy(filename, record.args[0]);
             return 1;
         default:
             return 0;
@@ -252,7 +282,82 @@ int get_open_flag(Record record, char*filename, char* flag_str) {
 }
 
 
-// The input *records must have been decoded and decompressed
+/**
+ * all_records is a pointer to every rank's records, e.g. all_records[0] are processor0's records
+ */
+void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, RecorderLocalDef *local_defs) {
+    size_t offset, size, nmemb;
+    int file_id, origin, flag;
+    for(int rank = 0; rank < global_def.total_ranks; rank++) {
+        Record *records = all_records[rank];
+        RecorderLocalDef local_def = local_defs[rank];
+        size_t *curr_offsets = malloc(sizeof(size_t) * local_def.num_files);
+        for(int i = 0; i < local_def.total_records; i++) {
+            Record record = records[i];
+            switch(record.func_id) {
+                case 5:                     // write
+                case 6:                     // read
+                    sscanf(record.args[2], "%zu", &size);
+                    file_id = atoi(record.args[0]);
+                    curr_offsets[file_id] += size;
+                case 9:                     // pread
+                case 10:                    // pread64
+                case 11:                    // pwrite
+                case 12:                    // pwrite64
+                    sscanf(record.args[2], "%zu", &size);
+                    sscanf(record.args[3], "%zu", &offset);
+                    file_id = atoi(record.args[0]);
+                    curr_offsets[file_id] += offset + size;
+                    break;
+                case 13:                    // readv
+                case 14:                    // writev
+                    sscanf(record.args[1], "%zu", &size);
+                    file_id = atoi(record.args[0]);
+                    curr_offsets[file_id] += size;
+                    break;
+                case 20:                    // fwrite
+                case 21:                    // fread
+                    sscanf(record.args[1], "%zu", &size);
+                    sscanf(record.args[2], "%zu", &nmemb);
+                    size = nmemb * size;
+                    file_id = atoi(record.args[0]);
+                    curr_offsets[file_id] += size;
+                    break;
+                case 7:                     // lseek
+                case 8:                     // lseek64
+                case 23:                    // fseek
+                    file_id = atoi(record.args[0]);
+                    offset = atol(record.args[1]);
+                    origin = atoi(record.args[2]);
+                    if (origin == SEEK_SET)
+                        curr_offsets[file_id] = offset;
+                    if (origin == SEEK_CUR)
+                        curr_offsets[file_id] += offset;
+                    break;
+                case 2:                     // open
+                case 3:                     // open64
+                    file_id = atoi(record.args[0]);
+                    flag = atoi(record.args[1]);
+                    if (!(flag & O_APPEND))
+                        curr_offsets[i] = 0;
+                    break;
+                case 17:                    // fopen
+                case 18:                    // fopen64
+                case 60:                    // fdopen
+                    if(strstr(record.args[1], "a") == NULL)
+                        curr_offsets[i] = 0;
+                    break;
+            }
+        }
+
+    }
+}
+
+/**
+ * Get bandwidth information for one rank, e.g. read/write bandwidth, total read/write time, etc.
+ * see struct RecorderBandiwdthInfo in reader.h
+ * The input *records is all records of one rank, and must have been decoded and decompressed
+ */
 void get_bandwidth_info(Record *records, RecorderLocalDef local_def, RecorderBandwidthInfo *bwinfo) {
     bwinfo->read_size = 0;
     bwinfo->write_size = 0;

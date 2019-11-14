@@ -14,8 +14,20 @@ void write_to_textfile(const char* path, Record *records, RecorderLocalDef local
         //printf("%d %f %f %s %d", record->status, record->tstart, record->tend, func_list[record->func_id], record->arg_count);
         fprintf(out_file, "%f %f %s", record.tstart, record.tend, func_list[record.func_id]);
         for(int arg_id = 0; arg_id < record.arg_count; arg_id++) {
-            //printf(" %s", record->args[arg_id]);
-            fprintf(out_file, " %s", record.args[arg_id]);
+            char *arg = record.args[arg_id];
+
+            // convert filename id to filename string
+            if (arg_id < 8) {
+                char pos = 0b00000001 << arg_id;
+                if (pos & filename_arg_pos[record.func_id]) {
+                    int filename_id = atoi(record.args[arg_id]);
+                    arg = local_def.filemap[filename_id];
+                }
+            }
+
+            //printf(" %s", arg);
+            fprintf(out_file, " %s", arg);
+
         }
         //printf("\n");
         fprintf(out_file, "\n");
