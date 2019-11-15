@@ -51,7 +51,7 @@ x: list of strings, where each entry a category
 y: list of numbers - value for each category
 horizontal: draw the chart horizontally
 '''
-def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", horizontal=False, logScale=False, xlabel="", ylabel=""):
+def draw_bar_chart(x, y, title="", save_to="/tmp/recorder_temp.png", horizontal=False, logScale=False, xlabel="", ylabel=""):
     fig, ax = plt.subplots()
     x_pos = np.arange(len(x))
     if horizontal:
@@ -81,7 +81,7 @@ def draw_bar_chart(x:list, y:list, title="", save_to="/tmp/recorder_temp.png", h
     fig.tight_layout()
     plt.savefig(save_to)
 
-def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
+def draw_overall_time_chart(tr, xlabel="", ylabel="", title="", save_to="/tmp/recorder_temp.png"):
     df = tr.get_posix_io()
     fig, ax = plt.subplots(figsize=(9, max(4, 0.2*tr.procs)))
 
@@ -122,7 +122,7 @@ def draw_overall_time_chart(tr:TraceReader, xlabel="", ylabel="", title="", save
 
 
 # O(nlogn) to merge the overlapping/contiguous intervals
-def merge_bars(df:pd.DataFrame):
+def merge_bars(df):
     mergedBars = []
     if df.shape[0] == 0: return mergedBars
 
@@ -140,7 +140,7 @@ def merge_bars(df:pd.DataFrame):
     mergedBars.append((start, mergedCount))
     return mergedBars
 
-def offset_vs_rank_subplot(ax, tr:TraceReader, filename):
+def offset_vs_rank_subplot(ax, tr, filename):
     df = tr.get_posix_io()
     df = df[df['filename'] == filename]
 
@@ -165,7 +165,7 @@ def offset_vs_rank_subplot(ax, tr:TraceReader, filename):
     ax.grid(True)
     ax.title.set_text(filename.split("/")[-1])
 
-def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
+def draw_offset_vs_rank(tr, save_to="/tmp/recorder_tmp.jpg"):
     io_files = [] # files have I/O operations
     df = tr.get_posix_io()
     for filename in tr.files:
@@ -200,7 +200,7 @@ def draw_offset_vs_rank(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
 
 
 colors = ['r', 'g', 'b', 'y']
-def offset_vs_time_subplot(ax, tr:TraceReader, filename):
+def offset_vs_time_subplot(ax, tr, filename):
     write_dots_x, write_dots_y, read_dots_x, read_dots_y = [], [], [], []
     read_patches, write_patches = [], []
     for i in range(tr.procs):
@@ -240,7 +240,7 @@ def offset_vs_time_subplot(ax, tr:TraceReader, filename):
     ax.grid(True)
     ax.title.set_text(filename.split("/")[-1])
 
-def draw_offset_vs_time(tr:TraceReader, save_to="/tmp/recorder_tmp.jpg"):
+def draw_offset_vs_time(tr, save_to="/tmp/recorder_tmp.jpg"):
     io_files = [] # files have I/O operations
     df = tr.get_posix_io()
     for filename in tr.files:

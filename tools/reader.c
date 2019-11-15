@@ -162,29 +162,29 @@ Record* read_logfile(const char* logfile_path, RecorderGlobalDef global_def, Rec
     return records;
 }
 
-int is_read_function(Record record) {
-    const char* func_name = func_list[record.func_id];
+int is_posix_read_function(Record *record) {
+    if(record->func_id >= 66)   // the first 66 functions are POSIX I/O
+        return 0;
+    const char* func_name = func_list[record->func_id];
     if(strstr(func_name, "read") != NULL)
         return 1;
     return 0;
 }
-int is_write_function(Record record) {
-    const char* func_name = func_list[record.func_id];
+int is_posix_write_function(Record *record) {
+    if(record->func_id >= 66)   // the first 66 functions are POSIX I/O
+        return 0;
+    const char* func_name = func_list[record->func_id];
     if (strstr(func_name, "write") != NULL)
         return 1;
     return 0;
 }
 
-void get_io_filename(Record record, char* filename) {
-    for(int idx = 0; idx < 8; idx++) {
-        char pos = 0b00000001 << idx;
-        if (pos & filename_arg_pos[record.func_id]) {
-            strcpy(filename, record.args[idx]);
-            return;
-        }
-    }
+char* get_io_filename(Record *record, RecorderLocalDef *local_def) {
+    int file_id = atoi(record->args[0]);
+    if(file_id < local_def->num_files)
+        return local_def->filemap[file_id];
+    return NULL;
 }
-
 
 /**
  * Get the io size of one decoded/decompressed record
@@ -285,10 +285,49 @@ int get_open_flag(Record record, char* flag_str) {
 /**
  * all_records is a pointer to every rank's records, e.g. all_records[0] are processor0's records
  */
-void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, RecorderLocalDef *local_defs) {
+typedef struct Interval_t {
+    size_t offset;
+    size_t size;
+} Interval;
+
+int interval_comparator(const void *p, const void *q) {
+    size_t l = ((Interval *)p)->offset;
+    size_t r = ((Interval *)p)->offset;
+    return l - r;
+}
+size_t get_posix_io_count(Record **all_records, RecorderGlobalDef *global_def, RecorderLocalDef *local_defs) {
+    size_t count = 0;
+    for(int rank = 0; rank < global_def->total_ranks; rank++) {
+        for(int i = 0; i < local_defs[rank].total_records; i++) {
+            switch(all_records[rank][i].func_id) {
+                case 5:
+                case 6:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 20:
+                case 21:
+                    count++;
+                    break;
+            }
+        }
+    }
+    return count;
+}
+
+
+
+void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, RecorderLocalDef *local_defs) {
+    size_t total = get_posix_io_count(all_records, global_def, local_defs);
+    Interval *intervals = malloc(sizeof(Interval) * total);
+    int interval_id = 0;
+
     size_t offset, size, nmemb;
     int file_id, origin, flag;
-    for(int rank = 0; rank < global_def.total_ranks; rank++) {
+    for(int rank = 0; rank < global_def->total_ranks; rank++) {
         Record *records = all_records[rank];
         RecorderLocalDef local_def = local_defs[rank];
         size_t *curr_offsets = malloc(sizeof(size_t) * local_def.num_files);
@@ -299,6 +338,8 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, Reco
                 case 6:                     // read
                     sscanf(record.args[2], "%zu", &size);
                     file_id = atoi(record.args[0]);
+                    intervals[interval_id].offset = curr_offsets[file_id];
+                    intervals[interval_id++].size = size;
                     curr_offsets[file_id] += size;
                 case 9:                     // pread
                 case 10:                    // pread64
@@ -307,12 +348,16 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, Reco
                     sscanf(record.args[2], "%zu", &size);
                     sscanf(record.args[3], "%zu", &offset);
                     file_id = atoi(record.args[0]);
+                    intervals[interval_id].offset = curr_offsets[file_id];
+                    intervals[interval_id++].size = size;
                     curr_offsets[file_id] += offset + size;
                     break;
                 case 13:                    // readv
                 case 14:                    // writev
                     sscanf(record.args[1], "%zu", &size);
                     file_id = atoi(record.args[0]);
+                    intervals[interval_id].offset = curr_offsets[file_id];
+                    intervals[interval_id++].size = size;
                     curr_offsets[file_id] += size;
                     break;
                 case 20:                    // fwrite
@@ -321,6 +366,8 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, Reco
                     sscanf(record.args[2], "%zu", &nmemb);
                     size = nmemb * size;
                     file_id = atoi(record.args[0]);
+                    intervals[interval_id].offset = curr_offsets[file_id];
+                    intervals[interval_id++].size = size;
                     curr_offsets[file_id] += size;
                     break;
                 case 7:                     // lseek
@@ -349,8 +396,9 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef global_def, Reco
                     break;
             }
         }
-
     }
+
+    qsort((void*)intervals, total, sizeof(Interval), interval_comparator);
 }
 
 /**
@@ -364,11 +412,11 @@ void get_bandwidth_info(Record *records, RecorderLocalDef local_def, RecorderBan
     double read_time = 0, write_time = 0;
     for(int i = 0; i < local_def.total_records; i++) {
         Record record = records[i];
-        if (is_read_function(record)) {
+        if (is_posix_read_function(&record)) {
             bwinfo->read_size += get_io_size(record);
             read_time += (record.tend - record.tstart);
         }
-        if (is_write_function(record)) {
+        if (is_posix_write_function(&record)) {
             bwinfo->write_size += get_io_size(record);
             write_time += (record.tend - record.tstart);
         }

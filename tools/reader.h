@@ -39,9 +39,9 @@ void decode(Record *records, RecorderGlobalDef global_def, RecorderLocalDef loca
  */
 Record* read_logfile(const char* logfile_path, RecorderGlobalDef global_def, RecorderLocalDef local_def);
 
-int is_read_function(Record record);
+int is_posix_read_function(Record *record);
 
-int is_write_function(Record record);
+int is_posix_write_function(Record *record);
 
 size_t get_io_size(Record record);
 
