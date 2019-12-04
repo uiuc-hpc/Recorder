@@ -7,9 +7,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 #include <unordered_map>
 #include <vector>
 #include <array>
+#include <iostream>
+#include <algorithm>
 
 #include "reader.h"
 
@@ -52,7 +55,7 @@ void read_local_metadata(string path, RecorderLocalDef *local_def) {
 }
 
 
-unordered_map<string,int> merge_filemaps(RecorderGlobalDef *global_def, RecorderLocalDef *local_defs) {
+unordered_map<string,int> merge_filemaps(RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
     // Merge filemap from all ranks
     unordered_map<string, int > filemap;
     for(int rank = 0; rank < global_def->total_ranks; rank++) {
@@ -123,7 +126,7 @@ static inline char** copy_args(char** args, int count) {
 
 }
 
-void decode(vector<Record> records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+void decode(vector<Record> &records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
     for(int i = 0; i < local_def.total_records; i++) {
         Record *record = &(records[i]);             // Use pointer to directly modify record in array
 
@@ -238,26 +241,32 @@ size_t get_io_size(Record record) {
 
 
 typedef struct Interval_t {
+    double timestamp;
     size_t offset;
     size_t size;
+    bool is_write;  // write or read operation?
 } Interval;
 
-Interval new_interval(size_t offset, size_t size) {
+Interval new_interval(double timestamp, size_t offset, size_t size, int func_id) {
     Interval interval;
+    interval.timestamp = timestamp;
     interval.offset = offset;
     interval.size = size;
+    if(strstr(func_list[func_id], "write") != NULL)
+        interval.is_write = true;
+    else
+        interval.is_write = false;
+
     return interval;
 }
 
-int interval_comparator(const void *p, const void *q) {
-    size_t l = ((Interval *)p)->offset;
-    size_t r = ((Interval *)p)->offset;
-    return l - r;
+bool interval_comparator(Interval &p, Interval &q) {
+    return (p.offset > q.offset);
 }
 /**
  * all_records is a pointer to every rank's records, e.g. all_records[0] are processor 0's records
  */
-vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobalDef *global_def, RecorderLocalDef *local_defs) {
+vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
 
     unordered_map<string, int> filemap = merge_filemaps(global_def, local_defs);
 
@@ -297,31 +306,29 @@ vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobal
 }
 
 
-
-void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, RecorderLocalDef *local_defs) {
+void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
 
     unordered_map<string, int> filemap = merge_filemaps(global_def, local_defs);
-    //vector<vector<Interval>> intervals = allocate_intervals(all_records, global_def, local_defs);
     vector<vector<Interval>> intervals(filemap.size());
 
     size_t offset, size, nmemb;
     int file_id, origin, flag;
     for(int rank = 0; rank < global_def->total_ranks; rank++) {
-        Record *records = all_records[rank];
+        vector<Record> records = all_records[rank];
         RecorderLocalDef local_def = local_defs[rank];
-        size_t *curr_offsets = (size_t*)malloc(sizeof(size_t) * local_def.num_files);
+        vector<size_t> curr_offsets(filemap.size());
         for(int i = 0; i < local_def.total_records; i++) {
             Record record = records[i];
+            //std::cerr<<func_list[record.func_id]<<" "<<record.arg_count<<endl;
             switch(record.func_id) {
                 case 5:                     // write
                 case 6:                     // read
                     sscanf(record.args[2], "%zu", &size);
                     file_id = atoi(record.args[0]);
-
                     file_id = filemap[string(local_def.filemap[file_id])];
-
-                    intervals[file_id].push_back(new_interval(curr_offsets[file_id], size));
+                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
                     curr_offsets[file_id] += size;
+                    break;
                 case 9:                     // pread
                 case 10:                    // pread64
                 case 11:                    // pwrite
@@ -329,20 +336,16 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, Rec
                     sscanf(record.args[2], "%zu", &size);
                     sscanf(record.args[3], "%zu", &offset);
                     file_id = atoi(record.args[0]);
-
                     file_id = filemap[string(local_def.filemap[file_id])];
-
-                    intervals[file_id].push_back(new_interval(curr_offsets[file_id], size));
+                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
                     curr_offsets[file_id] = offset + size;
                     break;
                 case 13:                    // readv
                 case 14:                    // writev
                     sscanf(record.args[1], "%zu", &size);
                     file_id = atoi(record.args[0]);
-
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(curr_offsets[file_id], size));
-
+                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
                     curr_offsets[file_id] += size;
                     break;
                 case 20:                    // fwrite
@@ -351,10 +354,8 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, Rec
                     sscanf(record.args[2], "%zu", &nmemb);
                     size = nmemb * size;
                     file_id = atoi(record.args[0]);
-
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(curr_offsets[file_id], size));
-
+                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
                     curr_offsets[file_id] += size;
                     break;
                 case 7:                     // lseek
@@ -365,7 +366,7 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, Rec
                     offset = atol(record.args[1]);
                     origin = atoi(record.args[2]);
                     if (origin == SEEK_SET)
-                        curr_offsets[file_id] = offset;
+                      curr_offsets[file_id] = offset;
                     if (origin == SEEK_CUR)
                         curr_offsets[file_id] += offset;
                     break;
@@ -389,25 +390,93 @@ void get_access_pattern(Record **all_records, RecorderGlobalDef *global_def, Rec
         }
     }
 
-    //qsort((void*)intervals, total, sizeof(Interval), interval_comparator);
+    vector<RecorderAccessPattern> patterns(filemap.size());
+    for(file_id = 0; file_id < filemap.size(); file_id++) {
+        patterns[file_id].read_after_read = false;
+        patterns[file_id].read_after_write = false;
+        patterns[file_id].write_after_write = false;
+        patterns[file_id].write_after_read  = false;
+    }
+
+    // Sorting
+    double t_sorting = clock();
+    for(file_id = 0; file_id < intervals.size(); file_id++) {
+        if(intervals[file_id].size() <= 1) continue;
+        std::sort(intervals[file_id].begin(), intervals[file_id].end(), interval_comparator);
+        std::cout<<file_id<<" "<<intervals[file_id].size()<<endl;
+    }
+    t_sorting = (clock() - t_sorting) / CLOCKS_PER_SEC;
+
+    // Testing for overlapping operations
+    double t_testing = clock();
+    for(file_id = 0; file_id < intervals.size(); file_id++) {
+        if(intervals[file_id].size() <= 1) continue;
+        std::cout<<file_id<<" "<<intervals[file_id].size()<<endl;
+        for(int i = 0; i < intervals[file_id].size()-1; i++) {
+            for(int j = i+1; j < intervals[file_id].size(); j++) {
+                Interval i1, i2 = intervals[file_id][i], intervals[file_id][j];
+                if(i2.offset >= i1.offset + i1.size) // no overlapping, move on
+                    break;
+                else {
+                    if(i1.is_write && i2.is_write) {
+                        cout<<" , hahahahah, "<<file_id<<endl;
+                        //patterns[file_id].write_after_write = true;
+                    }
+                    /*
+                    else if(!i1.is_write && !i2.is_write)
+                        patterns[file_id].read_after_read = true;
+                    else {  // read after write or write after read
+                        if(i1.timestamp < i2.timestamp) {
+                            if(i1.is_write)
+                                patterns[file_id].read_after_write = true;
+                            else
+                                patterns[file_id].write_after_read = true;
+                        } else {
+                            if(i1.is_write)
+                                patterns[file_id].write_after_read = true;
+                            else
+                                patterns[file_id].read_after_write = true;
+                        }
+                    }
+                    */
+                }
+            }
+        }
+    }
+    t_testing = (clock() - t_testing) / CLOCKS_PER_SEC;
+    std::cout<<"sorting time:"<<t_sorting<<", teseting time:"<<t_testing<<endl;
 }
 
 int main(int argc, char* argv[]) {
+    double t_readin, t_decompress;
+
     RecorderGlobalDef global_def;
     vector<RecorderLocalDef> local_defs;
     vector<vector<Record>> all_records;
 
+    // 1. Read  global def, local defs and all log files
+    t_readin = clock();
     read_global_metadata(string(argv[1])+"/recorder.mt", &global_def);
-    for(int i = 0; i < global_def.total_ranks; i++) {
+    for(int rank = 0; rank < global_def.total_ranks; rank++) {
         RecorderLocalDef local_def;
-        read_local_metadata(string(argv[1])+"/"+to_string(i)+".mt", &local_def);
+        read_local_metadata(string(argv[1])+"/"+to_string(rank)+".mt", &local_def);
         local_defs.push_back(local_def);
 
-        vector<Record> records = read_logfile(string(argv[1])+"/"+to_string(i)+".itf", global_def, local_def);
-        decode(records, global_def, local_def);
+        vector<Record> records = read_logfile(string(argv[1])+"/"+to_string(rank)+".itf", global_def, local_def);
         all_records.push_back(records);
     }
-    return 0;
+    t_readin = (clock() - t_readin) / CLOCKS_PER_SEC;
 
+    // 2. decompress
+    t_decompress = clock();
+    for(int rank = 0; rank < global_def.total_ranks; rank++) {
+        decode(all_records[rank], global_def, local_defs[rank]);
+    }
+    t_decompress = (clock() - t_decompress) / CLOCKS_PER_SEC;
+
+    get_access_pattern(all_records, &global_def, local_defs);
+
+    std::cout<<"read time:"<<t_readin<<", decompress time:"<<t_decompress<<endl;
+    return 0;
 }
 

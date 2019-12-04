@@ -57,4 +57,11 @@ typedef struct RecorderBandwidthInfo_t {
     double write_cost;
 } RecorderBandwidthInfo;
 
+typedef struct RecorderAccessPattern_t {
+    bool read_after_read;
+    bool read_after_write;
+    bool write_after_write;
+    bool write_after_read;
+} RecorderAccessPattern;
+
 void get_bandwidth_info(Record *records, RecorderLocalDef local_def, RecorderBandwidthInfo *bwinfo);
