@@ -13,6 +13,7 @@
 #include <array>
 #include <iostream>
 #include <algorithm>
+#include <set>
 
 #include "reader.h"
 
@@ -125,46 +126,29 @@ static inline char** copy_args(char** args, int count) {
     return new_args;
 
 }
+inline void decompress(Record *record, Record *ref_record) {
+    char **diff_args = record->args;                // diff_args only have the different arguments
+    int diff_arg_id = 0;
+    record->func_id = ref_record->func_id;
+    record->arg_count = ref_record->arg_count;
+    record->args = copy_args(ref_record->args, record->arg_count);
+    for(int arg_pos = 0; arg_pos < 7; arg_pos++) {   // set the different arguments
+        char diff_bit = 0b00000001 << arg_pos;
+        if (diff_bit & record->status) {
+            free(record->args[arg_pos]);
+            record->args[arg_pos] = diff_args[diff_arg_id++];
+        }
+    }
+    record->status = 0b00000000;
+}
 
-void decompress(vector<Record> &records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+void decompress(vector<Record> &records, RecorderLocalDef local_def) {
     for(int i = 0; i < local_def.total_records; i++) {
-        Record *record = &(records[i]);             // Use pointer to directly modify record in array
-
         // decompress peephole compressed record
-        if (record->status & 0b10000000) {
-            int ref_id = record->func_id;
-            char **diff_args = record->args;                // diff_args only have the different arguments
-            int diff_arg_id = 0;
-            record->func_id = records[i-1-ref_id].func_id;
-            record->arg_count = records[i-1-ref_id].arg_count;
-            record->args = copy_args(records[i-1-ref_id].args, record->arg_count);
-            for(int arg_pos = 0; arg_pos < 7; arg_pos++) {   // set the different arguments
-                char diff_bit = 0b00000001 << arg_pos;
-                if (diff_bit & record->status) {
-                    free(record->args[arg_pos]);
-                    record->args[arg_pos] = diff_args[diff_arg_id++];
-                }
-            }
+        if (records[i].status & 0b10000000) {
+            int ref_id = records[i].func_id;
+            decompress(&(records[i]), &(records[i-1-ref_id]));
         }
-
-        // Decode
-        // convert filename id to filename string
-        /*
-        for(int idx = 0; idx < 8; idx++) {
-            char pos = 0b00000001 << idx;
-            if (pos & filename_arg_pos[record->func_id]) {
-                // 1. !record->status, then this record is not compressed, need to map the filename
-                // 2. pos & record.status = true so that the filename is not the same as the refered record
-                //    otherwise the filename has already been set by the referred record
-                if ((!record->status) || (pos & record->status)) {
-                    int filename_id = atoi(record->args[idx]);
-                    char* filename = local_def.filemap[filename_id];
-                    free(record->args[idx]);
-                    record->args[idx] = strdup(filename);
-                }
-            }
-        }
-        */
     }
 }
 
@@ -308,10 +292,13 @@ vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobal
 
 void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
 
-    // Setup
+    // Build interval list
     double t_setup = clock();
     unordered_map<string, int> filemap = merge_filemaps(global_def, local_defs);
     vector<vector<Interval>> intervals(filemap.size());
+
+    // acceptable functions, only consider these functions
+    std::set<int> acceptable_functions = {5, 6, 9, 10, 11, 12, 13, 14, 20, 21, 7, 8, 23, 2, 3, 17, 18, 60};
 
     size_t offset, size, nmemb;
     int file_id, origin, flag;
@@ -321,7 +308,17 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
         vector<size_t> curr_offsets(filemap.size());
         for(int i = 0; i < local_def.total_records; i++) {
             Record record = records[i];
-            //std::cerr<<func_list[record.func_id]<<" "<<record.arg_count<<endl;
+
+            // Need to decompress the reocrd first if it was compressed
+            if (record.status & 0b10000000) {
+                int ref_id = record.func_id;
+                Record ref_record = records[i-1-ref_id];
+                // If the function is in our acceptable function set
+                if (ref_record.status & 0b10000000) continue;
+                if (acceptable_functions.find(ref_record.func_id) == acceptable_functions.end()) continue;
+                decompress(&record, &ref_record);
+            }
+
             switch(record.func_id) {
                 case 5:                     // write
                 case 6:                     // read
@@ -470,9 +467,11 @@ int main(int argc, char* argv[]) {
 
     // 2. decompress
     t_decompress = clock();
+    /*
     for(int rank = 0; rank < global_def.total_ranks; rank++) {
-        decompress(all_records[rank], global_def, local_defs[rank]);
+        decompress(all_records[rank], local_defs[rank]);
     }
+    */
     t_decompress = (clock() - t_decompress) / CLOCKS_PER_SEC;
 
     get_access_pattern(all_records, &global_def, local_defs);
