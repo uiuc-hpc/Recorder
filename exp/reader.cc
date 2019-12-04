@@ -126,7 +126,7 @@ static inline char** copy_args(char** args, int count) {
 
 }
 
-void decode(vector<Record> &records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
+void decompress(vector<Record> &records, RecorderGlobalDef global_def, RecorderLocalDef local_def) {
     for(int i = 0; i < local_def.total_records; i++) {
         Record *record = &(records[i]);             // Use pointer to directly modify record in array
 
@@ -261,7 +261,7 @@ Interval new_interval(double timestamp, size_t offset, size_t size, int func_id)
 }
 
 bool interval_comparator(Interval &p, Interval &q) {
-    return (p.offset > q.offset);
+    return (p.offset < q.offset);
 }
 /**
  * all_records is a pointer to every rank's records, e.g. all_records[0] are processor 0's records
@@ -308,6 +308,8 @@ vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobal
 
 void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
 
+    // Setup
+    double t_setup = clock();
     unordered_map<string, int> filemap = merge_filemaps(global_def, local_defs);
     vector<vector<Interval>> intervals(filemap.size());
 
@@ -389,6 +391,7 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
             }
         }
     }
+    t_setup = (clock() - t_setup) / CLOCKS_PER_SEC;
 
     vector<RecorderAccessPattern> patterns(filemap.size());
     for(file_id = 0; file_id < filemap.size(); file_id++) {
@@ -413,16 +416,15 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
         if(intervals[file_id].size() <= 1) continue;
         std::cout<<file_id<<" "<<intervals[file_id].size()<<endl;
         for(int i = 0; i < intervals[file_id].size()-1; i++) {
+            Interval i1 = intervals[file_id][i];
             for(int j = i+1; j < intervals[file_id].size(); j++) {
-                Interval i1, i2 = intervals[file_id][i], intervals[file_id][j];
+                Interval i2 = intervals[file_id][j];
                 if(i2.offset >= i1.offset + i1.size) // no overlapping, move on
                     break;
                 else {
                     if(i1.is_write && i2.is_write) {
-                        cout<<" , hahahahah, "<<file_id<<endl;
-                        //patterns[file_id].write_after_write = true;
+                        patterns[file_id].write_after_write = true;
                     }
-                    /*
                     else if(!i1.is_write && !i2.is_write)
                         patterns[file_id].read_after_read = true;
                     else {  // read after write or write after read
@@ -438,13 +440,12 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
                                 patterns[file_id].read_after_write = true;
                         }
                     }
-                    */
                 }
             }
         }
     }
     t_testing = (clock() - t_testing) / CLOCKS_PER_SEC;
-    std::cout<<"sorting time:"<<t_sorting<<", teseting time:"<<t_testing<<endl;
+    std::cout<<"setup time:"<<t_setup<<", sorting time:"<<t_sorting<<", teseting time:"<<t_testing<<endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -470,7 +471,7 @@ int main(int argc, char* argv[]) {
     // 2. decompress
     t_decompress = clock();
     for(int rank = 0; rank < global_def.total_ranks; rank++) {
-        decode(all_records[rank], global_def, local_defs[rank]);
+        decompress(all_records[rank], global_def, local_defs[rank]);
     }
     t_decompress = (clock() - t_decompress) / CLOCKS_PER_SEC;
 
