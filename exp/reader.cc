@@ -290,7 +290,7 @@ vector<vector<Interval>> allocate_intervals(Record **all_records, RecorderGlobal
 }
 
 
-void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
+void get_access_pattern(vector<vector<Record>> &all_records, RecorderGlobalDef *global_def, vector<RecorderLocalDef> local_defs) {
 
     // Build interval list
     double t_setup = clock();
@@ -303,67 +303,66 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
     size_t offset, size, nmemb;
     int file_id, origin, flag;
     for(int rank = 0; rank < global_def->total_ranks; rank++) {
-        vector<Record> records = all_records[rank];
         RecorderLocalDef local_def = local_defs[rank];
         vector<size_t> curr_offsets(filemap.size());
         for(int i = 0; i < local_def.total_records; i++) {
-            Record record = records[i];
+            Record *record = &(all_records[rank][i]);
 
             // Need to decompress the reocrd first if it was compressed
-            if (record.status & 0b10000000) {
-                int ref_id = record.func_id;
-                Record ref_record = records[i-1-ref_id];
+            if (record->status & 0b10000000) {
+                int ref_id = record->func_id;
+                Record *ref_record = &(all_records[rank][i-1-ref_id]);
                 // If the function is in our acceptable function set
-                if (ref_record.status & 0b10000000) continue;
-                if (acceptable_functions.find(ref_record.func_id) == acceptable_functions.end()) continue;
-                decompress(&record, &ref_record);
+                if (ref_record->status & 0b10000000) continue;
+                if (acceptable_functions.find(ref_record->func_id) == acceptable_functions.end()) continue;
+                decompress(record, ref_record);
             }
 
-            switch(record.func_id) {
+            switch(record->func_id) {
                 case 5:                     // write
                 case 6:                     // read
-                    sscanf(record.args[2], "%zu", &size);
-                    file_id = atoi(record.args[0]);
+                    sscanf(record->args[2], "%zu", &size);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
+                    intervals[file_id].push_back(new_interval(record->tstart, curr_offsets[file_id], size, record->func_id));
                     curr_offsets[file_id] += size;
                     break;
                 case 9:                     // pread
                 case 10:                    // pread64
                 case 11:                    // pwrite
                 case 12:                    // pwrite64
-                    sscanf(record.args[2], "%zu", &size);
-                    sscanf(record.args[3], "%zu", &offset);
-                    file_id = atoi(record.args[0]);
+                    sscanf(record->args[2], "%zu", &size);
+                    sscanf(record->args[3], "%zu", &offset);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
+                    intervals[file_id].push_back(new_interval(record->tstart, curr_offsets[file_id], size, record->func_id));
                     curr_offsets[file_id] = offset + size;
                     break;
                 case 13:                    // readv
                 case 14:                    // writev
-                    sscanf(record.args[1], "%zu", &size);
-                    file_id = atoi(record.args[0]);
+                    sscanf(record->args[1], "%zu", &size);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
+                    intervals[file_id].push_back(new_interval(record->tstart, curr_offsets[file_id], size, record->func_id));
                     curr_offsets[file_id] += size;
                     break;
                 case 20:                    // fwrite
                 case 21:                    // fread
-                    sscanf(record.args[1], "%zu", &size);
-                    sscanf(record.args[2], "%zu", &nmemb);
+                    sscanf(record->args[1], "%zu", &size);
+                    sscanf(record->args[2], "%zu", &nmemb);
                     size = nmemb * size;
-                    file_id = atoi(record.args[0]);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    intervals[file_id].push_back(new_interval(record.tstart, curr_offsets[file_id], size, record.func_id));
+                    intervals[file_id].push_back(new_interval(record->tstart, curr_offsets[file_id], size, record->func_id));
                     curr_offsets[file_id] += size;
                     break;
                 case 7:                     // lseek
                 case 8:                     // lseek64
                 case 23:                    // fseek
-                    file_id = atoi(record.args[0]);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    offset = atol(record.args[1]);
-                    origin = atoi(record.args[2]);
+                    offset = atol(record->args[1]);
+                    origin = atoi(record->args[2]);
                     if (origin == SEEK_SET)
                       curr_offsets[file_id] = offset;
                     if (origin == SEEK_CUR)
@@ -371,18 +370,18 @@ void get_access_pattern(vector<vector<Record>> all_records, RecorderGlobalDef *g
                     break;
                 case 2:                     // open
                 case 3:                     // open64
-                    file_id = atoi(record.args[0]);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    flag = atoi(record.args[1]);
+                    flag = atoi(record->args[1]);
                     if (!(flag & O_APPEND))
                         curr_offsets[file_id] = 0;
                     break;
                 case 17:                    // fopen
                 case 18:                    // fopen64
                 case 60:                    // fdopen
-                    file_id = atoi(record.args[0]);
+                    file_id = atoi(record->args[0]);
                     file_id = filemap[string(local_def.filemap[file_id])];
-                    if(strstr(record.args[1], "a") == NULL)
+                    if(strstr(record->args[1], "a") == NULL)
                         curr_offsets[file_id] = 0;
                     break;
             }
