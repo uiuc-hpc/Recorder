@@ -123,7 +123,7 @@ int RECORDER_MPI_DECL(MPI_Barrier)(MPI_Comm comm) {
 }
 
 int RECORDER_MPI_DECL(MPI_Bcast)(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
-    char **args = assemble_args_list(5, ptoa(buffer), type2name(datatype), itoa(root), comm2name(comm));
+    char **args = assemble_args_list(5, ptoa(buffer), itoa(count), type2name(datatype), itoa(root), comm2name(comm));
     RECORDER_INTERCEPTOR(int, PMPI_Bcast, (buffer, count, datatype, root, comm), 5, args)
 }
 
