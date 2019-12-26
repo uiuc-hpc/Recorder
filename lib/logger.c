@@ -142,15 +142,8 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
     if (compress) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
-        diff_record.func_id = new_record.func_id;
-
-        int tstart = (diff_record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
-        int tend   = (diff_record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
-        RECORDER_REAL_CALL(fwrite) (&(diff_record.status), sizeof(char), 1, f);
-        RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
-        RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
-        RECORDER_REAL_CALL(fwrite) (&ref_window_id, sizeof(char), 1, f);
-        write_record_args(f, diff_record.arg_count, diff_record.args);
+        diff_record.func_id = ref_window_id;
+        writeInBinary(__datafh, diff_record);
     } else {
         new_record.status = 0b00000000;
         writeInBinary(__datafh, new_record);
