@@ -53,6 +53,7 @@
 #include <sys/uio.h>
 #include <stdint.h>
 #include <mpi.h>
+#include <stdbool.h>
 #include "hdf5.h"
 #include "recorder-log-format.h"
 #include "hashmap.h"
@@ -64,9 +65,9 @@
 #define CONST
 #endif
 
-extern int depth;                           /* funciton call depth */
-extern int __recording;                     /* Only true after init() before exit() so we won't track unwanted functions and files*/
-extern hashmap_map *__filename2id_map;      /* map <filename, integer> */
+extern int depth;                               // funciton call depth
+extern bool __recording;                        // Only true after init() before exit() so we won't track unwanted functions and files
+extern hashmap_map *__filename2id_map;          // map <filename, integer>
 
 
 /* logger.c */

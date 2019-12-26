@@ -3,7 +3,7 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
 
-int __recording;
+bool __recording;
 
 /*
  * Map filename to Integer in binary format

@@ -7,16 +7,18 @@
 #include "zlib.h"
 
 
-
-/* Global file handler (per rank) for the local trace log file */
+// Global file handler (per rank) for the local trace log file
 FILE *__datafh;
 FILE *__metafh;
-/* Starting timestamp of each rank */
+// Starting timestamp of each rank
 double START_TIMESTAMP;
 double TIME_RESOLUTION = 0.000001;
-/* Filename to integer map */
+// Filename to integer map
 hashmap_map *__filename2id_map;
-int __recording;
+
+// set to true after initialization (log_init) and before exit()
+bool __recording;
+
 
 /* A sliding window for peephole compression */
 #define RECORD_WINDOW_SIZE 3
@@ -53,17 +55,48 @@ static inline void write_record_args(FILE* f, int arg_count, char** args) {
     fprintf(f, "\n");
 }
 
-static inline void write_compressed_record(FILE* f, char ref_window_id, Record diff_record) {
-    int tstart = (diff_record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
-    int tend   = (diff_record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
-    RECORDER_REAL_CALL(fwrite) (&(diff_record.status), sizeof(char), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&ref_window_id, sizeof(char), 1, f);
-    write_record_args(f, diff_record.arg_count, diff_record.args);
+static inline Record get_diff_record(Record old_record, Record new_record) {
+    Record diff_record;
+    diff_record.status = 0b10000000;
+    diff_record.arg_count = 999;    // initialize an impossible large value at first
+
+    // Same function should normally have the same number of arguments
+    if (old_record.arg_count != new_record.arg_count)
+        return diff_record;
+
+    // Get the number of different arguments
+    int count = 0;
+    for(int i = 0; i < old_record.arg_count; i++)
+        if(strcmp(old_record.args[i], new_record.args[i]) !=0)
+            count++;
+
+    // record.args store only the different arguments
+    // record.status keeps track the position of different arguments
+    diff_record.arg_count = count;
+    int idx = 0;
+    diff_record.args = malloc(sizeof(char *) * count);
+    static char diff_bits[] = {0b10000001, 0b10000010, 0b10000100, 0b10001000,
+                                0b10010000, 0b10100000, 0b11000000};
+    for(int i = 0; i < old_record.arg_count; i++) {
+        if(strcmp(old_record.args[i], new_record.args[i]) !=0) {
+            diff_record.args[idx++] = new_record.args[i];
+            if(i < 7) {
+                diff_record.status = diff_record.status | diff_bits[i];
+            }
+        }
+    }
+    return diff_record;
 }
 
-static inline void write_uncompressed_record(FILE *f, Record record) {
+
+/* Mode 1. Write record in plan text format */
+static inline void writeInText(FILE *f, Record record) {
+    fprintf(f, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
+    write_record_args(f, record.arg_count, record.args);
+}
+
+// Mode 2. Write in binary format, no compression
+static inline void writeInBinary(FILE *f, Record record) {
     int tstart = (record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
     int tend   = (record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
     RECORDER_REAL_CALL(fwrite) (&(record.status), sizeof(char), 1, f);
@@ -73,14 +106,64 @@ static inline void write_uncompressed_record(FILE *f, Record record) {
     write_record_args(f, record.arg_count, record.args);
 }
 
-/* Write record in plan text format */
-static inline void write_record_in_text(FILE *f, Record record) {
-    fprintf(f, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
-    write_record_args(f, record.arg_count, record.args);
+
+// Mode 3. Write in Recorder format (binary + peephole compression)
+static inline void writeInRecorder(FILE* f, Record new_record) {
+
+    bool compress = false;
+    Record diff_record;
+    int min_diff_count = 999;
+    char ref_window_id;
+    for(int i = 0; i < RECORD_WINDOW_SIZE; i++) {
+        Record record = __record_window[i];
+        // Only meets the following conditions that we consider to compress it:
+        // 1. same function as the one in sliding window
+        // 2. has at least 1 arguments
+        // 3. has less than 8 arguments
+        // 4. the number of different arguments is less the number of total arguments
+        if ((record.func_id == new_record.func_id) && (new_record.arg_count < 8) &&
+             (new_record.arg_count > 0) && (record.arg_count > 0)) {
+            Record tmp_record = get_diff_record(record, new_record);
+
+            // Cond.4
+            if(tmp_record.arg_count >= new_record.arg_count)
+                continue;
+
+            // Currently has the minimum number of different arguments
+            if(tmp_record.arg_count < min_diff_count) {
+                min_diff_count = tmp_record.arg_count;
+                ref_window_id = i;
+                compress = true;
+                diff_record = tmp_record;
+            }
+        }
+    }
+
+    if (compress) {
+        diff_record.tstart = new_record.tstart;
+        diff_record.tend = new_record.tend;
+        diff_record.func_id = new_record.func_id;
+
+        int tstart = (diff_record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
+        int tend   = (diff_record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
+        RECORDER_REAL_CALL(fwrite) (&(diff_record.status), sizeof(char), 1, f);
+        RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
+        RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
+        RECORDER_REAL_CALL(fwrite) (&ref_window_id, sizeof(char), 1, f);
+        write_record_args(f, diff_record.arg_count, diff_record.args);
+    } else {
+        new_record.status = 0b00000000;
+        writeInBinary(__datafh, new_record);
+    }
+
+    __record_window[2] = __record_window[1];
+    __record_window[1] = __record_window[0];
+    __record_window[0] = new_record;
+
 }
 
-/* Compress the plain text with zlib and write it out */
-static inline void write_record_in_zlib(FILE *f, Record record) {
+/* Mode 4. Compress the plain text with zlib and write it out */
+static inline void writeInZlib(FILE *f, Record record) {
     static char in_buf[ZLIB_BUF_SIZE];
     static char out_buf[ZLIB_BUF_SIZE];
     sprintf(in_buf, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
@@ -127,39 +210,6 @@ void zlib_exit() {
 }
 
 
-static inline Record get_diff_record(Record old_record, Record new_record) {
-    Record diff_record;
-    diff_record.status = 0b10000000;
-    diff_record.arg_count = 999;    // initialize an impossible large value at first
-
-    // Same function should normally have the same number of arguments
-    if (old_record.arg_count != new_record.arg_count)
-        return diff_record;
-
-    // Get the number of different arguments
-    int count = 0;
-    for(int i = 0; i < old_record.arg_count; i++)
-        if(strcmp(old_record.args[i], new_record.args[i]) !=0)
-            count++;
-
-    // record.args store only the different arguments
-    // record.status keeps track the position of different arguments
-    diff_record.arg_count = count;
-    int idx = 0;
-    diff_record.args = malloc(sizeof(char *) * count);
-    static char diff_bits[] = {0b10000001, 0b10000010, 0b10000100, 0b10001000,
-                                0b10010000, 0b10100000, 0b11000000};
-    for(int i = 0; i < old_record.arg_count; i++) {
-        if(strcmp(old_record.args[i], new_record.args[i]) !=0) {
-            diff_record.args[idx++] = new_record.args[i];
-            if(i < 7) {
-                diff_record.status = diff_record.status | diff_bits[i];
-            }
-        }
-    }
-    return diff_record;
-}
-
 
 void write_record(Record new_record) {
     if (!__recording) return;       // have not initialized yet
@@ -167,64 +217,20 @@ void write_record(Record new_record) {
     __local_def.total_records++;
     __local_def.function_count[new_record.func_id]++;
 
-    if (__compression_mode == COMP_TEXT) {
-        write_record_in_text(__datafh, new_record);
-        return;
+    switch(__compression_mode) {
+        case COMP_TEXT:
+            writeInText(__datafh, new_record);
+            break;
+        case COMP_BINARY:
+            writeInBinary(__datafh, new_record);
+            break;
+        case COMP_ZLIB:
+            writeInZlib(__datafh, new_record);
+            break;
+        default:
+            writeInRecorder(__datafh, new_record);
+            break;
     }
-
-    if (__compression_mode == COMP_ZLIB) {
-        write_record_in_zlib(__datafh, new_record);
-        return;
-    }
-
-    if (__compression_mode == COMP_BINARY) {        // baseline encoding, uncompressed binary foramt
-        write_uncompressed_record(__datafh, new_record);
-        return;
-    }
-
-    // The rest code is for peephole compression mode
-    int compress = 0;
-    Record diff_record;
-    int min_diff_count = 999;
-    char ref_window_id;
-    for(int i = 0; i < RECORD_WINDOW_SIZE; i++) {
-        Record record = __record_window[i];
-        // Only meets the following conditions that we consider to compress it:
-        // 1. same function as the one in sliding window
-        // 2. has at least 1 arguments
-        // 3. has less than 8 arguments
-        // 4. the number of different arguments is less the number of total arguments
-        if ((record.func_id == new_record.func_id) && (new_record.arg_count < 8) &&
-             (new_record.arg_count > 0) && (record.arg_count > 0)) {
-            Record tmp_record = get_diff_record(record, new_record);
-
-            // Cond.4
-            if(tmp_record.arg_count >= new_record.arg_count)
-                continue;
-
-            // Currently has the minimum number of different arguments
-            if(tmp_record.arg_count < min_diff_count) {
-                min_diff_count = tmp_record.arg_count;
-                ref_window_id = i;
-                compress = 1;
-                diff_record = tmp_record;
-            }
-        }
-    }
-
-    if (compress) {
-        diff_record.tstart = new_record.tstart;
-        diff_record.tend = new_record.tend;
-        diff_record.func_id = new_record.func_id;
-        write_compressed_record(__datafh, ref_window_id, diff_record);
-    } else {
-        new_record.status = 0b00000000;
-        write_uncompressed_record(__datafh, new_record);
-    }
-
-    __record_window[2] = __record_window[1];
-    __record_window[1] = __record_window[0];
-    __record_window[0] = new_record;
 }
 
 void logger_init(int rank, int nprocs) {
@@ -268,12 +274,12 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(global_metafh);
     }
 
-    __recording = 1;
+    __recording = true;
 }
 
 
 void logger_exit() {
-    __recording = 0;
+    __recording = false;
 
     /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
     if (__compression_mode == COMP_ZLIB)
