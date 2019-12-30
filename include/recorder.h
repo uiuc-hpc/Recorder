@@ -81,6 +81,7 @@ long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
 char* itoa(int val);                            // convert a integer to string
+char* ftoa(double val);                         // convert a float to string
 char* ptoa(const void* ptr);                    // convert a pointer to string
 char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);

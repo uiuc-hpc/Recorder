@@ -78,6 +78,13 @@ inline char* itoa(int val) {
     return str;
 }
 
+/* Integer to stirng */
+inline char* ftoa(double val) {
+    char *str = malloc(sizeof(char) * 32);
+    sprintf(str, "%f", val);
+    return str;
+}
+
 /* Pointer to string */
 inline char* ptoa(const void *ptr) {
     char *str = malloc(sizeof(char) * 16);
