@@ -10,9 +10,11 @@
 // Global file handler (per rank) for the local trace log file
 FILE *__datafh;
 FILE *__metafh;
+
 // Starting timestamp of each rank
 double START_TIMESTAMP;
 double TIME_RESOLUTION = 0.000001;
+
 // Filename to integer map
 hashmap_map *__filename2id_map;
 
@@ -35,25 +37,53 @@ CompressionMode __compression_mode = COMP_ZLIB;
 RecorderLocalDef __local_def;
 
 
+// Buffer the tracing records. Dump when its full
+struct MemBuf {
+    void *buffer;
+    int size;
+    int pos;
+    void (*release) (struct MemBuf*);
+    void (*append)(struct MemBuf*, const void* ptr, int length);
+    void (*dump) (struct MemBuf*);
+};
+void membufRelease(struct MemBuf *membuf) {
+    free(membuf->buffer);
+    membuf->pos = 0;
+}
+void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
+    printf("append\n");
+    if (length >= membuf->size) {
+        RECORDER_REAL_CALL(fwrite) (ptr, 1, length, __datafh);
+        return;
+    }
+    if (membuf->pos + length >= membuf->size) {
+        membuf->dump(membuf);
+    }
+    memcpy(membuf->buffer+membuf->pos, ptr, length);
+    membuf->pos += length;
+}
+void membufDump(struct MemBuf *membuf) {
+    printf("dump\n");
+    RECORDER_REAL_CALL(fwrite) (membuf->buffer, 1, membuf->pos, __datafh);
+    membuf->pos = 0;
+}
+void membufInit(struct MemBuf* membuf) {
+    membuf->size = 12*1024*1024;            // 12M
+    membuf->buffer = malloc(membuf->size);
+    membuf->pos = 0;
+    membuf->release = membufRelease;
+    membuf->append = membufAppend;
+    membuf->dump = membufDump;
+}
+struct MemBuf __membuf;
+
+
 static inline int startsWith(const char *pre, const char *str) {
     size_t lenpre = strlen(pre),
            lenstr = strlen(str);
     return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
 }
 
-
-static inline void write_record_args(FILE* f, int arg_count, char** args) {
-    char invalid_str[] = "???";
-    for(int i = 0; i < arg_count; i++) {
-        fprintf(f, " ");
-        if(args[i]) {
-            //if (!startsWith("0x", args[i]))
-            RECORDER_REAL_CALL(fwrite) (args[i], strlen(args[i]), 1, f);
-        } else
-            RECORDER_REAL_CALL(fwrite) (invalid_str, strlen(invalid_str), 1, f);
-    }
-    fprintf(f, "\n");
-}
 
 static inline Record get_diff_record(Record old_record, Record new_record) {
     Record diff_record;
@@ -88,22 +118,42 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
     return diff_record;
 }
 
+// 0. Helper function, write all function arguments
+static inline void writeArguments(FILE* f, int arg_count, char** args) {
+    char invalid_str[] = "???";
+    for(int i = 0; i < arg_count; i++) {
+        __membuf.append(&__membuf, " ", 1);
+        if(args[i])
+            __membuf.append(&__membuf, args[i], strlen(args[i]));
+        else
+            __membuf.append(&__membuf, invalid_str, strlen(invalid_str));
+    }
+    __membuf.append(&__membuf, "\n", 1);
+}
 
 /* Mode 1. Write record in plan text format */
+// tstart tend function args...
 static inline void writeInText(FILE *f, Record record) {
-    fprintf(f, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
-    write_record_args(f, record.arg_count, record.args);
+    const char* func = get_function_name_by_id(record.func_id);
+    char* tstart = ftoa(record.tstart);
+    char* tend = ftoa(record.tend);
+    __membuf.append(&__membuf, tstart, strlen(tstart));
+    __membuf.append(&__membuf, " ", 1);
+    __membuf.append(&__membuf, tend, strlen(tend));
+    __membuf.append(&__membuf, " ", 1);
+    __membuf.append(&__membuf, func, strlen(func));
+    writeArguments(f, record.arg_count, record.args);
 }
 
 // Mode 2. Write in binary format, no compression
 static inline void writeInBinary(FILE *f, Record record) {
     int tstart = (record.tstart - START_TIMESTAMP) / TIME_RESOLUTION;
     int tend   = (record.tend - START_TIMESTAMP) / TIME_RESOLUTION;
-    RECORDER_REAL_CALL(fwrite) (&(record.status), sizeof(char), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&tstart, sizeof(int), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&tend, sizeof(int), 1, f);
-    RECORDER_REAL_CALL(fwrite) (&(record.func_id), sizeof(unsigned char), 1, f);
-    write_record_args(f, record.arg_count, record.args);
+    __membuf.append(&__membuf, &(record.status), sizeof(char));
+    __membuf.append(&__membuf, &tstart, sizeof(int));
+    __membuf.append(&__membuf, &tend, sizeof(int));
+    __membuf.append(&__membuf, &(record.func_id), sizeof(unsigned char));
+    writeArguments(f, record.arg_count, record.args);
 }
 
 
@@ -267,6 +317,7 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(global_metafh);
     }
 
+    membufInit(&__membuf);
     __recording = true;
 }
 
@@ -278,11 +329,6 @@ void logger_exit() {
     if (__compression_mode == COMP_ZLIB)
         zlib_exit();
 
-    /* Close the log file */
-    if ( __datafh ) {
-        RECORDER_REAL_CALL(fclose) (__datafh);
-        __datafh = NULL;
-    }
 
     /* Write out local metadata information */
     __local_def.num_files = hashmap_length(__filename2id_map),
@@ -313,5 +359,14 @@ void logger_exit() {
     if ( __metafh) {
         RECORDER_REAL_CALL(fclose) (__metafh);
         __metafh = NULL;
+    }
+
+
+    __membuf.dump(&__membuf);
+    __membuf.release(&__membuf);
+    /* Close the log file */
+    if ( __datafh ) {
+        RECORDER_REAL_CALL(fclose) (__datafh);
+        __datafh = NULL;
     }
 }

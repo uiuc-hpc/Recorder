@@ -80,7 +80,7 @@ inline char* itoa(int val) {
 
 /* Integer to stirng */
 inline char* ftoa(double val) {
-    char *str = malloc(sizeof(char) * 32);
+    char *str = malloc(sizeof(char) * 24);
     sprintf(str, "%f", val);
     return str;
 }
