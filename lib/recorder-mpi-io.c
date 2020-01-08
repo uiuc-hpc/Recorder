@@ -377,3 +377,48 @@ int RECORDER_MPI_DECL(MPI_Finalized)(int *flag) {
     char **args = assemble_args_list(1, ptoa(flag));
     RECORDER_INTERCEPTOR(int, PMPI_Finalized, (flag), 1, args)
 }
+
+// Added 10 new MPI funcitons on 2019/01/07
+int RECORDER_MPI_DECL(MPI_Cart_rank) (MPI_Comm comm, CONST int coords[], int *rank) {
+    char **args = assemble_args_list(3, comm2name(comm), ptoa(coords), ptoa(rank));
+    RECORDER_INTERCEPTOR(int, PMPI_Cart_rank, (comm, coords, rank), 3, args)
+}
+int RECORDER_MPI_DECL(MPI_Cart_create) (MPI_Comm comm_old, int ndims, CONST int dims[], const int periods[], int reorder, MPI_Comm *comm_cart) {
+    char **args = assemble_args_list(6, comm2name(comm_old), itoa(ndims), ptoa(dims), ptoa(periods), itoa(reorder), ptoa(comm_cart));
+    RECORDER_INTERCEPTOR(int, PMPI_Cart_create, (comm_old, ndims, dims, periods, reorder, comm_cart), 6, args)
+}
+int RECORDER_MPI_DECL(MPI_Cart_get) (MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]) {
+    char **args = assemble_args_list(5, comm2name(comm), itoa(maxdims), ptoa(dims), ptoa(periods), ptoa(coords));
+    RECORDER_INTERCEPTOR(int, PMPI_Cart_get, (comm, maxdims, dims, periods, coords), 5, args)
+}
+int RECORDER_MPI_DECL(MPI_Cart_shift) (MPI_Comm comm, int direction, int disp, int *rank_source, int *rank_dest) {
+    char **args = assemble_args_list(5, comm2name(comm), itoa(direction), itoa(disp), ptoa(rank_source), ptoa(rank_dest));
+    RECORDER_INTERCEPTOR(int, PMPI_Cart_shift, (comm, direction, disp, rank_source, rank_dest), 5, args)
+}
+int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
+    char **args = assemble_args_list(2, ptoa(request), ptoa(status));
+    RECORDER_INTERCEPTOR(int, PMPI_Wait, (request, status), 2, args)
+}
+int RECORDER_MPI_DECL(MPI_Send) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    char **args = assemble_args_list(6, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm));
+    RECORDER_INTERCEPTOR(int, PMPI_Send, (buf, count, datatype, dest, tag, comm), 6, args)
+}
+int RECORDER_MPI_DECL(MPI_Recv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), ptoa(status));
+    RECORDER_INTERCEPTOR(int, PMPI_Recv, (buf, count, datatype, source, tag, comm, status), 7, args)
+}
+int RECORDER_MPI_DECL(MPI_Sendrecv) (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                                        int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
+    char **args = assemble_args_list(12, ptoa(sendbuf), itoa(sendcount), type2name(sendtype), itoa(dest), itoa(sendtag), ptoa(recvbuf), itoa(recvcount), type2name(recvtype),
+                                        itoa(source), itoa(recvtag), comm2name(comm), ptoa(status));
+    RECORDER_INTERCEPTOR(int, PMPI_Sendrecv, (sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status), 12, args)
+}
+int RECORDER_MPI_DECL(MPI_Isend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request) {
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm), ptoa(request));
+    RECORDER_INTERCEPTOR(int, PMPI_Isend, (buf, count, datatype, dest, tag, comm, request), 7, args)
+}
+int RECORDER_MPI_DECL(MPI_Irecv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request) {
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), ptoa(request));
+    RECORDER_INTERCEPTOR(int, PMPI_Irecv, (buf, count, datatype, source, tag, comm, request), 7, args)
+}
+
