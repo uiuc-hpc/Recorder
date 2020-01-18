@@ -8,7 +8,7 @@ bool __recording;
 /*
  * Map filename to Integer in binary format
  * The filename must be absolute pathname
- * __filename2id_map is a extern gobal variable defined
+ * __filename2id_map is an extern gobal variable defined
  * in recorder.h, initialized in logger.c
  */
 hashmap_map* __filename2id_map;

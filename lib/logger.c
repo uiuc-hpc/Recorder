@@ -12,6 +12,7 @@
 #define ZLIB_BUF_SIZE 4096          // For zlib compression //
 
 
+//hashmap_map *__filename2id_map;
 struct Logger {
     FILE *dataFile;             // log file
     FILE *metaFile;             // metadata file
@@ -297,7 +298,8 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(mkdir)
 
     // Initialize the global values
-    __logger.fileMap = hashmap_new();
+    __filename2id_map = hashmap_new();      // __filename2id_map is extern global
+    __logger.fileMap = __filename2id_map;
 
     __logger.startTimestamp = recorder_wtime();
 
@@ -328,11 +330,13 @@ void logger_init(int rank, int nprocs) {
 
     membufInit(&__membuf);
     __logger.recording = true;
+    __recording = __logger.recording;   // set the extern global
 }
 
 
 void logger_exit() {
     __logger.recording = false;
+    __recording = __logger.recording;   // set the extern global
 
     /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
     if (__logger.compMode == COMP_ZLIB)
