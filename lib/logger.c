@@ -62,6 +62,7 @@ void membufRelease(struct MemBuf *membuf) {
 }
 void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
     if (length >= membuf->size) {
+        membuf->dump(membuf);
         RECORDER_REAL_CALL(fwrite) (ptr, 1, length, __logger.dataFile);
         return;
     }
