@@ -135,9 +135,11 @@ static inline void writeArguments(FILE* f, int arg_count, char** args) {
     char invalid_str[] = "???";
     for(int i = 0; i < arg_count; i++) {
         __membuf.append(&__membuf, " ", 1);
-        if(args[i])
+        if(args[i]) {
+            for(int j = 0; j < strlen(args[i]); j++)
+                if(args[i][j] == ' ') args[i][j] = '_';
             __membuf.append(&__membuf, args[i], strlen(args[i]));
-        else
+        } else
             __membuf.append(&__membuf, invalid_str, strlen(invalid_str));
     }
     __membuf.append(&__membuf, "\n", 1);
