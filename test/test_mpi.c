@@ -22,7 +22,7 @@ static void print(char *func_name, bool start) {
 
 
 int main(int argc, char *argv[]) {
-    MPI_Init(NULL, NULL);
+    MPI_Init(&argc, &argv);
 
     int world_size;
 

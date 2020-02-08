@@ -3,12 +3,12 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
 
-int __recording;
+bool __recording;
 
 /*
  * Map filename to Integer in binary format
  * The filename must be absolute pathname
- * __filename2id_map is a extern gobal variable defined
+ * __filename2id_map is an extern gobal variable defined
  * in recorder.h, initialized in logger.c
  */
 hashmap_map* __filename2id_map;
@@ -75,6 +75,13 @@ inline double recorder_wtime(void) {
 inline char* itoa(int val) {
     char *str = malloc(sizeof(char) * 16);
     sprintf(str, "%d", val);
+    return str;
+}
+
+/* Integer to stirng */
+inline char* ftoa(double val) {
+    char *str = malloc(sizeof(char) * 24);
+    sprintf(str, "%f", val);
     return str;
 }
 

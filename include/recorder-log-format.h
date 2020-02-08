@@ -126,7 +126,7 @@ static const char* func_list[] = {
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
     "remove",
 
-    // MPI I/O  - 61 functions
+    // MPI I/O  - 71 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
     "PMPI_File_iread",              "PMPI_File_iread_shared",   "PMPI_File_iwrite_at",
     "PMPI_File_iwrite",             "PMPI_File_iwrite_shared",  "PMPI_File_open",
@@ -148,6 +148,11 @@ static const char* func_list[] = {
     "PMPI_Type_extent",             "PMPI_Type_free",           "PMPI_Type_hindexed",
     "PMPI_Op_create",               "PMPI_Op_free",             "PMPI_Type_get_envelope",
     "PMPI_Type_size",
+    // Added 2019/01/07
+    "PMPI_Cart_rank",               "PMPI_Cart_create",         "PMPI_Cart_get",
+    "PMPI_Cart_shift",              "PMPI_Wait",                "PMPI_Send",
+    "PMPI_Recv",                    "PMPI_Sendrecv",            "PMPI_Isend",
+    "PMPI_Irecv",
 
     // HDF5 I/O - 68 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     // File interface
@@ -224,6 +229,12 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,
+    // Added 2019/01/07
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,
+
 
     // HDF5 I/O - 68 functions
     // Only H5Fcreate and H5Fopen have filename arguments

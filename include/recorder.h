@@ -53,6 +53,7 @@
 #include <sys/uio.h>
 #include <stdint.h>
 #include <mpi.h>
+#include <stdbool.h>
 #include "hdf5.h"
 #include "recorder-log-format.h"
 #include "hashmap.h"
@@ -64,9 +65,9 @@
 #define CONST
 #endif
 
-extern int depth;                           /* funciton call depth */
-extern int __recording;                     /* Only true after init() before exit() so we won't track unwanted functions and files*/
-extern hashmap_map *__filename2id_map;      /* map <filename, integer> */
+extern int depth;                               // funciton call depth
+extern bool __recording;                        // Only true after init() before exit() so we won't track unwanted functions and files
+extern hashmap_map *__filename2id_map;          // map <filename, integer>
 
 
 /* logger.c */
@@ -80,6 +81,7 @@ long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
 char* itoa(int val);                            // convert a integer to string
+char* ftoa(double val);                         // convert a float to string
 char* ptoa(const void* ptr);                    // convert a pointer to string
 char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);
@@ -312,6 +314,17 @@ RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
 RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
 RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
 RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype));
+// Added 10 new MPI functinos on 2019/01/07
+RECORDER_FORWARD_DECL(PMPI_Cart_rank, int, (MPI_Comm comm, CONST int coords[], int *rank));
+RECORDER_FORWARD_DECL(PMPI_Cart_create, int, (MPI_Comm comm_old, int ndims, CONST int dims[], CONST int periods[], int reorder, MPI_Comm *comm_cart));
+RECORDER_FORWARD_DECL(PMPI_Cart_get, int, (MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]));
+RECORDER_FORWARD_DECL(PMPI_Cart_shift, int, (MPI_Comm comm, int direction, int disp, int *rank_source, int *rank_dest));
+RECORDER_FORWARD_DECL(PMPI_Wait, int, (MPI_Request *request, MPI_Status *status));
+RECORDER_FORWARD_DECL(PMPI_Send, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,MPI_Comm comm));
+RECORDER_FORWARD_DECL(PMPI_Recv, int, (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status));
+RECORDER_FORWARD_DECL(PMPI_Sendrecv, int, (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status));
+RECORDER_FORWARD_DECL(PMPI_Isend, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request));
+RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request));
 
 
 
