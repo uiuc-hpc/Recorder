@@ -179,7 +179,7 @@ int RECORDER_MPI_DECL(MPI_Alltoall)(CONST void *sbuf, int scount, MPI_Datatype s
 
 int RECORDER_MPI_DECL(MPI_Reduce)(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype, MPI_Op op, int root, MPI_Comm comm) {
     char **args = assemble_args_list(7, ptoa(sbuf), ptoa(rbuf), itoa(count), type2name(stype),
-                                    ptoa(op), itoa(root), comm2name(comm));
+                                    itoa(op), itoa(root), comm2name(comm));
     RECORDER_INTERCEPTOR(int, PMPI_Reduce, (sbuf, rbuf, count, stype, op, root, comm), 7, args)
 }
 
@@ -383,7 +383,7 @@ int RECORDER_MPI_DECL(MPI_Cart_rank) (MPI_Comm comm, CONST int coords[], int *ra
     char **args = assemble_args_list(3, comm2name(comm), ptoa(coords), ptoa(rank));
     RECORDER_INTERCEPTOR(int, PMPI_Cart_rank, (comm, coords, rank), 3, args)
 }
-int RECORDER_MPI_DECL(MPI_Cart_create) (MPI_Comm comm_old, int ndims, CONST int dims[], const int periods[], int reorder, MPI_Comm *comm_cart) {
+int RECORDER_MPI_DECL(MPI_Cart_create) (MPI_Comm comm_old, int ndims, CONST int dims[], CONST int periods[], int reorder, MPI_Comm *comm_cart) {
     char **args = assemble_args_list(6, comm2name(comm_old), itoa(ndims), ptoa(dims), ptoa(periods), itoa(reorder), ptoa(comm_cart));
     RECORDER_INTERCEPTOR(int, PMPI_Cart_create, (comm_old, ndims, dims, periods, reorder, comm_cart), 6, args)
 }
