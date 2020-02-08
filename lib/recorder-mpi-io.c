@@ -179,7 +179,7 @@ int RECORDER_MPI_DECL(MPI_Alltoall)(CONST void *sbuf, int scount, MPI_Datatype s
 
 int RECORDER_MPI_DECL(MPI_Reduce)(CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype, MPI_Op op, int root, MPI_Comm comm) {
     char **args = assemble_args_list(7, ptoa(sbuf), ptoa(rbuf), itoa(count), type2name(stype),
-                                    itoa(op), itoa(root), comm2name(comm));
+                                    ptoa(op), itoa(root), comm2name(comm));
     RECORDER_INTERCEPTOR(int, PMPI_Reduce, (sbuf, rbuf, count, stype, op, root, comm), 7, args)
 }
 
