@@ -49,11 +49,14 @@ class HTMLWriter:
         self.functionPatterns = ""           # 2.2
         self.functionCount = ""             # 2.3
 
+        # 3.
         self.overallIOActivities = ""
         self.offsetVsRankImage = "./figures/offset_vs_rank.png"
         self.offsetVsTimeImage = "./figures/offset_vs_time.png"
         self.accessPatternTable = ""
-        self.ioSizesImage = "./figures/io_sizes_image.png"
+
+        # 4.
+        self.ioSizes = ""
 
     def write_html(self):
         html_content  = """
@@ -103,14 +106,14 @@ class HTMLWriter:
                 %s
                 <hr>
 
-                <h2> 4. Percentage of I/O access sizes </h2>
-                <img src="%s" alt="access sizes" width="700"></img>
+                <h2> 4. Count of I/O access sizes </h2>
+                %s
             </div></body>
         </html>
         """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
                 self.functionLayers, self.functionPatterns, self.functionCount, \
                 self.overallIOActivities, relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
-                relpath(self.ioSizesImage))
+                self.ioSizes)
 
         f = open("./test.html", "w")
         f.write(html_content)

@@ -147,7 +147,6 @@ def function_counts():
     funcnames = funcnames[index]
 
     p = figure(x_axis_label="Count", x_axis_type="log", y_axis_label="Function", y_range=funcnames)
-
     p.hbar(y=funcnames, right=counts, height=0.8, left=1)
     script, div = components(p)
     htmlWriter.functionCount = div + script
@@ -193,6 +192,35 @@ def overall_io_activities():
     htmlWriter.overallIOActivities = div + script
 
 
+def offset_vs_time():
+    pass
+
+
+# 4
+def io_sizes():
+    def get_io_size(record):
+        funcname = func_list[record[3]]
+        if "MPI" in funcname or "H5" in funcname: return -1
+        if "fwrite" in funcname or "fread" in funcname:
+            return int(record[4][1]) * int(record[4][2])
+        # read/pread, write/pwrite
+        if "read" in funcname or "write" in funcname:
+            return int(record[4][2])
+        return -1
+
+    sizes = {}
+    for records in reader.records:
+        for record in records:
+            io_size = get_io_size(record)
+            if io_size not in sizes: sizes[io_size] = 0
+            sizes[io_size] += 1
+
+    p = figure(x_axis_label="IO Size", y_axis_label="Count", y_axis_type="log")
+    p.vbar(x=sizes.keys(), top=sizes.values(), width=0.6, bottom=1)
+    script, div = components(p)
+    htmlWriter.ioSizes = div + script
+
+
 if __name__ == "__main__":
     record_counts()
 
@@ -203,6 +231,10 @@ if __name__ == "__main__":
     function_counts()
 
     overall_io_activities()
+
+
+    io_sizes()
+
 
     htmlWriter.write_html()
 

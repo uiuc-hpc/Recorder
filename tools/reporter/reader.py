@@ -142,12 +142,13 @@ class LocalMetadata:
 
             self.functionCounter = struct.unpack("i"*256, f.read(256*4))
 
+            self.fileMap = [None] * self.numFiles
             for i in range(self.numFiles):
                 fileId = struct.unpack("i", f.read(4))[0]
                 fileSize = struct.unpack("l", f.read(8))[0]
                 filenameLen = struct.unpack("i", f.read(4))[0]
                 filename = f.read(filenameLen)
-                self.fileMap.append([fileId, fileSize, filename])
+                self.fileMap[fileId] = [fileId, fileSize, filename]
 
     def output(self):
         print("Basic Information:")
