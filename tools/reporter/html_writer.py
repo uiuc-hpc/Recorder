@@ -37,19 +37,19 @@ class HTMLWriter:
 
     def __init__(self, path):
         self.path = path
+        # 0
         self.performanceTable = ""
+        self.recordCount = ""               # 0.1
 
-        self.recordCount = ""
+        self.fileCount = ""                 # 1.1
+        self.fileAccessModeTable = ""       # 1.2
 
-        self.fileTable = ""
-        self.fileAccessModeTable = ""
-        self.fileSizeImage = "./figures/file_size.png"
+        # 2.
+        self.functionLayers = ""            # 2.1
+        self.functionPatterns = ""           # 2.2
+        self.functionCount = ""             # 2.3
 
-        self.functionCount = ""
-
-        self.functionAccessTypeImage = "./figures/function_access_type.png"
-        self.functionCountImage = "./figures/function_categories.png"
-        self.overallTimeChart = "./figures/overall_time_chart.png"
+        self.overallIOActivities = ""
         self.offsetVsRankImage = "./figures/offset_vs_rank.png"
         self.offsetVsTimeImage = "./figures/offset_vs_time.png"
         self.accessPatternTable = ""
@@ -74,19 +74,17 @@ class HTMLWriter:
                 %s
                 <h4> 1.2 Access mode of each file </h4>
                 %s
-                <h4>1.3 File Sizes</h4>
-                <img src="%s" alt="File Size" width="600"></img>
                 <hr>
 
                 <h2> 2. Function Statistics </h3>
                 <div>
                     <div style="display:inline-block">
                         <h4> 2.1 I/O Layers</h4>
-                        <img src="%s" alt="I/O Layers" height="280"></img>
+                        %s
                     </div>
                     <div style="display:inline-block">
                         <h4> 2.2 POSIX I/O Patterns </h4>
-                        <img src="%s" alt="POSIX I/O Patterns" height="280"></img>
+                        %s
                     </div>
                 </div>
                 <h4> 2.3 Function count </h4>
@@ -96,7 +94,7 @@ class HTMLWriter:
 
                 <h2> 3. Access Patterns </h2>
                 <h4> 3.1 Overall I/O activities </h4>
-                <img src="%s" alt="offset vs rank" width="600"></img>
+                %s
                 <h4> 3.2 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="900"></img>
                 <h4> 3.3 Accessed offsets VS time </h4>
@@ -109,9 +107,9 @@ class HTMLWriter:
                 <img src="%s" alt="access sizes" width="700"></img>
             </div></body>
         </html>
-        """ %(css_style, self.performanceTable, self.recordCount, self.fileTable, self.fileAccessModeTable, relpath(self.fileSizeImage),    \
-                relpath(self.functionCountImage), relpath(self.functionAccessTypeImage), self.functionCount, \
-                relpath(self.overallTimeChart), relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
+        """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
+                self.functionLayers, self.functionPatterns, self.functionCount, \
+                self.overallIOActivities, relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
                 relpath(self.ioSizesImage))
 
         f = open("./test.html", "w")

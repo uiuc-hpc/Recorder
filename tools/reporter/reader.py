@@ -4,6 +4,9 @@ import sys, struct
 import numpy as np
 import time
 
+'''
+Copied from include/recorder-log-format.h
+'''
 func_list = [
     # POSIX I/O - 66 functions
     "creat",        "creat64",      "open",         "open64",   "close",
@@ -76,7 +79,7 @@ func_list = [
 ]
 
 '''
-Global Metadata Structure
+Global Metadata Structure - same as in include/recorder-log-format.h
     Time Resolution:        double, 8 bytes
     Number of MPI Ranks:    Int, 4 bytes
     Compression Mode:       Int, 4 bytes
@@ -105,13 +108,18 @@ class GlobalMetadata:
         print("Window Sizes:", self.windowSize)
 
 '''
-double start_timestamp;
-double end_timestamp;
-int num_files;                  // number of files accessed by the rank
-int total_records;              // total number of records we have written
-char **filemap;                 // mapping of filenames and integer ids. only set when read the local def file
-size_t *file_sizes;             // size of each file accessed. only set when read back the local def file
-int function_count[256];        // counting the functions at runtime
+Local Metadata Structure - same as in include/recorder-log-format.h
+
+    Start timestamp:            double, 8 bytes
+    ed timestamp:               double, 8 bytes
+    Number of files accessed:   int,    4 bytes
+    Total number of records:    int,    4 bytes
+    Filemap:                    char**, 8 bytes pointer, ignore it
+    File sizes array:           int*,   8 bytes pointer, size of each file accessed, ignore it
+    Function counter:           int*256,4 * 256 bytes
+
+    Then one line per file accessed, has the following form:
+    file id(4), file size(8), filename length(4), filename(variable length)
 '''
 class LocalMetadata:
     def __init__(self, path):
@@ -161,37 +169,12 @@ class RecorderReader:
         self.localMetadata = []
         self.records = []
 
-        self.totalRecords = 0
-        self.compressedRecords = 0
-
-        self.totalArgs = 0;
-        self.diffArgs = 0
-
-
-        readTime, decodeTime, decompressTime = 0.0, 0.0, 0.0
         for rank in range(self.globalMetadata.numRanks):
             self.localMetadata.append( LocalMetadata(path+"/"+str(rank)+".mt") )
-
-            '''
-            t = time.time()
-            lines = self.readTraceFile( path+"/"+str(rank)+".itf" )
-            readTime += (time.time() - t)
-
-            t = time.time()
+            lines = self.read( path+"/"+str(rank)+".itf" )
             records = self.decode(lines)
-            decodeTime += (time.time() - t)
-
-            t = time.time()
             records = self.decompress(records)
-            decompressTime += (time.time() - t)
-
             self.records.append( records )
-            '''
-
-            #self.compressedFunctions(path+"/"+str(rank)+".itf")
-        #print(self.totalArgs, self.totalArgs-self.diffArgs, (self.totalArgs-self.diffArgs)*1.0/self.totalArgs)
-        #print(self.totalRecords, self.compressedRecords)
-        #print("Read Time: %s\nDecode Time: %s\nDecompress Time: %s\n" %(readTime, decodeTime, decompressTime))
 
     def decompress(self, records):
         for idx, record in enumerate(records):
@@ -206,14 +189,21 @@ class RecorderReader:
                 for i, c in enumerate(binStr):
                     if c == '1':
                         if ii >= len(record[4]):
-                            print(record, ii)
+                            print("Error:", record, ii)
                         refArgs[i] = record[4][ii]
                         ii += 1
                 records[idx][4] = refArgs
         return records
 
     '''
-    The lines read in from one log file
+    @lines: The lines read in from one log file
+        status:         singed char, 1 byte
+        delta_tstart:   int, 4 bytes
+        delta_tend:     int, 4 bytes
+        funcId/refId:   signed char, 1 byte
+        args:           string seperated by space
+    Output is a list of records for one rank, where each  record has the format
+        [status, tstart, tend, funcId/refId, [args]]
     '''
     def decode(self, lines):
         records = []
@@ -225,27 +215,17 @@ class RecorderReader:
             args = line[11:].split(' ')
             funcname = func_list[funcId]
 
-            #if ("open" in funcname or "read" in funcname or "write" in funcname) \
-            #    and ("MPI" not in funcname) and ("H5" not in funcname):
+            # Selective decoding
+            #if "H5" not in funcname and "MPI" not in funcname:
             records.append([status, tstart, tend, funcId, args])
-            if status != 0:
-                self.compressedRecords += 1
 
-        self.totalRecords += len(lines)
         return records
 
 
     '''
-    One line per record:
-        status:         singed char, 1 byte
-        delta_tstart:   int, 4 bytes
-        delta_tend:     int, 4 bytes
-        funcId/refId:   signed char, 1 byte
-        args:           string seperated by space
-    Output is a list of records for one rank, where each  record has the format
-        [status, tstart, tend, funcId/refId, [args]]
+    Read one rank's trace file and return one line for each record
     '''
-    def readTraceFile(self, path):
+    def read(self, path):
         print(path)
         lines = []
         with open(path, 'rb') as f:
@@ -260,39 +240,3 @@ class RecorderReader:
                 lines.append(line)
                 start_pos = end_pos+1
         return lines
-
-
-    def compressedFunctions(self, path):
-        records = []
-        lines = []
-        with open(path, 'rb') as f:
-            content = f.read()
-            start_pos = 0
-            end_pos = 0
-            while True:
-                end_pos = content.find("\n", start_pos+10)
-                if end_pos == -1:
-                    break
-                line = content[start_pos: end_pos]
-                lines.append(line)
-                start_pos = end_pos+1
-
-
-        self.totalRecords += len(lines)
-        for i in range(len(lines)):
-            line = lines[i]
-            status = struct.unpack('b', line[0])[0]
-            tstart = struct.unpack('i', line[1:5])[0]
-            tend = struct.unpack('i', line[5:9])[0]
-            funcId = struct.unpack('B', line[9])[0]
-            args = line[10:].strip().split(' ')
-            funcname = func_list[funcId]
-
-            numArgs = len(args)
-            if status != 0:
-                numArgs = records[i-1-funcId]
-                self.totalArgs += numArgs
-                self.diffArgs += len(args)
-                self.compressedRecords += 1
-            records.append(numArgs)
-        print(path, len(lines))
