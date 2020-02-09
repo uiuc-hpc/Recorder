@@ -84,7 +84,7 @@ static inline char* fd2name(int fd) {
     if(ret <  0) return fdname;
     realname[ret] = 0; // readlink does not append a null byte
 
-    char *id_str = get_filename_id(realname);
+    char *id_str = realrealpath(realname);
     free(fdname);
     free(realname);
     return id_str;
@@ -131,12 +131,12 @@ void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, 
 }
 
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
-    char** args = assemble_args_list(2, path, itoa(mode));
+    char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
     RECORDER_INTERCEPTOR(int, creat, (path, mode), 2, args)
 }
 
 int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
-    char** args = assemble_args_list(2, path, itoa(mode));
+    char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
     RECORDER_INTERCEPTOR(int, creat64, (path, mode), 2, args)
 }
 
@@ -169,12 +169,12 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
 }
 
 FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
-    char** args = assemble_args_list(2, path, mode);
+    char** args = assemble_args_list(2, realrealpath(path), mode);
     RECORDER_INTERCEPTOR(FILE*, fopen64, (path, mode), 2, args)
 }
 
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
-    char** args = assemble_args_list(2, path, mode);
+    char** args = assemble_args_list(2, realrealpath(path), mode);
     RECORDER_INTERCEPTOR(FILE*, fopen, (path, mode), 2, args)
 }
 
