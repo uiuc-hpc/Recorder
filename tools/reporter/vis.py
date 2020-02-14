@@ -191,9 +191,38 @@ def overall_io_activities():
     script, div = components(p)
     htmlWriter.overallIOActivities = div + script
 
-
+# 3.3
 def offset_vs_time():
-    pass
+
+    # interval = [tstart, tend, offset, count]
+    def plot_for_one_file(filename, intervals):
+        intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
+
+        x, y = [], []
+        nan = float('nan')
+        for interval in intervals:
+            tstart, tend, offset, count = interval[1], interval[2], interval[3], interval[4]
+            x += [tstart, tend, nan]
+            y += [offset, offset+count, offset+count]
+
+        if len(x) > 0 : x = x[0:len(x)-1]
+        if len(y) > 0 : y = y[0:len(y)-1]
+        p = figure(title=filename, x_axis_label="Time", y_axis_label="Offset")
+        p.line(x, y, line_width=10, alpha=1.0)
+        return p
+
+    from build_offset_intervals import build_offset_intervals
+    intervals = build_offset_intervals(reader)
+
+    plots = []
+    for idx, filename in enumerate(intervals):
+        if (len(intervals[filename]) > 0):
+            p = plot_for_one_file(filename, intervals[filename])
+            plots.append(p)
+
+    from bokeh.layouts import gridplot
+    script, div = components(gridplot(plots, ncols=3, plot_width=400, plot_height=300))
+    htmlWriter.offsetVsTime = script+div
 
 
 # 4
@@ -204,6 +233,7 @@ def io_sizes():
         if "fwrite" in funcname or "fread" in funcname:
             return int(record[4][1]) * int(record[4][2])
         # read/pread, write/pwrite
+        # TODO readv/writev
         if "read" in funcname or "write" in funcname:
             return int(record[4][2])
         return -1
@@ -212,10 +242,11 @@ def io_sizes():
     for records in reader.records:
         for record in records:
             io_size = get_io_size(record)
+            if(io_size <= 0): continue
             if io_size not in sizes: sizes[io_size] = 0
             sizes[io_size] += 1
 
-    p = figure(x_axis_label="IO Size", y_axis_label="Count", y_axis_type="log")
+    p = figure(x_axis_label="IO Size", y_axis_label="Count", y_axis_type="log", plot_width=400, plot_height=300)
     p.vbar(x=sizes.keys(), top=sizes.values(), width=0.6, bottom=1)
     script, div = components(p)
     htmlWriter.ioSizes = div + script
@@ -231,10 +262,8 @@ if __name__ == "__main__":
     function_counts()
 
     overall_io_activities()
-
+    offset_vs_time()
 
     io_sizes()
 
-
     htmlWriter.write_html()
-

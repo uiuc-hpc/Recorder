@@ -52,7 +52,7 @@ class HTMLWriter:
         # 3.
         self.overallIOActivities = ""
         self.offsetVsRankImage = "./figures/offset_vs_rank.png"
-        self.offsetVsTimeImage = "./figures/offset_vs_time.png"
+        self.offsetVsTime = ""
         self.accessPatternTable = ""
 
         # 4.
@@ -101,7 +101,7 @@ class HTMLWriter:
                 <h4> 3.2 Accessed offsets VS ranks </h4>
                 <img src="%s" alt="offset vs rank" width="900"></img>
                 <h4> 3.3 Accessed offsets VS time </h4>
-                <img src="%s" alt="offset vs time" width="900"></img>
+                %s
                 <h4> 3.4 File access patterns </h4>
                 %s
                 <hr>
@@ -112,7 +112,7 @@ class HTMLWriter:
         </html>
         """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
                 self.functionLayers, self.functionPatterns, self.functionCount, \
-                self.overallIOActivities, relpath(self.offsetVsRankImage), relpath(self.offsetVsTimeImage), self.accessPatternTable, \
+                self.overallIOActivities, relpath(self.offsetVsRankImage), self.offsetVsTime, self.accessPatternTable, \
                 self.ioSizes)
 
         f = open("./test.html", "w")
