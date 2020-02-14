@@ -13,7 +13,6 @@ def handle_data_operations(record, fileMap, offsetBook):
     # TODO preadv, readv, etc
     if "writev" in func or "readv" in func:
         pass
-
     elif "fwrite" in func or "fread" in func:
         fileId, size, count = int(args[3]), int(args[1]), int(args[2])
         filename = fileMap[fileId][2]
@@ -50,6 +49,16 @@ def handle_metadata_operations(record, fileMap, offsetBook):
         elif whence == 1:   # SEEK_CUR
             offsetBook[filename] += offset
 
+def ignore_files(filename):
+    ignore_prefixes = ["/dev", "/proc"]
+    for prefix in ignore_prefixes:
+        if filename.startswith(prefix):
+            return True
+    if "pipe:" in filename:
+        return True
+
+    return False
+
 
 def build_offset_intervals(reader):
     offsetBook = {}
@@ -71,7 +80,7 @@ def build_offset_intervals(reader):
 
             handle_metadata_operations(record, fileMap, offsetBook)
             filename, offset, count = handle_data_operations(record, fileMap, offsetBook)
-            if(filename != ""):
+            if(filename != "" and not ignore_files(filename)):
                 tstart = timeRes * int(record[1])
                 tend = timeRes * int(record[2])
                 if filename not in intervals:

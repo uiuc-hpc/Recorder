@@ -10,6 +10,8 @@ from prettytable import PrettyTable
 
 from reader import RecorderReader, func_list
 from html_writer import HTMLWriter
+from build_offset_intervals import ignore_files
+from build_offset_intervals import build_offset_intervals
 
 reader = RecorderReader(sys.argv[1])
 htmlWriter = HTMLWriter("./")
@@ -21,7 +23,7 @@ def record_counts():
         y.append(meta.totalRecords)
     x = range(reader.globalMetadata.numRanks)
     p = figure(x_axis_label="Rank", y_axis_label="Number of records", plot_width=400, plot_height=300)
-    p.xaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
+    #p.xaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
     p.vbar(x=x, top=y, width=0.6)
     script, div = components(p)
     htmlWriter.recordCount = div+script
@@ -30,10 +32,15 @@ def record_counts():
 def file_counts():
     y = []
     for meta in reader.localMetadata:
-        y.append(meta.numFiles)
+        num = 0
+        for fileInfo in meta.fileMap:
+            filename = fileInfo[2]
+            if not ignore_files(filename):
+                num += 1
+        y.append(num)
     x = range(reader.globalMetadata.numRanks)
     p = figure(x_axis_label="Rank", y_axis_label="Number of files accessed", plot_width=400, plot_height=300)
-    p.xaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
+    #p.xaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
     p.vbar(x=x, top=y, width=0.6)
     script, div = components(p)
     htmlWriter.fileCount = div+script
@@ -95,8 +102,9 @@ def file_access_mode():
     table = PrettyTable()
     table.field_names = ['Filename', 'File Size', 'Open Flags', 'Read', 'Write']
     for filename in flags_set:
-        table.add_row([filename, sizes_set[filename], list(flags_set[filename]),\
-            accesses_set[filename]['read'], accesses_set[filename]['write']])
+        if(not ignore_files(filename)):
+            table.add_row([filename, sizes_set[filename], list(flags_set[filename]),\
+                accesses_set[filename]['read'], accesses_set[filename]['write']])
     htmlWriter.fileAccessModeTable = table.get_html_string()
 
 # 2.1
@@ -186,20 +194,46 @@ def overall_io_activities():
         p.line(x_write, y_write, line_color='red', line_width=20, alpha=1.0, legend_label="write")
         p.line(x_read, y_read, line_color='blue', line_width=20, alpha=1.0, legend_label="read")
 
-    p.yaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
+    #p.yaxis[0].ticker = FixedTicker(ticks=range(reader.globalMetadata.numRanks))
     p.legend.location = "top_left"
     script, div = components(p)
     htmlWriter.overallIOActivities = div + script
 
-# 3.3
-def offset_vs_time():
-
-    # interval = [tstart, tend, offset, count]
+#3.2
+def offset_vs_rank(intervals):
+    # interval = [rank, tstart, tend, offset, count]
     def plot_for_one_file(filename, intervals):
         intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
 
-        x, y = [], []
-        nan = float('nan')
+        x, y, nan = [], [], float('nan')
+        for interval in intervals:
+            rank, offset, count = interval[0], interval[3], interval[4]
+            x += [rank, rank, rank]
+            y += [offset, offset+count, nan]
+
+        if len(x) > 0 : x = x[0:len(x)-1]
+        if len(y) > 0 : y = y[0:len(y)-1]
+        p = figure(title=filename, x_axis_label="Rank", y_axis_label="Offset")
+        p.line(x, y, line_width=10, alpha=1.0)
+        return p
+
+    plots = []
+    for idx, filename in enumerate(intervals):
+        if (len(intervals[filename]) > 0):
+            p = plot_for_one_file(filename, intervals[filename])
+            plots.append(p)
+
+    from bokeh.layouts import gridplot
+    script, div = components(gridplot(plots, ncols=3, plot_width=400, plot_height=300))
+    htmlWriter.offsetVsRank = script+div
+
+# 3.3
+def offset_vs_time(intervals):
+    # interval = [rank, tstart, tend, offset, count]
+    def plot_for_one_file(filename, intervals):
+        intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
+
+        x, y, nan = [], [], float('nan')
         for interval in intervals:
             tstart, tend, offset, count = interval[1], interval[2], interval[3], interval[4]
             x += [tstart, tend, nan]
@@ -211,8 +245,6 @@ def offset_vs_time():
         p.line(x, y, line_width=10, alpha=1.0)
         return p
 
-    from build_offset_intervals import build_offset_intervals
-    intervals = build_offset_intervals(reader)
 
     plots = []
     for idx, filename in enumerate(intervals):
@@ -261,8 +293,10 @@ if __name__ == "__main__":
     function_layers()
     function_counts()
 
+    intervals = build_offset_intervals(reader)
     overall_io_activities()
-    offset_vs_time()
+    offset_vs_time(intervals)
+    offset_vs_rank(intervals)
 
     io_sizes()
 
