@@ -18,7 +18,8 @@ RECORDER_LOG_FORMAT = $(srcdir)/./recorder-log-format.h
 INCL_DEPS = include/recorder.h $(recorder_LOG_FORMAT) include/hashmap.h
 
 CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
-    -I${MPI_DIR}/include -I/usr/include/hdf5/mpich \
+    -I${MPI_DIR}/include -I/${HDF5_DIR}/include/ \
+	-I/usr/include/hdf5/mpich \
     -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD
 
 LIBS += -lz @LIBBZ2@
