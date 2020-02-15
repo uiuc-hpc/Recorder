@@ -150,6 +150,8 @@ def function_patterns(all_intervals):
     for filename in all_intervals.keys():
         if ignore_files(filename): continue
         intervals = sorted(all_intervals[filename], key=lambda x: x[1])   # sort by tstart
+        '''
+        This code consider each rank separately
         lastOffsets = [0] * reader.globalMetadata.numRanks
         for interval in intervals:
             rank, offset, count = interval[0], interval[3], interval[4]
@@ -162,6 +164,18 @@ def function_patterns(all_intervals):
                 #print filename, interval
                 x['random'] += 1
             lastOffsets[rank] = offset + count
+        '''
+        for i in range(len(intervals)-1):
+            i1, i2 = intervals[i], intervals[i+1]
+            offset1, count1 = i1[3], i1[4]
+            offset2, count2 = i2[3], i2[4]
+
+            if (offset1 + count1) == offset2:
+                x['consecutive'] += 1
+            elif (offset1 + count1) < offset2:
+                x['sequential'] += 1
+            else:
+                x['random'] += 1
 
     script, div = components(pie_chart(x))
     htmlWriter.functionPatterns = script+div
@@ -299,6 +313,7 @@ def file_access_patterns(intervals):
             if offset1+count1 <= offset2:
                 continue
 
+            print(filename, i1, i2)
             isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
             isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
