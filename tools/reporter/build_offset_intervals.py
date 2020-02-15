@@ -10,9 +10,11 @@ def handle_data_operations(record, fileMap, offsetBook):
 
     filename, offset, count = "", -1, -1
 
-    # TODO preadv, readv, etc
     if "writev" in func or "readv" in func:
-        pass
+        fileId, count = int(args[0]), int(args[1])
+        filename = fileMap[fileId][2]
+        offset = offsetBook[filename]
+        offsetBook[filename] += count
     elif "fwrite" in func or "fread" in func:
         fileId, size, count = int(args[3]), int(args[1]), int(args[2])
         filename = fileMap[fileId][2]

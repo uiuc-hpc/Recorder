@@ -229,8 +229,10 @@ ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t
     RECORDER_INTERCEPTOR(ssize_t, pwrite, (fd, buf, count, offset), 4, args)
 }
 
+
 ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) {
-    // TODO: IOV
+    // Return total bytes as the second argument
+    // So during post-processing we know both the offset and bytes count
     int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         total += iov[i].iov_len;
@@ -239,7 +241,8 @@ ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) 
 }
 
 ssize_t RECORDER_POSIX_DECL(writev)(int fd, const struct iovec *iov, int iovcnt) {
-    // TODO: IOV
+    // Return total bytes as the second argument
+    // So during post-processing we know both the offset and bytes count
     int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         total += iov[i].iov_len;
