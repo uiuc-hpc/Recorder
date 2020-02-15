@@ -53,7 +53,7 @@ class HTMLWriter:
         self.overallIOActivities = ""
         self.offsetVsRank = ""
         self.offsetVsTime = ""
-        self.accessPatternTable = ""
+        self.fileAccessPatterns = ""
 
         # 4.
         self.ioSizes = ""
@@ -112,7 +112,7 @@ class HTMLWriter:
         </html>
         """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
                 self.functionLayers, self.functionPatterns, self.functionCount, \
-                self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.accessPatternTable, \
+                self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.fileAccessPatterns, \
                 self.ioSizes)
 
         f = open("./test.html", "w")

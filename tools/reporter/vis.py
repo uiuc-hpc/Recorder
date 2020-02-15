@@ -203,8 +203,7 @@ def overall_io_activities():
 def offset_vs_rank(intervals):
     # interval = [rank, tstart, tend, offset, count]
     def plot_for_one_file(filename, intervals):
-        intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
-
+        intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
         x, y, nan = [], [], float('nan')
         for interval in intervals:
             rank, offset, count = interval[0], interval[3], interval[4]
@@ -232,7 +231,6 @@ def offset_vs_time(intervals):
     # interval = [rank, tstart, tend, offset, count]
     def plot_for_one_file(filename, intervals):
         intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
-
         x, y, nan = [], [], float('nan')
         for interval in intervals:
             tstart, tend, offset, count = interval[1], interval[2], interval[3], interval[4]
@@ -256,6 +254,52 @@ def offset_vs_time(intervals):
     script, div = components(gridplot(plots, ncols=3, plot_width=400, plot_height=300))
     htmlWriter.offsetVsTime = script+div
 
+# 3.4
+def file_access_patterns(intervals):
+
+    def pattern_for_one_file(filename, intervals):
+        pattern = {"RAR": {'S':False, 'D':False}, "RAW": {'S':False, 'D':False},
+                    "WAW": {'S':False, 'D':False}, "WAR": {'S':False, 'D':False}}
+        intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
+        for i in range(len(intervals)-1):
+            i1, i2 = intervals[i], intervals[i+1]
+            tstart1, offset1, count1 = i1[1], i1[3], i1[4]
+            tstart2, offset2, count2 = i2[1], i2[3], i2[4]
+
+            # no overlap
+            if offset1+count1 <= offset2:
+                continue
+
+            isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
+            isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
+            rank1 = i1[0] if tstart1 < tstart2 else i2[0]
+            rank2 = i2[0] if tstart2 > tstart1 else i1[0]
+
+            # overlap
+            if isRead1 and isRead2:             # RAR
+                if rank1 == rank2: pattern['RAR']['S'] = True
+                else: pattern['RAR']['D'] = True
+            if isRead1 and not isRead2:         # WAR
+                if rank1 == rank2: pattern['WAR']['S'] = True
+                else: pattern['WAR']['D'] = True
+            if not isRead1 and not isRead2:     # WAW
+                if rank1 == rank2: pattern['WAW']['S'] = True
+                else: pattern['WAW']['D'] = True
+            if not isRead1 and isRead2:         # RAW
+                if rank1 == rank2: pattern['RAW']['S'] = True
+                else: pattern['RAW']['D'] = True
+        return pattern
+
+    table = PrettyTable()
+    table.field_names = ['Filename', 'RAR(Same Rank)', 'RAW(Same Rank)', 'WAW(Same Rank)', 'WAR(Same Rank)', \
+            'RAR(Different Rank)', 'RAW(Different Rank)', 'WAW(Different Rank)', 'WAR(Different Rank)']
+    for filename in intervals.keys():
+        if not ignore_files(filename):
+            pattern = pattern_for_one_file(filename, intervals[filename])
+            table.add_row([filename,    \
+                pattern['RAR']['S'], pattern['RAW']['S'], pattern['WAW']['S'], pattern['WAR']['S'], \
+                pattern['RAR']['D'], pattern['RAW']['D'], pattern['WAW']['D'], pattern['WAR']['D']])
+    htmlWriter.fileAccessPatterns = table.get_html_string()
 
 # 4
 def io_sizes():
@@ -294,9 +338,11 @@ if __name__ == "__main__":
     function_counts()
 
     intervals = build_offset_intervals(reader)
+
     overall_io_activities()
     offset_vs_time(intervals)
     offset_vs_rank(intervals)
+    file_access_patterns(intervals)
 
     io_sizes()
 

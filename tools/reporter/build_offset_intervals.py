@@ -83,9 +83,10 @@ def build_offset_intervals(reader):
             if(filename != "" and not ignore_files(filename)):
                 tstart = timeRes * int(record[1])
                 tend = timeRes * int(record[2])
+                isRead = "read" in func
                 if filename not in intervals:
                     intervals[filename] = []
-                intervals[filename].append( [rank, tstart, tend, offset, count] )
+                intervals[filename].append( [rank, tstart, tend, offset, count, isRead] )
 
     return intervals
 
