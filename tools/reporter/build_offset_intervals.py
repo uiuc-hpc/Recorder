@@ -74,21 +74,31 @@ def build_offset_intervals(reader):
 
     timeRes = reader.globalMetadata.timeResolution
     ranks = reader.globalMetadata.numRanks
-    for rank in range(ranks):
-        fileMap = reader.localMetadata[rank].fileMap
-        for record in reader.records[rank]:
-            func = func_list[record[3]]
-            if "MPI" in func or "H5" in func: continue
 
-            handle_metadata_operations(record, fileMap, offsetBook)
-            filename, offset, count = handle_data_operations(record, fileMap, offsetBook)
-            if(filename != "" and not ignore_files(filename)):
-                tstart = timeRes * int(record[1])
-                tend = timeRes * int(record[2])
-                isRead = "read" in func
-                if filename not in intervals:
-                    intervals[filename] = []
-                intervals[filename].append( [rank, tstart, tend, offset, count, isRead] )
+    # merge the list(reader.records) of list(each rank's records) into one flat list
+    # then sort the whole list by tstart
+    records = []
+    for rank in range(ranks):
+        for record in reader.records[rank]:
+            records.append(record+[rank])             # insert rank at the end
+    records = sorted(records, key=lambda x: x[1])
+
+    for record in records:
+        rank = record[-1]
+        fileMap = reader.localMetadata[rank].fileMap
+
+        func = func_list[record[3]]
+        if "MPI" in func or "H5" in func: continue
+
+        handle_metadata_operations(record, fileMap, offsetBook)
+        filename, offset, count = handle_data_operations(record, fileMap, offsetBook)
+        if(filename != "" and not ignore_files(filename)):
+            tstart = timeRes * int(record[1])
+            tend = timeRes * int(record[2])
+            isRead = "read" in func
+            if filename not in intervals:
+                intervals[filename] = []
+            intervals[filename].append( [rank, tstart, tend, offset, count, isRead] )
 
     return intervals
 

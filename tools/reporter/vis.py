@@ -107,19 +107,9 @@ def file_access_mode():
                 accesses_set[filename]['read'], accesses_set[filename]['write']])
     htmlWriter.fileAccessModeTable = table.get_html_string()
 
-# 2.1
-def function_layers():
-    x = {'hdf5':0, 'mpi':0, 'posix':0 }
-    for localMetadata in reader.localMetadata:
-        for i, count in enumerate(localMetadata.functionCounter):
-            if count <= 0: continue
-            if "H5" in func_list[i]:
-                x['hdf5'] += count
-            elif "MPI" in func_list[i]:
-                x['mpi'] += count
-            else:
-                x['posix'] += count
-
+# Helper for pie charts in 2.
+# where x is a dict with keys as categories
+def pie_chart(x):
     import pandas as pd
     from bokeh.palettes import Category20c
     data = pd.Series(x).reset_index(name='value').rename(columns={'index':'layer'})
@@ -134,9 +124,47 @@ def function_layers():
     p.axis.axis_label=None
     p.axis.visible=False
     p.grid.grid_line_color = None
-    script, div = components(p)
+    return p
+
+# 2.1
+def function_layers():
+    x = {'hdf5':0, 'mpi':0, 'posix':0 }
+    for localMetadata in reader.localMetadata:
+        for i, count in enumerate(localMetadata.functionCounter):
+            if count <= 0: continue
+            if "H5" in func_list[i]:
+                x['hdf5'] += count
+            elif "MPI" in func_list[i]:
+                x['mpi'] += count
+            else:
+                x['posix'] += count
+    script, div = components(pie_chart(x))
     htmlWriter.functionLayers = script+div
 
+# 2.2
+def function_patterns(all_intervals):
+    # 1,2,3 - consecutive
+    # 1,3,9 - sequential
+    # 1,3,2 - random
+    x = {'consecutive':0, 'sequential':0, 'random':0}
+    for filename in all_intervals.keys():
+        if ignore_files(filename): continue
+        intervals = sorted(all_intervals[filename], key=lambda x: x[1])   # sort by tstart
+        lastOffsets = [0] * reader.globalMetadata.numRanks
+        for interval in intervals:
+            rank, offset, count = interval[0], interval[3], interval[4]
+            lastOffset = lastOffsets[rank]
+            if (offset + count) == lastOffset:
+                x['consecutive'] += 1
+            elif (offset + count) > lastOffset:
+                x['sequential'] += 1
+            else:
+                #print filename, interval
+                x['random'] += 1
+            lastOffsets[rank] = offset + count
+
+    script, div = components(pie_chart(x))
+    htmlWriter.functionPatterns = script+div
 
 # 2.3
 def function_counts():
@@ -158,6 +186,7 @@ def function_counts():
     p.hbar(y=funcnames, right=counts, height=0.8, left=1)
     script, div = components(p)
     htmlWriter.functionCount = div + script
+
 
 # 3.1
 def overall_io_activities():
@@ -329,15 +358,18 @@ def io_sizes():
 
 
 if __name__ == "__main__":
+
+    intervals = build_offset_intervals(reader)
+
     record_counts()
 
     file_counts()
     file_access_mode()
 
     function_layers()
+    function_patterns(intervals)
     function_counts()
 
-    intervals = build_offset_intervals(reader)
 
     overall_io_activities()
     offset_vs_time(intervals)
