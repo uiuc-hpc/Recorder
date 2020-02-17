@@ -75,15 +75,21 @@ static inline char* fd2name(int fd) {
     char *fdname = malloc(sizeof(char)*len);
     sprintf(fdname, "/proc/self/fd/%d", fd);
 
-    // when opena file that does not exist, fd will be -1
-    if(fd < 0) return fdname;
-
     MAP_OR_FAIL(readlink)
     char *realname = malloc(sizeof(char)*len);
     int ret = RECORDER_REAL_CALL(readlink(fdname, realname, len));
-    if(ret <  0) return fdname;
-    realname[ret] = 0; // readlink does not append a null byte
 
+    // when open a file that does not exist, fd will be -1
+    if(fd < 0 || ret <  0) {
+        char *id_str = realrealpath(fdname);    // still need to return a integer string
+        free(fdname);
+        free(realname);
+        return id_str;
+    }
+
+    // File exists, readlink succeed
+    // readlink does not append a null byte
+    realname[ret] = 0;
     char *id_str = realrealpath(realname);
     free(fdname);
     free(realname);
