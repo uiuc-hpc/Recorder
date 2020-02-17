@@ -89,9 +89,11 @@ def file_access_mode():
                 flags_set[filename].add(flagStr)
 
             if "read" in funcname or "write" in funcname :
-                fileId = int(record[4][0])
                 if "fread" in funcname or "fwrite" in funcname:
                     fileId = int(record[4][3])
+                else:
+                    fileId = int(record[4][0])
+
                 filename = fileMap[fileId][2]
                 if "read" in funcname:
                     accesses_set[filename]["read"] = True
@@ -255,8 +257,8 @@ def offset_vs_rank(intervals):
 
         if len(x) > 0 : x = x[0:len(x)-1]
         if len(y) > 0 : y = y[0:len(y)-1]
-        p = figure(title=filename, x_axis_label="Rank", y_axis_label="Offset")
-        p.line(x, y, line_width=10, alpha=1.0)
+        p = figure(title=filename.split("/")[-1], x_axis_label="Rank", y_axis_label="Offset")
+        p.line(x, y, line_width=5, alpha=1.0)
         return p
 
     plots = []
@@ -282,8 +284,8 @@ def offset_vs_time(intervals):
 
         if len(x) > 0 : x = x[0:len(x)-1]
         if len(y) > 0 : y = y[0:len(y)-1]
-        p = figure(title=filename, x_axis_label="Time", y_axis_label="Offset")
-        p.line(x, y, line_width=10, alpha=1.0)
+        p = figure(title=filename.split("/")[-1], x_axis_label="Time", y_axis_label="Offset")
+        p.line(x, y, line_width=2, alpha=1.0)
         return p
 
 
