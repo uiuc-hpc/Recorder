@@ -263,7 +263,7 @@ def offset_vs_rank(intervals):
 
     plots = []
     for idx, filename in enumerate(intervals):
-        if (len(intervals[filename]) > 0):
+        if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
 
@@ -291,7 +291,7 @@ def offset_vs_time(intervals):
 
     plots = []
     for idx, filename in enumerate(intervals):
-        if (len(intervals[filename]) > 0):
+        if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
 
