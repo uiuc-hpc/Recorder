@@ -175,6 +175,8 @@ class RecorderReader:
             lines = self.read( path+"/"+str(rank)+".itf" )
             records = self.decode(lines)
             records = self.decompress(records)
+            # sort records by tstart
+            records = sorted(records, key=lambda x: x[1])  # sort by tstart
             self.records.append( records )
 
     def decompress(self, records):
