@@ -334,6 +334,7 @@ RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datat
 RECORDER_FORWARD_DECL(H5Fcreate, hid_t, (const char *filename, unsigned flags, hid_t create_plist, hid_t access_plist));
 RECORDER_FORWARD_DECL(H5Fopen, hid_t, (const char *filename, unsigned flags, hid_t access_plist));
 RECORDER_FORWARD_DECL(H5Fclose, herr_t, (hid_t file_id));
+RECORDER_FORWARD_DECL(H5Fflush, herr_t, (hid_t object_id, H5F_scope_t scope));
 /* Group Interface */
 RECORDER_FORWARD_DECL(H5Gclose, herr_t, (hid_t group_id));
 RECORDER_FORWARD_DECL(H5Gcreate1, hid_t, (hid_t loc_id, const char *name, size_t size_hint));

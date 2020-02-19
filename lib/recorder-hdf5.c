@@ -271,6 +271,13 @@ herr_t RECORDER_HDF5_DECL(H5Fclose)(hid_t file_id) {
     RECORDER_INTERCEPTOR(herr_t, H5Fclose, (file_id), 1, args)
 }
 
+herr_t RECORDER_HDF5_DECL(H5Fflush)(hid_t object_id, H5F_scope_t scope) {
+    char **args = assemble_args_list(2, itoa(object_id), itoa(scope));
+    RECORDER_INTERCEPTOR(herr_t, H5Fflush, (object_id, scope), 2, args)
+}
+
+
+
 // Group Interface
 herr_t RECORDER_HDF5_DECL(H5Gclose)(hid_t group_id) {
     char **args = assemble_args_list(1, itoa(group_id));

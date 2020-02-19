@@ -53,7 +53,7 @@ func_list = [
     "PMPI_Irecv",
 
     # HDF5 I/O - 68 functions
-    "H5Fcreate",            "H5Fopen",              "H5Fclose",     # File interface
+    "H5Fcreate",            "H5Fopen",              "H5Fclose",    "H5Fflush",   # File interface
     "H5Gclose",             "H5Gcreate1",           "H5Gcreate2",   # Group interface
     "H5Gget_objinfo",       "H5Giterate",           "H5Gopen1",
     "H5Gopen2",             "H5Dclose",             "H5Dcreate1",
