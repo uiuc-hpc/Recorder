@@ -16,7 +16,8 @@ def fill_in_filename(record, fileMap):
         fileId = int(args[3])
         filename = fileMap[fileId][2]
         record[4][3] = filename
-    elif "seek" in func or "open" in func or "write" in func or "read" in func:
+    elif "seek" in func or "open" in func or "close" in func \
+         or "write" in func or "read" in func:
         fileId = int(args[0])
         filename = fileMap[fileId][2]
         record[4][0] = filename
