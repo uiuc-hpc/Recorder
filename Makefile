@@ -1,15 +1,18 @@
 ifneq ("$(wildcard config.inc)","")
-include config.inc
-#$(info )
+	include config.inc
 else
-$(error Please run config.sh)
+	$(error Please run config.sh)
 endif
 
 srcdir = .
 prefix = .
 libdir = ${HOME}/librecorder/lib
 
-CC = mpicc
+CC = ${MPI_DIR}/bin/mpicc
+ifeq ("$(wildcard $(CC))","")
+	CC = mpicc
+endif
+
 LD = @LD@
 
 
