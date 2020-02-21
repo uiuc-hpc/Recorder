@@ -154,15 +154,16 @@ static const char* func_list[] = {
     "PMPI_Recv",                    "PMPI_Sendrecv",            "PMPI_Isend",
     "PMPI_Irecv",
 
-    // HDF5 I/O - 69 functions
+    // HDF5 I/O - 70 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     "H5Fflush", // File interface
     "H5Gclose",             "H5Gcreate1",           "H5Gcreate2",   // Group interface
     "H5Gget_objinfo",       "H5Giterate",           "H5Gopen1",
     "H5Gopen2",             "H5Dclose",             "H5Dcreate1",
     "H5Dcreate2",           "H5Dget_create_plist",  "H5Dget_space", // Dataset interface
     "H5Dget_type",          "H5Dopen1",             "H5Dopen2",
-    "H5Dread",              "H5Dwrite",             "H5Sclose",
-    "H5Screate",            "H5Screate_simple",     "H5Sget_select_npoints",    // Dataspace interface
+    "H5Dread",              "H5Dwrite",             "H5Dset_extent",
+    "H5Sclose",                                                     // Dataspace interface
+    "H5Screate",            "H5Screate_simple",     "H5Sget_select_npoints",
     "H5Sget_simple_extent_dims", "H5Sget_simple_extent_npoints", "H5Sselect_elements",
     "H5Sselect_hyperslab",  "H5Sselect_none",       "H5Tclose",     // Datatype interface
     "H5Tcopy",              "H5Tget_class",         "H5Tget_size",
@@ -236,7 +237,7 @@ static char filename_arg_pos[] = {
     0b00000000,
 
 
-    // HDF5 I/O - 69 functions
+    // HDF5 I/O - 70 functions
     // Only H5Fcreate and H5Fopen have filename arguments
     0b00000001,  0b00000001,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
@@ -244,7 +245,7 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
-    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000, 0b00000000,
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,

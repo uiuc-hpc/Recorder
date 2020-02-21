@@ -59,7 +59,8 @@ func_list = [
     "H5Gopen2",             "H5Dclose",             "H5Dcreate1",
     "H5Dcreate2",           "H5Dget_create_plist",  "H5Dget_space", # Dataset interface
     "H5Dget_type",          "H5Dopen1",             "H5Dopen2",
-    "H5Dread",              "H5Dwrite",             "H5Sclose",
+    "H5Dread",              "H5Dwrite",             "H5Dset_extent",
+    "H5Sclose",
     "H5Screate",            "H5Screate_simple",     "H5Sget_select_npoints",    # Dataspace interface
     "H5Sget_simple_extent_dims", "H5Sget_simple_extent_npoints", "H5Sselect_elements",
     "H5Sselect_hyperslab",  "H5Sselect_none",       "H5Tclose",     # Datatype interface

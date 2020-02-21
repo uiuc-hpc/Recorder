@@ -354,6 +354,7 @@ RECORDER_FORWARD_DECL(H5Dopen1, hid_t, (hid_t loc_id, const char *name));
 RECORDER_FORWARD_DECL(H5Dopen2, hid_t, (hid_t loc_id, const char *name, hid_t dapl_id));
 RECORDER_FORWARD_DECL(H5Dread, herr_t, (hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf));
 RECORDER_FORWARD_DECL(H5Dwrite, herr_t, (hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf));
+RECORDER_FORWARD_DECL(H5Dset_extent, herr_t, (hid_t dataset_id, const hsize_t size[]));
 /* Dataspace Interface */
 RECORDER_FORWARD_DECL(H5Sclose, herr_t, (hid_t space_id));
 RECORDER_FORWARD_DECL(H5Screate, hid_t, (H5S_class_t type));
