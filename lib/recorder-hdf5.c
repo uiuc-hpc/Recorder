@@ -366,6 +366,12 @@ herr_t RECORDER_HDF5_DECL(H5Dwrite)(hid_t dataset_id, hid_t mem_type_id, hid_t m
     RECORDER_INTERCEPTOR(hid_t, H5Dwrite, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf), 6, args)
 }
 
+herr_t RECORDER_HDF5_DECL(H5Dset_extent)(hid_t dset_id, const hsize_t size[]) {
+    char **args = assemble_args_list(2, itoa(dset_id), ptoa(size));
+    RECORDER_INTERCEPTOR(herr_t, H5Dset_extent, (dset_id, size), 2, args)
+}
+
+
 herr_t RECORDER_HDF5_DECL(H5Sclose)(hid_t space_id) {
     char **args = assemble_args_list(1, itoa(space_id));
     RECORDER_INTERCEPTOR(herr_t, H5Sclose, (space_id), 1, args)
