@@ -13,17 +13,15 @@ CC = mpicc
 LD = @LD@
 
 
-
 RECORDER_LOG_FORMAT = $(srcdir)/./recorder-log-format.h
 INCL_DEPS = include/recorder.h $(recorder_LOG_FORMAT) include/hashmap.h
 
 CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
     -I${MPI_DIR}/include -I/${HDF5_DIR}/include/ \
-	-I/usr/include/hdf5/mpich \
     -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD
 
 LIBS += -lz @LIBBZ2@
-LDFLAGS += -L/usr/lib/x86_64-linux-gnu/hdf5/mpich -lhdf5 -ldl
+LDFLAGS += -L${MPI_DIR}/lib -L${HDF5_DIR}/lib -L${LD_LIBRARY_PATH} -lhdf5 -ldl
 
 CFLAGS += $(CFLAGS_SHARED) ${DISABLED_LAYERS}
 
