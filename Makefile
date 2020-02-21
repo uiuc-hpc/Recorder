@@ -21,7 +21,7 @@ CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
     -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD
 
 LIBS += -lz @LIBBZ2@
-LDFLAGS += -L${MPI_DIR}/lib -L${HDF5_DIR}/lib -L${LD_LIBRARY_PATH} -lhdf5 -ldl
+LDFLAGS += -L${MPI_DIR}/lib -L${HDF5_DIR}/lib -lhdf5 -ldl
 
 CFLAGS += $(CFLAGS_SHARED) ${DISABLED_LAYERS}
 
