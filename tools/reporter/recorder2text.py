@@ -2,10 +2,9 @@
 # encoding: utf-8
 
 from reader import RecorderReader
-from reader import func_list
 import sys, os
 
-def fill_in_filename(record, fileMap):
+def fill_in_filename(record, fileMap, func_list):
     func = func_list[record[3]]
     args = record[4]
 
@@ -33,12 +32,13 @@ if __name__ == "__main__":
         pass
 
     reader = RecorderReader(sys.argv[1])
+    func_list = reader.globalMetadata.funcs
     for rank in range(reader.globalMetadata.numRanks):
         fileMap = reader.localMetadata[rank].fileMap
 
         print(rank, len(reader.records[rank]))
         with open(logs_dir+"/"+str(rank)+".txt", 'w') as f:
             for record in reader.records[rank]:
-                record = fill_in_filename(record, fileMap)
+                record = fill_in_filename(record, fileMap, func_list)
                 recordText = "%s %s %s %s\n" %(record[1], record[2], func_list[record[3]], record[4])
                 f.write(recordText)

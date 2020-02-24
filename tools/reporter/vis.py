@@ -8,7 +8,7 @@ from bokeh.embed import components
 from bokeh.models import FixedTicker
 from prettytable import PrettyTable
 
-from reader import RecorderReader, func_list
+from reader import RecorderReader
 from html_writer import HTMLWriter
 from build_offset_intervals import ignore_files
 from build_offset_intervals import build_offset_intervals
@@ -73,7 +73,7 @@ def file_access_mode():
     for rank in range(reader.globalMetadata.numRanks):
         fileMap = reader.localMetadata[rank].fileMap
         for record in reader.records[rank]:
-            funcname = func_list[record[3]]
+            funcname = reader.globalMetadata.funcs[record[3]]
             if "MPI" in funcname or "H5" in funcname: continue
 
             if "open" in funcname:
@@ -130,6 +130,7 @@ def pie_chart(x):
 
 # 2.1
 def function_layers():
+    func_list = reader.globalMetadata.funcs
     x = {'hdf5':0, 'mpi':0, 'posix':0 }
     for localMetadata in reader.localMetadata:
         for i, count in enumerate(localMetadata.functionCounter):
@@ -184,6 +185,7 @@ def function_patterns(all_intervals):
 
 # 2.3
 def function_counts():
+    func_list = reader.globalMetadata.funcs
     aggregate = np.zeros(256)
     for localMetadata in reader.localMetadata:
         aggregate += np.array(localMetadata.functionCounter)
@@ -207,6 +209,7 @@ def function_counts():
 # 3.1
 def overall_io_activities():
 
+    func_list = reader.globalMetadata.funcs
     timeRes = float(reader.globalMetadata.timeResolution)
     nan = float('nan')
 
@@ -349,6 +352,7 @@ def file_access_patterns(intervals):
 
 # 4
 def io_sizes():
+    func_list = reader.globalMetadata.funcs
     def get_io_size(record):
         funcname = func_list[record[3]]
         if "MPI" in funcname or "H5" in funcname: return -1
