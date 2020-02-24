@@ -85,6 +85,9 @@ Global Metadata Structure - same as in include/recorder-log-format.h
     Number of MPI Ranks:    Int, 4 bytes
     Compression Mode:       Int, 4 bytes
     Recorder Window Size:   Int ,4 bytes
+
+    Then followed by one function name per line
+    They are the one intercepted by the current version of Recorder
 '''
 class GlobalMetadata:
     def __init__(self, path):
@@ -92,6 +95,7 @@ class GlobalMetadata:
         self.numRanks = 0
         self.compMode = 0
         self.windowSize = 0
+        self.funcs = []
 
         self.read(path)
         self.output()
@@ -101,6 +105,11 @@ class GlobalMetadata:
             buf = f.read(8+4+4+4)
             self.timeResolution, self.numRanks, \
             self.compMode, self.windowSize = struct.unpack("diii", buf)
+
+            f.seek(24, 0)
+            self.funcs = f.read().splitlines()
+            self.funcs = [func.replace("PMPI", "MPI") for func in self.funcs]
+
 
     def output(self):
         print("Time Resolution:", self.timeResolution)

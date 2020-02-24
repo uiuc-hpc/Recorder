@@ -328,6 +328,16 @@ void logger_init(int rank, int nprocs) {
             .peephole_window_size = RECORD_WINDOW_SIZE
         };
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
+
+        for(unsigned int i = 0; i < 256; i++) {
+            const char *funcname = get_function_name_by_id(i);
+            if(funcname) {
+                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
+                RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
+            } else {
+                break;
+            }
+        }
         RECORDER_REAL_CALL(fclose)(global_metafh);
     }
 
