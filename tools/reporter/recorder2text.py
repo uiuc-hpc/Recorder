@@ -16,7 +16,7 @@ def fill_in_filename(record, fileMap):
         fileId = int(args[3])
         filename = fileMap[fileId][2]
         record[4][3] = filename
-    if "dir" in func:       # ignore opendir, closedir, etc.
+    elif "dir" in func:       # ignore opendir, closedir, etc.
         pass
     elif "seek" in func or "open" in func or "close" in func \
          or "write" in func or "read" in func:
