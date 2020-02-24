@@ -325,6 +325,10 @@ RECORDER_FORWARD_DECL(PMPI_Recv, int, (void *buf, int count, MPI_Datatype dataty
 RECORDER_FORWARD_DECL(PMPI_Sendrecv, int, (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status));
 RECORDER_FORWARD_DECL(PMPI_Isend, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request));
 RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request));
+// Add 3 MPI_Info related functions on 2020/02/24
+RECORDER_FORWARD_DECL(PMPI_Info_create, int, (MPI_Info *info));
+RECORDER_FORWARD_DECL(PMPI_Info_set, int, (MPI_Info info, CONST char *key, CONST char *value));
+RECORDER_FORWARD_DECL(PMPI_Info_get, int, (MPI_Info info, CONST char *key, int valuelen, char *value, int *flag));
 
 
 

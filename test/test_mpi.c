@@ -44,15 +44,21 @@ int main(int argc, char *argv[]) {
     char rbuf[MPI_MAX_PROCESSOR_NAME];
     TEST_MPI_CALL(MPI_Alltoall, (sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD));
 
+    // MPI Info related
+    MPI_Info info;
+    TEST_MPI_CALL(MPI_Info_create, (&info));
+    TEST_MPI_CALL(MPI_Info_set, (info, "cb_nodes", "2"));
+
+
     /* IO-Realted MPI Calls */
     MPI_File fh;
     MPI_Status status;
     int i, a[10];
     for ( i=0;i<10;i++) a[i] = 5;
 
-    TEST_MPI_CALL(MPI_File_open, (MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, MPI_INFO_NULL, &fh))
+    TEST_MPI_CALL(MPI_File_open, (MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, info, &fh))
 
-    TEST_MPI_CALL(MPI_File_set_view, (fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL))
+    TEST_MPI_CALL(MPI_File_set_view, (fh, 0, MPI_INT, MPI_INT, "native", info))
 
     //MPI_File_set_atomicity(fh0, 1);
     TEST_MPI_CALL(MPI_File_write_at, (fh, 0, a, 10, MPI_INT, &status))
