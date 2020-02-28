@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import sys
-from reader import RecorderReader, func_list
+from reader import RecorderReader
 
 
-def handle_data_operations(record, fileMap, offsetBook):
+def handle_data_operations(record, fileMap, offsetBook, func_list):
     func = func_list[record[3]]
     rank, args = record[-1], record[4]
 
@@ -32,7 +32,7 @@ def handle_data_operations(record, fileMap, offsetBook):
     return filename, offset, count
 
 
-def handle_metadata_operations(record, fileMap, offsetBook):
+def handle_metadata_operations(record, fileMap, offsetBook, func_list):
     rank, func = record[-1], func_list[record[3]]
     # TODO consider append flags
     if "fopen" in func or "fdopen" in func:
@@ -63,6 +63,7 @@ def ignore_files(filename):
 
 
 def build_offset_intervals(reader):
+    func_list = reader.globalMetadata.funcs
     timeRes = reader.globalMetadata.timeResolution
     ranks = reader.globalMetadata.numRanks
 
@@ -91,8 +92,8 @@ def build_offset_intervals(reader):
         func = func_list[record[3]]
         if "MPI" in func or "H5" in func: continue
 
-        handle_metadata_operations(record, fileMap, offsetBook)
-        filename, offset, count = handle_data_operations(record, fileMap, offsetBook)
+        handle_metadata_operations(record, fileMap, offsetBook, func_list)
+        filename, offset, count = handle_data_operations(record, fileMap, offsetBook, func_list)
         if(filename != "" and not ignore_files(filename)):
             tstart = timeRes * int(record[1])
             tend = timeRes * int(record[2])
