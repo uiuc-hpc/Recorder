@@ -315,8 +315,10 @@ void logger_init(int rank, int nprocs) {
     __logger.metaFile = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
 
     // Global metadata, include compression mode, time resolution
+    __logger.compMode = COMP_RECORDER;
     const char* comp_mode = getenv("RECORDER_COMPRESSION_MODE");
     if (comp_mode) __logger.compMode = atoi(comp_mode);
+
     if (__logger.compMode == COMP_ZLIB)        // Initialize zlib if compression mode is COMP_ZLIB
         zlib_init();
     if (rank == 0) {

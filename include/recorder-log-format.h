@@ -85,7 +85,7 @@ typedef struct Record_t {
 
 
 // Compression method, use peephole compression by default
-enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_PEEPHOLE=2, COMP_ZLIB=3 };
+enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_RECORDER=2, COMP_ZLIB=3 };
 typedef enum CompressionMode_t CompressionMode;
 
 
