@@ -245,6 +245,9 @@ RECORDER_FORWARD_DECL(access, int, (const char *path, int amode));
 RECORDER_FORWARD_DECL(faccessat, int, (int fd, const char *path, int amode, int flag));
 RECORDER_FORWARD_DECL(tmpfile, FILE*, (void));
 RECORDER_FORWARD_DECL(remove, int, (const char *pathname));
+RECORDER_FORWARD_DECL(truncate, int, (const char *pathname, off_t length));
+RECORDER_FORWARD_DECL(ftruncate, int, (int fd, off_t length));
+
 // Others
 //int statfs(const char *path, struct statfs *buf);
 //int fstatfs(int fd, struct statfs *buf);

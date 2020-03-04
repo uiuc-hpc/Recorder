@@ -453,6 +453,12 @@ int RECORDER_POSIX_DECL(remove)(const char *path) {
     char** args = assemble_args_list(1, realrealpath(path));
     RECORDER_INTERCEPTOR(int, remove, (path), 1, args)
 }
-
-
+int RECORDER_POSIX_DECL(truncate)(const char *path, off_t length) {
+    char** args = assemble_args_list(2, realrealpath(path), itoa(length));
+    RECORDER_INTERCEPTOR(int, truncate, (path, length), 2, args)
+}
+int RECORDER_POSIX_DECL(ftruncate)(int fd, off_t length) {
+    char** args = assemble_args_list(2, fd2name(fd), itoa(length));
+    RECORDER_INTERCEPTOR(int, ftruncate, (fd, length), 2, args)
+}
 
