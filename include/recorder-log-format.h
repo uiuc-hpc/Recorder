@@ -194,7 +194,7 @@ static const char* func_list[] = {
  *
  */
 static char filename_arg_pos[] = {
-    // POSIX - 66 functions
+    // POSIX - 68 functions
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
