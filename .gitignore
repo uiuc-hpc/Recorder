@@ -47,3 +47,4 @@ __pycache__/
 logs/
 tools/otf2-converter
 tools/figures/
+*.html
