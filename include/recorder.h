@@ -411,6 +411,8 @@ RECORDER_FORWARD_DECL(H5Pset_meta_block_size, herr_t, (hid_t fapl_id, hsize_t si
 RECORDER_FORWARD_DECL(H5Lexists, htri_t, (hid_t loc_id, const char *name, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Lget_val, herr_t, (hid_t link_loc_id, const char *link_name, void *linkval_buff, size_t size, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Literate, herr_t, (hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t * idx, H5L_iterate_t op, void *op_data));
+RECORDER_FORWARD_DECL(H5Literate1, herr_t, (hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t * idx, H5L_iterate_t op, void *op_data));
+RECORDER_FORWARD_DECL(H5Literate2, herr_t, (hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t * idx, H5L_iterate_t op, void *op_data));
 /* Object Interface */
 RECORDER_FORWARD_DECL(H5Oclose, herr_t, (hid_t object_id));
 RECORDER_FORWARD_DECL(H5Oget_info, herr_t, (hid_t object_id, H5O_info_t * object_info));
