@@ -78,7 +78,7 @@ Change Log
 **Recorder 2.0.1** Nov 7, 2019
 1. Implement compressed peephole encoding schema.
 2. Intergrat zlib as another compression choice.
-3. Users can choose compression modes by setting a environment variable.
+3. Users can choose compression modes by setting environment variables.
 
 **Recorder 2.0** Jul 19, 2019
 1. Add the binary format output.
