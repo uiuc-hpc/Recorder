@@ -57,12 +57,10 @@ Visualization
 ------------
 
 ```console
-cd /path/to/Recorder/tools
-pip install -r requirements.txt
-mkdir -p reports.out/figures
-python report.py /path/to/your_trace_folder/
+cd /path/to/Recorder/tools/reporter
+python reporter.py /path/to/your_trace_folder/
 ```
-The visualization report (simple_report.html) will be written into ./reports.out directory
+The visualization report (recorder-report.html) will be written into the current directory
 
 
 Publication
