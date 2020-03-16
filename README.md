@@ -59,7 +59,7 @@ LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 Visualization
 ------------
 
-We use Python [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
+We use Python libraries [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
 Please install those dependencies first.
 
 ```console
