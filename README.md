@@ -1,4 +1,4 @@
-Recorder v2.1
+Recorder 2.0
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
@@ -71,12 +71,12 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
-**Recorder v2.1** Nov 7, 2019
+**Recorder 2.0.1** Nov 7, 2019
 1. Implement compressed peephole encoding schema.
 2. Intergrat zlib as another compression choice.
 3. Users can choose compression modes by setting a environment variable.
 
-**Recorder v2.0** Jul 19, 2019
+**Recorder 2.0** Jul 19, 2019
 1. Add the binary format output.
 2. Implement a converter that can output OTF2 trace format.
 3. Write a separate  log unit to provide an uniform logging interface. Re-write most of the code to use this new log unit.
