@@ -59,6 +59,9 @@ LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 Visualization
 ------------
 
+We use Python [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
+Please install those dependencies first.
+
 ```console
 cd /path/to/Recorder/tools/reporter
 python reporter.py /path/to/your_trace_folder/
