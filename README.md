@@ -37,7 +37,10 @@ git clone https://github.com/uiuc-hpc/Recorder.git
 
 **Note that your application and Recorder must use the same version of HDF5 and MPI.**<br>
 Options can be used to disable one ore more level of traces.<br>
-Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
+Valid options:
+ * -DDISABLE_HDF5_TRACE
+ * -DDISABLE_MPIO_TRACE
+ * -DDISABLE_POSIX_TRACE
 ```console
 ./config.sh PATH_TO_HDF5 PATH_TO_MPI [options]
 ```
