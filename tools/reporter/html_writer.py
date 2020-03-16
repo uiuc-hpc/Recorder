@@ -119,7 +119,7 @@ class HTMLWriter:
                 self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.fileAccessPatterns, \
                 self.ioSizes)
 
-        f = open("./test.html", "w")
+        f = open("./recorder-report.html", "w")
         f.write(html_content)
         f.close()
 
