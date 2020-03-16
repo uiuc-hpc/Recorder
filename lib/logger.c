@@ -108,7 +108,8 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 
     // Get the number of different arguments
     int count = 0;
-    for(int i = 0; i < old_record.arg_count; i++)
+    int i;
+    for(i = 0; i < old_record.arg_count; i++)
         if(strcmp(old_record.args[i], new_record.args[i]) !=0)
             count++;
 
@@ -119,7 +120,7 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
     diff_record.args = malloc(sizeof(char *) * count);
     static char diff_bits[] = {0b10000001, 0b10000010, 0b10000100, 0b10001000,
                                 0b10010000, 0b10100000, 0b11000000};
-    for(int i = 0; i < old_record.arg_count; i++) {
+    for(i = 0; i < old_record.arg_count; i++) {
         if(strcmp(old_record.args[i], new_record.args[i]) !=0) {
             diff_record.args[idx++] = new_record.args[i];
             if(i < 7) {
@@ -133,10 +134,11 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 // 0. Helper function, write all function arguments
 static inline void writeArguments(FILE* f, int arg_count, char** args) {
     char invalid_str[] = "???";
-    for(int i = 0; i < arg_count; i++) {
+    int i, j;
+    for(i = 0; i < arg_count; i++) {
         __membuf.append(&__membuf, " ", 1);
         if(args[i]) {
-            for(int j = 0; j < strlen(args[i]); j++)
+            for(j = 0; j < strlen(args[i]); j++)
                 if(args[i][j] == ' ') args[i][j] = '_';
             __membuf.append(&__membuf, args[i], strlen(args[i]));
         } else
@@ -178,7 +180,8 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
     Record diff_record;
     int min_diff_count = 999;
     char ref_window_id;
-    for(int i = 0; i < RECORD_WINDOW_SIZE; i++) {
+    int i;
+    for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
         Record record = __logger.recordWindow[i];
         // Only meets the following conditions that we consider to compress it:
         // 1. same function as the one in sliding window
@@ -224,7 +227,8 @@ static inline void writeInZlib(FILE *f, Record record) {
     static char in_buf[ZLIB_BUF_SIZE];
     static char out_buf[ZLIB_BUF_SIZE];
     sprintf(in_buf, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
-    for(int i = 0; i < record.arg_count; i++) {
+    int i;
+    for(i = 0; i < record.arg_count; i++) {
         strcat(in_buf, " ");
         if(record.args[i])
             strcat(in_buf, record.args[i]);
@@ -331,7 +335,8 @@ void logger_init(int rank, int nprocs) {
         };
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
 
-        for(unsigned int i = 0; i < 256; i++) {
+        unsigned int i;
+        for(i = 0; i < 256; i++) {
             const char *funcname = get_function_name_by_id(i);
             if(funcname) {
                 RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
@@ -368,7 +373,8 @@ void logger_exit() {
      * since is already closed (null), the stat() function
      * won't be intercepted. */
     if (hashmap_length(__logger.fileMap) > 0 ) {
-        for(int i = 0; i< __logger.fileMap->table_size; i++) {
+        int i;
+        for(i = 0; i< __logger.fileMap->table_size; i++) {
             if(__logger.fileMap->data[i].in_use != 0) {
                 char *filename = __logger.fileMap->data[i].key;
                 int id = __logger.fileMap->data[i].data;
