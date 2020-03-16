@@ -34,7 +34,8 @@ git clone https://github.com/uiuc-hpc/Recorder.git
 ```
 
 2. Tell Recorder where to find HDF5 and MPI.
-Note that your application and Recorder need to use the same version of HDF5 and MPI.<br>
+
+**Note that your application and Recorder must use the same version of HDF5 and MPI.**<br>
 Options can be used to disable one ore more level of traces.<br>
 Valid options: -DDISABLE_HDF5_TRACE -DDISABLE_MPIO_TRACE -DDISABLE_POSIX_TRACE
 ```console
