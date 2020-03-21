@@ -418,5 +418,11 @@ RECORDER_FORWARD_DECL(H5Oclose, herr_t, (hid_t object_id));
 RECORDER_FORWARD_DECL(H5Oget_info, herr_t, (hid_t object_id, H5O_info_t * object_info));
 RECORDER_FORWARD_DECL(H5Oget_info_by_name, herr_t, (hid_t loc_id, const char *object_name, H5O_info_t *object_info, hid_t lapl_id));
 RECORDER_FORWARD_DECL(H5Oopen, hid_t, (hid_t loc_id, const char *name, hid_t lapl_id));
+/* Collective Metadata */
+RECORDER_FORWARD_DECL(H5Pset_coll_metadata_write, herr_t, (hid_t fapl_id, hbool_t is_collective));
+RECORDER_FORWARD_DECL(H5Pget_coll_metadata_write, herr_t, (hid_t fapl_id, hbool_t* is_collective));
+RECORDER_FORWARD_DECL(H5Pset_all_coll_metadata_ops, herr_t, (hid_t accpl_id, hbool_t is_collective));
+RECORDER_FORWARD_DECL(H5Pget_all_coll_metadata_ops, herr_t, (hid_t accpl_id, hbool_t* is_collective));
+
 
 #endif /* __RECORDER_H */

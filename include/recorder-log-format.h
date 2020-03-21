@@ -157,7 +157,7 @@ static const char* func_list[] = {
     "PMPI_Info_create",             "PMPI_Info_set",            "PMPI_Info_get",
 
 
-    // HDF5 I/O - 70 functions
+    // HDF5 I/O - 74 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     "H5Fflush", // File interface
     "H5Gclose",             "H5Gcreate1",           "H5Gcreate2",   // Group interface
     "H5Gget_objinfo",       "H5Giterate",           "H5Gopen1",
@@ -181,7 +181,9 @@ static const char* func_list[] = {
     "H5Pset_fapl_mpiposix", "H5Pset_istore_k",      "H5Pset_mdc_config",
     "H5Pset_meta_block_size","H5Lexists",           "H5Lget_val",   // Link interface
     "H5Literate",           "H5Oclose",             "H5Oget_info",  // Object interface
-    "H5Oget_info_by_name",  "H5Oopen"
+    "H5Oget_info_by_name",  "H5Oopen",
+    "H5Pset_coll_metadata_write",                   "H5Pget_coll_metadata_write"    // collective metadata
+    "H5Pset_all_coll_metadata_ops",                 " H5Pget_all_coll_metadata_ops"
 };
 
 
@@ -242,7 +244,7 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,  0b00000000,
 
 
-    // HDF5 I/O - 70 functions
+    // HDF5 I/O - 74 functions
     // Only H5Fcreate and H5Fopen have filename arguments
     0b00000001,  0b00000001,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
@@ -266,7 +268,8 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
-    0b00000000,  0b00000000
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
 };
 
 #endif /* __RECORDER_LOG_FORMAT_H */

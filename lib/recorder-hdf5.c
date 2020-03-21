@@ -652,3 +652,25 @@ hid_t RECORDER_HDF5_DECL(H5Oopen)(hid_t loc_id, const char *name, hid_t lapl_id)
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(lapl_id));
     RECORDER_INTERCEPTOR(hid_t, H5Oopen, (loc_id, name, lapl_id), 3, args)
 }
+
+
+herr_t RECORDER_HDF5_DECL(H5Pset_coll_metadata_write)(hid_t fapl_id, hbool_t is_collective) {
+    char **args = assemble_args_list(2, itoa(fapl_id), itoa(is_collective));
+    RECORDER_INTERCEPTOR(herr_t, H5Pset_coll_metadata_write, (fapl_id, is_collective), 2, args)
+}
+
+herr_t RECORDER_HDF5_DECL(H5Pget_coll_metadata_write)(hid_t fapl_id, hbool_t* is_collective) {
+    char **args = assemble_args_list(2, itoa(fapl_id), ptoa(is_collective));
+    RECORDER_INTERCEPTOR(herr_t, H5Pget_coll_metadata_write, (fapl_id, is_collective), 2, args)
+}
+
+herr_t RECORDER_HDF5_DECL(H5Pset_all_coll_metadata_ops)(hid_t fapl_id, hbool_t is_collective) {
+    char **args = assemble_args_list(2, itoa(fapl_id), itoa(is_collective));
+    RECORDER_INTERCEPTOR(herr_t, H5Pset_all_coll_metadata_ops, (fapl_id, is_collective), 2, args)
+}
+
+herr_t RECORDER_HDF5_DECL(H5Pget_all_coll_metadata_ops)(hid_t fapl_id, hbool_t* is_collective) {
+    char **args = assemble_args_list(2, itoa(fapl_id), ptoa(is_collective));
+    RECORDER_INTERCEPTOR(herr_t, H5Pget_all_coll_metadata_ops, (fapl_id, is_collective), 2, args)
+}
+
