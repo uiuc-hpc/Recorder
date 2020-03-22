@@ -270,6 +270,14 @@ size_t RECORDER_POSIX_DECL(fwrite)(const void *ptr, size_t size, size_t nmemb, F
     RECORDER_INTERCEPTOR(size_t, fwrite, (ptr, size, nmemb, stream), 4, args)
 }
 
+int RECORDER_POSIX_DECL(fprintf)(FILE *stream, const char *format, ...) {
+    va_list fprintf_args;
+    va_start(fprintf_args, format);
+    char** args = assemble_args_list(2, stream2name(stream), format);
+    RECORDER_INTERCEPTOR(size_t, vfprintf, (stream, format, fprintf_args), 2, args)
+    va_end(fprintf_args);
+}
+
 ssize_t RECORDER_POSIX_DECL(read)(int fd, void *buf, size_t count) {
     char** args = assemble_args_list(3, fd2name(fd), ptoa(buf), itoa(count));
     RECORDER_INTERCEPTOR(ssize_t, read, (fd, buf, count), 3, args)

@@ -110,7 +110,7 @@ typedef struct RecorderLocalDef_t {
 
 
 static const char* func_list[] = {
-    // POSIX I/O - 68 functions
+    // POSIX I/O - 69 functions
     "creat",        "creat64",      "open",         "open64",   "close",
     "write",        "read",         "lseek",        "lseek64",  "pread",
     "pread64",      "pwrite",       "pwrite64",     "readv",    "writev",
@@ -124,7 +124,7 @@ static const char* func_list[] = {
     "closedir",     "rewinddir",    "mknod",        "mknodat",  "fcntl",
     "dup",          "dup2",         "pipe",         "mkfifo",   "umask",
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
-    "remove",       "truncate",     "ftruncate",
+    "remove",       "truncate",     "ftruncate",    "fprintf",
 
     // MPI I/O  - 74 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
