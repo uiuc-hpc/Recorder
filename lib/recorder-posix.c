@@ -271,11 +271,15 @@ size_t RECORDER_POSIX_DECL(fwrite)(const void *ptr, size_t size, size_t nmemb, F
 }
 
 int RECORDER_POSIX_DECL(fprintf)(FILE *stream, const char *format, ...) {
-
-
+    // Get the size of the string fprintf will write
     va_list fprintf_args;
     va_start(fprintf_args, format);
-    char** args = assemble_args_list(2, stream2name(stream), strdup(format));
+    int size = vsnprintf(NULL, 0, format, fprintf_args) + 1;
+    va_end(fprintf_args);
+
+
+    va_start(fprintf_args, format);
+    char** args = assemble_args_list(2, stream2name(stream), itoa(size));
     RECORDER_INTERCEPTOR(size_t, vfprintf, (stream, format, fprintf_args), 2, args)
     va_end(fprintf_args);
 }
