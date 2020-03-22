@@ -27,6 +27,12 @@ int main() {
     write(fd, &data, sizeof(char)*7);
 
     close(fd);
+
+    int a, b;
+    a = 0;
+    b = 10;
+    fprintf(stderr, "hello world: %d %d", a, b);
     MPI_Finalize();
+
     return 0;
 }

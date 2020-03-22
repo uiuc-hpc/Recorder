@@ -200,8 +200,7 @@ RECORDER_FORWARD_DECL(ftell, long, (FILE *stream));
 RECORDER_FORWARD_DECL(fseek, int, (FILE * stream, long offset, int whence));
 RECORDER_FORWARD_DECL(fsync, int, (int fd));
 RECORDER_FORWARD_DECL(fdatasync, int, (int fd));
-RECORDER_FORWARD_DECL(fprintf, int, (FILE *stream, const char *format, ...));
-RECORDER_FORWARD_DECL(vfprintf, int, (FILE *stream, const char *format, va_list ap)); // our tracing implementation calss vfprintf
+RECORDER_FORWARD_DECL(vfprintf, int, (FILE *stream, const char *format, va_list ap));   // we need to use vprintf to trace fprintf so we can pass va_list
 // stat/fstat/lstat are wrappers in GLIBC and dlsym can not hook them.
 // Instead, xstat/lxstat/fxstat are their GLIBC implementations so we can hook them.
 RECORDER_FORWARD_DECL(__xstat, int, (int vers, const char *path, struct stat *buf));
