@@ -183,7 +183,7 @@ static const char* func_list[] = {
     "H5Literate",           "H5Oclose",             "H5Oget_info",  // Object interface
     "H5Oget_info_by_name",  "H5Oopen",
     "H5Pset_coll_metadata_write",                   "H5Pget_coll_metadata_write"    // collective metadata
-    "H5Pset_all_coll_metadata_ops",                 " H5Pget_all_coll_metadata_ops"
+    "H5Pset_all_coll_metadata_ops",                 "H5Pget_all_coll_metadata_ops"
 };
 
 
