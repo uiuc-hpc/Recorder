@@ -151,10 +151,6 @@ class RecorderReader:
             tend = struct.unpack('i', line[5:9])[0]
             funcId = struct.unpack('B', line[9])[0]
             args = line[11:].split(' ')
-            funcname = self.globalMetadata.funcs[funcId]
-
-            # Selective decoding
-            #if "H5" not in funcname and "MPI" not in funcname:
             records.append([status, tstart, tend, funcId, args])
 
         return records
