@@ -28,6 +28,11 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
         filename = fileMap[fileId][2]
         offset = offsetBook[filename][rank]
         offsetBook[filename][rank] += count
+    elif "fprintf" in func:
+        fileId, count = int(args[0]), int(args[1])
+        filename = fileMap[fileId][2]
+        offset = offsetBook[filename][rank]
+        offsetBook[filename][rank] += count
 
     return filename, offset, count
 
@@ -52,7 +57,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list):
             offsetBook[filename][rank] += offset
 
 def ignore_files(filename):
-    ignore_prefixes = ["/dev", "/proc"]
+    ignore_prefixes = ["/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/"]
     for prefix in ignore_prefixes:
         if filename.startswith(prefix):
             return True

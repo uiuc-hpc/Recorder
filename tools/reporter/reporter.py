@@ -88,7 +88,7 @@ def file_access_mode():
                     print("Not regonized: ", funcname)
                 flags_set[filename].add(flagStr)
 
-            if "read" in funcname or "write" in funcname :
+            if "fprintf" in funcname or "read" in funcname or "write" in funcname :
                 if "fread" in funcname or "fwrite" in funcname:
                     fileId = int(record[4][3])
                 else:
@@ -97,7 +97,7 @@ def file_access_mode():
                 filename = fileMap[fileId][2]
                 if "read" in funcname:
                     accesses_set[filename]["read"] = True
-                if "write" in funcname:
+                if "write" in funcname or "fprintf" in funcname:
                     accesses_set[filename]["write"] = True
 
 
@@ -218,7 +218,7 @@ def overall_io_activities():
         for record in reader.records[rank]:
             funcname = func_list[record[3]]
             if "MPI" in funcname or "H5" in funcname: continue
-            if "write" in funcname:
+            if "write" in funcname or "fprintf" in funcname:
                 x_write.append(record[1] * timeRes)
                 x_write.append(record[2] * timeRes)
                 x_write.append(nan)
@@ -362,6 +362,8 @@ def io_sizes():
         # TODO readv/writev
         if "read" in funcname or "write" in funcname:
             return int(record[4][2])
+        if "fprintf" in funcname:
+            return int(record[4][1])
         return -1
 
     sizes = {}

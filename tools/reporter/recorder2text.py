@@ -23,7 +23,7 @@ def fill_in_filename(record, fileMap, func_list):
         pass
     elif "seek" in func or "open" in func or "close" in func \
         or "write" in func or "read" in func or "truncate" in func \
-        or "unlink" in func:
+        or "unlink" in func or "fprintf" in func:
         fileId = int(args[0])
         filename = fileMap[fileId][2]
         record[4][0] = filename
