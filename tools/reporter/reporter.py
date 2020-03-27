@@ -74,7 +74,7 @@ def file_access_mode():
         fileMap = reader.localMetadata[rank].fileMap
         for record in reader.records[rank]:
             funcname = reader.globalMetadata.funcs[record[3]]
-            if "MPI" in funcname or "H5" in funcname: continue
+            if "dir" in funcname or "MPI" in funcname or "H5" in funcname: continue
 
             if "open" in funcname:
                 fileId = int(record[4][0])
@@ -317,13 +317,16 @@ def file_access_patterns(intervals):
             # no overlapping
             if offset1+count1 <= offset2:
                 continue
+            if len(sessions1) == 0 or len(sessions2) ==0:
+                print("Without a session? ", filename, i1, i2)
             # has overlapping but may not conflicting
-            # if sessions1 intersets sessions2 then there's conflicting
-            if not (set(sessions1) & set(sessions2)):
+            # if sessions1 intersets sessions2, and
+            # one of the common sessions is the local session
+            # then there's a conflict
+            if not (sessions1[0] in sessions2 or sessions2[0] in sessions1):
                 continue
 
             print(filename, i1, i2)
-
             isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
             isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
@@ -360,7 +363,7 @@ def io_sizes():
     func_list = reader.globalMetadata.funcs
     def get_io_size(record):
         funcname = func_list[record[3]]
-        if "MPI" in funcname or "H5" in funcname: return -1
+        if "dir" in funcname or "MPI" in funcname or "H5" in funcname: return -1
         if "fwrite" in funcname or "fread" in funcname:
             return int(record[4][1]) * int(record[4][2])
         # read/pread, write/pwrite

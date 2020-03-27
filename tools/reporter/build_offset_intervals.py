@@ -10,6 +10,12 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
 
     filename, offset, count = "", -1, -1
 
+    # Ignore the functions that may confuse later conditions test
+    if "readlink" in func or "dir" in func:
+        return filename, offset, count
+
+
+
     if "writev" in func or "readv" in func:
         fileId, count = int(args[0]), int(args[1])
         filename = fileMap[fileId][2]
@@ -39,7 +45,10 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
 
 def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, sessionBook):
     rank, func = record[-1], func_list[record[3]]
-    # TODO consider append flags
+    # Ignore directory related operations
+    if "dir" in func:
+        return
+
     if "fopen" in func or "fdopen" in func:
         fileId = int(record[4][0])
         filename = fileMap[fileId][2]
@@ -56,8 +65,9 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         filename = fileMap[fileId][2]
         offsetBook[filename][rank] = 0
         # create a new session
-        newSession = 1+sessionBook[filename][0] if len(sessionBook[filename]) > 0 else 0
-        sessionBook[filename].append((rank, newSession, False))
+        newSessionID = 1+sessionBook[filename][-1][1] if len(sessionBook[filename]) > 0 else 0
+        sessionBook[filename].append([rank, newSessionID, False])
+        # TODO consider append flags
     elif "seek" in func:
         fileId, offset, whence = int(record[4][0]), int(record[4][1]), int(record[4][2])
         filename = fileMap[fileId][2]
