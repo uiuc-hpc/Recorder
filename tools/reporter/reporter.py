@@ -311,14 +311,19 @@ def file_access_patterns(intervals):
         intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
         for i in range(len(intervals)-1):
             i1, i2 = intervals[i], intervals[i+1]
-            tstart1, offset1, count1 = i1[1], i1[3], i1[4]
-            tstart2, offset2, count2 = i2[1], i2[3], i2[4]
+            tstart1, offset1, count1, sessions1 = i1[1], i1[3], i1[4], i1[6]
+            tstart2, offset2, count2, sessions2 = i2[1], i2[3], i2[4], i2[6]
 
-            # no overlap
+            # no overlapping
             if offset1+count1 <= offset2:
+                continue
+            # has overlapping but may not conflicting
+            # if sessions1 intersets sessions2 then there's conflicting
+            if not (set(sessions1) & set(sessions2)):
                 continue
 
             print(filename, i1, i2)
+
             isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
             isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
