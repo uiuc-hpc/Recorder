@@ -100,13 +100,14 @@ class LocalMetadata:
             print(fileInfo)
 
 class RecorderReader:
-    def __init__(self, path):
+    def __init__(self, path, readMetadataOnly=False):
         self.globalMetadata = GlobalMetadata(path+"/recorder.mt")
         self.localMetadata = []
         self.records = []
 
         for rank in range(self.globalMetadata.numRanks):
             self.localMetadata.append( LocalMetadata(path+"/"+str(rank)+".mt") )
+            if(readMetadataOnly): continue
             lines = self.read( path+"/"+str(rank)+".itf" )
             records = self.decode(lines)
             records = self.decompress(records)
