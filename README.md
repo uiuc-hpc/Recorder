@@ -1,4 +1,4 @@
-Recorder 2.0
+Recorder 2.1
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
@@ -75,6 +75,10 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
+**Recorder 2.1** May 15, 2020
+1. Dump a VERSION file for the reader script to decide the trace format.
+2. Include the return value in each record.
+3. Implement conflict detection algorithm for commit semantics and session semantics.
 **Recorder 2.0.1** Nov 7, 2019
 1. Implement compressed peephole encoding schema.
 2. Intergrat zlib as another compression choice.
