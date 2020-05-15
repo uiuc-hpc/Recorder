@@ -132,7 +132,10 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
 }
 
 // 0. Helper function, write all function arguments
-static inline void writeArguments(FILE* f, int arg_count, char** args) {
+static inline void writeArguments(FILE* f, Record record) {
+    int arg_count = record.arg_count;
+    char **args = record.args;
+
     char invalid_str[] = "???";
     int i, j;
     for(i = 0; i < arg_count; i++) {
@@ -153,12 +156,15 @@ static inline void writeInText(FILE *f, Record record) {
     const char* func = get_function_name_by_id(record.func_id);
     char* tstart = ftoa(record.tstart);
     char* tend = ftoa(record.tend);
+    char* res = itoa(record.res);
     __membuf.append(&__membuf, tstart, strlen(tstart));
     __membuf.append(&__membuf, " ", 1);
     __membuf.append(&__membuf, tend, strlen(tend));
     __membuf.append(&__membuf, " ", 1);
+    __membuf.append(&__membuf, res, strlen(res));
+    __membuf.append(&__membuf, " ", 1);
     __membuf.append(&__membuf, func, strlen(func));
-    writeArguments(f, record.arg_count, record.args);
+    writeArguments(f, record);
 }
 
 // Mode 2. Write in binary format, no compression
@@ -168,8 +174,9 @@ static inline void writeInBinary(FILE *f, Record record) {
     __membuf.append(&__membuf, &(record.status), sizeof(char));
     __membuf.append(&__membuf, &tstart, sizeof(int));
     __membuf.append(&__membuf, &tend, sizeof(int));
+    __membuf.append(&__membuf, &(record.res), sizeof(int));
     __membuf.append(&__membuf, &(record.func_id), sizeof(unsigned char));
-    writeArguments(f, record.arg_count, record.args);
+    writeArguments(f, record);
 }
 
 
@@ -210,6 +217,7 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
         diff_record.tstart = new_record.tstart;
         diff_record.tend = new_record.tend;
         diff_record.func_id = ref_window_id;
+        diff_record.res = new_record.res;
         writeInBinary(__logger.dataFile, diff_record);
     } else {
         new_record.status = 0b00000000;
@@ -278,16 +286,16 @@ void write_record(Record record) {
     __logger.localDef.function_count[record.func_id]++;
 
     switch(__logger.compMode) {
-        case COMP_TEXT:
+        case COMP_TEXT:     // 0
             writeInText(__logger.dataFile, record);
             break;
-        case COMP_BINARY:
+        case COMP_BINARY:   // 1
             writeInBinary(__logger.dataFile, record);
             break;
-        case COMP_ZLIB:
+        case COMP_ZLIB:     // 3
             writeInZlib(__logger.dataFile, record);
             break;
-        default:
+        default:            // 2, default if compMode not set
             writeInRecorder(__logger.dataFile, record);
             break;
     }
@@ -311,6 +319,7 @@ void logger_init(int rank, int nprocs) {
     __logger.startTimestamp = recorder_wtime();
 
     RECORDER_REAL_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
     char logfile_name[256];
     char metafile_name[256];
     sprintf(logfile_name, "logs/%d.itf", rank);
@@ -346,6 +355,11 @@ void logger_init(int rank, int nprocs) {
             }
         }
         RECORDER_REAL_CALL(fclose)(global_metafh);
+
+
+        FILE* version_file = RECORDER_REAL_CALL(fopen) ("logs/VERSION", "w");
+        RECORDER_REAL_CALL(fwrite) ("2.1", 3, 1, version_file);
+        RECORDER_REAL_CALL(fclose)(version_file);
     }
 
     membufInit(&__membuf);

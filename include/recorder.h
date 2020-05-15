@@ -147,14 +147,7 @@ char* realrealpath(const char* path);           // return the absolute path (map
 #endif
 
 
-/**
- * I/O Interceptor
- * We intercept functions (e.g., from recorder-posix.c) and then
- * call this interception funciton. In this function, we construct
- * a [struct Record] for each function call and then write it to
- * log file using the logging unit.
- */
-#define RECORDER_INTERCEPTOR(ret, func, real_args, record_arg_count, record_args)   \
+#define RECORDER_INTERCEPTOR_NOIO(ret, func, real_args, record_arg_count, record_args)   \
     MAP_OR_FAIL(func)                                                               \
     depth++;                                                                        \
     double tstart = recorder_wtime();                                               \
@@ -167,7 +160,18 @@ char* realrealpath(const char* path);           // return the absolute path (map
         .tend = tend,                                                               \
         .arg_count = record_arg_count,                                              \
         .args = record_args                                                         \
-    };                                                                              \
+    };
+
+
+/**
+ * I/O Interceptor
+ * We intercept functions (e.g., from recorder-posix.c) and then
+ * call this interception funciton. In this function, we construct
+ * a [struct Record] for each function call and then write it to
+ * log file using the logging unit.
+ */
+#define RECORDER_INTERCEPTOR(ret, func, real_args, record_arg_count, record_args)   \
+    RECORDER_INTERCEPTOR_NOIO(ret, func, real_args, record_arg_count, record_args)  \
     write_record(record);                                                           \
     return res;
 
