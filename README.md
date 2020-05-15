@@ -79,6 +79,7 @@ Change Log
 1. Dump a VERSION file for the reader script to decide the trace format.
 2. Include the return value in each record.
 3. Implement conflict detection algorithm for commit semantics and session semantics.
+
 **Recorder 2.0.1** Nov 7, 2019
 1. Implement compressed peephole encoding schema.
 2. Intergrat zlib as another compression choice.
