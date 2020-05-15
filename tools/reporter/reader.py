@@ -21,6 +21,7 @@ class GlobalMetadata:
         self.compMode = 0
         self.windowSize = 0
         self.funcs = []
+        self.version = 2.0
 
         self.read(path)
         self.output()
@@ -99,6 +100,16 @@ class LocalMetadata:
         for fileInfo in self.fileMap:
             print(fileInfo)
 
+class Record:
+    def __init__(self, status, tstart, tend, funcId, args, res=None):
+        self.status = status
+        self.tstart = tstart
+        self.tend = tend
+        self.funcId = funcId
+        self.args = args
+        self.res = res
+
+
 class RecorderReader:
     def __init__(self, path, readMetadataOnly=False):
         self.globalMetadata = GlobalMetadata(path+"/recorder.mt")
@@ -112,26 +123,26 @@ class RecorderReader:
             records = self.decode(lines)
             records = self.decompress(records)
             # sort records by tstart
-            records = sorted(records, key=lambda x: x[1])  # sort by tstart
+            records = sorted(records, key=lambda x: x.tstart)  # sort by tstart
             self.records.append( records )
 
     def decompress(self, records):
         for idx, record in enumerate(records):
-            if record[0] != 0:
-                status, ref_id = record[0], record[3]
-                records[idx][3] = records[idx-1-ref_id][3]
-                binStr = bin(status & 0b11111111)   # use mask to get the two's complement as in C code
-                binStr = binStr[3:][::-1]           # ignore the leading "0b1" and reverse the string
+            if record.status != 0:                              # compressed
+                status, ref_id = record.status, record.funcId
+                records[idx].funcId = records[idx-1-ref_id].funcId
+                binStr = bin(status & 0b11111111)               # use mask to get the two's complement as in C code
+                binStr = binStr[3:][::-1]                       # ignore the leading "0b1" and reverse the string
 
-                refArgs = list(records[idx-1-ref_id][4])    # copy the list
+                refArgs = list(records[idx-1-ref_id].args)      # copy the list
                 ii = 0
                 for i, c in enumerate(binStr):
                     if c == '1':
-                        if ii >= len(record[4]):
+                        if ii >= len(record.args):
                             print("Error:", record, ii)
-                        refArgs[i] = record[4][ii]
+                        refArgs[i] = record.args[ii]
                         ii += 1
-                records[idx][4] = refArgs
+                records[idx].args = refArgs
         return records
 
     '''
@@ -150,9 +161,18 @@ class RecorderReader:
             status = struct.unpack('b', line[0])[0]
             tstart = struct.unpack('i', line[1:5])[0]
             tend = struct.unpack('i', line[5:9])[0]
-            funcId = struct.unpack('B', line[9])[0]
-            args = line[11:].split(' ')
-            records.append([status, tstart, tend, funcId, args])
+
+            if(self.globalMetadata.version < 2.1):
+                funcId = struct.unpack('B', line[9])[0]
+                args = line[11:].split(' ')
+                #records.append([status, tstart, tend, funcId, args])
+                records.append(Record(status, tstart, tend, funcId, args))
+            else:
+                # For Recorder 2.1 and new version
+                tend = struct.unpack('i', line[9:13])[0]
+                funcId = struct.unpack('B', line[13])[0]
+                args = line[15:].split(' ')
+                records.append([status, tstart, tend, funcId, args])
 
         return records
 

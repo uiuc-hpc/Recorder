@@ -311,22 +311,23 @@ def file_access_patterns(intervals):
         intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
         for i in range(len(intervals)-1):
             i1, i2 = intervals[i], intervals[i+1]
-            tstart1, offset1, count1, sessions1 = i1[1], i1[3], i1[4], i1[6]
-            tstart2, offset2, count2, sessions2 = i2[1], i2[3], i2[4], i2[6]
+            tstart1, offset1, count1, segments1 = i1[1], i1[3], i1[4], i1[6]
+            tstart2, offset2, count2, segments2 = i2[1], i2[3], i2[4], i2[6]
 
             # no overlapping
             if offset1+count1 <= offset2:
                 continue
-            if len(sessions1) == 0 or len(sessions2) ==0:
+            if len(segments1) == 0 or len(segments2) ==0:
                 print("Without a session? ", filename, i1, i2)
+                continue
             # has overlapping but may not conflicting
-            # if sessions1 intersets sessions2, and
-            # one of the common sessions is the local session
+            # if segments1 intersets segments2, and
+            # one of the common segments is the local session
             # then there's a conflict
-            if not (sessions1[0] in sessions2 or sessions2[0] in sessions1):
+            if not (segments1[0] in segments2 or segments2[0] in segments1):
                 continue
 
-            print(filename, i1, i2)
+            #print(filename, i1, i2)
             isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
             isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
@@ -345,6 +346,13 @@ def file_access_patterns(intervals):
             if not isRead1 and isRead2:         # RAW
                 if rank1 == rank2: pattern['RAW']['S'] = True
                 else: pattern['RAW']['D'] = True
+        # debug info
+        if pattern['RAW']['S']: print "RAR-S"
+        if pattern['RAW']['D']: print "RAW-D"
+        if pattern['WAW']['S']: print "WAW-S"
+        if pattern['WAW']['D']: print "WAW-D"
+        if pattern['WAR']['S']: print "WAR-S"
+        if pattern['WAR']['D']: print "WAR-D"
         return pattern
 
     table = PrettyTable()
@@ -392,6 +400,7 @@ if __name__ == "__main__":
 
     intervals = build_offset_intervals(reader)
 
+    '''
     record_counts()
 
     file_counts()
@@ -401,12 +410,12 @@ if __name__ == "__main__":
     function_patterns(intervals)
     function_counts()
 
-
     overall_io_activities()
     offset_vs_time(intervals)
     offset_vs_rank(intervals)
+    '''
     file_access_patterns(intervals)
 
-    io_sizes()
+    #io_sizes()
 
     htmlWriter.write_html()

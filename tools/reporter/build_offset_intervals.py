@@ -14,8 +14,6 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
     if "readlink" in func or "dir" in func:
         return filename, offset, count
 
-
-
     if "writev" in func or "readv" in func:
         fileId, count = int(args[0]), int(args[1])
         filename = fileMap[fileId][2]
@@ -43,7 +41,7 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
     return filename, offset, count
 
 
-def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, sessionBook):
+def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, segmentBook):
     rank, func = record[-1], func_list[record[3]]
     # Ignore directory related operations
     if "dir" in func:
@@ -57,37 +55,54 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         openMode = record[4][1]
         if openMode == 'a':
             offsetBook[filename][rank] = closeBook[filename] if filename in closeBook else 0
-        # create a new session
-        newSessionID = 1+sessionBook[filename][-1][1] if len(sessionBook[filename]) > 0 else 0
-        sessionBook[filename].append([rank, newSessionID, False])
+        # create a new segment
+        newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
+        segmentBook[filename].append([rank, newSegmentID, False])
     elif "open" in func:
         fileId = int(record[4][0])
         filename = fileMap[fileId][2]
         offsetBook[filename][rank] = 0
-        # create a new session
-        newSessionID = 1+sessionBook[filename][-1][1] if len(sessionBook[filename]) > 0 else 0
-        sessionBook[filename].append([rank, newSessionID, False])
+        # create a new segment
+        newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
+        segmentBook[filename].append([rank, newSegmentID, False])
         # TODO consider append flags
     elif "seek" in func:
         fileId, offset, whence = int(record[4][0]), int(record[4][1]), int(record[4][2])
         filename = fileMap[fileId][2]
-        if whence == 0:     # SEEK_STE
+        if whence == 0:     # SEEK_SET
             offsetBook[filename][rank] = offset
         elif whence == 1:   # SEEK_CUR
             offsetBook[filename][rank] += offset
-    elif "close" in func:
+        elif whence == 2:   # SEEK_END
+            if filename in closeBook:
+                offsetBook[filename][rank] = max(offsetBook[filename][rank], closeBook[filename])
+
+    elif "close" in func or "sync" in func:
         fileId = int(record[4][0])
         filename = fileMap[fileId][2]
         closeBook[filename] = offsetBook[filename][rank]
 
-        # close the most recent open session
-        for i in range(len(sessionBook[filename]))[::-1]:
-            if sessionBook[filename][i][0] == rank:
-                sessionBook[filename][i][2] = True
-                break
+        # 1. Close all segments on the local process for this file
+        for i in range(len(segmentBook[filename])):
+            if segmentBook[filename][i][0] == rank:
+                segmentBook[filename][i][2] = True
+        # 2. And starts a new segment for all other processes have the same file opened
+        # Skip this step for session semantics
+        visitedRanks = set()
+        tmpSegments = []
+        # [::-1] check the most recent unclosed segment to get the largest segmentId
+        for segment in segmentBook[filename][::-1]:
+            if segment[0] in visitedRanks:
+                continue
+            if segment[0] != rank and not segment[2]:
+                tmpSegments.append([segment[0], 1+segment[1], False])
+                visitedRanks.add(segment[0])
+        segmentBook[filename] = segmentBook[filename] + tmpSegments
+
+
 
 def ignore_files(filename):
-    ignore_prefixes = ["/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/"]
+    ignore_prefixes = ["/sys/", "/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/"]
     for prefix in ignore_prefixes:
         if filename.startswith(prefix):
             return True
@@ -103,7 +118,7 @@ def build_offset_intervals(reader):
     ranks = reader.globalMetadata.numRanks
 
     closeBook = {}  # Keep track the most recent close function and its file size so a later append operation knows the most recent file size
-    sessionBook = {}    # sessionBook[filename] maintains all sessions for filename, it is a list of list (rank, session-id, closed)
+    segmentBook = {}    # segmentBook[filename] maintains all segments for filename, it is a list of list (rank, segment-id, closed)
     offsetBook = {}
     intervals = {}
 
@@ -112,7 +127,7 @@ def build_offset_intervals(reader):
         for fileInfo in localMetadata.fileMap:
             filename = fileInfo[2]
             offsetBook[filename] = [0] * ranks
-            sessionBook[filename] = []
+            segmentBook[filename] = []
 
 
     # merge the list(reader.records) of list(each rank's records) into one flat list
@@ -130,7 +145,7 @@ def build_offset_intervals(reader):
         func = func_list[record[3]]
         if "MPI" in func or "H5" in func: continue
 
-        handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, sessionBook)
+        handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, segmentBook)
         filename, offset, count = handle_data_operations(record, fileMap, offsetBook, func_list)
         if(filename != "" and not ignore_files(filename)):
             tstart = timeRes * int(record[1])
@@ -139,15 +154,20 @@ def build_offset_intervals(reader):
             if filename not in intervals:
                 intervals[filename] = []
 
-            sessions = []
-            startFlag = False
-            for session in sessionBook[filename][::-1]:     # iterate from inner-most to outer-most
-                if session[0] == rank and not session[2]:   # Find the inner most unclosed local session
-                    startFlag = True
-                if startFlag and not session[2]:            # keep adding unclosed remote sessions
-                    sessions.append(session[1])
+            # segments[0] is the local segment, the others are remote segments
+            segments = []
+            # 1. Add local segment
+            # Find the most recent unclosed local segment
+            for segment in segmentBook[filename][::-1]:
+                if segment[0] == rank and not segment[2]:
+                    segments.append(segment[1])
 
-            intervals[filename].append( [rank, tstart, tend, offset, count, isRead, sessions] )
+            # 2. Add all remote segments
+            for segment in segmentBook[filename]:
+                if segment[0] != rank and not segment[2]:
+                    segments.append(segment[1])
+            intervals[filename].append( [rank, tstart, tend, offset, count, isRead, segments] )
+
 
     return intervals
 
