@@ -132,12 +132,10 @@ inline char* realrealpath(const char *path) {
     realpath(path, real_pathname);      // we do not intercept realpath()
     if (real_pathname == NULL)          // realpath() could return NULL on error
         strcpy(real_pathname, path);
-    /*
-     * use hashmap to get unique id
-    char* id_str = get_filename_id(real_pathname);
-    free(real_pathname);
-    return id_str;
-    */
+
+    // insert to hashmap
+    char* id = get_filename_id(real_pathname); free(id);
+
     return real_pathname;
 }
 
