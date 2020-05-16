@@ -73,26 +73,26 @@ def file_access_mode():
     for rank in range(reader.globalMetadata.numRanks):
         fileMap = reader.localMetadata[rank].fileMap
         for record in reader.records[rank]:
-            funcname = reader.globalMetadata.funcs[record[3]]
+            funcname = reader.globalMetadata.funcs[record.funcId]
             if "dir" in funcname or "MPI" in funcname or "H5" in funcname: continue
 
             if "open" in funcname:
-                fileId = int(record[4][0])
+                fileId = int(record.args[0])
                 filename = fileMap[fileId][2]
                 flagStr = ""
                 if funcname == "open" or funcname == "open64":
-                    flagStr = get_flag_str( int(record[4][1]) )
+                    flagStr = get_flag_str( int(record.args[1]) )
                 elif "fopen" in funcname or "fdopen" in funcname:
-                    flagStr = record[4][1]
+                    flagStr = record.args[1]
                 else:
                     print("Not regonized: ", funcname)
                 flags_set[filename].add(flagStr)
 
             if "fprintf" in funcname or "read" in funcname or "write" in funcname :
                 if "fread" in funcname or "fwrite" in funcname:
-                    fileId = int(record[4][3])
+                    fileId = int(record.args[3])
                 else:
-                    fileId = int(record[4][0])
+                    fileId = int(record.args[0])
 
                 filename = fileMap[fileId][2]
                 if "read" in funcname:
@@ -216,15 +216,15 @@ def overall_io_activities():
     def io_activity(rank):
         x_read, x_write, y_read, y_write = [], [], [], []
         for record in reader.records[rank]:
-            funcname = func_list[record[3]]
+            funcname = func_list[record.funcId]
             if "MPI" in funcname or "H5" in funcname: continue
             if "write" in funcname or "fprintf" in funcname:
-                x_write.append(record[1] * timeRes)
-                x_write.append(record[2] * timeRes)
+                x_write.append(record.tstart * timeRes)
+                x_write.append(record.tend * timeRes)
                 x_write.append(nan)
             if "read" in funcname:
-                x_read.append(record[1] * timeRes)
-                x_read.append(record[2] * timeRes)
+                x_read.append(record.tstart * timeRes)
+                x_read.append(record.tend * timeRes)
                 x_read.append(nan)
 
         if(len(x_write)>0): x_write = x_write[0: len(x_write)-1]
@@ -370,16 +370,16 @@ def file_access_patterns(intervals):
 def io_sizes():
     func_list = reader.globalMetadata.funcs
     def get_io_size(record):
-        funcname = func_list[record[3]]
+        funcname = func_list[record.funcId]
         if "dir" in funcname or "MPI" in funcname or "H5" in funcname: return -1
         if "fwrite" in funcname or "fread" in funcname:
-            return int(record[4][1]) * int(record[4][2])
+            return int(record.args[1]) * int(record.args[2])
         # read/pread, write/pwrite
         # TODO readv/writev
         if "read" in funcname or "write" in funcname:
-            return int(record[4][2])
+            return int(record.args[2])
         if "fprintf" in funcname:
-            return int(record[4][1])
+            return int(record.args[1])
         return -1
 
     sizes = {}
@@ -400,7 +400,6 @@ if __name__ == "__main__":
 
     intervals = build_offset_intervals(reader)
 
-    '''
     record_counts()
 
     file_counts()
@@ -413,9 +412,8 @@ if __name__ == "__main__":
     overall_io_activities()
     offset_vs_time(intervals)
     offset_vs_rank(intervals)
-    '''
     file_access_patterns(intervals)
 
-    #io_sizes()
+    io_sizes()
 
     htmlWriter.write_html()

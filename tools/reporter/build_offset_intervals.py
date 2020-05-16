@@ -5,8 +5,8 @@ from reader import RecorderReader
 
 
 def handle_data_operations(record, fileMap, offsetBook, func_list):
-    func = func_list[record[3]]
-    rank, args = record[-1], record[4]
+    func = func_list[record.funcId]
+    rank, args = record.rank, record.args
 
     filename, offset, count = "", -1, -1
 
@@ -42,24 +42,24 @@ def handle_data_operations(record, fileMap, offsetBook, func_list):
 
 
 def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, segmentBook):
-    rank, func = record[-1], func_list[record[3]]
+    rank, func = record.rank, func_list[record.funcId]
     # Ignore directory related operations
     if "dir" in func:
         return
 
     if "fopen" in func or "fdopen" in func:
-        fileId = int(record[4][0])
+        fileId = int(record.args[0])
         filename = fileMap[fileId][2]
         offsetBook[filename][rank] = 0
         # Need to find out the correct file size from the closeBook
-        openMode = record[4][1]
+        openMode = record.args[1]
         if openMode == 'a':
             offsetBook[filename][rank] = closeBook[filename] if filename in closeBook else 0
         # create a new segment
         newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
         segmentBook[filename].append([rank, newSegmentID, False])
     elif "open" in func:
-        fileId = int(record[4][0])
+        fileId = int(record.args[0])
         filename = fileMap[fileId][2]
         offsetBook[filename][rank] = 0
         # create a new segment
@@ -67,7 +67,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         segmentBook[filename].append([rank, newSegmentID, False])
         # TODO consider append flags
     elif "seek" in func:
-        fileId, offset, whence = int(record[4][0]), int(record[4][1]), int(record[4][2])
+        fileId, offset, whence = int(record.args[0]), int(record.args[1]), int(record.args[2])
         filename = fileMap[fileId][2]
         if whence == 0:     # SEEK_SET
             offsetBook[filename][rank] = offset
@@ -78,7 +78,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
                 offsetBook[filename][rank] = max(offsetBook[filename][rank], closeBook[filename])
 
     elif "close" in func or "sync" in func:
-        fileId = int(record[4][0])
+        fileId = int(record.args[0])
         filename = fileMap[fileId][2]
         closeBook[filename] = offsetBook[filename][rank]
 
@@ -134,22 +134,24 @@ def build_offset_intervals(reader):
     # then sort the whole list by tstart
     records = []
     for rank in range(ranks):
-        for record in reader.records[rank]:
-            records.append(record+[rank])             # insert rank at the end
-    records = sorted(records, key=lambda x: x[1])
+        records = records + reader.records[rank]
+    records = sorted(records, key=lambda x: x.tstart)
 
     for record in records:
-        rank = record[-1]
-        fileMap = reader.localMetadata[rank].fileMap
+        rank = record.rank
 
-        func = func_list[record[3]]
+        fileMap = reader.localMetadata[rank].fileMap
+        if reader.globalMetadata.version >= 2.1:
+            fileMap = {0: "stdin", 1: "stdout", 2: "stderr"}
+
+        func = func_list[record.funcId]
         if "MPI" in func or "H5" in func: continue
 
         handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook, segmentBook)
         filename, offset, count = handle_data_operations(record, fileMap, offsetBook, func_list)
         if(filename != "" and not ignore_files(filename)):
-            tstart = timeRes * int(record[1])
-            tend = timeRes * int(record[2])
+            tstart = timeRes * int(record.tstart)
+            tend = timeRes * int(record.tend)
             isRead = "read" in func
             if filename not in intervals:
                 intervals[filename] = []

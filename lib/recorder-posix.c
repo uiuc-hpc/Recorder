@@ -154,12 +154,20 @@ void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, 
 
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
-    RECORDER_INTERCEPTOR(int, creat, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR_NOIO(int, creat, (path, mode), 2, args)
+
+    record.res = res;
+    write_record(record);
+    return res;
 }
 
 int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
-    RECORDER_INTERCEPTOR(int, creat64, (path, mode), 2, args)
+    RECORDER_INTERCEPTOR_NOIO(int, creat64, (path, mode), 2, args)
+
+    record.res = res;
+    write_record(record);
+    return res;
 }
 
 int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
@@ -169,10 +177,18 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
         int mode = va_arg(arg, int);
         va_end(arg);
         char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
-        RECORDER_INTERCEPTOR(int, open64, (path, flags, mode), 3, args)
+        RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags, mode), 3, args)
+
+        record.res = res;
+        write_record(record);
+        return res;
     } else {
         char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
-        RECORDER_INTERCEPTOR(int, open64, (path, flags), 2, args)
+        RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags), 2, args)
+
+        record.res = res;
+        write_record(record);
+        return res;
     }
 }
 
@@ -183,10 +199,18 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
         int mode = va_arg(arg, int);
         va_end(arg);
         char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
-        RECORDER_INTERCEPTOR(int, open, (path, flags, mode), 3, args)
+        RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags, mode), 3, args)
+
+        record.res = res;
+        write_record(record);
+        return res;
     } else {
         char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
-        RECORDER_INTERCEPTOR(int, open, (path, flags), 2, args)
+        RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags), 2, args)
+
+        record.res = res;
+        write_record(record);
+        return res;
     }
 }
 
@@ -450,11 +474,19 @@ int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
 */
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
     char** args = assemble_args_list(1, itoa(oldfd));
-    RECORDER_INTERCEPTOR(int, dup, (oldfd), 1, args)
+    RECORDER_INTERCEPTOR_NOIO(int, dup, (oldfd), 1, args)
+
+    record.res = res;
+    write_record(record);
+    return res;
 }
 int RECORDER_POSIX_DECL(dup2)(int oldfd, int newfd) {
     char** args = assemble_args_list(2, itoa(oldfd), itoa(newfd));
     RECORDER_INTERCEPTOR(int, dup2, (oldfd, newfd), 2, args)
+
+    record.res = res;
+    write_record(record);
+    return res;
 }
 int RECORDER_POSIX_DECL(pipe)(int pipefd[2]) {
     // TODO: pipefd?

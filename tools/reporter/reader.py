@@ -101,7 +101,8 @@ class LocalMetadata:
             print(fileInfo)
 
 class Record:
-    def __init__(self, status, tstart, tend, funcId, args, res=None):
+    def __init__(self, rank, status, tstart, tend, funcId, args, res=None):
+        self.rank = rank
         self.status = status
         self.tstart = tstart
         self.tend = tend
@@ -120,7 +121,7 @@ class RecorderReader:
             self.localMetadata.append( LocalMetadata(path+"/"+str(rank)+".mt") )
             if(readMetadataOnly): continue
             lines = self.read( path+"/"+str(rank)+".itf" )
-            records = self.decode(lines)
+            records = self.decode(lines, rank)
             records = self.decompress(records)
             # sort records by tstart
             records = sorted(records, key=lambda x: x.tstart)  # sort by tstart
@@ -155,7 +156,7 @@ class RecorderReader:
     Output is a list of records for one rank, where each  record has the format
         [status, tstart, tend, funcId/refId, [args]]
     '''
-    def decode(self, lines):
+    def decode(self, lines, rank):
         records = []
         for line in lines:
             status = struct.unpack('b', line[0])[0]
@@ -165,14 +166,13 @@ class RecorderReader:
             if(self.globalMetadata.version < 2.1):
                 funcId = struct.unpack('B', line[9])[0]
                 args = line[11:].split(' ')
-                #records.append([status, tstart, tend, funcId, args])
-                records.append(Record(status, tstart, tend, funcId, args))
+                records.append(Record(rank, status, tstart, tend, funcId, args))
             else:
                 # For Recorder 2.1 and new version
-                tend = struct.unpack('i', line[9:13])[0]
+                res = struct.unpack('i', line[9:13])[0]
                 funcId = struct.unpack('B', line[13])[0]
                 args = line[15:].split(' ')
-                records.append([status, tstart, tend, funcId, args])
+                records.append(Record(rank, status, tstart, tend, funcId, args, res))
 
         return records
 

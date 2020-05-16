@@ -39,25 +39,31 @@ def fill_in_filename_2(record, fileMap, func_list):
 
     if "open" in func or "creat" in func:
         if not "fdopen" in func:
-            filename = record[0]
-            fileMap[1] = filename
+            filename = args[0]
+            fileMap[record.res] = filename
     # TODO: dup/dup2
 
     if "mmap" in func:
-        fileId = int(args[4])
-        filename = fileMap[fileId]
+        fd = int(args[4])
+        filename = fileMap[fd] if fd in fileMap else "unknow fd"
         record.args[4] = filename
     elif "fwrite" in func or "fread" in func:
-        fileId = int(args[3])
-        filename = fileMap[fileId]
+        fd = int(args[3])
+        filename = fileMap[fd] if fd in fileMap else "unknow fd"
         record.args[3] = filename
+    elif "fxstat" in func:
+        fd = int(args[1])
+        filename = fileMap[fd] if fd in fileMap else "unknow fd"
+        record.args[2] = filename
     elif "dir" in func:       # ignore opendir, closedir, etc.
         pass
     elif "seek" in func or "write" in func or "read" in func or "ftruncate" in func \
-        or "fdopen" in func or "fileno" in func or "fprintf" in func:
-        fileId = int(args[0])
-        filename = fileMap[fileId]
+        or "close" in func or "fdopen" in func or "fileno" in func or "fprintf" in func:
+        fd = int(args[0])
+        filename = fileMap[fd] if fd in fileMap else "unknow fd"
         record.args[0] = filename
+
+    return record
 
 
 if __name__ == "__main__":
@@ -73,7 +79,7 @@ if __name__ == "__main__":
     for rank in range(reader.globalMetadata.numRanks):
         fileMap = reader.localMetadata[rank].fileMap
         if version >= 2.1:
-            fileMap = {}
+            fileMap = {0: "stdin", 1: "stdout", 2:"stderr"}
 
         print(rank, len(reader.records[rank]))
         with open(logs_dir+"/"+str(rank)+".txt", 'w') as f:

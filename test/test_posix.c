@@ -25,8 +25,10 @@ int main() {
     write(fd, &data, sizeof(char)*5);
     res = fstat(fd, &buf);
     write(fd, &data, sizeof(char)*7);
-
     close(fd);
+
+    FILE* fp = fopen("./workfile.out.2", "w");
+    fclose(fp);
 
     int a, b;
     a = 0;
