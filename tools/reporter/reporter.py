@@ -77,15 +77,18 @@ def file_access_mode():
             if "dir" in funcname or "MPI" in funcname or "H5" in funcname: continue
 
             if "open" in funcname:
-                fileId = int(record.args[0])
-                filename = fileMap[fileId][2]
+                if reader.globalMetadata.version >= 2.1:
+                    filename = record.args[0]
+                else:
+                    fileId = int(record.args[0])
+                    filename = fileMap[fileId][2]
                 flagStr = ""
                 if funcname == "open" or funcname == "open64":
                     flagStr = get_flag_str( int(record.args[1]) )
                 elif "fopen" in funcname or "fdopen" in funcname:
                     flagStr = record.args[1]
                 else:
-                    print("Not regonized: ", funcname)
+                    print("Not recognized: ", funcname)
                 flags_set[filename].add(flagStr)
 
             if "fprintf" in funcname or "read" in funcname or "write" in funcname :
@@ -95,6 +98,7 @@ def file_access_mode():
                     fileId = int(record.args[0])
 
                 filename = fileMap[fileId][2]
+
                 if "read" in funcname:
                     accesses_set[filename]["read"] = True
                 if "write" in funcname or "fprintf" in funcname:
@@ -179,6 +183,10 @@ def function_patterns(all_intervals):
                 x['sequential'] += 1
             else:
                 x['random'] += 1
+        total = x['consecutive'] + x['sequential'] + x['random']
+    print("consecutive:",  x['consecutive'] )
+    print("sequential:",  x['sequential'] )
+    print("random:",  x['random'])
 
     script, div = components(pie_chart(x))
     htmlWriter.functionPatterns = script+div
@@ -327,7 +335,6 @@ def file_access_patterns(intervals):
             if not (segments1[0] in segments2 or segments2[0] in segments1):
                 continue
 
-            #print(filename, i1, i2)
             isRead1 = i1[5] if tstart1 < tstart2 else i2[5]
             isRead2 = i2[5] if tstart2 > tstart1 else i1[5]
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
@@ -341,7 +348,9 @@ def file_access_patterns(intervals):
                 if rank1 == rank2: pattern['WAR']['S'] = True
                 else: pattern['WAR']['D'] = True
             if not isRead1 and not isRead2:     # WAW
-                if rank1 == rank2: pattern['WAW']['S'] = True
+                if rank1 == rank2:
+                    pattern['WAW']['S'] = True
+                    print(filename, i1, i2)
                 else: pattern['WAW']['D'] = True
             if not isRead1 and isRead2:         # RAW
                 if rank1 == rank2: pattern['RAW']['S'] = True
@@ -400,20 +409,20 @@ if __name__ == "__main__":
 
     intervals = build_offset_intervals(reader)
 
-    record_counts()
+    #record_counts()
 
-    file_counts()
-    file_access_mode()
+    #file_counts()
+    #file_access_mode()
 
-    function_layers()
+    #function_layers()
     function_patterns(intervals)
-    function_counts()
+    #function_counts()
 
-    overall_io_activities()
-    offset_vs_time(intervals)
-    offset_vs_rank(intervals)
-    file_access_patterns(intervals)
+    #overall_io_activities()
+    #offset_vs_time(intervals)
+    #offset_vs_rank(intervals)
+    #file_access_patterns(intervals)
 
-    io_sizes()
+    #io_sizes()
 
     htmlWriter.write_html()

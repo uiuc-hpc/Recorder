@@ -21,7 +21,7 @@ class GlobalMetadata:
         self.compMode = 0
         self.windowSize = 0
         self.funcs = []
-        self.version = 2.0
+        self.version = 2.1
 
         self.read(path)
         self.output()
@@ -93,9 +93,9 @@ class LocalMetadata:
         print("files:", self.numFiles)
         print("records:", self.totalRecords)
 
-        print("\nFunction Counter:")
-        for idx, count in enumerate(self.functionCounter):
-            if count > 0: print(idx, count)
+        #print("\nFunction Counter:")
+        #for idx, count in enumerate(self.functionCounter):
+        #    if count > 0: print(idx, count)
         print("\nFile Map:")
         for fileInfo in self.fileMap:
             print(fileInfo)

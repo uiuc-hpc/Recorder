@@ -85,8 +85,9 @@ if __name__ == "__main__":
         with open(logs_dir+"/"+str(rank)+".txt", 'w') as f:
             for record in reader.records[rank]:
                 if version >= 2.1 :
-                    record = fill_in_filename_2(record, fileMap, func_list)
+                    #record = fill_in_filename_2(record, fileMap, func_list)
+                    recordText = "%s %s %s %s %s\n" %(record.tstart, record.tend, record.res, func_list[record.funcId], record.args)
                 else:
                     record = fill_in_filename(record, fileMap, func_list)
-                recordText = "%s %s %s %s\n" %(record.tstart, record.tend, func_list[record.funcId], record.args)
+                    recordText = "%s %s %s %s\n" %(record.tstart, record.tend, func_list[record.funcId], record.args)
                 f.write(recordText)
