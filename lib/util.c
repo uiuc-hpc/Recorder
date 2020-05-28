@@ -120,6 +120,7 @@ unsigned char get_function_id_by_name(const char* name) {
         if (strcmp(func_list[i], name) == 0)
             return i;
     }
+    printf("[Recorder ERROR] Missing function %s\n", name);
     return 255;
 }
 
