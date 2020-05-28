@@ -274,6 +274,7 @@ def offset_vs_rank(intervals):
 
     plots = []
     for idx, filename in enumerate(intervals):
+        if ignore_files(filename): continue
         if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
@@ -302,6 +303,7 @@ def offset_vs_time(intervals):
 
     plots = []
     for idx, filename in enumerate(intervals):
+        if ignore_files(filename): continue
         if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
@@ -409,20 +411,20 @@ if __name__ == "__main__":
 
     intervals = build_offset_intervals(reader)
 
-    #record_counts()
+    record_counts()
 
-    #file_counts()
+    file_counts()
     #file_access_mode()
 
-    #function_layers()
+    function_layers()
     function_patterns(intervals)
-    #function_counts()
+    function_counts()
 
-    #overall_io_activities()
-    #offset_vs_time(intervals)
-    #offset_vs_rank(intervals)
-    #file_access_patterns(intervals)
+    overall_io_activities()
+    offset_vs_time(intervals)
+    offset_vs_rank(intervals)
+    file_access_patterns(intervals)
 
-    #io_sizes()
+    io_sizes()
 
     htmlWriter.write_html()

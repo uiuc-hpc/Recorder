@@ -232,8 +232,6 @@ def build_offset_intervals(reader):
     fileMaps = []
     for i in range(ranks): fileMaps.append({0: "stdin", 1: "stdout", 2: "stderr"})
 
-    f = open("./nwchem_debug.txt", "w")
-
 
     for record in records:
 
@@ -271,11 +269,6 @@ def build_offset_intervals(reader):
                     segments.append(segment[1])
             intervals[filename].append( [rank, tstart, tend, offset, count, isRead, segments] )
 
-            if rank == 0 and "water.db" in filename:
-                recordText = "%s %s %s %s %s\n" %(record.tstart, record.tend, func, offset, record.args)
-                f.write(recordText)
-
-    f.close()
     return intervals
 
 if __name__ == "__main__":
