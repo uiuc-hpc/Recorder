@@ -348,7 +348,7 @@ int RECORDER_MPI_DECL(MPI_File_write)(MPI_File fh, CONST void *buf, int count,
 int RECORDER_MPI_DECL(MPI_File_write_at)(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, MPI_Status *status) {
     char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
-    printf("offset: %s, count: %s\n", itoa(offset), itoa(count));
+    //printf("offset: %s, count: %s\n", itoa(offset), itoa(count));
     RECORDER_INTERCEPTOR(int, PMPI_File_write_at, (fh, offset, buf, count, datatype, status), 6, args)
 
 }
