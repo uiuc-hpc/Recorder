@@ -72,9 +72,9 @@ inline double recorder_wtime(void) {
 }
 
 /* Integer to stirng */
-inline char* itoa(int val) {
+inline char* itoa(long long val) {
     char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%d", val);
+    sprintf(str, "%lld", val);
     return str;
 }
 
