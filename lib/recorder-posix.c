@@ -151,6 +151,10 @@ void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, 
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
     RECORDER_INTERCEPTOR(void*, mmap, (addr, length, prot, flags, fd, offset), 6, args)
 }
+int RECORDER_POSIX_DECL(msync)(void *addr, size_t length, int flags) {
+    char** args = assemble_args_list(3, ptoa(addr), itoa(length), itoa(flags));
+    RECORDER_INTERCEPTOR(int, msync, (addr, length, flags), 3, args)
+}
 
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));

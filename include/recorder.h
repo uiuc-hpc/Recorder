@@ -195,6 +195,7 @@ RECORDER_FORWARD_DECL(readv, ssize_t, (int fd, const struct iovec *iov, int iovc
 RECORDER_FORWARD_DECL(writev, ssize_t, (int fd, const struct iovec *iov, int iovcnt));
 RECORDER_FORWARD_DECL(mmap, void *, (void *addr, size_t length, int prot, int flags, int fd, off_t offset));
 RECORDER_FORWARD_DECL(mmap64, void *, (void *addr, size_t length, int prot, int flags, int fd, off64_t offset));
+RECORDER_FORWARD_DECL(msync, int, (void *addr, size_t length, int flags));
 RECORDER_FORWARD_DECL(fopen, FILE *, (const char *path, const char *mode));
 RECORDER_FORWARD_DECL(fopen64, FILE *, (const char *path, const char *mode));
 RECORDER_FORWARD_DECL(fclose, int, (FILE * fp));
