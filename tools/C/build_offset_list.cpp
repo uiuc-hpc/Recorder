@@ -260,6 +260,27 @@ void access_patterns(unordered_map<string, vector<Interval*>> intervals) {
     cout<<"consecutive:"<<consecqutive<<", sequential:"<<sequential<<", random:"<<random;
 }
 
+bool compare_by_offset(const Interval *lhs, const Interval *rhs) {
+    return lhs->offset < rhs->offset;
+}
+void conflicts(unordered_map<string, vector<Interval*>> intervals) {
+    for(auto iter=intervals.begin(); iter!=intervals.end(); ++iter) {
+        string filename = iter->first;
+        vector<Interval*> is = iter->second;
+        cout<<filename<<" "<<is.size()<<endl;
+
+        sort(is.begin(), is.end(), compare_by_offset);
+        for(int i = 0; i < is.size()-1; i++) {
+            Interval i1 = is[i];
+            Interval i2 = is[i+1];
+
+            // no conflicts
+            if(i1->offset+i1->count <= i2->offset)
+                continue;
+        }
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     char path[128];
@@ -285,7 +306,8 @@ int main(int argc, char* argv[]) {
 
     unordered_map<string, vector<Interval*>> intervals = build_offset_list(reader);
 
-    access_patterns(intervals);
+    //access_patterns(intervals);
+    conflicts(intervals);
 
     return 0;
 }
