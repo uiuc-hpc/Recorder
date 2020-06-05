@@ -157,6 +157,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
                 segmentBook[filename][i][2] = True
         # 2. And starts a new segment for all other processes have the same file opened
         # Skip this step for session semantics
+        '''
         visitedRanks = set()
         tmpSegments = []
         # [::-1] check the most recent unclosed segment to get the largest segmentId
@@ -167,6 +168,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
                 tmpSegments.append([segment[0], 1+segment[1], False])
                 visitedRanks.add(segment[0])
         segmentBook[filename] = segmentBook[filename] + tmpSegments
+        '''
 
 
 

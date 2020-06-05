@@ -111,6 +111,8 @@ class Record:
         self.res = res
 
 
+
+
 class RecorderReader:
     def __init__(self, path, readMetadataOnly=False):
         self.globalMetadata = GlobalMetadata(path+"/recorder.mt")

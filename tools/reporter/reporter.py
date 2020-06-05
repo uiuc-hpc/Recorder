@@ -5,7 +5,7 @@ import numpy as np
 from math import pi
 from bokeh.plotting import figure, output_file, show
 from bokeh.embed import components
-from bokeh.models import FixedTicker
+from bokeh.models import FixedTicker, ColumnDataSource, LabelSet
 from prettytable import PrettyTable
 
 from reader import RecorderReader
@@ -316,8 +316,8 @@ def offset_vs_time(intervals):
 def file_access_patterns(intervals):
 
     def pattern_for_one_file(filename, intervals):
-        pattern = {"RAR": {'S':False, 'D':False}, "RAW": {'S':False, 'D':False},
-                    "WAW": {'S':False, 'D':False}, "WAR": {'S':False, 'D':False}}
+        pattern = {"RAR": {'S':0, 'D':0}, "RAW": {'S':0, 'D':0},
+                    "WAW": {'S':0, 'D':0}, "WAR": {'S':0, 'D':0}}
         intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
         for i in range(len(intervals)-1):
             i1, i2 = intervals[i], intervals[i+1]
@@ -328,7 +328,7 @@ def file_access_patterns(intervals):
             if offset1+count1 <= offset2:
                 continue
             if len(segments1) == 0 or len(segments2) ==0:
-                print("Without a session? ", filename, i1, i2)
+                #print("Without a session? ", filename, i1, i2)
                 continue
             # has overlapping but may not conflicting
             # if segments1 intersets segments2, and
@@ -342,28 +342,28 @@ def file_access_patterns(intervals):
             rank1 = i1[0] if tstart1 < tstart2 else i2[0]
             rank2 = i2[0] if tstart2 > tstart1 else i1[0]
 
+            #print(filename, i1, i2)
             # overlap
             if isRead1 and isRead2:             # RAR
-                if rank1 == rank2: pattern['RAR']['S'] = True
-                else: pattern['RAR']['D'] = True
+                if rank1 == rank2: pattern['RAR']['S'] += 1
+                else: pattern['RAR']['D'] += 1
             if isRead1 and not isRead2:         # WAR
-                if rank1 == rank2: pattern['WAR']['S'] = True
-                else: pattern['WAR']['D'] = True
+                if rank1 == rank2: pattern['WAR']['S'] += 1
+                else: pattern['WAR']['D'] += 1
             if not isRead1 and not isRead2:     # WAW
-                if rank1 == rank2:
-                    pattern['WAW']['S'] = True
-                    print(filename, i1, i2)
-                else: pattern['WAW']['D'] = True
+                if rank1 == rank2: pattern['WAW']['S'] += 1
+                else: pattern['WAW']['D'] += 1
             if not isRead1 and isRead2:         # RAW
-                if rank1 == rank2: pattern['RAW']['S'] = True
-                else: pattern['RAW']['D'] = True
+                if rank1 == rank2: pattern['RAW']['S'] += 1
+                else: pattern['RAW']['D'] += 1
         # debug info
-        if pattern['RAW']['S']: print "RAR-S"
-        if pattern['RAW']['D']: print "RAW-D"
-        if pattern['WAW']['S']: print "WAW-S"
-        if pattern['WAW']['D']: print "WAW-D"
-        if pattern['WAR']['S']: print "WAR-S"
-        if pattern['WAR']['D']: print "WAR-D"
+        print(filename)
+        if pattern['RAW']['S']: print "RAW-S", pattern['RAW']['S']
+        if pattern['RAW']['D']: print "RAW-D", pattern['RAW']['D']
+        if pattern['WAW']['S']: print "WAW-S", pattern['WAW']['S']
+        if pattern['WAW']['D']: print "WAW-D", pattern['WAW']['D']
+        if pattern['WAR']['S']: print "WAR-S", pattern['WAR']['S']
+        if pattern['WAR']['D']: print "WAR-D", pattern['WAR']['D']
         return pattern
 
     table = PrettyTable()
@@ -378,19 +378,31 @@ def file_access_patterns(intervals):
     htmlWriter.fileAccessPatterns = table.get_html_string()
 
 # 4
-def io_sizes():
+def io_sizes(read=True):
     func_list = reader.globalMetadata.funcs
     def get_io_size(record):
         funcname = func_list[record.funcId]
         if "dir" in funcname or "MPI" in funcname or "H5" in funcname: return -1
         if "fwrite" in funcname or "fread" in funcname:
-            return int(record.args[1]) * int(record.args[2])
+            if read and "read" in funcname:
+                return int(record.args[1]) * int(record.args[2])
+            if not read and "write" in funcname:
+                return int(record.args[1]) * int(record.args[2])
         # read/pread, write/pwrite
         # TODO readv/writev
+        if "writevv" in funcname or "writev" in funcname:
+            if read and "readv" in funcname:
+                return int(record.args[1])
+            if not read and "writev" in funcname:
+                return int(record.args[1])
         if "read" in funcname or "write" in funcname:
-            return int(record.args[2])
+            if read and "read" in funcname:
+                return int(record.args[2])
+            if not read and "write" in funcname:
+                return int(record.args[2])
         if "fprintf" in funcname:
-            return int(record.args[1])
+            if not read:
+                return int(record.args[1])
         return -1
 
     sizes = {}
@@ -401,10 +413,25 @@ def io_sizes():
             if io_size not in sizes: sizes[io_size] = 0
             sizes[io_size] += 1
 
-    p = figure(x_axis_label="IO Size", y_axis_label="Count", y_axis_type="log", plot_width=400, plot_height=300)
-    p.vbar(x=sizes.keys(), top=sizes.values(), width=0.6, bottom=1)
+    xs = sorted(sizes.keys())
+    ys = []
+    for key  in xs: ys.append(sizes[key])
+    xs = map(str, xs)
+
+    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", plot_width=450, plot_height=350)
+    p.vbar(x=xs, top=ys, width=0.6, bottom=1)
+
+    labels = LabelSet(x='x', y='y', text='y', level='glyph', x_offset=-13.5, y_offset=0,
+                source=ColumnDataSource(dict(x=xs ,y=ys)), render_mode='canvas')
+    p.xaxis.major_label_orientation = math.pi/2
+    p.add_layout(labels)
+
     script, div = components(p)
-    htmlWriter.ioSizes = div + script
+    if read:
+        htmlWriter.readIOSizes = div + script
+    else:
+        htmlWriter.writeIOSizes = div + script
+
 
 
 if __name__ == "__main__":
@@ -425,6 +452,7 @@ if __name__ == "__main__":
     offset_vs_rank(intervals)
     file_access_patterns(intervals)
 
-    io_sizes()
+    io_sizes(read=True)
+    io_sizes(read=False)
 
     htmlWriter.write_html()

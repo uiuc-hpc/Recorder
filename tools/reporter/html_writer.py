@@ -56,7 +56,8 @@ class HTMLWriter:
         self.fileAccessPatterns = ""
 
         # 4.
-        self.ioSizes = ""
+        self.readIOSizes = ""
+        self.writeIOSizes = ""
 
     def write_html(self):
         html_content  = """
@@ -111,13 +112,22 @@ class HTMLWriter:
                 <hr>
 
                 <h2> 4. Count of I/O access sizes </h2>
-                %s
+                <div>
+                    <div style="display:inline-block">
+                        <h4> 4.1 Read </h4>
+                        %s
+                    </div>
+                    <div style="display:inline-block">
+                        <h4> 4.2 Write </h4>
+                        %s
+                    </div>
+                </div>
             </div></body>
         </html>
         """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
                 self.functionLayers, self.functionPatterns, self.functionCount, \
                 self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.fileAccessPatterns, \
-                self.ioSizes)
+                self.readIOSizes, self.writeIOSizes)
 
         f = open("./recorder-report.html", "w")
         f.write(html_content)
