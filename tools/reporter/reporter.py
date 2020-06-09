@@ -210,8 +210,40 @@ def function_counts():
 
     p = figure(x_axis_label="Count", x_axis_type="log", y_axis_label="Function", y_range=funcnames)
     p.hbar(y=funcnames, right=counts, height=0.8, left=1)
+    labels = LabelSet(x='x', y='y', text='x', level='glyph', x_offset=0, y_offset=-8, text_font_size="10pt",
+                source=ColumnDataSource(dict(x=counts, y=funcnames)), render_mode='canvas')
+    p.add_layout(labels)
+
     script, div = components(p)
     htmlWriter.functionCount = div + script
+
+def function_times():
+    func_list = reader.globalMetadata.funcs
+
+    aggregate = np.zeros(256)
+    for rank in range(reader.globalMetadata.numRanks):
+        for record in reader.records[rank]:
+            aggregate[record.funcId] += (record.tend - record.tstart)*reader.globalMetadata.timeResolution
+
+    funcnames, times = np.array([]), np.array([])
+
+    for i in range(len(aggregate)):
+        if aggregate[i] > 0:
+            funcnames = np.append(funcnames, func_list[i].replace("PMPI", "MPI"))
+            times = np.append(times, aggregate[i])
+
+    index = np.argsort(times)[::-1]
+    times = times[index]
+    funcnames = funcnames[index]
+
+    p = figure(x_axis_label="Spent Time (Seconds)", y_axis_label="Function", y_range=funcnames)
+    p.hbar(y=funcnames, right=times, height=0.8, left=1)
+    labels = LabelSet(x='x', y='y', text='x', level='glyph', x_offset=0, y_offset=-8, text_font_size="10pt",
+                source=ColumnDataSource(dict(x=times, y=funcnames)), render_mode='canvas')
+    p.add_layout(labels)
+
+    script, div = components(p)
+    htmlWriter.functionTimes = div + script
 
 
 # 3.1
@@ -418,12 +450,12 @@ def io_sizes(read=True):
     for key  in xs: ys.append(sizes[key])
     xs = map(str, xs)
 
-    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", plot_width=450, plot_height=350)
+    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=800, plot_height=350)
     p.vbar(x=xs, top=ys, width=0.6, bottom=1)
-
-    labels = LabelSet(x='x', y='y', text='y', level='glyph', x_offset=-13.5, y_offset=0,
-                source=ColumnDataSource(dict(x=xs ,y=ys)), render_mode='canvas')
     p.xaxis.major_label_orientation = math.pi/2
+
+    labels = LabelSet(x='x', y='y', text='y', level='glyph', x_offset=-10, y_offset=0, text_font_size="10pt",
+                source=ColumnDataSource(dict(x=xs ,y=ys)), render_mode='canvas')
     p.add_layout(labels)
 
     script, div = components(p)
@@ -446,6 +478,7 @@ if __name__ == "__main__":
     function_layers()
     function_patterns(intervals)
     function_counts()
+    function_times()
 
     overall_io_activities()
     offset_vs_time(intervals)

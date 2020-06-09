@@ -46,8 +46,9 @@ class HTMLWriter:
 
         # 2.
         self.functionLayers = ""            # 2.1
-        self.functionPatterns = ""           # 2.2
+        self.functionPatterns = ""          # 2.2
         self.functionCount = ""             # 2.3
+        self.functionTimes = ""             # 2.4
 
         # 3.
         self.overallIOActivities = ""
@@ -96,6 +97,9 @@ class HTMLWriter:
                 <h4> 2.3 Function count </h4>
                 %s
                 <hr>
+                <h4> 2.4 Seconds spent on each function </h4>
+                %s
+                <hr>
 
 
                 <h2> 3. Access Patterns </h2>
@@ -125,7 +129,7 @@ class HTMLWriter:
             </div></body>
         </html>
         """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
-                self.functionLayers, self.functionPatterns, self.functionCount, \
+                self.functionLayers, self.functionPatterns, self.functionCount, self.functionTimes, \
                 self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.fileAccessPatterns, \
                 self.readIOSizes, self.writeIOSizes)
 
