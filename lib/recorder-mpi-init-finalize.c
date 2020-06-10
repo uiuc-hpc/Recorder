@@ -54,27 +54,32 @@
 #include "recorder.h"
 
 
-static double elapsed_time;
+static double local_tstart, local_tend;
 static int rank, nprocs;
 
 void recorder_init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Comm_size)
     MAP_OR_FAIL(PMPI_Comm_rank)
     MAP_OR_FAIL(PMPI_Wtime)
+    MAP_OR_FAIL(PMPI_Reduce)
     RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 
     depth = 0;
     logger_init(rank, nprocs);
-
-    elapsed_time = RECORDER_REAL_CALL(PMPI_Wtime)();
+    local_tstart = RECORDER_REAL_CALL(PMPI_Wtime)();
 }
 
 void recorder_exit() {
     logger_exit();
-    elapsed_time = RECORDER_REAL_CALL(PMPI_Wtime)() - elapsed_time;
+    local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
+
+    double min_tstart, max_tend;
+    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &min_tstart, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
     if (rank == 0)
-        printf("[Recorder] elapsed time: %.2f\n", elapsed_time);
+        printf("[Recorder] elapsed time: %.2f\n", max_tend-min_tstart);
 }
 
 int PMPI_Init(int *argc, char ***argv) {
