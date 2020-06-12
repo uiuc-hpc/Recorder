@@ -292,16 +292,23 @@ def offset_vs_rank(intervals):
     # interval = [rank, tstart, tend, offset, count]
     def plot_for_one_file(filename, intervals):
         intervals = sorted(intervals, key=lambda x: x[3])   # sort by starting offset
-        x, y, nan = [], [], float('nan')
+        x_read, y_read, x_write, y_write, nan = [], [], [], [], float('nan')
         for interval in intervals:
-            rank, offset, count = interval[0], interval[3], interval[4]
-            x += [rank, rank, rank]
-            y += [offset, offset+count, nan]
+            rank, offset, count, isRead = interval[0], interval[3], interval[4], interval[5]
+            if isRead:
+                x_read += [rank, rank, rank]
+                y_read += [offset, offset+count, nan]
+            else:
+                x_write += [rank, rank, rank]
+                y_write += [offset, offset+count, nan]
 
-        if len(x) > 0 : x = x[0:len(x)-1]
-        if len(y) > 0 : y = y[0:len(y)-1]
+        if len(x_read) > 0 : x_read = x_read[0:len(x_read)-1]
+        if len(y_read) > 0 : y_read = y_read[0:len(y_read)-1]
+        if len(x_write) > 0 : x_write = x_write[0:len(x_write)-1]
+        if len(y_write) > 0 : y_write = y_write[0:len(y_write)-1]
         p = figure(title=filename.split("/")[-1], x_axis_label="Rank", y_axis_label="Offset")
-        p.line(x, y, line_width=5, alpha=1.0)
+        p.line(x_read, y_read, line_color='blue', line_width=5, alpha=1.0, legend_label="read")
+        p.line(x_write, y_write, line_color='red', line_width=5, alpha=1.0, legend_label="write")
         return p
 
     plots = []
@@ -320,16 +327,23 @@ def offset_vs_time(intervals):
     # interval = [rank, tstart, tend, offset, count]
     def plot_for_one_file(filename, intervals):
         intervals = sorted(intervals, key=lambda x: x[1])   # sort by tstart
-        x, y, nan = [], [], float('nan')
+        x_read, y_read, x_write, y_write, nan = [], [], [], [], float('nan')
         for interval in intervals:
-            tstart, tend, offset, count = interval[1], interval[2], interval[3], interval[4]
-            x += [tstart, tend, nan]
-            y += [offset, offset+count, offset+count]
+            tstart, tend, offset, count, isRead = interval[1], interval[2], interval[3], interval[4], interval[5]
+            if isRead:
+                x_read += [tstart, tend, nan]
+                y_read += [offset, offset+count, offset+count]
+            else:
+                x_write += [tstart, tend, nan]
+                y_write += [offset, offset+count, offset+count]
 
-        if len(x) > 0 : x = x[0:len(x)-1]
-        if len(y) > 0 : y = y[0:len(y)-1]
+        if len(x_read) > 0 : x_read = x_read[0:len(x_read)-1]
+        if len(y_read) > 0 : y_read = y_read[0:len(y_read)-1]
+        if len(x_write) > 0 : x_write = x_write[0:len(x_write)-1]
+        if len(y_write) > 0 : y_write = y_write[0:len(y_write)-1]
         p = figure(title=filename.split("/")[-1], x_axis_label="Time", y_axis_label="Offset")
-        p.line(x, y, line_width=2, alpha=1.0)
+        p.line(x_read, y_read, line_color='blue', line_width=2, alpha=1.0, legend_label="read")
+        p.line(x_write, y_write, line_color='red', line_width=2, alpha=1.0, legend_label="write")
         return p
 
 
@@ -450,7 +464,7 @@ def io_sizes(read=True):
     for key  in xs: ys.append(sizes[key])
     xs = map(str, xs)
 
-    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=800, plot_height=350)
+    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=400, plot_height=350)
     p.vbar(x=xs, top=ys, width=0.6, bottom=1)
     p.xaxis.major_label_orientation = math.pi/2
 
