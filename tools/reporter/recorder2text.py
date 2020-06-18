@@ -67,7 +67,7 @@ def fill_in_filename_2(record, fileMap, func_list):
 
 
 if __name__ == "__main__":
-    logs_dir = sys.argv[1]+"/../logs_text"
+    logs_dir = sys.argv[1]+"_text"
     try:
         os.mkdir(logs_dir)
     except:
@@ -83,7 +83,8 @@ if __name__ == "__main__":
 
         print(rank, len(reader.records[rank]))
         with open(logs_dir+"/"+str(rank)+".txt", 'w') as f:
-            for record in reader.records[rank]:
+            records = sorted(reader.records[rank], key=lambda x: x.tstart)
+            for record in records:
                 if version >= 2.1 :
                     #record = fill_in_filename_2(record, fileMap, func_list)
                     recordText = "%s %s %s %s %s\n" %(record.tstart, record.tend, record.res, func_list[record.funcId], record.args)

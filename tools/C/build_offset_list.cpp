@@ -306,8 +306,8 @@ int main(int argc, char* argv[]) {
 
     unordered_map<string, vector<Interval*>> intervals = build_offset_list(reader);
 
-    //access_patterns(intervals);
-    conflicts(intervals);
+    access_patterns(intervals);
+    //conflicts(intervals);
 
     return 0;
 }

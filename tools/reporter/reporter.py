@@ -312,11 +312,15 @@ def offset_vs_rank(intervals):
         return p
 
     plots = []
-    for idx, filename in enumerate(intervals):
+    idx = 0
+    for filename in intervals:
         if ignore_files(filename): continue
+        if 'pout' in filename and int(filename.split('pout.')[-1]) > 9: continue
+
         if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
+            idx += 1
 
     from bokeh.layouts import gridplot
     script, div = components(gridplot(plots, ncols=3, plot_width=400, plot_height=300))
@@ -348,11 +352,14 @@ def offset_vs_time(intervals):
 
 
     plots = []
-    for idx, filename in enumerate(intervals):
+    idx = 0
+    for filename in intervals:
         if ignore_files(filename): continue
+        if 'pout' in filename and int(filename.split('pout.')[-1]) > 9: continue
         if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
+            idx += 1
 
     from bokeh.layouts import gridplot
     script, div = components(gridplot(plots, ncols=3, plot_width=400, plot_height=300))
@@ -497,6 +504,7 @@ if __name__ == "__main__":
     overall_io_activities()
     offset_vs_time(intervals)
     offset_vs_rank(intervals)
+
     file_access_patterns(intervals)
 
     io_sizes(read=True)
