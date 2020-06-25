@@ -411,12 +411,12 @@ def file_access_patterns(intervals):
                 else: pattern['RAW']['D'] += 1
         # debug info
         print(filename)
-        if pattern['RAW']['S']: print "RAW-S", pattern['RAW']['S']
-        if pattern['RAW']['D']: print "RAW-D", pattern['RAW']['D']
-        if pattern['WAW']['S']: print "WAW-S", pattern['WAW']['S']
-        if pattern['WAW']['D']: print "WAW-D", pattern['WAW']['D']
-        if pattern['WAR']['S']: print "WAR-S", pattern['WAR']['S']
-        if pattern['WAR']['D']: print "WAR-D", pattern['WAR']['D']
+        if pattern['RAW']['S']: print("RAW-S"), pattern['RAW']['S']
+        if pattern['RAW']['D']: print("RAW-D"), pattern['RAW']['D']
+        if pattern['WAW']['S']: print("WAW-S"), pattern['WAW']['S']
+        if pattern['WAW']['D']: print("WAW-D"), pattern['WAW']['D']
+        if pattern['WAR']['S']: print("WAR-S"), pattern['WAR']['S']
+        if pattern['WAR']['D']: print("WAR-D"), pattern['WAR']['D']
         return pattern
 
     table = PrettyTable()
@@ -467,9 +467,8 @@ def io_sizes(read=True):
             sizes[io_size] += 1
 
     xs = sorted(sizes.keys())
-    ys = []
-    for key  in xs: ys.append(sizes[key])
-    xs = map(str, xs)
+    ys = [ sizes[x] for x in xs ]
+    xs = [ str(x) for x in xs ]
 
     p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=400, plot_height=350)
     p.vbar(x=xs, top=ys, width=0.6, bottom=1)

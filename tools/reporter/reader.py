@@ -34,7 +34,7 @@ class GlobalMetadata:
 
             f.seek(24, 0)
             self.funcs = f.read().splitlines()
-            self.funcs = [func.replace("PMPI", "MPI") for func in self.funcs]
+            self.funcs = [func.decode('utf-8').replace("PMPI", "MPI") for func in self.funcs]
 
 
     def output(self):
@@ -83,7 +83,7 @@ class LocalMetadata:
                 fileId = struct.unpack("i", f.read(4))[0]
                 fileSize = struct.unpack("l", f.read(8))[0]
                 filenameLen = struct.unpack("i", f.read(4))[0]
-                filename = f.read(filenameLen)
+                filename = f.read(filenameLen).decode('utf-8', 'ignore')
                 self.fileMap[fileId] = [fileId, fileSize, filename]
 
     def output(self):
@@ -161,19 +161,19 @@ class RecorderReader:
     def decode(self, lines, rank):
         records = []
         for line in lines:
-            status = struct.unpack('b', line[0])[0]
+            status = struct.unpack('b', line[0:1])[0]
             tstart = struct.unpack('i', line[1:5])[0]
             tend = struct.unpack('i', line[5:9])[0]
 
             if(self.globalMetadata.version < 2.1):
                 funcId = struct.unpack('B', line[9])[0]
-                args = line[11:].split(' ')
+                args = line[11:].decode('utf-8').split(' ')
                 records.append(Record(rank, status, tstart, tend, funcId, args))
             else:
                 # For Recorder 2.1 and new version
                 res = struct.unpack('i', line[9:13])[0]
-                funcId = struct.unpack('B', line[13])[0]
-                args = line[15:].split(' ')
+                funcId = struct.unpack('B', line[13:14])[0]
+                args = line[15:].decode('utf-8').split(' ')
                 records.append(Record(rank, status, tstart, tend, funcId, args, res))
 
         return records
@@ -190,7 +190,7 @@ class RecorderReader:
             start_pos = 0
             end_pos = 0
             while True:
-                end_pos = content.find("\n", start_pos+10)
+                end_pos = content.find(b"\n", start_pos+10)
                 if end_pos == -1:
                     break
                 line = content[start_pos: end_pos]
