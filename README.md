@@ -47,7 +47,7 @@ Options can be used to disable one ore more level of traces. Valid options:
 3. Make and install.
 ```console
 make
-make install prefix=${HOME}/librecorder
+make install prefix=$HOME
 ```
 
 4. Have fun.<br>
