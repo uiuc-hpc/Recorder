@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import os
+import os, bokeh
 
 def relpath(path):
     return os.path.relpath(path)
@@ -37,6 +37,7 @@ class HTMLWriter:
 
     def __init__(self, path):
         self.path = path
+        self.bokeh_version = bokeh.__version__  # python bokeh version must match the JS version
         # 0
         self.performanceTable = ""
         self.recordCount = ""               # 0.1
@@ -60,15 +61,22 @@ class HTMLWriter:
         self.readIOSizes = ""
         self.writeIOSizes = ""
 
+    def get_html_head(self):
+        html_head = """
+            <head>
+                %s
+                <meta charset="UTF-8">
+                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-%s.min.js"></script>
+                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-%s.min.js"></script>
+                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-%s.min.js"></script>
+            </head>
+        """ %(css_style, self.bokeh_version, self.bokeh_version, self.bokeh_version)
+        return html_head
+
     def write_html(self):
         html_content  = """
         <html>
-            <head>
-                %s
-                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js"></script>
-                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.min.js"></script>
-                <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.min.js"></script>
-            </head>
+            %s
             <body><div class="content">
                 <h2> 0. Performance </h2>
                 %s
@@ -130,7 +138,7 @@ class HTMLWriter:
                 </div>
             </div></body>
         </html>
-        """ %(css_style, self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
+        """ %(self.get_html_head(), self.performanceTable, self.recordCount, self.fileCount, self.fileAccessModeTable, \
                 self.functionLayers, self.functionPatterns, self.functionCount, self.functionTimes, \
                 self.overallIOActivities, self.offsetVsRank, self.offsetVsTime, self.fileAccessPatterns, \
                 self.readIOSizes, self.writeIOSizes)
