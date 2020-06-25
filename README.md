@@ -55,6 +55,7 @@ mpirun can be changed to your workload manager, e.g. srun.
 ```console
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 ```
+The trace files will be written to the current directory.
 
 Visualization
 ------------
