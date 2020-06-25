@@ -55,11 +55,12 @@ mpirun can be changed to your workload manager, e.g. srun.
 ```console
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
 ```
+The trace files will be written to the current directory.
 
 Visualization
 ------------
 
-We use Python libraries [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
+We use Python libraries [pandas](https://pandas.pydata.org/), [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
 Please install those dependencies first.
 
 ```console
