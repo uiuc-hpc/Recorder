@@ -77,10 +77,12 @@ class HTMLWriter:
                 <h2> 1. File Statistics </h2>
                 <h4> 1.1 Number of file accessed by each rank</h4>
                 %s
+                <!--
                 <h4> 1.2 Access mode of each file </h4>
                 <div style="height:400px; overflow:auto;">
                 %s
                 </div>
+                -->
                 <hr>
 
                 <h2> 2. Function Statistics </h3>
