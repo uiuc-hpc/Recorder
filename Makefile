@@ -6,7 +6,7 @@ endif
 
 srcdir = .
 prefix = .
-libdir = ${HOME}/librecorder/lib
+libdir = ${prefix}/librecorder/lib
 
 CC = ${MPI_DIR}/bin/mpicc
 ifeq ("$(wildcard $(CC))","")
