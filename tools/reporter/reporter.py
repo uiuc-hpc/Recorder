@@ -443,7 +443,7 @@ def io_sizes(read=True):
                 return int(record.args[1]) * int(record.args[2])
         # read/pread, write/pwrite
         # TODO readv/writev
-        if "writevv" in funcname or "writev" in funcname:
+        if "writev" in funcname or "readv" in funcname:
             if read and "readv" in funcname:
                 return int(record.args[1])
             if not read and "writev" in funcname:
