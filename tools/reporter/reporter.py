@@ -410,7 +410,6 @@ def file_access_patterns(intervals):
                 if rank1 == rank2: pattern['RAW']['S'] += 1
                 else: pattern['RAW']['D'] += 1
         # debug info
-        print(filename)
         if pattern['RAW']['S']: print("RAW-S"), pattern['RAW']['S']
         if pattern['RAW']['D']: print("RAW-D"), pattern['RAW']['D']
         if pattern['WAW']['S']: print("WAW-S"), pattern['WAW']['S']
