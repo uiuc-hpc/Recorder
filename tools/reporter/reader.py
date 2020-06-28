@@ -21,7 +21,6 @@ class GlobalMetadata:
         self.compMode = 0
         self.windowSize = 0
         self.funcs = []
-        self.version = 2.1
 
         self.read(path)
         self.output()
@@ -164,17 +163,10 @@ class RecorderReader:
             status = struct.unpack('b', line[0:1])[0]
             tstart = struct.unpack('i', line[1:5])[0]
             tend = struct.unpack('i', line[5:9])[0]
-
-            if(self.globalMetadata.version < 2.1):
-                funcId = struct.unpack('B', line[9])[0]
-                args = line[11:].decode('utf-8').split(' ')
-                records.append(Record(rank, status, tstart, tend, funcId, args))
-            else:
-                # For Recorder 2.1 and new version
-                res = struct.unpack('i', line[9:13])[0]
-                funcId = struct.unpack('B', line[13:14])[0]
-                args = line[15:].decode('utf-8').split(' ')
-                records.append(Record(rank, status, tstart, tend, funcId, args, res))
+            res = struct.unpack('i', line[9:13])[0]
+            funcId = struct.unpack('B', line[13:14])[0]
+            args = line[15:].decode('utf-8').split(' ')
+            records.append(Record(rank, status, tstart, tend, funcId, args, res))
 
         return records
 

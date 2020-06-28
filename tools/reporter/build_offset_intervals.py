@@ -3,8 +3,6 @@
 import sys
 from reader import RecorderReader
 
-version = 2.1
-
 def handle_data_operations(record, fileMap, offsetBook, func_list, endOfFile):
     func = func_list[record.funcId]
     rank, args = record.rank, record.args
@@ -16,65 +14,43 @@ def handle_data_operations(record, fileMap, offsetBook, func_list, endOfFile):
         return filename, offset, count
 
     if "writev" in func or "readv" in func:
-        fileId, count = int(args[0]), int(args[1])
-        if version >= 2.1:
-            if(fileId not in fileMap): return "", -1, -1
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd, count = int(args[0]), int(args[1])
+        if(fd not in fileMap): return "", -1, -1
+        filename = fileMap[fd]
 
-        offset = offsetBook[fdOrFilename][rank]
-        offsetBook[fdOrFilename][rank] += count
-        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fdOrFilename][rank])
+        offset = offsetBook[fd][rank]
+        offsetBook[fd][rank] += count
+        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
     elif "fwrite" in func or "fread" in func:
-        fileId, size, count = int(args[3]), int(args[1]), int(args[2])
-        if version >= 2.1:
-            if(fileId not in fileMap): return "", -1, -1
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd, size, count = int(args[3]), int(args[1]), int(args[2])
+        if(fd not in fileMap): return "", -1, -1
+        filename = fileMap[fd]
 
-        offset, count = offsetBook[fdOrFilename][rank], size*count
-        offsetBook[fdOrFilename][rank] += count
-        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fdOrFilename][rank])
+        offset, count = offsetBook[fd][rank], size*count
+        offsetBook[fd][rank] += count
+        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
     elif "pwrite" in func or "pread" in func:
-        fileId, count, offset = int(args[0]), int(args[2]), int(args[3])
-        if version >= 2.1:
-            if(fileId not in fileMap): return "", -1, -1
-            filename = fileMap[fileId]
-        else:
-            filename = fileMap[fileId][2]
+        fd, count, offset = int(args[0]), int(args[2]), int(args[3])
+        if(fd not in fileMap): return "", -1, -1
+        filename = fileMap[fd]
+
         endOfFile[filename][rank] = max(endOfFile[filename][rank], offset+count)
     elif "write" in func or "read" in func:
-        fileId, count = int(args[0]), int(args[2])
-        if version >= 2.1:
-            if(fileId not in fileMap): return "", -1, -1
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd, count = int(args[0]), int(args[2])
+        if(fd not in fileMap): return "", -1, -1
+        filename = fileMap[fd]
 
-        offset = offsetBook[fdOrFilename][rank]
-        offsetBook[fdOrFilename][rank] += count
-        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fdOrFilename][rank])
+        offset = offsetBook[fd][rank]
+        offsetBook[fd][rank] += count
+        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
     elif "fprintf" in func:
-        fileId, count = int(args[0]), int(args[1])
-        if version >= 2.1:
-            if(fileId not in fileMap): return "", -1, -1
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd, count = int(args[0]), int(args[1])
+        if(fd not in fileMap): return "", -1, -1
+        filename = fileMap[fd]
 
-        offset = offsetBook[fdOrFilename][rank]
-        offsetBook[fdOrFilename][rank] += count
-        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fdOrFilename][rank])
+        offset = offsetBook[fd][rank]
+        offsetBook[fd][rank] += count
+        endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
 
     return filename, offset, count
 
@@ -86,68 +62,44 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         return
 
     if "fopen" in func or "fdopen" in func:
-        # version 2.1 and new, we keep the returned fd, and the argument is just the full file path
-        if version >= 2.1:
-            fd = record.res
-            filename = record.args[0]
-            fileMap[fd] = filename
-            offsetBook[fd][rank] = 0
-            # Need to find out the correct file size from the closeBook
-            openMode = record.args[1]
-            if 'a' in openMode:
-                offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
-        else:
-            fileId = int(record.args[0])
-            filename = fileMap[fileId][2]
-            offsetBook[filename][rank] = 0
-            # Need to find out the correct file size from the closeBook
-            openMode = record.args[1]
-            if 'a' in openMode:
-                offsetBook[filename][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
+        fd = record.res
+        filename = record.args[0]
+        fileMap[fd] = filename
+        offsetBook[fd][rank] = 0
+        # Need to find out the correct file size from the closeBook
+        openMode = record.args[1]
+        if 'a' in openMode:
+            offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
 
         # create a new segment
         newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
         segmentBook[filename].append([rank, newSegmentID, False])
     elif "open" in func:
-        if version >= 2.1:
-            fd = record.res
-            filename = record.args[0]
-            fileMap[fd] = filename
-            offsetBook[fd][rank] = 0
-        else:
-            fileId = int(record.args[0])
-            filename = fileMap[fileId][2]
-            offsetBook[filename][rank] = 0
+        fd = record.res
+        filename = record.args[0]
+        fileMap[fd] = filename
+        offsetBook[fd][rank] = 0
+
         # create a new segment
         newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
         segmentBook[filename].append([rank, newSegmentID, False])
         # TODO consider append flags
     elif "seek" in func:
-        fileId, offset, whence = int(record.args[0]), int(record.args[1]), int(record.args[2])
-        if version >= 2.1:
-            if fileId not in fileMap: return
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd, offset, whence = int(record.args[0]), int(record.args[1]), int(record.args[2])
+        if fd not in fileMap: return
+        filename = fileMap[fd]
 
         if whence == 0:     # SEEK_SET
-            offsetBook[fdOrFilename][rank] = offset
+            offsetBook[fd][rank] = offset
         elif whence == 1:   # SEEK_CUR
-            offsetBook[fdOrFilename][rank] += offset
+            offsetBook[fd][rank] += offset
         elif whence == 2:   # SEEK_END
-            offsetBook[fdOrFilename][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
+            offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
 
     elif "close" in func or "sync" in func:
-        fileId = int(record.args[0])
-        if version >= 2.1:
-            if(fileId not in fileMap): return
-            filename = fileMap[fileId]
-            fdOrFilename = fileId
-        else:
-            filename = fileMap[fileId][2]
-            fdOrFilename = filename
+        fd = int(record.args[0])
+        if(fd not in fileMap): return
+        filename = fileMap[fd]
 
         closeBook[filename] = endOfFile[filename][rank]
 
@@ -171,7 +123,6 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         '''
 
 
-
 def ignore_files(filename):
     ignore_prefixes = ["/sys/", "/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/", "/etc/"]
     for prefix in ignore_prefixes:
@@ -184,7 +135,6 @@ def ignore_files(filename):
 
 
 def build_offset_intervals(reader):
-    version = reader.globalMetadata.version
     func_list = reader.globalMetadata.funcs
     timeRes = reader.globalMetadata.timeResolution
     ranks = reader.globalMetadata.numRanks
@@ -205,31 +155,21 @@ def build_offset_intervals(reader):
 
     # Initialize offset book, each rank maintains its own offset book
     for localMetadata in reader.localMetadata:
-        if version >= 2.1:
-            fdSet = set([0, 1, 2])
-            for record in records:
-                fdSet.add(record.res)
-            for fd in fdSet:
-                offsetBook[fd] = [0] * ranks
+        fdSet = set([0, 1, 2])  # stdin, stderr, stdout
+        for record in records: fdSet.add(record.res)
+        for fd in fdSet: offsetBook[fd] = [0] * ranks
 
-            for fileInfo in localMetadata.fileMap:
-                filename = fileInfo[2]
-                segmentBook[filename] = []
-                endOfFile[filename] = [0] * ranks
-            segmentBook["stdin"] = []
-            segmentBook["stderr"] = []
-            segmentBook["stdout"] = []
-            endOfFile["stdin"] = [0] * ranks
-            endOfFile["stderr"] = [0] * ranks
-            endOfFile["stdout"] = [0] * ranks
+        for fileInfo in localMetadata.fileMap:
+            filename = fileInfo[2]
+            segmentBook[filename] = []
+            endOfFile[filename] = [0] * ranks
 
-
-        else:
-            for fileInfo in localMetadata.fileMap:
-                filename = fileInfo[2]
-                offsetBook[filename] = [0] * ranks
-                endOfFile[filename] = [0] * ranks
-                segmentBook[filename] = []
+        segmentBook["stdin"] = []
+        segmentBook["stderr"] = []
+        segmentBook["stdout"] = []
+        endOfFile["stdin"] = [0] * ranks
+        endOfFile["stderr"] = [0] * ranks
+        endOfFile["stdout"] = [0] * ranks
 
     fileMaps = []
     for i in range(ranks): fileMaps.append({0: "stdin", 1: "stdout", 2: "stderr"})
@@ -238,11 +178,7 @@ def build_offset_intervals(reader):
     for record in records:
 
         rank = record.rank
-
-        if reader.globalMetadata.version >= 2.1:
-            fileMap = fileMaps[rank]
-        else:
-            fileMap = reader.localMetadata[rank].fileMap
+        fileMap = fileMaps[rank]
 
         func = func_list[record.funcId]
         if "MPI" in func or "H5" in func: continue

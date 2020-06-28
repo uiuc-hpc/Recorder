@@ -77,11 +77,7 @@ def file_access_mode():
             if "dir" in funcname or "MPI" in funcname or "H5" in funcname: continue
 
             if "open" in funcname:
-                if reader.globalMetadata.version >= 2.1:
-                    filename = record.args[0]
-                else:
-                    fileId = int(record.args[0])
-                    filename = fileMap[fileId][2]
+                filename = record.args[0]
                 flagStr = ""
                 if funcname == "open" or funcname == "open64":
                     flagStr = get_flag_str( int(record.args[1]) )
@@ -93,11 +89,11 @@ def file_access_mode():
 
             if "fprintf" in funcname or "read" in funcname or "write" in funcname :
                 if "fread" in funcname or "fwrite" in funcname:
-                    fileId = int(record.args[3])
+                    fd = int(record.args[3])
                 else:
-                    fileId = int(record.args[0])
+                    fd = int(record.args[0])
 
-                filename = fileMap[fileId][2]
+                filename = fileMap[fd][2]
 
                 if "read" in funcname:
                     accesses_set[filename]["read"] = True
