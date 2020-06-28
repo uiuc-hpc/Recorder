@@ -387,7 +387,6 @@ void logger_exit() {
     HASH_ITER(hh, __filename_hashtable, item, tmp) {
         int filename_len = strlen(item->name);
         size_t file_size = get_file_size(item->name);
-        printf("here: %s\n", item->name);
         RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __logger.metaFile);
         RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, __logger.metaFile);
         RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, __logger.metaFile);
