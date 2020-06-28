@@ -79,6 +79,10 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
+**Recorder 2.1.1** June 28, 2020
+1. Use uthash library to replace the original hash map implementation
+2. Remove zlib support
+
 **Recorder 2.1** May 15, 2020
 1. Dump a VERSION file for the reader script to decide the trace format.
 2. Include the return value in each record.
