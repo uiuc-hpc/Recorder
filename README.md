@@ -93,6 +93,6 @@ Change Log
 1. Add the binary format output.
 2. Implement a converter that can output OTF2 trace format.
 3. Write a separate  log unit to provide an uniform logging interface. Re-write most of the code to use this new log unit.
-4. Ignore files (e.g. /sockets) that are not used the application itself.
+4. Ignore files (e.g. /sockets) that are not used by the application itself.
 5. Add a built-in hashmap to support mappings from function name and filename to integers.
 6. Put all function (that we plan to intercept) signatures in the same header file
