@@ -74,21 +74,13 @@ if __name__ == "__main__":
         pass
 
     reader = RecorderReader(sys.argv[1])
-    version = reader.globalMetadata.version
     func_list = reader.globalMetadata.funcs
     for rank in range(reader.globalMetadata.numRanks):
-        fileMap = reader.localMetadata[rank].fileMap
-        if version >= 2.1:
-            fileMap = {0: "stdin", 1: "stdout", 2:"stderr"}
+        fileMap = {0: "stdin", 1: "stdout", 2:"stderr"}
 
         print(rank, len(reader.records[rank]))
         with open(logs_dir+"/"+str(rank)+".txt", 'w') as f:
             records = sorted(reader.records[rank], key=lambda x: x.tstart)
             for record in records:
-                if version >= 2.1 :
-                    #record = fill_in_filename_2(record, fileMap, func_list)
-                    recordText = "%s %s %s %s %s\n" %(record.tstart, record.tend, record.res, func_list[record.funcId], record.args)
-                else:
-                    record = fill_in_filename(record, fileMap, func_list)
-                    recordText = "%s %s %s %s\n" %(record.tstart, record.tend, func_list[record.funcId], record.args)
+                recordText = "%s %s %s %s %s\n" %(record.tstart, record.tend, record.res, func_list[record.funcId], record.args)
                 f.write(recordText)
