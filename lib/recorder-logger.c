@@ -4,12 +4,10 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include "recorder.h"
-#include "zlib.h"
 
 
 #define TIME_RESOLUTION 0.000001
 #define RECORD_WINDOW_SIZE 3        // A sliding window for peephole compression
-#define ZLIB_BUF_SIZE 4096          // For zlib compression //
 
 /**
  * External global values, initialized here
@@ -30,9 +28,6 @@ struct Logger {
 
     // For Recorder Compression Mode
     Record recordWindow[RECORD_WINDOW_SIZE];
-
-    // For Zlib
-    z_stream zlibStream;
 };
 
 // Global object to access the Logger fileds
@@ -231,54 +226,6 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
 
 }
 
-/* Mode 4. Compress the plain text with zlib and write it out */
-static inline void writeInZlib(FILE *f, Record record) {
-    static char in_buf[ZLIB_BUF_SIZE];
-    static char out_buf[ZLIB_BUF_SIZE];
-    sprintf(in_buf, "%f %f %s", record.tstart, record.tend, get_function_name_by_id(record.func_id));
-    int i;
-    for(i = 0; i < record.arg_count; i++) {
-        strcat(in_buf, " ");
-        if(record.args[i])
-            strcat(in_buf, record.args[i]);
-        else                    // some null argument ?
-            strcat(in_buf, "???");
-    }
-    strcat(in_buf, "\n");
-
-    __logger.zlibStream.avail_in = strlen(in_buf);
-    __logger.zlibStream.next_in = in_buf;
-    do {
-        __logger.zlibStream.avail_out = ZLIB_BUF_SIZE;
-        __logger.zlibStream.next_out = out_buf;
-        int ret = deflate(&__logger.zlibStream, Z_NO_FLUSH);    /* no bad return value */
-        unsigned have = ZLIB_BUF_SIZE - __logger.zlibStream.avail_out;
-        RECORDER_REAL_CALL(fwrite) (out_buf, 1, have, f);
-    } while (__logger.zlibStream.avail_out == 0);
-}
-
-void zlib_init() {
-    /* allocate deflate state */
-    __logger.zlibStream.zalloc = Z_NULL;
-    __logger.zlibStream.zfree = Z_NULL;
-    __logger.zlibStream.opaque = Z_NULL;
-    deflateInit(&__logger.zlibStream, Z_DEFAULT_COMPRESSION);
-}
-void zlib_exit() {
-    // Write out everythin zlib's buffer
-    char out_buf[ZLIB_BUF_SIZE];
-    do {
-
-        __logger.zlibStream.avail_out = ZLIB_BUF_SIZE;
-        __logger.zlibStream.next_out = out_buf;
-        int ret = deflate(&__logger.zlibStream, Z_FINISH);    /* no bad return value */
-        unsigned have = ZLIB_BUF_SIZE - __logger.zlibStream.avail_out;
-        RECORDER_REAL_CALL(fwrite) (out_buf, 1, have, __logger.dataFile);
-    } while (__logger.zlibStream.avail_out == 0);
-    // Clean up and end the Zlib
-    (void)deflateEnd(&__logger.zlibStream);
-}
-
 
 void write_record(Record record) {
     if (!__recording) return;       // have not initialized yet
@@ -292,9 +239,6 @@ void write_record(Record record) {
             break;
         case COMP_BINARY:   // 1
             writeInBinary(__logger.dataFile, record);
-            break;
-        case COMP_ZLIB:     // 3
-            writeInZlib(__logger.dataFile, record);
             break;
         default:            // 2, default if compMode not set
             writeInRecorder(__logger.dataFile, record);
@@ -330,8 +274,6 @@ void logger_init(int rank, int nprocs) {
     const char* comp_mode = getenv("RECORDER_COMPRESSION_MODE");
     if (comp_mode) __logger.compMode = atoi(comp_mode);
 
-    if (__logger.compMode == COMP_ZLIB)        // Initialize zlib if compression mode is COMP_ZLIB
-        zlib_init();
     if (rank == 0) {
         FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("logs/recorder.mt", "wb");
         RecorderGlobalDef global_def = {
@@ -367,11 +309,6 @@ void logger_init(int rank, int nprocs) {
 
 void logger_exit() {
     __recording = false;    // set the extern global
-
-    /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
-    if (__logger.compMode == COMP_ZLIB)
-        zlib_exit();
-
 
     /* Write out local metadata information */
     __logger.localDef.num_files = HASH_COUNT(__filename_hashtable);
