@@ -249,23 +249,26 @@ void write_record(Record record) {
 void logger_init(int rank, int nprocs) {
     // Map the functions we will use later
     // We did not intercept fprintf
-    MAP_OR_FAIL(fopen)
-    MAP_OR_FAIL(fclose)
-    MAP_OR_FAIL(fwrite)
-    MAP_OR_FAIL(ftell)
-    MAP_OR_FAIL(fseek)
-    MAP_OR_FAIL(mkdir)
+    MAP_OR_FAIL(fopen);
+    MAP_OR_FAIL(fclose);
+    MAP_OR_FAIL(fwrite);
+    MAP_OR_FAIL(remove);
+    MAP_OR_FAIL(access);
+    MAP_OR_FAIL(mkdir);
 
     // Initialize the global values
     __filename_hashtable = NULL;
     __logger.startTimestamp = recorder_wtime();
 
-    RECORDER_REAL_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1) {
+        RECORDER_REAL_CALL(remove) ("recorder-logs");
+    }
+    RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     char logfile_name[256];
     char metafile_name[256];
-    sprintf(logfile_name, "logs/%d.itf", rank);
-    sprintf(metafile_name, "logs/%d.mt", rank);
+    sprintf(logfile_name, "recorder-logs/%d.itf", rank);
+    sprintf(metafile_name, "recorder-logs/%d.mt", rank);
     __logger.dataFile = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
     __logger.metaFile = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
 
@@ -275,7 +278,7 @@ void logger_init(int rank, int nprocs) {
     if (comp_mode) __logger.compMode = atoi(comp_mode);
 
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("logs/recorder.mt", "wb");
+        FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("recorder-logs/recorder.mt", "wb");
         RecorderGlobalDef global_def = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
@@ -296,7 +299,7 @@ void logger_init(int rank, int nprocs) {
         }
         RECORDER_REAL_CALL(fclose)(global_metafh);
 
-        FILE* version_file = RECORDER_REAL_CALL(fopen) ("logs/VERSION", "w");
+        FILE* version_file = RECORDER_REAL_CALL(fopen) ("recorder-logs/VERSION", "w");
         RECORDER_REAL_CALL(fwrite) ("2.1", 3, 1, version_file);
         RECORDER_REAL_CALL(fclose)(version_file);
     }
