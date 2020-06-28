@@ -65,7 +65,6 @@ void recorder_init(int *argc, char ***argv) {
     RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
 
-    depth = 0;
     logger_init(rank, nprocs);
     local_tstart = RECORDER_REAL_CALL(PMPI_Wtime)();
 }

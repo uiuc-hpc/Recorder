@@ -1,6 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2012 by The HDF Group
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted for any purpose (including commercial purposes)
@@ -55,8 +53,8 @@
 #include <mpi.h>
 #include <stdbool.h>
 #include "hdf5.h"
+#include "uthash.h"
 #include "recorder-log-format.h"
-#include "hashmap.h"
 
 #define __D_MPI_REQUEST MPIO_Request
 #if MPI_VERSION >= 3
@@ -65,9 +63,13 @@
 #define CONST
 #endif
 
-extern int depth;                               // funciton call depth
-extern bool __recording;                        // Only true after init() before exit() so we won't track unwanted functions and files
-extern hashmap_map *__filename2id_map;          // map <filename, integer>
+typedef struct FilenameHashTable_t {
+    char name[256];             // key
+    UT_hash_handle hh;
+} FilenameHashTable;
+
+extern bool __recording;                                // Only true after init() before exit() so we won't track unwanted functions and files
+extern FilenameHashTable* __filename_hashtable;         // map <filename, integer>
 
 
 /* logger.c */
@@ -76,7 +78,6 @@ void logger_exit();
 void write_record(Record record);
 
 /* util.c */
-char* get_filename_id(const char *filename);    // map filename to an integer
 long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
@@ -149,11 +150,9 @@ char* realrealpath(const char* path);           // return the absolute path (map
 
 #define RECORDER_INTERCEPTOR_NOIO(ret, func, real_args, record_arg_count, record_args)   \
     MAP_OR_FAIL(func)                                                               \
-    depth++;                                                                        \
     double tstart = recorder_wtime();                                               \
     ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
     double tend = recorder_wtime();                                                 \
-    depth--;                                                                        \
     Record record = {                                                               \
         .tstart = tstart,                                                           \
         .func_id = get_function_id_by_name(#func),                                  \

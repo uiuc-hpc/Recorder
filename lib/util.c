@@ -3,31 +3,12 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
 
-bool __recording;
 
 /*
- * Map filename to Integer in binary format
- * The filename must be absolute pathname
- * __filename2id_map is an extern gobal variable defined
- * in recorder.h, initialized in logger.c
+ * External global values defined in recorder.h
  */
-hashmap_map* __filename2id_map;
-inline char* get_filename_id(const char *filename) {
-    int id = -1;
-    if (!__recording || !filename || !__filename2id_map || strlen(filename) == 0)
-        return itoa(id);
-
-    const char *key = filename;
-
-    /* filename already exists */
-    if (hashmap_get(__filename2id_map, key, &id) == MAP_OK)
-        return itoa(id);
-
-    /* insert filename into the map */
-    id = hashmap_length(__filename2id_map);
-    hashmap_put(__filename2id_map, key, id);
-    return itoa(id);
-}
+bool __recording;
+FilenameHashTable* __filename_hashtable;
 
 
 /*
@@ -129,14 +110,25 @@ unsigned char get_function_id_by_name(const char* name) {
  * return the filename id from the hashmap
  */
 inline char* realrealpath(const char *path) {
-    char *real_pathname = (char*) malloc(PATH_MAX * sizeof(char));
-    realpath(path, real_pathname);      // we do not intercept realpath()
-    if (real_pathname == NULL)          // realpath() could return NULL on error
-        strcpy(real_pathname, path);
+    if(!__recording) return NULL;
 
-    // insert to hashmap
-    char* id = get_filename_id(real_pathname); free(id);
+    FilenameHashTable *entry = malloc(sizeof(FilenameHashTable));
 
-    return real_pathname;
+    realpath(path, entry->name);      // we do not intercept realpath()
+    if (entry->name == NULL)          // realpath() could return NULL on error
+        strcpy(entry->name, path);
+
+    FilenameHashTable *found;
+    HASH_FIND_STR(__filename_hashtable, entry->name, found);
+
+    if(found) {
+        free(entry);
+        return found->name;
+    } else {
+        // insert to hashtable
+        HASH_ADD_STR(__filename_hashtable, name, entry);
+        return entry->name;
+    }
+
 }
 

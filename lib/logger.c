@@ -11,20 +11,22 @@
 #define RECORD_WINDOW_SIZE 3        // A sliding window for peephole compression
 #define ZLIB_BUF_SIZE 4096          // For zlib compression //
 
+/**
+ * External global values, initialized here
+ */
+bool __recording;
+FilenameHashTable* __filename_hashtable;
 
-//hashmap_map *__filename2id_map;
+
 struct Logger {
-    FILE *dataFile;             // log file
-    FILE *metaFile;             // metadata file
-
-    bool recording;             // set to true only after initialization
+    FILE *dataFile;                     // log file
+    FILE *metaFile;                     // metadata file
 
     double startTimestamp;
 
-    RecorderLocalDef localDef;  // Local metadata information
-    hashmap_map *fileMap;       // Filename to Integer map
+    RecorderLocalDef localDef;          // Local metadata information
 
-    CompressionMode compMode;   // Compression Mode
+    CompressionMode compMode;           // Compression Mode
 
     // For Recorder Compression Mode
     Record recordWindow[RECORD_WINDOW_SIZE];
@@ -32,10 +34,9 @@ struct Logger {
     // For Zlib
     z_stream zlibStream;
 };
+
 // Global object to access the Logger fileds
 struct Logger __logger;
-
-
 
 
 /**
@@ -280,7 +281,7 @@ void zlib_exit() {
 
 
 void write_record(Record record) {
-    if (!__logger.recording) return;       // have not initialized yet
+    if (!__recording) return;       // have not initialized yet
 
     __logger.localDef.total_records++;
     __logger.localDef.function_count[record.func_id]++;
@@ -302,7 +303,6 @@ void write_record(Record record) {
 }
 
 void logger_init(int rank, int nprocs) {
-
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen)
@@ -313,9 +313,7 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(mkdir)
 
     // Initialize the global values
-    __filename2id_map = hashmap_new();      // __filename2id_map is extern global
-    __logger.fileMap = __filename2id_map;
-
+    __filename_hashtable = NULL;
     __logger.startTimestamp = recorder_wtime();
 
     RECORDER_REAL_CALL(mkdir) ("logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -363,14 +361,12 @@ void logger_init(int rank, int nprocs) {
     }
 
     membufInit(&__membuf);
-    __logger.recording = true;
-    __recording = __logger.recording;   // set the extern global
+    __recording = true;     // set the extern globals
 }
 
 
 void logger_exit() {
-    __logger.recording = false;
-    __recording = __logger.recording;   // set the extern global
+    __recording = false;    // set the extern global
 
     /* Call this before close file since we still could have data in zlib's buffer waiting to write out*/
     if (__logger.compMode == COMP_ZLIB)
@@ -378,43 +374,41 @@ void logger_exit() {
 
 
     /* Write out local metadata information */
-    __logger.localDef.num_files = hashmap_length(__logger.fileMap),
-    __logger.localDef.start_timestamp = __logger.startTimestamp,
-    __logger.localDef.end_timestamp = recorder_wtime(),
+    __logger.localDef.num_files = HASH_COUNT(__filename_hashtable);
+    __logger.localDef.start_timestamp = __logger.startTimestamp;
+    __logger.localDef.end_timestamp = recorder_wtime();
     RECORDER_REAL_CALL(fwrite) (&__logger.localDef, sizeof(__logger.localDef), 1, __logger.metaFile);
 
     /* Write out filename mappings, we call stat() to get file size
      * since is already closed (null), the stat() function
      * won't be intercepted. */
-    if (hashmap_length(__logger.fileMap) > 0 ) {
-        int i;
-        for(i = 0; i< __logger.fileMap->table_size; i++) {
-            if(__logger.fileMap->data[i].in_use != 0) {
-                char *filename = __logger.fileMap->data[i].key;
-                int id = __logger.fileMap->data[i].data;
-                size_t file_size = get_file_size(filename);
-                int filename_len = strlen(filename);
-                RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __logger.metaFile);
-                RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, __logger.metaFile);
-                RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, __logger.metaFile);
-                RECORDER_REAL_CALL(fwrite) (filename, sizeof(char), filename_len, __logger.metaFile);
-            }
-        }
+    FilenameHashTable *item, *tmp;
+    int id = 0;
+    HASH_ITER(hh, __filename_hashtable, item, tmp) {
+        int filename_len = strlen(item->name);
+        size_t file_size = get_file_size(item->name);
+        printf("here: %s\n", item->name);
+        RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __logger.metaFile);
+        RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, __logger.metaFile);
+        RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, __logger.metaFile);
+        RECORDER_REAL_CALL(fwrite) (item->name, sizeof(char), filename_len, __logger.metaFile);
+        id++;
     }
 
-    hashmap_free(__logger.fileMap);
-    __logger.fileMap = NULL;
+    HASH_CLEAR(hh, __filename_hashtable);
+
     if ( __logger.metaFile) {
         RECORDER_REAL_CALL(fclose) (__logger.metaFile);
         __logger.metaFile = NULL;
     }
 
-
     __membuf.dump(&__membuf);
     __membuf.release(&__membuf);
+
     /* Close the log file */
     if ( __logger.dataFile) {
         RECORDER_REAL_CALL(fclose) (__logger.dataFile);
         __logger.dataFile = NULL;
     }
+
 }

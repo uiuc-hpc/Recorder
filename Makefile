@@ -15,9 +15,7 @@ endif
 
 LD = @LD@
 
-
-RECORDER_LOG_FORMAT = $(srcdir)/./recorder-log-format.h
-INCL_DEPS = include/recorder.h $(recorder_LOG_FORMAT) include/hashmap.h
+INCL_DEPS = include/recorder.h include/recorder-log-format.h include/uthash.h
 
 CFLAGS_SHARED = -shared -fPIC -I. -I$(srcdir)/include -I$(srcdir)/../\
     -I${MPI_DIR}/include -I/${HDF5_DIR}/include/ \
@@ -36,7 +34,7 @@ lib:
 %.po: %.c $(INCL_DEPS) | lib
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
-lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/hashmap.po lib/logger.po lib/util.po
+lib/librecorder.so: lib/recorder-mpi-io.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/logger.po lib/util.po
 	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lrt -lz $(LDFLAGS)
 
 install:: all

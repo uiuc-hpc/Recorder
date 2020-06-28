@@ -1,6 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright 2012 by The HDF Group
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted for any purpose (including commercial purposes)
