@@ -73,7 +73,7 @@ void recorder_exit() {
 
     double min_tstart, max_tend;
     RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &min_tstart, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tend , &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0)
         printf("[Recorder] elapsed time: %.2f\n", max_tend-min_tstart);
