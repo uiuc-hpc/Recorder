@@ -126,7 +126,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
 
 
 def ignore_files(filename):
-    ignore_prefixes = ["/sys/", "/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/", "/etc/"]
+    ignore_prefixes = ["/sys/", "/dev", "/proc", "/p/lustre2/wang116/applications/ParaDis.v2.5.1.1/Copper/Copper_results/fluxdata/", "/etc/", "stdout", "stderr", "stdin"]
     for prefix in ignore_prefixes:
         if filename.startswith(prefix):
             return True

@@ -426,46 +426,23 @@ def file_access_patterns(intervals):
     htmlWriter.fileAccessPatterns = table.get_html_string()
 
 # 4
-def io_sizes(read=True):
-    func_list = reader.globalMetadata.funcs
-    def get_io_size(record):
-        funcname = func_list[record.funcId]
-        if "dir" in funcname or "MPI" in funcname or "H5" in funcname: return -1
-        if "fwrite" in funcname or "fread" in funcname:
-            if read and "read" in funcname:
-                return int(record.args[1]) * int(record.args[2])
-            if not read and "write" in funcname:
-                return int(record.args[1]) * int(record.args[2])
-        # read/pread, write/pwrite
-        # TODO readv/writev
-        if "writev" in funcname or "readv" in funcname:
-            if read and "readv" in funcname:
-                return int(record.args[1])
-            if not read and "writev" in funcname:
-                return int(record.args[1])
-        if "read" in funcname or "write" in funcname:
-            if read and "read" in funcname:
-                return int(record.args[2])
-            if not read and "write" in funcname:
-                return int(record.args[2])
-        if "fprintf" in funcname:
-            if not read:
-                return int(record.args[1])
-        return -1
+def io_sizes(intervals, read=True):
 
     sizes = {}
-    for records in reader.records:
-        for record in records:
-            io_size = get_io_size(record)
-            if(io_size <= 0): continue
+    for filename in intervals:
+        if ignore_files(filename): continue
+        for interval in intervals[filename]:
+            io_size , isRead = interval[4], interval[5]
+            if read != isRead: continue
             if io_size not in sizes: sizes[io_size] = 0
             sizes[io_size] += 1
+        print(filename, len(sizes.keys()))
 
     xs = sorted(sizes.keys())
     ys = [ sizes[x] for x in xs ]
     xs = [ str(x) for x in xs ]
 
-    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=400, plot_height=350)
+    p = figure(x_range=xs, x_axis_label="IO Size", y_axis_label="Count", y_axis_type='log', plot_width=500 if not read else 400, plot_height=350)
     p.vbar(x=xs, top=ys, width=0.6, bottom=1)
     p.xaxis.major_label_orientation = math.pi/2
 
@@ -501,7 +478,7 @@ if __name__ == "__main__":
 
     file_access_patterns(intervals)
 
-    io_sizes(read=True)
-    io_sizes(read=False)
+    io_sizes(intervals, read=True)
+    io_sizes(intervals, read=False)
 
     htmlWriter.write_html()
