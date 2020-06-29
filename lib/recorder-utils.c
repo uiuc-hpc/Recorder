@@ -110,7 +110,7 @@ unsigned char get_function_id_by_name(const char* name) {
  * return the filename id from the hashmap
  */
 inline char* realrealpath(const char *path) {
-    if(!__recording) return NULL;
+    if(!__recording) return strdup(path);
 
     FilenameHashTable *entry = malloc(sizeof(FilenameHashTable));
 
@@ -121,14 +121,14 @@ inline char* realrealpath(const char *path) {
     FilenameHashTable *found;
     HASH_FIND_STR(__filename_hashtable, entry->name, found);
 
+    // return duplicated name, because we need to free record.args later
     if(found) {
         free(entry);
-        return found->name;
+        return strdup(found->name);
     } else {
         // insert to hashtable
         HASH_ADD_STR(__filename_hashtable, name, entry);
-        return entry->name;
+        return strdup(entry->name);
     }
-
 }
 

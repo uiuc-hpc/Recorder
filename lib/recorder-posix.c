@@ -68,42 +68,6 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-static inline char* fd2name(int fd) {
-    size_t len = 256;
-    char *fdname = malloc(sizeof(char)*len);
-    sprintf(fdname, "/proc/self/fd/%d", fd);
-
-    MAP_OR_FAIL(readlink)
-    char *realname = malloc(sizeof(char)*len);
-    int ret = RECORDER_REAL_CALL(readlink(fdname, realname, len));
-
-    // when open a file that does not exist, fd will be -1
-    if(fd < 0 || ret <  0) {
-        char *id_str = realrealpath(fdname);    // still need to return a integer string
-        free(fdname);
-        free(realname);
-        return id_str;
-    }
-
-    // File exists, readlink succeed
-    // readlink does not append a null byte
-    realname[ret] = 0;
-    char *id_str = realrealpath(realname);
-    free(fdname);
-    free(realname);
-    return id_str;
-}
-
-static inline char* stream2name(FILE *fp) {
-    // Need to map the fileno funciton, because here - this file
-    // may be invoked even before MPI_Init in recorder-mpi-initialize.c
-    // also note that fileno causes segmentation fault if fp is NULL
-    if (fp == NULL) return NULL;
-    MAP_OR_FAIL(fileno)
-    int fd = RECORDER_REAL_CALL(fileno(fp));
-    return fd2name(fd);
-}
-
 static inline int stream2fd(FILE *fp) {
     // Need to map the fileno funciton, because here - this file
     // may be invoked even before MPI_Init in recorder-mpi-initialize.c
@@ -217,18 +181,16 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
 }
 
 FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
-    char** args = assemble_args_list(2, realrealpath(path), mode);
+    char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode), 2, args)
-
     record.res = stream2fd(res);
     write_record(record);
     return res;
 }
 
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
-    char** args = assemble_args_list(2, realrealpath(path), mode);
+    char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen, (path, mode), 2, args)
-
     record.res = stream2fd(res);
     write_record(record);
     return res;

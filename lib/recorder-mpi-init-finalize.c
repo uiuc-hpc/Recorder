@@ -60,8 +60,8 @@ void recorder_init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Comm_rank)
     MAP_OR_FAIL(PMPI_Wtime)
     MAP_OR_FAIL(PMPI_Reduce)
-    RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+    RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
 
     logger_init(rank, nprocs);
     local_tstart = RECORDER_REAL_CALL(PMPI_Wtime)();
@@ -71,12 +71,12 @@ void recorder_exit() {
     logger_exit();
 
     local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
-    double min_tstart, max_tend;
-    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &min_tstart, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-    RECORDER_REAL_CALL(PMPI_Reduce)(&local_tend , &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    //double min_tstart, max_tend;
+    //RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &min_tstart, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    //RECORDER_REAL_CALL(PMPI_Reduce)(&local_tend , &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0)
-        printf("[Recorder] elapsed time: %.2f\n", max_tend-min_tstart);
+        printf("[Recorder] elapsed time on rank 0: %.2f\n", local_tend-local_tstart);
 }
 
 int PMPI_Init(int *argc, char ***argv) {
@@ -102,12 +102,13 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
 
 int PMPI_Finalize(void) {
     recorder_exit();
-    MAP_OR_FAIL(PMPI_Finalize)
+    MAP_OR_FAIL(PMPI_Finalize);
     return RECORDER_REAL_CALL(PMPI_Finalize) ();
 }
 
 int MPI_Finalize(void) {
     recorder_exit();
-    MAP_OR_FAIL(PMPI_Finalize)
-    return RECORDER_REAL_CALL(PMPI_Finalize) ();
+    MAP_OR_FAIL(PMPI_Finalize);
+    int res = RECORDER_REAL_CALL(PMPI_Finalize) ();
+    return res;
 }

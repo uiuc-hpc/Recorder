@@ -17,6 +17,7 @@ FilenameHashTable* __filename_hashtable;
 
 
 struct Logger {
+    int rank;
     FILE *dataFile;                     // log file
     FILE *metaFile;                     // metadata file
 
@@ -73,7 +74,7 @@ void membufDump(struct MemBuf *membuf) {
     membuf->pos = 0;
 }
 void membufInit(struct MemBuf* membuf) {
-    membuf->size = 12*1024*1024;            // 12M
+    membuf->size = 6*1024*1024;            // 12M
     membuf->buffer = malloc(membuf->size);
     membuf->pos = 0;
     membuf->release = membufRelease;
@@ -167,11 +168,11 @@ static inline void writeInText(FILE *f, Record record) {
 static inline void writeInBinary(FILE *f, Record record) {
     int tstart = (record.tstart - __logger.startTimestamp) / TIME_RESOLUTION;
     int tend   = (record.tend - __logger.startTimestamp) / TIME_RESOLUTION;
-    __membuf.append(&__membuf, &(record.status), sizeof(char));
-    __membuf.append(&__membuf, &tstart, sizeof(int));
-    __membuf.append(&__membuf, &tend, sizeof(int));
-    __membuf.append(&__membuf, &(record.res), sizeof(int));
-    __membuf.append(&__membuf, &(record.func_id), sizeof(unsigned char));
+    __membuf.append(&__membuf, &(record.status), sizeof(record.status));
+    __membuf.append(&__membuf, &tstart, sizeof(tstart));
+    __membuf.append(&__membuf, &tend, sizeof(tend));
+    __membuf.append(&__membuf, &(record.res), sizeof(record.res));
+    __membuf.append(&__membuf, &(record.func_id), sizeof(record.func_id));
     writeArguments(f, record);
 }
 
@@ -184,13 +185,13 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
     int min_diff_count = 999;
     char ref_window_id;
     int i;
+    /*
     for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
         Record record = __logger.recordWindow[i];
         // Only meets the following conditions that we consider to compress it:
         // 1. same function as the one in sliding window
-        // 2. has at least 1 arguments
-        // 3. has less than 8 arguments
-        // 4. the number of different arguments is less the number of total arguments
+        // 2. has [1, 7] arguments
+        // 3. the number of different arguments is less the number of total arguments
         if ((record.func_id == new_record.func_id) && (new_record.arg_count < 8) &&
              (new_record.arg_count > 0) && (record.arg_count > 0)) {
             Record tmp_record = get_diff_record(record, new_record);
@@ -208,6 +209,7 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
             }
         }
     }
+    */
 
     if (compress) {
         diff_record.tstart = new_record.tstart;
@@ -219,6 +221,13 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
         new_record.status = 0b00000000;
         writeInBinary(__logger.dataFile, new_record);
     }
+
+    for(i = 0; i < __logger.recordWindow[2].arg_count; i++) {
+        if(__logger.recordWindow[2].args[i])
+            free(__logger.recordWindow[2].args[i]);
+    }
+    if(__logger.recordWindow[2].args)
+        free(__logger.recordWindow[2].args);
 
     __logger.recordWindow[2] = __logger.recordWindow[1];
     __logger.recordWindow[1] = __logger.recordWindow[0];
@@ -258,7 +267,14 @@ void logger_init(int rank, int nprocs) {
 
     // Initialize the global values
     __filename_hashtable = NULL;
+    __logger.rank = rank;
     __logger.startTimestamp = recorder_wtime();
+    __logger.recordWindow[2].args = NULL;
+    __logger.recordWindow[2].func_id = -1;
+    __logger.recordWindow[1].args = NULL;
+    __logger.recordWindow[1].func_id = -1;
+    __logger.recordWindow[0].args = NULL;
+    __logger.recordWindow[0].func_id = -1;
 
     if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1) {
         RECORDER_REAL_CALL(remove) ("recorder-logs");
@@ -348,5 +364,4 @@ void logger_exit() {
         RECORDER_REAL_CALL(fclose) (__logger.dataFile);
         __logger.dataFile = NULL;
     }
-
 }
