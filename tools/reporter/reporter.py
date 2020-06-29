@@ -406,12 +406,12 @@ def file_access_patterns(intervals):
                 if rank1 == rank2: pattern['RAW']['S'] += 1
                 else: pattern['RAW']['D'] += 1
         # debug info
-        if pattern['RAW']['S']: print("RAW-S"), pattern['RAW']['S']
-        if pattern['RAW']['D']: print("RAW-D"), pattern['RAW']['D']
-        if pattern['WAW']['S']: print("WAW-S"), pattern['WAW']['S']
-        if pattern['WAW']['D']: print("WAW-D"), pattern['WAW']['D']
-        if pattern['WAR']['S']: print("WAR-S"), pattern['WAR']['S']
-        if pattern['WAR']['D']: print("WAR-D"), pattern['WAR']['D']
+        if pattern['RAW']['S']: print("RAW-S", pattern['RAW']['S'], filename)
+        if pattern['RAW']['D']: print("RAW-D", pattern['RAW']['D'], filename)
+        if pattern['WAW']['S']: print("WAW-S", pattern['WAW']['S'], filename)
+        if pattern['WAW']['D']: print("WAW-D", pattern['WAW']['D'], filename)
+        if pattern['WAR']['S']: print("WAR-S", pattern['WAR']['S'], filename)
+        if pattern['WAR']['D']: print("WAR-D", pattern['WAR']['D'], filename)
         return pattern
 
     table = PrettyTable()
@@ -436,7 +436,6 @@ def io_sizes(intervals, read=True):
             if read != isRead: continue
             if io_size not in sizes: sizes[io_size] = 0
             sizes[io_size] += 1
-        print(filename, len(sizes.keys()))
 
     xs = sorted(sizes.keys())
     ys = [ sizes[x] for x in xs ]
