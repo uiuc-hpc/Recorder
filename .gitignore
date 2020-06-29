@@ -45,6 +45,7 @@ __pycache__/
 
 # App-specific
 logs/
+recorder-logs/
 tools/otf2-converter
 tools/figures/
 *.html

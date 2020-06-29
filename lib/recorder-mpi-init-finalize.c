@@ -69,8 +69,8 @@ void recorder_init(int *argc, char ***argv) {
 
 void recorder_exit() {
     logger_exit();
-    local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
 
+    local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
     double min_tstart, max_tend;
     RECORDER_REAL_CALL(PMPI_Reduce)(&local_tstart, &min_tstart, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     RECORDER_REAL_CALL(PMPI_Reduce)(&local_tend , &max_tend, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
