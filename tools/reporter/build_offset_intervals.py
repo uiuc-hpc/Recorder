@@ -39,9 +39,9 @@ def handle_data_operations(record, fileMap, offsetBook, func_list, endOfFile):
         fd, count = int(args[0]), int(args[2])
         if(fd not in fileMap): return "", -1, -1
         filename = fileMap[fd]
-
         offset = offsetBook[fd][rank]
         offsetBook[fd][rank] += count
+
         endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
     elif "fprintf" in func:
         fd, count = int(args[0]), int(args[1])
@@ -66,7 +66,6 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         filename = record.args[0]
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
-        # Need to find out the correct file size from the closeBook
         openMode = record.args[1]
         if 'a' in openMode:
             offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
@@ -79,11 +78,13 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         filename = record.args[0]
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
+        openMode = int( record.args[1] )
+        if openMode == 2:  # TODO need  a better to test for O_APPEND
+            offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
 
         # create a new segment
         newSegmentID = 1+segmentBook[filename][-1][1] if len(segmentBook[filename]) > 0 else 0
         segmentBook[filename].append([rank, newSegmentID, False])
-        # TODO consider append flags
     elif "seek" in func:
         fd, offset, whence = int(record.args[0]), int(record.args[1]), int(record.args[2])
         if fd not in fileMap: return
@@ -100,6 +101,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         fd = int(record.args[0])
         if(fd not in fileMap): return
         filename = fileMap[fd]
+        del fileMap[fd]
 
         closeBook[filename] = endOfFile[filename][rank]
 
