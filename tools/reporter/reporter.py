@@ -311,9 +311,9 @@ def offset_vs_rank(intervals):
     idx = 0
     for filename in intervals:
         if ignore_files(filename): continue
-        if 'pout' in filename and int(filename.split('pout.')[-1]) > 9: continue
-
-        if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
+        if 'junk' in filename and int(filename.split('junk.')[-1]) > 0: continue    # NWChem
+        if 'pout' in filename and int(filename.split('pout.')[-1]) > 0: continue    # Chombo
+        if idx < 16 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
             idx += 1
@@ -351,8 +351,9 @@ def offset_vs_time(intervals):
     idx = 0
     for filename in intervals:
         if ignore_files(filename): continue
-        if 'pout' in filename and int(filename.split('pout.')[-1]) > 9: continue
-        if idx < 12 and (len(intervals[filename]) > 0): # only show 12 files at most
+        if 'junk' in filename and int(filename.split('junk.')[-1]) > 0: continue    # NWChem
+        if 'pout' in filename and int(filename.split('pout.')[-1]) > 0: continue    # Chombo
+        if idx < 16 and (len(intervals[filename]) > 0): # only show 12 files at most
             p = plot_for_one_file(filename, intervals[filename])
             plots.append(p)
             idx += 1

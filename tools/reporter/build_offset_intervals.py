@@ -101,7 +101,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         fd = int(record.args[0])
         if(fd not in fileMap): return
         filename = fileMap[fd]
-        del fileMap[fd]
+        if "close" in func: del fileMap[fd]
 
         closeBook[filename] = endOfFile[filename][rank]
 
@@ -151,7 +151,6 @@ def build_offset_intervals(reader):
     for rank in range(ranks):
         records = records + reader.records[rank]
     records = sorted(records, key=lambda x: x.tstart)
-
 
     # Initialize offset book, each rank maintains its own offset book
     for localMetadata in reader.localMetadata:
