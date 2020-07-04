@@ -148,7 +148,21 @@ char* realrealpath(const char* path);           // return the absolute path (map
 #endif
 
 
-#define RECORDER_INTERCEPTOR_NOIO(ret, func, real_args, record_arg_count, record_args)   \
+/**
+ * I/O Interceptor
+ * Phase 1:
+ *
+ * we intercept functions (e.g., from recorder-posix.c) and then
+ * call this interception funciton.
+ *
+ * Here, we first run the original function so we can get the ouput
+ * parameters correctly.
+ *
+ * We also construct a [struct Record] for each function. But latter we
+ * can change the fields, e.g., fopen will convert the FILE* to an integer res.
+ *
+ */
+#define RECORDER_INTERCEPTOR_NOIO(ret, func, real_args)                             \
     MAP_OR_FAIL(func)                                                               \
     double tstart = recorder_wtime();                                               \
     ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
@@ -156,21 +170,21 @@ char* realrealpath(const char* path);           // return the absolute path (map
     Record record = {                                                               \
         .tstart = tstart,                                                           \
         .func_id = get_function_id_by_name(#func),                                  \
-        .tend = tend,                                                               \
-        .arg_count = record_arg_count,                                              \
-        .args = record_args                                                         \
+        .tend = tend                                                                \
     };
 
 
 /**
  * I/O Interceptor
- * We intercept functions (e.g., from recorder-posix.c) and then
- * call this interception funciton. In this function, we construct
- * a [struct Record] for each function call and then write it to
- * log file using the logging unit.
+ * Phase 2:
+ *
+ * Set other fields of the record, i.e, arg_count and args.
+ * Finally write out the record
+ *
  */
-#define RECORDER_INTERCEPTOR(ret, func, real_args, record_arg_count, record_args)   \
-    RECORDER_INTERCEPTOR_NOIO(ret, func, real_args, record_arg_count, record_args)  \
+#define RECORDER_INTERCEPTOR(record_arg_count, record_args)                         \
+    record.arg_count = record_arg_count;                                            \
+    record.args = record_args;                                                      \
     write_record(record);                                                           \
     return res;
 
