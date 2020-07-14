@@ -52,6 +52,7 @@ def handle_data_operations(record, fileMap, offsetBook, func_list, endOfFile):
         offsetBook[fd][rank] += count
         endOfFile[filename][rank] = max(endOfFile[filename][rank], offsetBook[fd][rank])
 
+
     return filename, offset, count
 
 
@@ -79,7 +80,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
         openMode = int( record.args[1] )
-        if openMode == 2:  # TODO need  a better to test for O_APPEND
+        if openMode == 2:  # TODO need  a better way to test for O_APPEND
             offsetBook[fd][rank] = max(endOfFile[filename][rank], closeBook[filename]) if filename in closeBook else endOfFile[filename][rank]
 
         # create a new segment
@@ -159,7 +160,7 @@ def build_offset_intervals(reader):
         for fd in fdSet: offsetBook[fd] = [0] * ranks
 
         for fileInfo in localMetadata.fileMap:
-            filename = fileInfo[2]
+            filename = fileInfo[2].replace(" ", "_")
             segmentBook[filename] = []
             endOfFile[filename] = [0] * ranks
 
