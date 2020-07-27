@@ -165,7 +165,7 @@ class RecorderReader:
             tend = struct.unpack('i', line[5:9])[0]
             res = struct.unpack('i', line[9:13])[0]
             funcId = struct.unpack('B', line[13:14])[0]
-            args = line[15:].decode('utf-8').split(' ')
+            args = [int(i) if i.isdigit() else i for i in line[15:].split(' ')]
             records.append(Record(rank, status, tstart, tend, funcId, args, res))
 
         return records
