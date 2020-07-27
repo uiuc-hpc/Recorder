@@ -316,7 +316,7 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(global_metafh);
 
         FILE* version_file = RECORDER_REAL_CALL(fopen) ("recorder-logs/VERSION", "w");
-        RECORDER_REAL_CALL(fwrite) ("2.1", 3, 1, version_file);
+        RECORDER_REAL_CALL(fwrite) ("2.2", 3, 1, version_file);
         RECORDER_REAL_CALL(fclose)(version_file);
     }
 
