@@ -91,8 +91,8 @@ int RECORDER_POSIX_DECL(close)(int fd) {
 }
 
 int RECORDER_POSIX_DECL(fclose)(FILE *fp) {
+    char** args = assemble_args_list(1, stream2fdstr(fp));  // get the fd first otherwise fp will be NULL after went through close
     RECORDER_INTERCEPTOR_NOIO(int, fclose, (fp));
-    char** args = assemble_args_list(1, stream2fdstr(fp));
     RECORDER_INTERCEPTOR(1, args);
 }
 
@@ -435,8 +435,8 @@ struct dirent* RECORDER_POSIX_DECL(readdir)(DIR *dir) {
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(closedir)(DIR *dir) {
-    RECORDER_INTERCEPTOR_NOIO(int, closedir, (dir));
     char** args = assemble_args_list(1, ptoa(dir));
+    RECORDER_INTERCEPTOR_NOIO(int, closedir, (dir));
     RECORDER_INTERCEPTOR(1, args);
 }
 /*

@@ -7,7 +7,7 @@
 
 
 int main() {
-    //MPI_Init(NULL, NULL);
+    MPI_Init(NULL, NULL);
 
     struct stat buf;
     int res;
@@ -33,8 +33,8 @@ int main() {
     int a, b;
     a = 0;
     b = 10;
-    fprintf(stderr, "hello world: %d %d", a, b);
-    //MPI_Finalize();
+    fprintf(stderr, "hello world: %d %d\n", a, b);
+    MPI_Finalize();
 
     return 0;
 }
