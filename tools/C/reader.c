@@ -1,20 +1,14 @@
-#include <iostream>
 #include <string.h>
-#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 #include "./reader.h"
-#include <bitset>
-using namespace std;
 
 void read_global_metadata(char* path, RecorderGlobalDef *RGD) {
     FILE* fp = fopen(path, "r+b");
     fread(RGD, sizeof(RecorderGlobalDef), 1, fp);
     fclose(fp);
-
-    cout<<"time res:"<<RGD->time_resolution<<endl;
-    cout<<"total ranks:"<<RGD->total_ranks<<endl;
-    cout<<"comp mode: "<<RGD->compression_mode<<endl;
-    cout<<"peephole size:"<<RGD->peephole_window_size<<endl;
 }
+
 
 void read_local_metadata(char* path, RecorderLocalDef *RLD) {
     FILE* fp = fopen(path, "r+b");
@@ -58,10 +52,11 @@ char** get_record_arguments(char* str, int arg_count) {
 }
 
 
-vector<Record*> read_records(char* path) {
-    vector<Record*> records;
-    FILE* fp = fopen(path, "r+b");
+Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
 
+    Record *records = (Record*) malloc(sizeof(Record) * len);
+
+    FILE* fp = fopen(path, "r+b");
 
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp);
@@ -74,9 +69,10 @@ vector<Record*> read_records(char* path) {
     long args_start_pos = 0;
     long rec_start_pos = 0;
 
+    int ri = 0;
     while(rec_start_pos < fsize) {
         // read one record
-        Record *r = (Record*) malloc(sizeof(Record));
+        Record *r = &(records[ri++]);
 
         // 1. First 14 bytes: status, tstart, tend, func_id, res;
         int tstart; int tend;
@@ -86,7 +82,8 @@ vector<Record*> read_records(char* path) {
         memcpy(&(r->res), content+rec_start_pos+9, 4);
         memcpy(&(r->func_id), content+rec_start_pos+13, 1);
 
-        r->tstart = tstart; r->tend = tend;
+        r->tstart = tstart * RGD->time_resolution;
+        r->tend = tend * RGD->time_resolution;
         r->arg_count = 0;
 
         // 2. Then arguments splited by ' '
@@ -108,8 +105,6 @@ vector<Record*> read_records(char* path) {
             arguments_str[len-1] = 0;
             r->args = get_record_arguments(arguments_str, r->arg_count);
         }
-
-        records.push_back(r);
     }
 
     free(content);
@@ -118,11 +113,11 @@ vector<Record*> read_records(char* path) {
     return records;
 }
 
-void decompress_records(vector<Record*> records) {
+void decompress_records(Record *records, int len) {
     static char diff_bits[] = {0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000};
 
-    for(int i = 0; i < records.size(); i++) {
-        Record* r = records[i];
+    for(int i = 0; i < len; i++) {
+        Record* r = &(records[i]);
 
         /*
         cout<<i+1<<", status:"<<bitset<8>(r->status)<<", ref-id: "<<bitset<8>(r->func_id)<<", args:";
@@ -133,7 +128,7 @@ void decompress_records(vector<Record*> records) {
 
         if(r->status) {
             int ref_id = i - 1 - r->func_id;
-            Record *ref = records[ref_id];
+            Record *ref = &(records[ref_id]);
 
             r->func_id = ref->func_id;
             r->arg_count = ref->arg_count;
@@ -153,4 +148,31 @@ void decompress_records(vector<Record*> records) {
     }
 }
 
+/*
+int main(int argc, char** argv) {
+    const char* logs_dir =  argv[1];
 
+    char global_metadata_file[256];
+    char local_metadata_file[256];
+    char log_file[256];
+
+    RecorderGlobalDef RGD;
+    RecorderLocalDef RLD;
+    sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
+    read_global_metadata(global_metadata_file, &RGD);
+
+    for(int rank = 0; rank < RGD.total_ranks; rank++) {
+        sprintf(local_metadata_file, "%s/%d.mt", logs_dir, rank);
+        read_local_metadata(local_metadata_file, &RLD);
+
+        sprintf(log_file, "%s/%d.itf", logs_dir, rank);
+        Record *records = read_records(log_file, RLD.total_records);
+        decompress_records(records, RLD.total_records);
+        printf("%s: %d\n", log_file,  RLD.total_records);
+
+        free(records);
+    }
+
+    return 0;
+}
+*/
