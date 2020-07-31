@@ -9,13 +9,14 @@
  * Write all original records (encoded and compressed) to text file
  */
 void write_to_textfile(const char* path, Record *records, int len) {
+    int i, arg_id;
 
     FILE* out_file = fopen(path, "w");
-    for(int i = 0; i < len; i++) {
+    for(i = 0; i < len; i++) {
         Record record = records[i];
         //printf("%d %f %f %s %d", record->status, record->tstart, record->tend, func_list[record->func_id], record->arg_count);
         fprintf(out_file, "%f %f %d %s (", record.tstart, record.tend, record.res, func_list[record.func_id]);
-        for(int arg_id = 0; arg_id < record.arg_count; arg_id++) {
+        for(arg_id = 0; arg_id < record.arg_count; arg_id++) {
             char *arg = record.args[arg_id];
             fprintf(out_file, " %s", arg);
         }
@@ -37,7 +38,8 @@ int main(int argc, char **argv) {
     sprintf(global_metadata_path, "%s/recorder.mt", log_dir_path);
     read_global_metadata(global_metadata_path, &RGD);
 
-    for(int i = 0; i < RGD.total_ranks ; i++) {
+    int i;
+    for(i = 0; i < RGD.total_ranks ; i++) {
         sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
         sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
         sprintf(textfile_path, "%s/%d.txt" , textfile_dir, i);

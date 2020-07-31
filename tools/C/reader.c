@@ -17,7 +17,8 @@ void read_local_metadata(char* path, RecorderLocalDef *RLD) {
     RLD->filemap = (char**) malloc(sizeof(char*) * RLD->num_files);
     RLD->file_sizes = (size_t*) malloc(sizeof(size_t) * RLD->num_files);
 
-    for(int i = 0; i < RLD->num_files; i++) {
+    int i;
+    for(i = 0; i < RLD->num_files; i++) {
         int id, filename_len;
         fread(&id, sizeof(int), 1, fp);
         fread(&(RLD->file_sizes[i]), sizeof(size_t), 1, fp);
@@ -69,7 +70,7 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
     long args_start_pos = 0;
     long rec_start_pos = 0;
 
-    int ri = 0;
+    int i, ri = 0;
     while(rec_start_pos < fsize) {
         // read one record
         Record *r = &(records[ri++]);
@@ -89,7 +90,7 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
         // 2. Then arguments splited by ' '
         // '\n' marks the end of one record
         args_start_pos = rec_start_pos + 15;
-        for(int i = rec_start_pos+14; i < fsize; i++) {
+        for(i = rec_start_pos+14; i < fsize; i++) {
             if(' ' == content[i])
                 r->arg_count++;
             if('\n' == content[i]) {
@@ -116,7 +117,8 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
 void decompress_records(Record *records, int len) {
     static char diff_bits[] = {0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000};
 
-    for(int i = 0; i < len; i++) {
+    int i, j;
+    for(i = 0; i < len; i++) {
         Record* r = &(records[i]);
 
         /*
@@ -137,7 +139,7 @@ void decompress_records(Record *records, int len) {
             // decompress arguments
             int k = 0;
             r->args = (char**) malloc(sizeof(char*) * r->arg_count);
-            for(int j = 0; j < r->arg_count; j++) {
+            for(j = 0; j < r->arg_count; j++) {
                 if( (j < 7) && (r->status & diff_bits[j]) ) {  // Modify the different ones
                     r->args[j] = diff_args[k++];
                 } else {                                        // Copy the same ones
