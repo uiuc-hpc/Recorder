@@ -16,7 +16,7 @@ def handle_data_operations(record, fileMap, offsetBook, func_list, endOfFile):
             endOfFile[filename][rank] = 0
 
     func = func_list[record.func_id]
-    rank, args = record.rank, record.args
+    rank, args = record.rank, record.args_to_strs()
 
     filename, offset, count = "", -1, -1
 
@@ -87,6 +87,8 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         segmentBook[filename].append([rank, newSegmentID, False])
 
     rank, func = record.rank, func_list[record.func_id]
+    args = record.args_to_strs()
+
     # Ignore directory related operations
     if "dir" in func:
         return
@@ -94,30 +96,30 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
     if "fopen" in func or "fdopen" in func:
         fd = record.res
         if "fdopen" in func:
-            oldFd = int(record.args[0])
+            oldFd = int(args[0])
             if oldFd not in fileMap:        # openning some file that we do not know?
                 return
             else:
                 filename = fileMap[oldFd]
         else:
-            filename = record.args[0]
+            filename = args[0]
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
-        openMode = record.args[1]
-        if 'a' in openMode:
+        openMode = args[1]
+        if b'a' in openMode:
             offsetBook[fd][rank] = get_latest_offset(filename, rank, closeBook, endOfFile)
         create_new_segment(filename, rank, segmentBook)
     elif "open" in func:
         fd = record.res
-        filename = record.args[0]
+        filename = args[0]
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
-        openMode = int( record.args[1] )
+        openMode = int( args[1] )
         if openMode == 2:  # TODO need  a better way to test for O_APPEND
             offsetBook[fd][rank] = get_latest_offset(filename, rank, closeBook, endOfFile)
         create_new_segment(filename, rank, segmentBook)
     elif "seek" in func:
-        fd, offset, whence = int(record.args[0]), int(record.args[1]), int(record.args[2])
+        fd, offset, whence = int(args[0]), int(args[1]), int(args[2])
         if fd not in fileMap: return
         filename = fileMap[fd]
 
@@ -129,7 +131,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
             offsetBook[fd][rank] = get_latest_offset(filename, rank, closeBook, endOfFile)
 
     elif "close" in func or "sync" in func:
-        fd = int(record.args[0])
+        fd = int(args[0])
         if(fd not in fileMap): return
         filename = fileMap[fd]
         if "close" in func: del fileMap[fd]
@@ -213,7 +215,7 @@ def build_offset_intervals(reader):
     for rank in range(ranks):
         LM = reader.LMs[rank]
         for i in range(LM.num_files):
-            filename = LM.filemap[i].replace(" ", "_")
+            filename = LM.filenames[i].replace(" ", "_")
             segmentBook[filename] = []
             endOfFile[filename] = [0] * ranks
 

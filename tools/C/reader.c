@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
         read_local_metadata(local_metadata_file, &RLD);
 
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
-        Record *records = read_records(log_file, RLD.total_records);
+        Record *records = read_records(log_file, RLD.total_records, &RGD);
         decompress_records(records, RLD.total_records);
         printf("%s: %d\n", log_file,  RLD.total_records);
 

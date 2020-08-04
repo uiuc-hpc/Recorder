@@ -33,7 +33,7 @@ def file_counts():
     for LM in reader.LMs:
         num = 0
         for i in range(LM.num_files):
-            filename = LM.filemap[i]
+            filename = LM.filenames[i]
             if not ignore_files(filename):
                 num += 1
         y.append(num)
