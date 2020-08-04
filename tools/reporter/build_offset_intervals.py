@@ -106,7 +106,7 @@ def handle_metadata_operations(record, fileMap, offsetBook, func_list, closeBook
         fileMap[fd] = filename
         offsetBook[fd][rank] = 0
         openMode = args[1]
-        if b'a' in openMode:
+        if 'a' in openMode:
             offsetBook[fd][rank] = get_latest_offset(filename, rank, closeBook, endOfFile)
         create_new_segment(filename, rank, segmentBook)
     elif "open" in func:
