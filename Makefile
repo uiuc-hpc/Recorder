@@ -7,6 +7,7 @@ endif
 srcdir = .
 prefix = .
 libdir = ${prefix}/librecorder/lib
+bindir = ${prefix}/librecorder/bin
 
 CC = ${MPI_DIR}/bin/mpicc
 ifeq ("$(wildcard $(CC))","")
@@ -44,8 +45,9 @@ tools/C/recorder2text.out:
 	$(CC) tools/C/recorder2text.c tools/C/reader.c -o $@
 
 install:: all
-	install -d $(libdir)
+	install -d $(libdir) $(bindir)
 	install -m 755 lib/librecorder.so $(libdir)
+	install -m 755 tools/C/recorder2text.out $(bindir)
 
 clean::
 	rm -f *.o *.a lib/*.o lib/*.po lib/*.a lib/*.so
