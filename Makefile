@@ -26,7 +26,7 @@ LDFLAGS += -L${MPI_DIR}/lib -L${HDF5_DIR}/lib -lhdf5 -ldl
 
 CFLAGS += $(CFLAGS_SHARED) ${DISABLED_LAYERS}
 
-all: tools/C/reader.so lib/librecorder.so
+all: tools/C/reader.so lib/librecorder.so tools/C/recorder2text.out
 
 lib:
 	@mkdir -p $@
@@ -39,6 +39,9 @@ lib/librecorder.so: lib/recorder-mpi.po lib/recorder-mpi-init-finalize.po lib/re
 
 tools/C/reader.so:
 	$(CC) -fPIC -shared -ldl tools/C/reader.c -o $@
+
+tools/C/recorder2text.out:
+	$(CC) tools/C/recorder2text.c tools/C/reader.c -o $@
 
 install:: all
 	install -d $(libdir)
