@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
     IntervalsMap *IM = build_offset_intervals(reader, &num_files);
 
 
-    //access_patterns(IM, num_files);
-    detect_overlaps(IM, num_files);
+    access_patterns(IM, num_files);
+    //detect_overlaps(IM, num_files);
 
     for(int i = 0; i < num_files; i++) {
         free(IM[i].filename);
