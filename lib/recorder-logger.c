@@ -86,7 +86,6 @@ void membufInit(struct MemBuf* membuf) {
 
 
 
-
 static inline int startsWith(const char *pre, const char *str) {
     size_t lenpre = strlen(pre),
            lenstr = strlen(str);
@@ -304,14 +303,10 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
 
         unsigned int i;
-        for(i = 0; i < 256; i++) {
+        for(i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
             const char *funcname = get_function_name_by_id(i);
-            if(funcname) {
-                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
-                RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
-            } else {
-                break;
-            }
+            RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
+            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
         }
         RECORDER_REAL_CALL(fclose)(global_metafh);
 
