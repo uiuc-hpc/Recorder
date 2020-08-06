@@ -81,9 +81,10 @@ void write_record(Record record);
 long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
-char* itoa(long long val);                      // convert a integer to string
+char* itoa(size_t val);                      // convert a integer to string
 char* ftoa(double val);                         // convert a float to string
 char* ptoa(const void* ptr);                    // convert a pointer to string
+char* arrtoa(size_t arr[], int count);          // convert an array of size_t to a string
 char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);
 unsigned char get_function_id_by_name(const char* name);
@@ -351,6 +352,9 @@ RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datat
 RECORDER_FORWARD_DECL(PMPI_Info_create, int, (MPI_Info *info));
 RECORDER_FORWARD_DECL(PMPI_Info_set, int, (MPI_Info info, CONST char *key, CONST char *value));
 RECORDER_FORWARD_DECL(PMPI_Info_get, int, (MPI_Info info, CONST char *key, int valuelen, char *value, int *flag));
+// Add MPI_Waitall and MPI_Waitsome on 2020/08/06
+RECORDER_FORWARD_DECL(PMPI_Waitall, int, (int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]));
+RECORDER_FORWARD_DECL(PMPI_Waitsome, int, (int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]));
 
 
 

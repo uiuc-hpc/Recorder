@@ -125,7 +125,7 @@ static const char* func_list[] = {
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
     "remove",       "truncate",     "ftruncate",    "vfprintf", "msync",
 
-    // MPI I/O  - 74 functions
+    // MPI I/O  - 76 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
     "PMPI_File_iread",              "PMPI_File_iread_shared",   "PMPI_File_iwrite_at",
     "PMPI_File_iwrite",             "PMPI_File_iwrite_shared",  "PMPI_File_open",
@@ -154,6 +154,8 @@ static const char* func_list[] = {
     "PMPI_Irecv",
     // Added 2020/02/24
     "PMPI_Info_create",             "PMPI_Info_set",            "PMPI_Info_get",
+    // Added 2020/08/06
+    "PMPI_Waitall",             "PMPI_Waitsome",
 
 
     // HDF5 I/O - 74 functions
@@ -211,7 +213,7 @@ static char filename_arg_pos[] = {
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000000, // tmpfile
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000000, // remove
 
-    // MPI I/O - 74 functions
+    // MPI I/O - 76 functions
     // Only MPI_File_open has the filename argument
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
@@ -241,6 +243,8 @@ static char filename_arg_pos[] = {
     0b00000000,
     // Added 2020/02/24
     0b00000000,  0b00000000,  0b00000000,
+    // Added 2020/08/06
+    0b00000000,  0b00000000,
 
 
     // HDF5 I/O - 74 functions
