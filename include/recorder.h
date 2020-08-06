@@ -352,9 +352,10 @@ RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datat
 RECORDER_FORWARD_DECL(PMPI_Info_create, int, (MPI_Info *info));
 RECORDER_FORWARD_DECL(PMPI_Info_set, int, (MPI_Info info, CONST char *key, CONST char *value));
 RECORDER_FORWARD_DECL(PMPI_Info_get, int, (MPI_Info info, CONST char *key, int valuelen, char *value, int *flag));
-// Add MPI_Waitall and MPI_Waitsome on 2020/08/06
+// Add MPI_Waitall, MPI_Waitsome and MPI_Waitany on 2020/08/06
 RECORDER_FORWARD_DECL(PMPI_Waitall, int, (int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]));
 RECORDER_FORWARD_DECL(PMPI_Waitsome, int, (int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]));
+RECORDER_FORWARD_DECL(PMPI_Waitany, int, (int count, MPI_Request array_of_requests[], int *indx, MPI_Status * status));
 
 
 

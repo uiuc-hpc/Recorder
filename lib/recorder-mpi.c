@@ -458,7 +458,7 @@ int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
-// Add MPI_Waitall and MPI_Waitsome on 2020/08/06
+// Add MPI_Waitall, MPI_Waitsome and MPI_Waitany on 2020/08/06
 int RECORDER_MPI_DECL(MPI_Waitall) (int count, MPI_Request requests[], MPI_Status statuses[]) {
     int i;
     size_t arr[count];
@@ -484,6 +484,17 @@ int RECORDER_MPI_DECL(MPI_Waitsome) (int incount, MPI_Request requests[], int *o
     char* indices_str = arrtoa(arr2, *outcount);
     char **args = assemble_args_list(5, itoa(incount), requests_str, itoa(*outcount), indices_str, ptoa(statuses));
     RECORDER_INTERCEPTOR(5, args);
+}
+int RECORDER_MPI_DECL(MPI_Waitany) (int count, MPI_Request requests[], int *indx, MPI_Status *status) {
+    int i;
+    size_t arr[count];
+    for(i = 0; i < count; i++)
+        arr[i] = (size_t) requests[i];
+    char* requests_str = arrtoa(arr, count);
+
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Waitany, (count, requests, indx, status));
+    char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*indx), ptoa(status));
+    RECORDER_INTERCEPTOR(4, args);
 }
 
 

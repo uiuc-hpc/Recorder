@@ -155,7 +155,7 @@ static const char* func_list[] = {
     // Added 2020/02/24
     "PMPI_Info_create",             "PMPI_Info_set",            "PMPI_Info_get",
     // Added 2020/08/06
-    "PMPI_Waitall",             "PMPI_Waitsome",
+    "PMPI_Waitall",                 "PMPI_Waitsome",            "PMPI_Waitany",
 
 
     // HDF5 I/O - 74 functions
@@ -244,7 +244,7 @@ static char filename_arg_pos[] = {
     // Added 2020/02/24
     0b00000000,  0b00000000,  0b00000000,
     // Added 2020/08/06
-    0b00000000,  0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
 
 
     // HDF5 I/O - 74 functions
