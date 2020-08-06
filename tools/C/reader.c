@@ -34,7 +34,6 @@ void read_local_metadata(char* path, RecorderLocalDef *RLD) {
 }
 
 
-
 // Return an array of char*, where each element is an argument
 // The input is the original arguments string
 char** get_record_arguments(char* str, int arg_count) {
@@ -45,7 +44,7 @@ char** get_record_arguments(char* str, int arg_count) {
     char* token = strtok(str, " ");
 
     while( token != NULL ) {
-        args[i++] = token;
+        args[i++] = strdup(token);
         token = strtok(NULL, " ");
     }
 
@@ -105,6 +104,7 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
             memcpy(arguments_str, content+args_start_pos, len-1);
             arguments_str[len-1] = 0;
             r->args = get_record_arguments(arguments_str, r->arg_count);
+            free(arguments_str);
         }
     }
 
@@ -120,13 +120,6 @@ void decompress_records(Record *records, int len) {
     int i, j;
     for(i = 0; i < len; i++) {
         Record* r = &(records[i]);
-
-        /*
-        cout<<i+1<<", status:"<<bitset<8>(r->status)<<", ref-id: "<<bitset<8>(r->func_id)<<", args:";
-        if(r->arg_count)
-            cout<<r->args[0];
-        cout<<endl;
-        */
 
         if(r->status) {
             int ref_id = i - 1 - r->func_id;
@@ -150,31 +143,49 @@ void decompress_records(Record *records, int len) {
     }
 }
 
-/*
-int main(int argc, char** argv) {
-    const char* logs_dir =  argv[1];
+void release_resources(RecorderReader *reader) {
+    int ranks = reader->RGD.total_ranks;
+
+    int rank;
+    for (rank = 0; rank < ranks; rank++) {
+
+        Record* records = reader->records[rank];
+        for(int i = 0; i < reader->RLDs[rank].total_records; i++) {
+            for(int j = 0; j < records[i].arg_count; j++)
+                free(records[i].args[j]);
+            free(records[i].args);
+        }
+
+        free(records);
+    }
+    free(reader->records);
+    free(reader->RLDs);
+}
+
+
+void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
 
     char global_metadata_file[256];
     char local_metadata_file[256];
     char log_file[256];
 
-    RecorderGlobalDef RGD;
-    RecorderLocalDef RLD;
-    sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
-    read_global_metadata(global_metadata_file, &RGD);
 
-    for(int rank = 0; rank < RGD.total_ranks; rank++) {
+
+    sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
+    read_global_metadata(global_metadata_file, &(reader->RGD));
+
+
+    reader->RLDs = (RecorderLocalDef*) malloc(sizeof(RecorderLocalDef) * reader->RGD.total_ranks);
+    reader->records = (Record**) malloc(sizeof(Record*) * reader->RGD.total_ranks);
+
+    int rank;
+    for(rank = 0; rank < reader->RGD.total_ranks; rank++) {
         sprintf(local_metadata_file, "%s/%d.mt", logs_dir, rank);
-        read_local_metadata(local_metadata_file, &RLD);
+        read_local_metadata(local_metadata_file, &(reader->RLDs[rank]));
 
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
-        Record *records = read_records(log_file, RLD.total_records, &RGD);
-        decompress_records(records, RLD.total_records);
-        printf("%s: %d\n", log_file,  RLD.total_records);
-
-        free(records);
+        reader->records[rank] = read_records(log_file, reader->RLDs[rank].total_records, &reader->RGD);
+        decompress_records(reader->records[rank], reader->RLDs[rank].total_records);
+        printf("%s: %d\n", log_file,  reader->RLDs[rank].total_records);
     }
-
-    return 0;
 }
-*/
