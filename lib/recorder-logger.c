@@ -184,7 +184,6 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
     int min_diff_count = 999;
     char ref_window_id;
     int i;
-    /*
     for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
         Record record = __logger.recordWindow[i];
         // Only meets the following conditions that we consider to compress it:
@@ -208,7 +207,6 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
             }
         }
     }
-    */
 
     if (compress) {
         diff_record.tstart = new_record.tstart;

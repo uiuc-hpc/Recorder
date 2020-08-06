@@ -14,7 +14,6 @@ void write_to_textfile(const char* path, Record *records, int len) {
     FILE* out_file = fopen(path, "w");
     for(i = 0; i < len; i++) {
         Record record = records[i];
-        printf("%d %f %f %s %d\n", record.status, record.tstart, record.tend, func_list[record.func_id], record.arg_count);
         fprintf(out_file, "%f %f %d %s (", record.tstart, record.tend, record.res, func_list[record.func_id]);
         for(arg_id = 0; arg_id < record.arg_count; arg_id++) {
             char *arg = record.args[arg_id];
@@ -26,33 +25,23 @@ void write_to_textfile(const char* path, Record *records, int len) {
 }
 
 int main(int argc, char **argv) {
-    char* log_dir_path = argv[1];
-    char global_metadata_path[256], local_metadata_path[256], logfile_path[256],  textfile_dir[256], textfile_path[256];
 
-    RecorderGlobalDef RGD;
-    RecorderLocalDef RLD;
-
-    sprintf(textfile_dir, "%s/_text", log_dir_path);
+    char textfile_dir[256], textfile_path[256];
+    sprintf(textfile_dir, "%s/_text", argv[1]);
     mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    sprintf(global_metadata_path, "%s/recorder.mt", log_dir_path);
-    read_global_metadata(global_metadata_path, &RGD);
+    RecorderReader reader;
+    recorder_read_traces(argv[1], &reader);
 
-    int i;
-    for(i = 0; i < RGD.total_ranks ; i++) {
-        sprintf(local_metadata_path, "%s/%d.mt" , log_dir_path, i);
-        sprintf(logfile_path, "%s/%d.itf" , log_dir_path, i);
-        sprintf(textfile_path, "%s/%d.txt" , textfile_dir, i);
+    for(int rank = 0; rank < reader.RGD.total_ranks; rank++) {
 
-        read_local_metadata(local_metadata_path, &RLD);
-        printf("Rank %d, Records: %d\n", i, RLD.total_records);
+        sprintf(textfile_path, "%s/%d.txt" , textfile_dir, rank);
 
-        Record *records = read_records(logfile_path, RLD.total_records, &RGD);
-        decompress_records(records, RLD.total_records);
-
-        write_to_textfile(textfile_path, records, RLD.total_records);
-        free(records);
+        Record* records = reader.records[rank];
+        write_to_textfile(textfile_path, records, reader.RLDs[rank].total_records);
     }
+
+    release_resources(&reader);
 
     return 0;
 }
