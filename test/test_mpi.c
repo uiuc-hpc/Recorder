@@ -31,17 +31,16 @@ int main(int argc, char *argv[]) {
 
     // MPI Info related
     MPI_Info info;
-    MPI_Info_create, (&info);
-    MPI_Info_set, (info, "cb_nodes", "2");
-
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "cb_nodes", "2");
 
     /* IO-Realted MPI Calls */
     MPI_File fh;
     MPI_Status status;
     int i, a[10];
-    for ( i=0;i<10;i++) a[i] = 5;
+    for (i=0;i<10;i++) a[i] = 5;
 
-    MPI_File_open(MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, info, &fh);
+    int err = MPI_File_open(MPI_COMM_WORLD, "workfile.out", MPI_MODE_RDWR | MPI_MODE_CREATE, info, &fh);
 
     MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", info);
 
@@ -51,7 +50,6 @@ int main(int argc, char *argv[]) {
     MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
 
     if(world_size > 1) {
         if (rank == 0) {
