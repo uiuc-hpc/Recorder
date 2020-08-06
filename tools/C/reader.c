@@ -146,12 +146,12 @@ void decompress_records(Record *records, int len) {
 void release_resources(RecorderReader *reader) {
     int ranks = reader->RGD.total_ranks;
 
-    int rank;
+    int i, j, rank;
     for (rank = 0; rank < ranks; rank++) {
 
         Record* records = reader->records[rank];
-        for(int i = 0; i < reader->RLDs[rank].total_records; i++) {
-            for(int j = 0; j < records[i].arg_count; j++)
+        for(i = 0; i < reader->RLDs[rank].total_records; i++) {
+            for(j = 0; j < records[i].arg_count; j++)
                 free(records[i].args[j]);
             free(records[i].args);
         }

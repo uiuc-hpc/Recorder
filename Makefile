@@ -50,6 +50,6 @@ install:: all
 	install -m 755 tools/C/recorder2text.out $(bindir)
 
 clean::
-	rm -f *.o *.a lib/*.o lib/*.po lib/*.a lib/*.so
+	rm -f *.o *.a lib/*.o lib/*.po lib/*.a lib/*.so tools/C/*.so tools/C/*.out
 
 distclean:: clean
