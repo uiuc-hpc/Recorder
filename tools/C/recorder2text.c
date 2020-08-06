@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
     RecorderReader reader;
     recorder_read_traces(argv[1], &reader);
 
-    for(int rank = 0; rank < reader.RGD.total_ranks; rank++) {
+    int rank;
+    for(rank = 0; rank < reader.RGD.total_ranks; rank++) {
 
         sprintf(textfile_path, "%s/%d.txt" , textfile_dir, rank);
 
