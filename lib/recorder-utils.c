@@ -78,7 +78,8 @@ inline char* arrtoa(size_t arr[], int count) {
     str[0] = '[';
     int pos = 1;
 
-    for(int i = 0; i < count; i++) {
+    int i;
+    for(i = 0; i < count; i++) {
         char *s = itoa(arr[i]);
         memcpy(str+pos, s, strlen(s));
         pos += strlen(s);
