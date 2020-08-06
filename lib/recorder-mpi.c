@@ -458,7 +458,38 @@ int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
-// Add MPI_Waitall, MPI_Waitsome and MPI_Waitany on 2020/08/06
+int RECORDER_MPI_DECL(MPI_Send) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Send, (buf, count, datatype, dest, tag, comm));
+    char **args = assemble_args_list(6, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm));
+    RECORDER_INTERCEPTOR(6, args);
+}
+int RECORDER_MPI_DECL(MPI_Recv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Recv, (buf, count, datatype, source, tag, comm, status));
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), ptoa(status));
+    RECORDER_INTERCEPTOR(7, args);
+}
+int RECORDER_MPI_DECL(MPI_Sendrecv) (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                                        int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Sendrecv, (sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status));
+    char **args = assemble_args_list(12, ptoa(sendbuf), itoa(sendcount), type2name(sendtype), itoa(dest), itoa(sendtag), ptoa(recvbuf), itoa(recvcount), type2name(recvtype),
+                                        itoa(source), itoa(recvtag), comm2name(comm), ptoa(status));
+    RECORDER_INTERCEPTOR(12, args);
+}
+int RECORDER_MPI_DECL(MPI_Isend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Isend, (buf, count, datatype, dest, tag, comm, request));
+    size_t r = *request;
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm), itoa(r));
+    RECORDER_INTERCEPTOR(7, args);
+}
+int RECORDER_MPI_DECL(MPI_Irecv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Irecv, (buf, count, datatype, source, tag, comm, request));
+    size_t r = *request;
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), itoa(r));
+    RECORDER_INTERCEPTOR(7, args);
+}
+
+
+// Add MPI_Waitall, MPI_Waitsome, MPI_Waitany and MPI_Ssend on 2020/08/06
 int RECORDER_MPI_DECL(MPI_Waitall) (int count, MPI_Request requests[], MPI_Status statuses[]) {
     int i;
     size_t arr[count];
@@ -496,35 +527,9 @@ int RECORDER_MPI_DECL(MPI_Waitany) (int count, MPI_Request requests[], int *indx
     char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*indx), ptoa(status));
     RECORDER_INTERCEPTOR(4, args);
 }
-
-
-int RECORDER_MPI_DECL(MPI_Send) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Send, (buf, count, datatype, dest, tag, comm));
+int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ssend, (buf, count, datatype, dest, tag, comm));
     char **args = assemble_args_list(6, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm));
     RECORDER_INTERCEPTOR(6, args);
-}
-int RECORDER_MPI_DECL(MPI_Recv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Recv, (buf, count, datatype, source, tag, comm, status));
-    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), ptoa(status));
-    RECORDER_INTERCEPTOR(7, args);
-}
-int RECORDER_MPI_DECL(MPI_Sendrecv) (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                                        int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Sendrecv, (sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status));
-    char **args = assemble_args_list(12, ptoa(sendbuf), itoa(sendcount), type2name(sendtype), itoa(dest), itoa(sendtag), ptoa(recvbuf), itoa(recvcount), type2name(recvtype),
-                                        itoa(source), itoa(recvtag), comm2name(comm), ptoa(status));
-    RECORDER_INTERCEPTOR(12, args);
-}
-int RECORDER_MPI_DECL(MPI_Isend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Isend, (buf, count, datatype, dest, tag, comm, request));
-    size_t r = *request;
-    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(dest), itoa(tag), comm2name(comm), itoa(r));
-    RECORDER_INTERCEPTOR(7, args);
-}
-int RECORDER_MPI_DECL(MPI_Irecv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Irecv, (buf, count, datatype, source, tag, comm, request));
-    size_t r = *request;
-    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), itoa(r));
-    RECORDER_INTERCEPTOR(7, args);
 }
 
