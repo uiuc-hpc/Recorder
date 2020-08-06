@@ -54,21 +54,21 @@ inline double recorder_wtime(void) {
 
 /* Integer to stirng */
 inline char* itoa(size_t val) {
-    char *str = malloc(sizeof(char) * 16);
+    char *str = calloc(16, sizeof(char));
     sprintf(str, "%ld", val);
     return str;
 }
 
 /* Integer to stirng */
 inline char* ftoa(double val) {
-    char *str = malloc(sizeof(char) * 24);
+    char *str = calloc(24, sizeof(char));
     sprintf(str, "%f", val);
     return str;
 }
 
 /* Pointer to string */
 inline char* ptoa(const void *ptr) {
-    char *str = malloc(sizeof(char) * 16);
+    char *str = calloc(16, sizeof(char));
     sprintf(str, "%p", ptr);
     return str;
 }

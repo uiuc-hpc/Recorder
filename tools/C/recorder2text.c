@@ -14,7 +14,7 @@ void write_to_textfile(const char* path, Record *records, int len) {
     FILE* out_file = fopen(path, "w");
     for(i = 0; i < len; i++) {
         Record record = records[i];
-        //printf("%d %f %f %s %d", record->status, record->tstart, record->tend, func_list[record->func_id], record->arg_count);
+        printf("%d %f %f %s %d\n", record.status, record.tstart, record.tend, func_list[record.func_id], record.arg_count);
         fprintf(out_file, "%f %f %d %s (", record.tstart, record.tend, record.res, func_list[record.func_id]);
         for(arg_id = 0; arg_id < record.arg_count; arg_id++) {
             char *arg = record.args[arg_id];
