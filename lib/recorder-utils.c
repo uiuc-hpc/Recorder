@@ -53,9 +53,9 @@ inline double recorder_wtime(void) {
 }
 
 /* Integer to stirng */
-inline char* itoa(long long val) {
+inline char* itoa(size_t val) {
     char *str = malloc(sizeof(char) * 16);
-    sprintf(str, "%lld", val);
+    sprintf(str, "%ld", val);
     return str;
 }
 
@@ -72,6 +72,27 @@ inline char* ptoa(const void *ptr) {
     sprintf(str, "%p", ptr);
     return str;
 }
+
+inline char* arrtoa(size_t arr[], int count) {
+    char *str = calloc(16 * count, sizeof(char));
+    str[0] = '[';
+    int pos = 1;
+
+    for(int i = 0; i < count; i++) {
+        char *s = itoa(arr[i]);
+        memcpy(str+pos, s, strlen(s));
+        pos += strlen(s);
+
+        if(i == count - 1)
+            str[pos++] = ']';
+        else
+            str[pos++] = ',';
+
+        free(s);
+    }
+    return str;
+}
+
 
 /* Put many arguments (char *) in a list (char**) */
 inline char** assemble_args_list(int arg_count, ...) {
