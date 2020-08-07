@@ -27,7 +27,7 @@ CFLAGS += $(CFLAGS_SHARED) ${DISABLED_LAYERS}
 LDFLAGS += -L${MPI_DIR}/lib -L${HDF5_DIR}/lib -lhdf5 -ldl
 
 
-all: lib/librecorder.so tools/C/reader.so tools/C/recorder2text.out tools/C/overlap_conflict.out
+all: lib/librecorder.so tools/reader.so tools/recorder2text.out tools/overlap_conflict.out
 
 %.po: %.c | lib
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
@@ -35,24 +35,24 @@ all: lib/librecorder.so tools/C/reader.so tools/C/recorder2text.out tools/C/over
 lib/librecorder.so: lib/recorder-mpi.po lib/recorder-mpi-init-finalize.po lib/recorder-hdf5.po lib/recorder-posix.po lib/recorder-logger.po lib/recorder-utils.po
 	$(CC) $(CFLAGS) -o $@ $^ -lpthread -lrt -lz $(LDFLAGS)
 
-tools/C/reader.so: tools/C/reader.c
-	$(CC) -fPIC -shared -ldl $^ -o $@
+tools/reader.so: tools/reader.c
+	$(CC) -fPIC -shared -ldl -I$(srcdir)/include $^ -o $@
 
-tools/C/recorder2text.out: tools/C/recorder2text.c tools/C/reader.c
-	$(CC) $^ -o $@
+tools/recorder2text.out: tools/recorder2text.c tools/reader.c
+	$(CC) -I$(srcdir)/include $^ -o $@
 
-tools/C/overlap_conflict.out: tools/C/overlap_conflict.c tools/C/reader.c tools/C/build_offset_intervals.cpp
-	$(CXX) $^ -o $@
+tools/overlap_conflict.out: tools/overlap_conflict.c tools/reader.c tools/build_offset_intervals.cpp
+	$(CXX) -I$(srcdir)/include $^ -o $@
 
 
 install:: all
 	install -d $(libdir) $(bindir)
 	install -m 755 lib/librecorder.so $(libdir)
-	install -m 755 tools/C/reader.so $(libdir)
-	install -m 755 tools/C/recorder2text.out $(bindir)
-	install -m 755 tools/C/overlap_conflict.out $(bindir)
+	install -m 755 tools/reader.so $(libdir)
+	install -m 755 tools/recorder2text.out $(bindir)
+	install -m 755 tools/overlap_conflict.out $(bindir)
 
 clean::
-	rm -f *.o *.a lib/*.o lib/*.po lib/*.a lib/*.so tools/C/*.so tools/C/recorder2text.out
+	rm -f *.o *.a lib/*.o lib/*.po lib/*.a lib/*.so tools/*.so tools/*.out
 
 distclean:: clean

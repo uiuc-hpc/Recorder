@@ -2,7 +2,7 @@
 #define _RECORDER_READER_H_
 
 #include <stdbool.h>
-#include "../../include/recorder-log-format.h"
+#include "recorder-log-format.h"
 
 
 typedef struct RecorderReader_t {
