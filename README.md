@@ -79,7 +79,13 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
-**Recorder 2.1.1** June 28, 2020
+**Recorder 2.1.2** Aug 06, 2020
+1. Rewrite the reader program with C.
+2. Add Python bindings to call C functions.
+3. Remove oft2 converter.
+4. Clean up the Makefile.
+
+**Recorder 2.1.1** Jun 28, 2020
 1. Use [uthash](https://github.com/troydhanson/uthash) library to replace the original hash map implementation
 2. Remove zlib support
 
