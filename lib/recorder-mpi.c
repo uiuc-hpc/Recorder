@@ -453,8 +453,8 @@ int RECORDER_MPI_DECL(MPI_Cart_shift) (MPI_Comm comm, int direction, int disp, i
     RECORDER_INTERCEPTOR(5, args);
 }
 int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status));
     char **args = assemble_args_list(2, itoa(*request), ptoa(status));
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status));
     RECORDER_INTERCEPTOR(2, args);
 }
 
