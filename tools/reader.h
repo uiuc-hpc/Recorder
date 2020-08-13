@@ -9,6 +9,7 @@ typedef struct RecorderReader_t {
     RecorderGlobalDef RGD;
     RecorderLocalDef *RLDs;
     Record **records;       //records[rank] is a list of records of that rank
+    char func_list[256][64];
 } RecorderReader;
 
 typedef struct Interval_t {

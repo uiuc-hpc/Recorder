@@ -9,6 +9,30 @@ void read_global_metadata(char* path, RecorderGlobalDef *RGD) {
     fclose(fp);
 }
 
+void read_func_list(char* path, RecorderReader *reader) {
+    FILE* fp = fopen(path, "r+b");
+
+    fseek(fp, 0, SEEK_END);
+    long fsize = ftell(fp) - sizeof(RecorderGlobalDef);
+    char buf[fsize];
+
+    fseek(fp, sizeof(RecorderGlobalDef), SEEK_SET); // skip GlobalDef object
+    fread(buf, 1, fsize, fp);
+
+    int start_pos = 0, end_pos = 0;
+    int func_id = 0;
+
+    for(end_pos = 0; end_pos < fsize; end_pos++) {
+        if(buf[end_pos] == '\n') {
+            memcpy(reader->func_list[func_id], buf+start_pos, end_pos-start_pos);
+            start_pos = end_pos+1;
+            func_id++;
+        }
+    }
+
+    fclose(fp);
+}
+
 
 void read_local_metadata(char* path, RecorderLocalDef *RLD) {
     FILE* fp = fopen(path, "r+b");
@@ -172,6 +196,7 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
 
     sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
     read_global_metadata(global_metadata_file, &(reader->RGD));
+    read_func_list(global_metadata_file, reader);
 
 
     reader->RLDs = (RecorderLocalDef*) malloc(sizeof(RecorderLocalDef) * reader->RGD.total_ranks);
