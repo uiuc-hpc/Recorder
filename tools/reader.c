@@ -170,7 +170,6 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
     char log_file[256];
 
 
-
     sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
     read_global_metadata(global_metadata_file, &(reader->RGD));
 
@@ -186,6 +185,10 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
         reader->records[rank] = read_records(log_file, reader->RLDs[rank].total_records, &reader->RGD);
         decompress_records(reader->records[rank], reader->RLDs[rank].total_records);
-        printf("%s: %d\n", log_file,  reader->RLDs[rank].total_records);
+        printf("\rRead trace file for rank %d, records: %d", rank, reader->RLDs[rank].total_records);
+        fflush(stdout);
     }
+    fflush(stdout);
+    printf("\rRead traces successfully.                   \n");
+    fflush(stdout);
 }

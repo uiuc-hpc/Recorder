@@ -13,6 +13,7 @@ typedef struct RecorderReader_t {
 
 typedef struct Interval_t {
     int rank;
+    double tstart;
     size_t offset;
     size_t count;
     bool isRead;
@@ -21,10 +22,18 @@ typedef struct Interval_t {
 typedef struct IntervalsMap_t {
     char* filename;
     size_t num_intervals;
-    Interval *intervals; // Pointer to Interval, copied from vector<Interval>
+    Interval *intervals;    // Pointer to Interval, copied from vector<Interval>
+
+    int *num_opens;         // num_opens[rank] is list of number of opens for rank
+    int *num_closes;
+    int *num_commits;
+
+    double **topens;        // topens[rank] is a list of open timestamps for rank
+    double **tcloses;
+    double **tcommits;
 } IntervalsMap;
 
-
+enum Semantics {POSIX_SEMANTICS, COMMIT_SEMANTICS, SESSION_SEMANTICS};
 
 void read_global_metadata(char* path, RecorderGlobalDef *RGD);
 
@@ -39,6 +48,6 @@ void decompress_records(Record* records, int len);
 void recorder_read_traces(const char* logs_dir, RecorderReader *reader);
 void release_resources(RecorderReader *reader);
 
-IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files);
+IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, enum Semantics semantics);
 
 #endif
