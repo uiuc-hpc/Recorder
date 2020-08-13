@@ -140,8 +140,8 @@ inline char* realrealpath(const char *path) {
 
     FilenameHashTable *entry = malloc(sizeof(FilenameHashTable));
 
-    realpath(path, entry->name);      // we do not intercept realpath()
-    if (entry->name == NULL)          // realpath() could return NULL on error
+    char* res = realpath(path, entry->name);    // we do not intercept realpath()
+    if (res == NULL)                            // realpath() could return NULL on error
         strcpy(entry->name, path);
 
     FilenameHashTable *found;
