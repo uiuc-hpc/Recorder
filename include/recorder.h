@@ -357,6 +357,9 @@ RECORDER_FORWARD_DECL(PMPI_Waitall, int, (int count, MPI_Request array_of_reques
 RECORDER_FORWARD_DECL(PMPI_Waitsome, int, (int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]));
 RECORDER_FORWARD_DECL(PMPI_Waitany, int, (int count, MPI_Request array_of_requests[], int *indx, MPI_Status * status));
 RECORDER_FORWARD_DECL(PMPI_Ssend, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm));
+// Add MPI_Comm_split on 2020/08/17
+RECORDER_FORWARD_DECL(PMPI_Comm_split, int, (MPI_Comm comm, int color, int key, MPI_Comm * newcomm));
+
 
 
 

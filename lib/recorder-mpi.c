@@ -533,3 +533,10 @@ int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datat
     RECORDER_INTERCEPTOR(6, args);
 }
 
+int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Comm * newcomm) {
+    //printf("comm: %d, color: %d, key: %d\n", comm, color, key);
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split, (comm, color, key, newcomm));
+    char **args = assemble_args_list(4, itoa(comm), itoa(color), itoa(key), itoa(*newcomm));
+    RECORDER_INTERCEPTOR(4, args);
+}
+
