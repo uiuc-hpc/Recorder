@@ -42,6 +42,7 @@ Makefile.in
 /ylwrap
 .deps/
 .dirstamp
+.libs
 # http://www.gnu.org/software/autoconf
 autom4te.cache
 /autoscan.log
