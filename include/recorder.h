@@ -64,7 +64,7 @@
 #endif
 
 typedef struct FilenameHashTable_t {
-    char name[256];             // key
+    char name[PATH_MAX];             // key
     UT_hash_handle hh;
 } FilenameHashTable;
 
