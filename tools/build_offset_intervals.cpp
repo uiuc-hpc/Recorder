@@ -4,7 +4,9 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+extern "C" {                            // Needed to mix linking C and C++ sources
 #include "reader.h"
+}
 using namespace std;
 
 typedef struct RRecord_t {
@@ -302,7 +304,7 @@ vector<RRecord> flatten_and_sort_records(RecorderReader reader) {
 }
 
 
-IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, Semantics semantics) {
+IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, enum Semantics semantics) {
 
     vector<RRecord> records = flatten_and_sort_records(reader);
 

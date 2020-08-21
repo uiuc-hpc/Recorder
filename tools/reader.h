@@ -44,10 +44,9 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD);
 
 void decompress_records(Record* records, int len);
 
-
-
 void recorder_read_traces(const char* logs_dir, RecorderReader *reader);
 void release_resources(RecorderReader *reader);
+
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, enum Semantics semantics);
 

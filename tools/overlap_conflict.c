@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "reader.h"
 
-static Semantics semantics = COMMIT_SEMANTICS;
+static enum Semantics semantics = COMMIT_SEMANTICS;
 
 void access_patterns(IntervalsMap *IM, int num_files) {
     int idx;

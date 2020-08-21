@@ -67,7 +67,7 @@ class RecorderReader:
         return c_char_p( s.encode('utf-8') )
 
     def __init__(self, logs_dir):
-        libreader = cdll.LoadLibrary("../reader.so")
+        libreader = cdll.LoadLibrary("../.libs/librreader.so")
         libreader.read_records.restype = POINTER(Record)
 
         self.GM = GlobalMetadata()

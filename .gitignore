@@ -60,6 +60,7 @@ autom4te.cache
 /missing
 /stamp-h1
 # https://www.gnu.org/software/libtool/
+/libtool
 /ltmain.sh
 # http://www.gnu.org/software/texinfo
 /texinfo.tex

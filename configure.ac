@@ -1,6 +1,7 @@
-AC_INIT([Recorder], 0.1.0)
+AC_INIT([Recorder], 2.1.2)
 
 AC_PROG_CC([mpicc])
+AC_PROG_CXX([mpicxx])
 
 AM_INIT_AUTOMAKE
 
