@@ -49,7 +49,7 @@ Options for `configure` can be used to disable one ore more levels of traces. Va
  * --disalbe-mpi
  * --disable-hdf5
  
-If MPI or HDF5 is not located in standard paths, set CFLGAS and LDFLAGS to specific their location, e.g.,
+If MPI or HDF5 is not located in standard paths, set CFLGAS and LDFLAGS to specify their location, e.g.,
 ```console
 ./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
 ```
