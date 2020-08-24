@@ -1,4 +1,4 @@
-AC_INIT([Recorder], 2.1.2)
+AC_INIT([Recorder], 2.1.3)
 
 AC_PROG_CC([mpicc])
 AC_PROG_CXX([mpicxx])

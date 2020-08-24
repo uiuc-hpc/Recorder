@@ -83,6 +83,9 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
+**Recorder 2.1.3** Aug 23, 2020
+1. Use autotools and automake for compilation.
+
 **Recorder 2.1.2** Aug 06, 2020
 1. Rewrite the reader program with C.
 2. Add Python bindings to call C functions.
