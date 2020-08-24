@@ -57,7 +57,7 @@ If MPI or HDF5 is not located in standard paths, set CFLGAS and LDFLAGS to speci
 3. Have fun.<br>
 mpirun can be changed to your workload manager, e.g. srun.
 ```console
-LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
+LD_PRELOAD=[install location]/lib/librecorder.so mpirun -np N ./your_app
 ```
 The trace files will be written to the current directory.
 
