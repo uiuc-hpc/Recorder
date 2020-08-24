@@ -90,6 +90,12 @@ static inline char *type2name(MPI_Datatype type) {
     return tmp;
 }
 
+static inline char* status2str(MPI_Status *status) {
+    char *tmp = calloc(128, sizeof(char));
+    sprintf(tmp, "[%d %d %d]", status->MPI_SOURCE, status->MPI_TAG, status->MPI_ERROR);
+    return tmp;
+}
+
 
 /**
  * Intercept the following functions
@@ -269,37 +275,37 @@ int RECORDER_MPI_DECL(MPI_File_set_view)(MPI_File fh, MPI_Offset disp, MPI_Datat
 
 int RECORDER_MPI_DECL(MPI_File_read)(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_read_at)(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read_at, (fh, offset, buf, count, datatype, status));
-    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_read_at_all)(MPI_File fh, MPI_Offset offset, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read_at_all, (fh, offset, buf, count, datatype, status));
-    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_read_all)(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read_all, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_read_shared)(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read_shared, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_read_ordered)(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_read_ordered, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
@@ -345,42 +351,42 @@ int RECORDER_MPI_DECL(MPI_File_iread_shared)(MPI_File fh, void *buf, int count,
 int RECORDER_MPI_DECL(MPI_File_write)(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_write_at)(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_at, (fh, offset, buf, count, datatype, status));
-    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_write_at_all)(MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_at_all, (fh, offset, buf, count, datatype, status));
-    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(6, ptoa(fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_write_all)(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_all, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_write_shared)(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_shared, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_write_ordered)(MPI_File fh, CONST void *buf, int count,
         MPI_Datatype datatype, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_ordered, (fh, buf, count, datatype, status));
-    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), ptoa(status));
+    char **args = assemble_args_list(5, ptoa(fh), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
 
@@ -453,7 +459,7 @@ int RECORDER_MPI_DECL(MPI_Cart_shift) (MPI_Comm comm, int direction, int disp, i
     RECORDER_INTERCEPTOR(5, args);
 }
 int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
-    char **args = assemble_args_list(2, itoa(*request), ptoa(status));
+    char **args = assemble_args_list(2, itoa(*request), status2str(status));
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -465,14 +471,14 @@ int RECORDER_MPI_DECL(MPI_Send) (CONST void *buf, int count, MPI_Datatype dataty
 }
 int RECORDER_MPI_DECL(MPI_Recv) (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Recv, (buf, count, datatype, source, tag, comm, status));
-    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), ptoa(status));
+    char **args = assemble_args_list(7, ptoa(buf), itoa(count), type2name(datatype), itoa(source), itoa(tag), comm2name(comm), status2str(status));
     RECORDER_INTERCEPTOR(7, args);
 }
 int RECORDER_MPI_DECL(MPI_Sendrecv) (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype,
                                         int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Sendrecv, (sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status));
     char **args = assemble_args_list(12, ptoa(sendbuf), itoa(sendcount), type2name(sendtype), itoa(dest), itoa(sendtag), ptoa(recvbuf), itoa(recvcount), type2name(recvtype),
-                                        itoa(source), itoa(recvtag), comm2name(comm), ptoa(status));
+                                        itoa(source), itoa(recvtag), comm2name(comm), status2str(status));
     RECORDER_INTERCEPTOR(12, args);
 }
 int RECORDER_MPI_DECL(MPI_Isend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request) {
@@ -524,7 +530,7 @@ int RECORDER_MPI_DECL(MPI_Waitany) (int count, MPI_Request requests[], int *indx
     char* requests_str = arrtoa(arr, count);
 
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Waitany, (count, requests, indx, status));
-    char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*indx), ptoa(status));
+    char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*indx), status2str(status));
     RECORDER_INTERCEPTOR(4, args);
 }
 int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
@@ -536,6 +542,27 @@ int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datat
 int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Comm * newcomm) {
     //printf("comm: %d, color: %d, key: %d\n", comm, color, key);
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split, (comm, color, key, newcomm));
+    /*
+    int global_rank;
+    PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+
+    int rank, size;
+    PMPI_Comm_rank(*newcomm, &rank);
+    PMPI_Comm_size(*newcomm, &size);
+
+
+    int *recvbuf, *recvbuf2;
+    if(rank = 0) {
+        recvbuf = (int*)malloc(sizeof(int) * size);
+        recvbuf2 = (int*)malloc(sizeof(int) * size);
+    }
+
+    PMPI_Gather(&rank, 1, MPI_INT, recvbuf, 1, MPI_INT, 0, *newcomm);
+    PMPI_Gather(&global_rank, 1, MPI_INT, recvbuf2, 1, MPI_INT, 0, *newcomm);
+
+    free(recvbuf);
+    free(recvbuf2);
+    */
     char **args = assemble_args_list(4, itoa(comm), itoa(color), itoa(key), itoa(*newcomm));
     RECORDER_INTERCEPTOR(4, args);
 }
