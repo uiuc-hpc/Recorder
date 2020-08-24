@@ -85,12 +85,14 @@ Change Log
 ----------
 **Recorder 2.1.3** Aug 23, 2020
 1. Use autotools and automake for compilation.
+2. Add support for MPI_Comm_split
 
 **Recorder 2.1.2** Aug 06, 2020
 1. Rewrite the reader program with C.
 2. Add Python bindings to call C functions.
-3. Remove oft2 converter.
-4. Clean up the Makefile.
+3. Add support for MPI_Waitall/Waitany/Waitsome and MPI_Ssend
+4. Remove oft2 converter.
+5. Clean up the Makefile.
 
 **Recorder 2.1.1** Jun 28, 2020
 1. Use [uthash](https://github.com/troydhanson/uthash) library to replace the original hash map implementation
