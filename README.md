@@ -31,26 +31,30 @@ Installation & Usage
 
 ```console
 git clone https://github.com/uiuc-hpc/Recorder.git
+cd Recorder
 ```
 
-2. Tell Recorder where to find HDF5 and MPI.
+2. Compile Recorder with MPI and HDF5.
 
 **Note that your application and Recorder must use the same version of HDF5 and MPI.**<br>
-Options can be used to disable one ore more level of traces. Valid options:
- * -DDISABLE_HDF5_TRACE
- * -DDISABLE_MPIO_TRACE
- * -DDISABLE_POSIX_TRACE
+
 ```console
-./config.sh PATH_TO_HDF5 PATH_TO_MPI [options]
+./autogen.sh
+./configure --prefix=[install location]
+make && make install
+```
+By default, Recorde will trace function calls from all levels: HDF5, MPI and POSIX.
+Options for `configure` can be used to disable one ore more levels of traces. Valid options:
+ * --disable-posix
+ * --disalbe-mpi
+ * --disable-hdf5
+ 
+If MPI or HDF5 is not located in standard paths, set CFLGAS and LDFLAGS to specific their location, e.g.,
+```console
+./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
 ```
 
-3. Make and install.
-```console
-make
-make install prefix=$HOME
-```
-
-4. Have fun.<br>
+3. Have fun.<br>
 mpirun can be changed to your workload manager, e.g. srun.
 ```console
 LD_PRELOAD=/path/to/librecorder.so mpirun -np N ./your_app
