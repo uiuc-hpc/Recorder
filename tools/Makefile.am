@@ -11,5 +11,5 @@ recorder2text_DEPENDENCIES = librreader.la
 
 
 conflict_detector_SOURCES = overlap_conflict.c build_offset_intervals.cpp
-conflict_detector_LDFLAGS = librreader.la
+conflict_detector_LDADD = librreader.la
 conflict_detector_DEPENDENCIES = librreader.la
