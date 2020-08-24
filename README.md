@@ -83,9 +83,10 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
-**Recorder 2.1.3** Aug 23, 2020
+**Recorder 2.1.3** Aug 24, 2020
 1. Use autotools and automake for compilation.
 2. Add support for MPI_Comm_split
+3. Store the value of MPI_Status
 
 **Recorder 2.1.2** Aug 06, 2020
 1. Rewrite the reader program with C.
