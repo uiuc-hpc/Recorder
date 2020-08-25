@@ -95,4 +95,5 @@ tools/otf2-converter
 tools/conflict_detector
 tools/recorder2text
 tools/figures/
+install
 *.html
