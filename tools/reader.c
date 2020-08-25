@@ -24,6 +24,7 @@ void read_func_list(char* path, RecorderReader *reader) {
 
     for(end_pos = 0; end_pos < fsize; end_pos++) {
         if(buf[end_pos] == '\n') {
+            memset(reader->func_list[func_id], 0, sizeof(reader->func_list[func_id]));
             memcpy(reader->func_list[func_id], buf+start_pos, end_pos-start_pos);
             start_pos = end_pos+1;
             func_id++;
