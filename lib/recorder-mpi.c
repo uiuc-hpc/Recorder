@@ -73,10 +73,9 @@
 int depth;
 
 static inline char *comm2name(MPI_Comm comm) {
-    char *tmp = malloc(128);
     int len;
+    char *tmp = calloc(128, sizeof(char));
     PMPI_Comm_get_name(comm, tmp, &len);
-    tmp[len] = 0;
     if(len == 0) strcpy(tmp, "MPI_COMM_UNKNOWN");
     return tmp;
 }
@@ -539,30 +538,26 @@ int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datat
     RECORDER_INTERCEPTOR(6, args);
 }
 
-int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Comm * newcomm) {
+
+int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Comm *newcomm) {
     //printf("comm: %d, color: %d, key: %d\n", comm, color, key);
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split, (comm, color, key, newcomm));
-    /*
-    int global_rank;
-    PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-    int rank, size;
+    int rank;
     PMPI_Comm_rank(*newcomm, &rank);
-    PMPI_Comm_size(*newcomm, &size);
+    if(rank == 0) {
+        char* parent_name = comm2name(comm);
+        char new_comm_name[128] = {0};
 
+        int global_rank;
+        PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-    int *recvbuf, *recvbuf2;
-    if(rank = 0) {
-        recvbuf = (int*)malloc(sizeof(int) * size);
-        recvbuf2 = (int*)malloc(sizeof(int) * size);
+        sprintf(new_comm_name, "%s_%d", parent_name, global_rank);
+        PMPI_Comm_set_name(*newcomm, new_comm_name);
+        free(parent_name);
     }
 
-    PMPI_Gather(&rank, 1, MPI_INT, recvbuf, 1, MPI_INT, 0, *newcomm);
-    PMPI_Gather(&global_rank, 1, MPI_INT, recvbuf2, 1, MPI_INT, 0, *newcomm);
 
-    free(recvbuf);
-    free(recvbuf2);
-    */
     char **args = assemble_args_list(4, itoa(comm), itoa(color), itoa(key), itoa(*newcomm));
     RECORDER_INTERCEPTOR(4, args);
 }
