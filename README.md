@@ -83,6 +83,10 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
+**Recorder 2.1.4** Aug 26, 2020
+1. Update LICENSE
+2. Update automake/autotools files to make it ready for Spack
+
 **Recorder 2.1.3** Aug 24, 2020
 1. Use autotools and automake for compilation.
 2. Add support for MPI_Comm_split/MPI_Comm_dup/MPI_Comm_create
