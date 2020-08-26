@@ -2,6 +2,7 @@ AC_INIT([Recorder], 2.1.3)
 
 AC_PROG_CC([mpicc])
 AC_PROG_CXX([mpicxx])
+AC_CONFIG_MACRO_DIRS([m4])
 
 
 AC_ARG_ENABLE([posix], 
@@ -27,7 +28,7 @@ AS_IF([test "x$enable_hdf5" == "xno"], [
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT
 
-AC_CONFIG_MACRO_DIRS([m4])
+
 AC_CONFIG_FILES([
     Makefile
     lib/Makefile
