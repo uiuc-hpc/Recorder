@@ -69,7 +69,7 @@ Please install those dependencies first.
 Also, the visulation may take some time if there are a large number of I/O records.
 
 ```console
-cd /path/to/Recorder/tools/reporter
+cd [install location]/bin/reporter
 python reporter.py /path/to/your_trace_folder/
 ```
 The visualization report (recorder-report.html) will be written into the current directory
