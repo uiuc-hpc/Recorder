@@ -27,6 +27,7 @@ AS_IF([test "x$enable_hdf5" == "xno"], [
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT
 
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_FILES([
     Makefile
     lib/Makefile
