@@ -545,18 +545,19 @@ int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Co
 
     int rank;
     PMPI_Comm_rank(*newcomm, &rank);
+
+    char new_comm_name[128] = {0};
     if(rank == 0) {
         char* parent_name = comm2name(comm);
-        char new_comm_name[128] = {0};
 
         int global_rank;
         PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
         sprintf(new_comm_name, "%s_%d", parent_name, global_rank);
-        PMPI_Comm_set_name(*newcomm, new_comm_name);
         free(parent_name);
     }
-
+    PMPI_Bcast(new_comm_name, 128, MPI_CHAR, 0, *newcomm);
+    PMPI_Comm_set_name(*newcomm, new_comm_name);
 
     char **args = assemble_args_list(4, comm2name(comm), itoa(color), itoa(key), comm2name(*newcomm));
     RECORDER_INTERCEPTOR(4, args);
