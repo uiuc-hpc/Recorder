@@ -24,8 +24,7 @@ AS_IF([test "x$enable_hdf5" == "xno"], [
 ])
 
 
-
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 LT_INIT
 
 AC_CONFIG_FILES([
