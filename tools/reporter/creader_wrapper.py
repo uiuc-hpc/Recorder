@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 from ctypes import *
-import sys
+import sys, os
 
 class LocalMetadata(Structure):
     _fields_ = [
@@ -67,7 +67,11 @@ class RecorderReader:
         return c_char_p( s.encode('utf-8') )
 
     def __init__(self, logs_dir):
-        libreader = cdll.LoadLibrary("../.libs/librreader.so")
+        filedir = os.path.dirname(__file__)
+        parpardir = os.path.join(os.path.join(filedir, os.pardir), os.pardir)
+        libreader_path = os.path.join(parpardir, "lib/librreader.so")
+
+        libreader = cdll.LoadLibrary(libreader_path)
         libreader.read_records.restype = POINTER(Record)
 
         self.GM = GlobalMetadata()
