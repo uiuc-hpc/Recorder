@@ -359,6 +359,9 @@ RECORDER_FORWARD_DECL(PMPI_Waitany, int, (int count, MPI_Request array_of_reques
 RECORDER_FORWARD_DECL(PMPI_Ssend, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm));
 // Add MPI_Comm_split on 2020/08/17
 RECORDER_FORWARD_DECL(PMPI_Comm_split, int, (MPI_Comm comm, int color, int key, MPI_Comm * newcomm));
+RECORDER_FORWARD_DECL(PMPI_Comm_dup, int, (MPI_Comm comm, MPI_Comm * newcomm));
+RECORDER_FORWARD_DECL(PMPI_Comm_create, int, (MPI_Comm comm, MPI_Group group, MPI_Comm * newcomm));
+
 
 
 

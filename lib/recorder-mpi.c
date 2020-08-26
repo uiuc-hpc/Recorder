@@ -558,7 +558,19 @@ int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Co
     }
 
 
-    char **args = assemble_args_list(4, itoa(comm), itoa(color), itoa(key), itoa(*newcomm));
+    char **args = assemble_args_list(4, comm2name(comm), itoa(color), itoa(key), comm2name(*newcomm));
     RECORDER_INTERCEPTOR(4, args);
+}
+
+int RECORDER_MPI_DECL(MPI_Comm_create) (MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_create, (comm, group, newcomm));
+    char **args = assemble_args_list(3, comm2name(comm), itoa(group), comm2name(*newcomm));
+    RECORDER_INTERCEPTOR(3, args);
+}
+
+int RECORDER_MPI_DECL(MPI_Comm_dup) (MPI_Comm comm, MPI_Comm * newcomm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_dup, (comm, newcomm));
+    char **args = assemble_args_list(2, comm2name(comm), comm2name(*newcomm));
+    RECORDER_INTERCEPTOR(2, args);
 }
 
