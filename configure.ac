@@ -33,6 +33,7 @@ AC_CONFIG_FILES([
     Makefile
     lib/Makefile
     tools/Makefile
+    tools/reporter/Makefile
 ])
 
 AC_OUTPUT

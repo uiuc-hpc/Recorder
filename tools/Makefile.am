@@ -7,9 +7,6 @@ librreader_la_SOURCES = reader.c
 
 recorder2text_SOURCES = recorder2text.c
 recorder2text_LDADD = librreader.la
-recorder2text_DEPENDENCIES = librreader.la
-
 
 conflict_detector_SOURCES = overlap_conflict.c build_offset_intervals.cpp
 conflict_detector_LDADD = librreader.la
-conflict_detector_DEPENDENCIES = librreader.la
