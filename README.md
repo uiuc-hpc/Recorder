@@ -66,7 +66,7 @@ Visualization
 
 We use Python libraries [pandas](https://pandas.pydata.org/), [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
 Please install those dependencies first.
-Also, the visulation may take some time if the number of I/O records is large.
+Also, the visulation may take some time if there are a large number of I/O records.
 
 ```console
 cd /path/to/Recorder/tools/reporter
