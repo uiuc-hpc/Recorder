@@ -41,7 +41,8 @@ cd Recorder
 ```console
 ./autogen.sh
 ./configure --prefix=[install location]
-make && make install
+make
+make install
 ```
 By default, Recorde will trace function calls from all levels: HDF5, MPI and POSIX.
 Options for `configure` can be used to disable one ore more levels of traces. Valid options:
