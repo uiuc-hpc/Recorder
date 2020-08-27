@@ -361,7 +361,9 @@ RECORDER_FORWARD_DECL(PMPI_Ssend, int, (CONST void *buf, int count, MPI_Datatype
 RECORDER_FORWARD_DECL(PMPI_Comm_split, int, (MPI_Comm comm, int color, int key, MPI_Comm * newcomm));
 RECORDER_FORWARD_DECL(PMPI_Comm_dup, int, (MPI_Comm comm, MPI_Comm * newcomm));
 RECORDER_FORWARD_DECL(PMPI_Comm_create, int, (MPI_Comm comm, MPI_Group group, MPI_Comm * newcomm));
-
+// Add MPI_File_seek and MPI_File_seek_shared on 2020/08/27
+RECORDER_FORWARD_DECL(PMPI_File_seek, int, (MPI_File fh, MPI_Offset offset, int whence));
+RECORDER_FORWARD_DECL(PMPI_File_seek_shared, int, (MPI_File fh, MPI_Offset offset, int whence));
 
 
 

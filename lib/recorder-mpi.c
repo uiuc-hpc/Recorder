@@ -95,6 +95,15 @@ static inline char* status2str(MPI_Status *status) {
     return tmp;
 }
 
+static inline char* whence2name(int whence) {
+    if(whence == MPI_SEEK_SET)
+        return strdup("MPI_SEEK_SET");
+    if(whence == MPI_SEEK_CUR)
+        return strdup("MPI_SEEK_CUR");
+    if(whence == MPI_SEEK_END)
+        return strdup("MPI_SEEK_END");
+}
+
 
 /**
  * Intercept the following functions
@@ -580,4 +589,18 @@ int RECORDER_MPI_DECL(MPI_Comm_dup) (MPI_Comm comm, MPI_Comm * newcomm) {
     char **args = assemble_args_list(2, comm2name(comm), comm2name(*newcomm));
     RECORDER_INTERCEPTOR(2, args);
 }
+
+
+int RECORDER_MPI_DECL(MPI_File_seek) (MPI_File fh, MPI_Offset offset, int whence) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_seek, (fh, offset, whence));
+    char **args = assemble_args_list(3, ptoa(fh), itoa(offset), whence2name(whence));
+    RECORDER_INTERCEPTOR(3, args);
+}
+
+int RECORDER_MPI_DECL(MPI_File_seek_shared) (MPI_File fh, MPI_Offset offset, int whence) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_seek_shared, (fh, offset, whence));
+    char **args = assemble_args_list(3, ptoa(fh), itoa(offset), whence2name(whence));
+    RECORDER_INTERCEPTOR(3, args);
+}
+
 

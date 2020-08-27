@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     void *sbuf = processor_name;
     int scount = name_len;
-    char rbuf[MPI_MAX_PROCESSOR_NAME];
+    char rbuf[MPI_MAX_PROCESSOR_NAME*world_size];
     MPI_Alltoall(sbuf, scount, MPI_BYTE, rbuf, scount, MPI_BYTE, MPI_COMM_WORLD);
 
     // MPI Info related
@@ -44,8 +44,9 @@ int main(int argc, char *argv[]) {
 
     MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", info);
 
-    //MPI_File_set_atomicity(fh0, 1);
+    MPI_File_set_atomicity(fh, 1);
     MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status);
+    MPI_File_seek(fh, 100, MPI_SEEK_SET);
 
     MPI_File_close(&fh);
 

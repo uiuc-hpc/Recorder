@@ -125,7 +125,7 @@ static const char* func_list[] = {
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
     "remove",       "truncate",     "ftruncate",    "vfprintf", "msync",
 
-    // MPI 81 functions
+    // MPI 83 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
     "PMPI_File_iread",              "PMPI_File_iread_shared",   "PMPI_File_iwrite_at",
     "PMPI_File_iwrite",             "PMPI_File_iwrite_shared",  "PMPI_File_open",
@@ -159,6 +159,8 @@ static const char* func_list[] = {
     "PMPI_Ssend",
     // Added 2020/08/17
     "PMPI_Comm_split",              "PMPI_Comm_dup",            "PMPI_Comm_create",
+    // Added 2020/08/27
+    "PMPI_File_seek",                "PMPI_File_seek_shared",
 
     // HDF5 I/O - 74 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     "H5Fflush", // File interface
