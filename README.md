@@ -83,6 +83,10 @@ Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level appro
 
 Change Log
 ----------
+**Recorder 2.1.5** Aug 27, 2020
+1. Add MPI_File_seek and MPI_File_seek_shared
+2. Add documentation on how to install using [Spack](https://spack.io).
+
 **Recorder 2.1.4** Aug 26, 2020
 1. Update LICENSE
 2. Update automake/autotools files to make it ready for Spack
