@@ -303,7 +303,10 @@ void logger_init(int rank, int nprocs) {
         unsigned int i;
         for(i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
             const char *funcname = get_function_name_by_id(i);
-            RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
+            if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
+                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, global_metafh);
+            else
+                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
             RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
         }
         RECORDER_REAL_CALL(fclose)(global_metafh);
