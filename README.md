@@ -90,7 +90,7 @@ Below are some example graphs generated from the FLASH traces.
 ![showoff](./test/showoff.jpg)
 
 
-Publication
+Publications
 -----------
 [Wang, Chen, Jinghan Sun, Marc Snir, Kathryn Mohror, and Elsa Gonsiorowski. "Recorder 2.0: Efficient Parallel I/O Tracing and Analysis." In IEEE International Workshop on High-Performance Storage (HPS), 2020.](https://doi.org/10.1109/IPDPSW50202.2020.00176)
 
