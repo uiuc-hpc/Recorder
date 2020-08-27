@@ -89,6 +89,16 @@ The visualization report (recorder-report.html) will be written into the current
 Below are some example graphs generated from the [FLASH](http://flash.uchicago.edu) traces.
 ![showoff](./test/showoff.jpg)
 
+**3. Human-readable traces?**
+
+Recorder uses its own binary tracing format to compress and store traces.
+
+We provide a tool (recorder2text) that can convert the recorder format traces to plain text format.
+```bash
+$RECORDER_ROOT/bin/recorder2text /path/to/your_trace_folder/
+```
+This will generate text fomart traces under `/path/to/your_trace_folder/_text`.
+
 
 Publications
 -----------
