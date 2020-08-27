@@ -24,56 +24,68 @@ the tracing implementation where the timestamp, function name, and function
 parameters are recorded. The original HDF5 function is called after this
 recording process. The mechanism is the same for the MPI and POSIX layers.
 
-Installation & Usage
+Installation
 ------------
 
-1. Get the code.
+*Note that your application and Recorder must use the same version of HDF5 and MPI.*
 
-```console
+**1. Install manually**
+
+```bash
 git clone https://github.com/uiuc-hpc/Recorder.git
 cd Recorder
-```
-
-2. Compile Recorder with MPI and HDF5.
-
-**Note that your application and Recorder must use the same version of HDF5 and MPI.**<br>
-
-```console
 ./autogen.sh
 ./configure --prefix=[install location]
 make
 make install
 ```
+
 By default, Recorde will trace function calls from all levels: HDF5, MPI and POSIX.
 Options for `configure` can be used to disable one ore more levels of traces. Valid options:
  * --disable-posix
- * --disalbe-mpi
+ * --disable-mpi
  * --disable-hdf5
  
-If MPI or HDF5 is not located in standard paths, set CFLGAS and LDFLAGS to specify their location, e.g.,
-```console
+If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+```bash
 ./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
 ```
 
-3. Have fun.<br>
-mpirun can be changed to your workload manager, e.g. srun.
-```console
-LD_PRELOAD=[install location]/lib/librecorder.so mpirun -np N ./your_app
+**2. Install from Spack**
+```bash
+spack install recorder
 ```
+By default Recorder generates traces from all levels, you can use **~** to disable a specific level.
+
+E.g., the following command will install Recorder with HDF5 and MPI tracing disabled.
+```bash
+spack install recorder~hdf5~mpi
+```
+
+Usage
+------------
+
+Assume `$RECORDER_ROOT` is the location where you installed Recorder.
+
+**1. Generate traces.**
+
+```bash
+LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so mpirun -np N ./your_app
+```
+mpirun can be changed to your workload manager, e.g. srun.
+
 The trace files will be written to the current directory.
 
-Visualization
-------------
+**2. Visualization**
 
 We use Python libraries [pandas](https://pandas.pydata.org/), [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
 Please install those dependencies first.
 Also, the visulation may take some time if there are a large number of I/O records.
 
-```console
-cd [install location]/bin/reporter
-python reporter.py /path/to/your_trace_folder/
+```bash
+python $RECORDER_ROOT/bin/reporter/report.py /path/to/your_trace_folder/
 ```
-The visualization report (recorder-report.html) will be written into the current directory
+The visualization report (recorder-report.html) will be written into the current directory.
 
 
 Publication
