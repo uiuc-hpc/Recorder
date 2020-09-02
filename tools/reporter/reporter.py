@@ -170,7 +170,7 @@ def function_times():
     funcnames = funcnames[index]
 
     p = figure(x_axis_label="Spent Time (Seconds)", y_axis_label="Function", y_range=funcnames)
-    p.hbar(y=funcnames, right=times, height=0.8, left=1)
+    p.hbar(y=funcnames, right=times, height=0.8, left=0)
     labels = LabelSet(x='x', y='y', text='x', level='glyph', x_offset=0, y_offset=-8, text_font_size="10pt",
                 source=ColumnDataSource(dict(x=times, y=funcnames)), render_mode='canvas')
     p.add_layout(labels)
