@@ -187,6 +187,17 @@ void release_resources(RecorderReader *reader) {
     free(reader->RLDs);
 }
 
+int compare_by_tstart(const void *lhs, const void *rhs) {
+    const Record *r1 = (Record*) lhs;
+    const Record *r2 = (Record*) rhs;
+    if(r1->tstart > r2->tstart)
+        return 1;
+    else if(r1->tstart < r2->tstart)
+        return -1;
+    else
+        return 0;
+}
+
 
 void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
 
@@ -211,6 +222,7 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
         reader->records[rank] = read_records(log_file, reader->RLDs[rank].total_records, &reader->RGD);
         decompress_records(reader->records[rank], reader->RLDs[rank].total_records);
+        qsort(reader->records[rank], reader->RLDs[rank].total_records, sizeof(Record), compare_by_tstart);
         printf("\rRead trace file for rank %d, records: %d", rank, reader->RLDs[rank].total_records);
         fflush(stdout);
     }
