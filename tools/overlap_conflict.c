@@ -45,7 +45,7 @@ int sum_array(int *arr, int count) {
 }
 
 void detect_overlaps(IntervalsMap *IM, int num_files) {
-    int idx;
+    int i, idx;
     for(idx = 0; idx < num_files; idx++) {
 
         char *filename = IM[idx].filename;
@@ -56,7 +56,7 @@ void detect_overlaps(IntervalsMap *IM, int num_files) {
 
         int overlaps[2][4] = {0} ; // [different rank, same rank][RAR, RAW, WAR, WAW]
 
-        for(int i = 0; i < IM[idx].num_intervals-1; i++) {
+        for(i = 0; i < IM[idx].num_intervals-1; i++) {
             Interval *i1 = & intervals[i];
             Interval *i2 = & intervals[i+1];
 
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
     detect_overlaps(IM, num_files);
     detect_conflicts(IM, num_files);
 
-    for(int i = 0; i < num_files; i++) {
+    for(i = 0; i < num_files; i++) {
         free(IM[i].filename);
         free(IM[i].intervals);
 
