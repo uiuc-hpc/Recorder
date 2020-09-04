@@ -94,6 +94,7 @@ recorder-logs/
 tools/otf2-converter
 tools/conflict_detector
 tools/recorder2text
+tools/metaops_checker
 tools/figures/
 install
 *.html

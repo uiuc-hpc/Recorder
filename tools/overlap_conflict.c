@@ -6,14 +6,14 @@
 static enum Semantics semantics = COMMIT_SEMANTICS;
 
 void access_patterns(IntervalsMap *IM, int num_files) {
-    int idx;
+    int i, idx;
     int consecqutive = 0; int sequential = 0; int random = 0;
 
     for(idx = 0; idx < num_files; idx++) {
 
         printf("%d: %s, intervals: %ld\n", idx, IM[idx].filename, IM[idx].num_intervals);
 
-        for(int i = 0; i < IM[idx].num_intervals - 1; i++) {
+        for(i = 0; i < IM[idx].num_intervals - 1; i++) {
 
             Interval *i1 = & IM[idx].intervals[i];
             Interval *i2 = & IM[idx].intervals[i+1];
