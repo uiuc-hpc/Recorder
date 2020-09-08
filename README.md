@@ -83,7 +83,7 @@ Please install those dependencies first.
 Also, the visulation may take some time if there are a large number of I/O records.
 
 ```bash
-python $RECORDER_ROOT/bin/reporter/report.py /path/to/your_trace_folder/
+python $RECORDER_ROOT/bin/reporter/reporter.py /path/to/your_trace_folder/
 ```
 The visualization report (recorder-report.html) will be written into the current directory.
 Below are some example graphs generated from the [FLASH](http://flash.uchicago.edu) traces.
