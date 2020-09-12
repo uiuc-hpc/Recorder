@@ -71,6 +71,7 @@
 
 
 int depth;
+static int split_times;         // how many time we see MPI_Comm_split
 
 static inline char *comm2name(MPI_Comm comm) {
     int len;
@@ -562,9 +563,10 @@ int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Co
         int global_rank;
         PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-        sprintf(new_comm_name, "%s_%d", parent_name, global_rank);
+        sprintf(new_comm_name, "%s_(%d,%d)", parent_name, split_times++, global_rank);
         free(parent_name);
     }
+    PMPI_Bcast(&split_times, 1, MPI_INT, 0, *newcomm);
     PMPI_Bcast(new_comm_name, 128, MPI_CHAR, 0, *newcomm);
     PMPI_Comm_set_name(*newcomm, new_comm_name);
 
