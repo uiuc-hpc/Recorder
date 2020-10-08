@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "reader.h"
 
-static enum Semantics semantics = COMMIT_SEMANTICS;
+static int semantics = COMMIT_SEMANTICS;
 
 void access_patterns(IntervalsMap *IM, int num_files) {
     int i, idx;
@@ -64,6 +64,7 @@ void detect_overlaps(IntervalsMap *IM, int num_files) {
             if(i1->offset+i1->count <= i2->offset)
                 continue;
 
+            printf("%s, i1(%d, %d, %d, %d), i2(%d, %d, %d, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
             if(i1->isRead && i2->isRead)                // RAR
                 overlaps[same_rank][0] += 1;
@@ -170,13 +171,29 @@ int main(int argc, char* argv[]) {
     RecorderReader reader;
     recorder_read_traces(argv[1], &reader);
 
+    if(argc == 3 && strstr(argv[2], "--semantics="))  {
+        if(strstr(argv[2], "posix")) {
+            semantics = POSIX_SEMANTICS;
+        } else if(strstr(argv[2], "commit"))
+            semantics = COMMIT_SEMANTICS;
+        else if(strstr(argv[2], "session"))
+            semantics = SESSION_SEMANTICS;
+    }
+
+    if(semantics == POSIX_SEMANTICS)
+        printf("Use POSIX Semantics\n");
+    if(semantics == COMMIT_SEMANTICS)
+        printf("Use Commit Semantics\n");
+    if(semantics == SESSION_SEMANTICS)
+        printf("Use Session Semantics\n");
+
 
     int i, rank, num_files;
     IntervalsMap *IM = build_offset_intervals(reader, &num_files, semantics);
 
-    //access_patterns(IM, num_files);
+    access_patterns(IM, num_files);
     detect_overlaps(IM, num_files);
-    detect_conflicts(IM, num_files);
+    //detect_conflicts(IM, num_files);
 
     for(i = 0; i < num_files; i++) {
         free(IM[i].filename);

@@ -1,9 +1,12 @@
 #ifndef _RECORDER_READER_H_
 #define _RECORDER_READER_H_
-
 #include <stdbool.h>
 #include "recorder-log-format.h"
 
+
+#define POSIX_SEMANTICS 0
+#define COMMIT_SEMANTICS 1
+#define SESSION_SEMANTICS 2
 
 typedef struct RecorderReader_t {
     RecorderGlobalDef RGD;
@@ -34,7 +37,6 @@ typedef struct IntervalsMap_t {
     double **tcommits;
 } IntervalsMap;
 
-enum Semantics {POSIX_SEMANTICS, COMMIT_SEMANTICS, SESSION_SEMANTICS};
 
 void read_global_metadata(char* path, RecorderGlobalDef *RGD);
 
@@ -48,6 +50,6 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader);
 void release_resources(RecorderReader *reader);
 
 
-IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, enum Semantics semantics);
+IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);
 
 #endif

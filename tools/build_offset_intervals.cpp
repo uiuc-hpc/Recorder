@@ -48,7 +48,7 @@ size_t get_eof(string filename, unordered_map<string, size_t> local_eof, unorder
  * This function must be called after intervals of IntervalsMap have been filled.
  * Also, records need to be sorted by tstart, which we did in build_offset_intervals().
  */
-void setup_open_close_commit(vector<RRecord> records, int nprocs, IntervalsMap *IM, int num_files, Semantics semantics) {
+void setup_open_close_commit(vector<RRecord> records, int nprocs, IntervalsMap *IM, int num_files, int semantics) {
     int i, j, rank;
     unordered_map<string, vector<double>> topens[nprocs];
     unordered_map<string, vector<double>> tcloses[nprocs];
@@ -136,7 +136,7 @@ void handle_data_operation(RRecord &rr,
                             unordered_map<string, size_t> &local_eof,            // <filename, eof> (locally)
                             unordered_map<string, size_t> &global_eof,           // <filename, eof> (globally)
                             unordered_map<string, vector<Interval>> &intervals,
-                            Semantics semantics )
+                            int semantics )
 {
     Record *R = rr.record;
     const char* func = func_list[R->func_id];
@@ -304,7 +304,7 @@ vector<RRecord> flatten_and_sort_records(RecorderReader reader) {
 }
 
 
-IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, enum Semantics semantics) {
+IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics) {
 
     vector<RRecord> records = flatten_and_sort_records(reader);
 
