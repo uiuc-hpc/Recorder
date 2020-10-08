@@ -74,10 +74,15 @@ int depth;
 static int split_times;         // how many time we see MPI_Comm_split
 
 static inline char *comm2name(MPI_Comm comm) {
-    int len;
+    int len = 0;
     char *tmp = calloc(128, sizeof(char));
-    PMPI_Comm_get_name(comm, tmp, &len);
-    if(len == 0) strcpy(tmp, "MPI_COMM_UNKNOWN");
+    if(comm == MPI_COMM_NULL)
+        strcpy(tmp, "MPI_COMM_NULL");
+    else {
+        PMPI_Comm_get_name(comm, tmp, &len);
+        if(len == 0)
+            strcpy(tmp, "MPI_COMM_UNKNOWN");
+    }
     return tmp;
 }
 
@@ -553,22 +558,24 @@ int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Co
     //printf("comm: %d, color: %d, key: %d\n", comm, color, key);
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split, (comm, color, key, newcomm));
 
-    int rank;
-    PMPI_Comm_rank(*newcomm, &rank);
+    if((newcomm != NULL) && (*newcomm != MPI_COMM_NULL)) {
+        int rank;
+        PMPI_Comm_rank(*newcomm, &rank);
 
-    char new_comm_name[128] = {0};
-    if(rank == 0) {
-        char* parent_name = comm2name(comm);
+        char new_comm_name[128] = {0};
+        if(rank == 0) {
+            char* parent_name = comm2name(comm);
 
-        int global_rank;
-        PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+            int global_rank;
+            PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-        sprintf(new_comm_name, "%s_(%d,%d)", parent_name, split_times++, global_rank);
-        free(parent_name);
+            sprintf(new_comm_name, "%s_(%d,%d)", parent_name, split_times++, global_rank);
+            free(parent_name);
+        }
+        PMPI_Bcast(&split_times, 1, MPI_INT, 0, *newcomm);
+        PMPI_Bcast(new_comm_name, 128, MPI_CHAR, 0, *newcomm);
+        PMPI_Comm_set_name(*newcomm, new_comm_name);
     }
-    PMPI_Bcast(&split_times, 1, MPI_INT, 0, *newcomm);
-    PMPI_Bcast(new_comm_name, 128, MPI_CHAR, 0, *newcomm);
-    PMPI_Comm_set_name(*newcomm, new_comm_name);
 
     char **args = assemble_args_list(4, comm2name(comm), itoa(color), itoa(key), comm2name(*newcomm));
     RECORDER_INTERCEPTOR(4, args);
