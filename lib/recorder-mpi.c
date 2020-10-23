@@ -120,17 +120,15 @@ static inline char* whence2name(int whence) {
 int RECORDER_MPI_DECL(MPI_Comm_size)(MPI_Comm comm, int *size) {
     // TODO: size is only know after the function call
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_size, (comm, size));
-    char **args = assemble_args_list(2, comm2name(comm), ptoa(size));
+    char **args = assemble_args_list(2, comm2name(comm), itoa(*size));
     RECORDER_INTERCEPTOR(2, args);
-
 }
 
 int RECORDER_MPI_DECL(MPI_Comm_rank)(MPI_Comm comm, int *rank) {
     // TODO: rank is only know after the function call
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_rank, (comm, rank));
-    char **args = assemble_args_list(2, comm2name(comm), ptoa(rank));
+    char **args = assemble_args_list(2, comm2name(comm), itoa(*rank));
     RECORDER_INTERCEPTOR(2, args);
-
 }
 
 int RECORDER_MPI_DECL(MPI_Get_processor_name)(char *name, int *resultlen) {
