@@ -97,7 +97,10 @@ static inline char *type2name(MPI_Datatype type) {
 
 static inline char* status2str(MPI_Status *status) {
     char *tmp = calloc(128, sizeof(char));
-    sprintf(tmp, "[%d %d %d]", status->MPI_SOURCE, status->MPI_TAG, status->MPI_ERROR);
+    if(status == MPI_STATUS_IGNORE)
+        strcpy(tmp, "MPI_STATUS_IGNORE");
+    else
+        sprintf(tmp, "[%d %d %d]", status->MPI_SOURCE, status->MPI_TAG, status->MPI_ERROR);
     return tmp;
 }
 
