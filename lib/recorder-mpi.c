@@ -72,6 +72,7 @@
 
 int depth;
 static int split_times;         // how many time we see MPI_Comm_split
+static int dup_times;
 
 static inline char *comm2name(MPI_Comm comm) {
     int len = 0;
@@ -591,10 +592,24 @@ int RECORDER_MPI_DECL(MPI_Comm_create) (MPI_Comm comm, MPI_Group group, MPI_Comm
 int RECORDER_MPI_DECL(MPI_Comm_dup) (MPI_Comm comm, MPI_Comm * newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_dup, (comm, newcomm));
 
-    char new_comm_name[128] = {0};
-    char* parent_name = comm2name(comm);
-    sprintf(new_comm_name, "%s_dup", parent_name);
-    PMPI_Comm_set_name(*newcomm, new_comm_name);
+    if((newcomm != NULL) && (*newcomm != MPI_COMM_NULL)) {
+        int rank;
+        PMPI_Comm_rank(*newcomm, &rank);
+
+        char new_comm_name[128] = {0};
+        if(rank == 0) {
+            char* parent_name = comm2name(comm);
+
+            int global_rank;
+            PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+
+            sprintf(new_comm_name, "%s_(%d,%d)", parent_name, dup_times++, global_rank);
+            free(parent_name);
+        }
+        PMPI_Bcast(&dup_times, 1, MPI_INT, 0, *newcomm);
+        PMPI_Bcast(new_comm_name, 128, MPI_CHAR, 0, *newcomm);
+        PMPI_Comm_set_name(*newcomm, new_comm_name);
+    }
 
     char **args = assemble_args_list(2, comm2name(comm), comm2name(*newcomm));
     RECORDER_INTERCEPTOR(2, args);
