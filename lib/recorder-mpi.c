@@ -603,7 +603,7 @@ int RECORDER_MPI_DECL(MPI_Comm_dup) (MPI_Comm comm, MPI_Comm * newcomm) {
             int global_rank;
             PMPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-            sprintf(new_comm_name, "%s_(%d,%d)", parent_name, dup_times++, global_rank);
+            sprintf(new_comm_name, "%s_dup(%d,%d)", parent_name, dup_times++, global_rank);
             free(parent_name);
         }
         PMPI_Bcast(&dup_times, 1, MPI_INT, 0, *newcomm);
