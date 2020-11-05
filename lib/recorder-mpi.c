@@ -628,4 +628,8 @@ int RECORDER_MPI_DECL(MPI_File_seek_shared) (MPI_File fh, MPI_Offset offset, int
     RECORDER_INTERCEPTOR(3, args);
 }
 
-
+int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_get_size, (fh, offset));
+    char **args = assemble_args_list(2, ptoa(fh), itoa(*offset));
+    RECORDER_INTERCEPTOR(2, args);
+}

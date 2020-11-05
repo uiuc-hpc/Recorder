@@ -337,6 +337,8 @@ RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
 RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
 RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
 RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype));
+RECORDER_FORWARD_DECL(PMPI_File_get_size, int, (MPI_File fh, MPI_Offset *size));
+
 // Added 10 new MPI functinos on 2019/01/07
 RECORDER_FORWARD_DECL(PMPI_Cart_rank, int, (MPI_Comm comm, CONST int coords[], int *rank));
 RECORDER_FORWARD_DECL(PMPI_Cart_create, int, (MPI_Comm comm_old, int ndims, CONST int dims[], CONST int periods[], int reorder, MPI_Comm *comm_cart));
