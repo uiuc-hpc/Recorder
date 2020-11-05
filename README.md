@@ -108,7 +108,7 @@ Publications
 
 Change Log
 ----------
-**Recorder 2.1.6** Oct 05, 2020
+**Recorder 2.1.6** Nov 05, 2020
 1. Generate unique id for communicators 
 2. Fix bus caused by MPI_COMM_NULL
 3. Add support for MPI_File_get_size
