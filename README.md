@@ -108,6 +108,11 @@ Publications
 
 Change Log
 ----------
+**Recorder 2.1.6** Oct 05, 2020
+1. Generate unique id for communicators 
+2. Fix bus caused by MPI_COMM_NULL
+3. Add support for MPI_File_get_size
+
 **Recorder 2.1.5** Aug 27, 2020
 1. Add MPI_File_seek and MPI_File_seek_shared
 2. Add documentation on how to install using [Spack](https://spack.io).
