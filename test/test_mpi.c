@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     /* IO-Realted MPI Calls */
     MPI_File fh;
     MPI_Status status;
+    MPI_Offset offset;
     int i, a[10];
     for (i=0;i<10;i++) a[i] = 5;
 
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
     MPI_File_set_atomicity(fh, 1);
     MPI_File_write_at(fh, 0, a, 10, MPI_INT, &status);
     MPI_File_seek(fh, 100, MPI_SEEK_SET);
+    MPI_File_get_size(fh, &offset);
 
     MPI_File_close(&fh);
 
