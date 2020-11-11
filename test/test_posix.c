@@ -19,6 +19,9 @@ int main() {
     int fd = open("./workfile.out", O_RDONLY);
     res = fstat(fd, &buf);
 
+    struct flock lk;
+    fcntl(fd, F_GETLK, &lk);
+
     char data[] = "hello world";
     write(fd, &data, sizeof(char)*5);
     res = fstat(fd, &buf);

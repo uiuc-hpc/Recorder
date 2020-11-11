@@ -458,18 +458,35 @@ int RECORDER_POSIX_DECL(mknodat)(int fd, const char *path, mode_t mode, dev_t de
     char** args = assemble_args_list(4, itoa(fd), realrealpath(path), itoa(mode), itoa(dev));
     RECORDER_INTERCEPTOR(4, args);
 }
-
-
-
 // Advanced File Operations
-/* TODO: third argument
+// TODO: third argument
 int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "fcntl %d %d", fd, cmd);
-    RECORDER_INTERCEPTOR(fcntl, int, (fd, cmd), NULL, 0, 0, log_text)
-
+    if(cmd==F_DUPFD || cmd==F_SETFD || cmd==F_SETFL || cmd==F_SETOWN) {            // arg: int
+        va_list arg;
+        va_start(arg, cmd);
+        int val = va_arg(arg, int);
+        va_end(arg);
+        RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd, val));
+        char** args = assemble_args_list(3, itoa(fd), itoa(cmd), itoa(val));
+        RECORDER_INTERCEPTOR(3, args);
+    } else if(cmd==F_GETFD || cmd==F_GETFL || cmd==F_GETOWN) {                     // arg: void
+        RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd));
+        char** args = assemble_args_list(2, itoa(fd), itoa(cmd));
+        RECORDER_INTERCEPTOR(2, args);
+    } else if(cmd==F_SETLK || cmd==F_SETLKW || cmd==F_GETLK) {
+        va_list arg;
+        va_start(arg, cmd);
+        struct flock *lk = va_arg(arg, struct flock*);
+        va_end(arg);
+        RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd, lk));
+        char** args = assemble_args_list(3, itoa(fd), itoa(cmd), itoa(lk->l_type));
+        RECORDER_INTERCEPTOR(3, args);
+    } else {                                                                        // assume arg: void
+        RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd));
+        char** args = assemble_args_list(2, itoa(fd), itoa(cmd));
+        RECORDER_INTERCEPTOR(2, args);
+    }
 }
-*/
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
     RECORDER_INTERCEPTOR_NOIO(int, dup, (oldfd));
     record.res = res;
