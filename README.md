@@ -40,11 +40,16 @@ make
 make install
 ```
 
-By default, Recorde will trace function calls from all levels: HDF5, MPI and POSIX.
+By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
+
 Options for `configure` can be used to disable one ore more levels of traces. Valid options:
  * --disable-posix
  * --disable-mpi
  * --disable-hdf5
+
+Note on `fcntl`:
+In v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
+are supported. If non-POSIX commands used, please disable fcntl tracing at configure time with `--disable-fcntl`.
  
 If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
 ```bash
