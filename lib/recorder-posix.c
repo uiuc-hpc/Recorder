@@ -460,6 +460,7 @@ int RECORDER_POSIX_DECL(mknodat)(int fd, const char *path, mode_t mode, dev_t de
 }
 // Advanced File Operations
 // TODO: third argument
+#ifndef DISABLE_FCNTL_TRACE
 int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
     if(cmd==F_DUPFD || cmd==F_SETFD || cmd==F_SETFL || cmd==F_SETOWN) {            // arg: int
         va_list arg;
@@ -487,6 +488,8 @@ int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
         RECORDER_INTERCEPTOR(2, args);
     }
 }
+#endif
+
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
     RECORDER_INTERCEPTOR_NOIO(int, dup, (oldfd));
     record.res = res;

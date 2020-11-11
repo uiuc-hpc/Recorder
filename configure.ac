@@ -1,4 +1,4 @@
-AC_INIT([Recorder], 2.1.3)
+AC_INIT([Recorder], 2.1.7)
 
 AC_PROG_CC([mpicc])
 AC_PROG_CXX([mpicxx])
@@ -9,10 +9,14 @@ AC_ARG_ENABLE([posix],
     AS_HELP_STRING([--disable-posix], [Disable POSIX tracing]))
 
 AC_ARG_ENABLE([mpi],
-     AS_HELP_STRING([--disable-mpi], [Disable MPI tracing]))
+    AS_HELP_STRING([--disable-mpi], [Disable MPI tracing]))
 
 AC_ARG_ENABLE([hdf5],
-      AS_HELP_STRING([--disable-hdf5], [Disable HDF5 tracing]))
+    AS_HELP_STRING([--disable-hdf5], [Disable HDF5 tracing]))
+
+AC_ARG_ENABLE([fcntl],
+    AS_HELP_STRING([--disable-fcntl], [Disable FCNTL tracing]))
+
 
 AS_IF([test "x$enable_posix" == "xno"], [
   AC_SUBST(DISABLE_POSIX, "-DDISABLE_POSIX_TRACE")
@@ -23,7 +27,9 @@ AS_IF([test "x$enable_mpi" == "xno"], [
 AS_IF([test "x$enable_hdf5" == "xno"], [
   AC_SUBST(DISABLE_HDF5, "-DDISABLE_HDF5_TRACE")
 ])
-
+AS_IF([test "x$enable_fcntl" == "xno"], [
+  AC_SUBST(DISABLE_FCNTL, "-DDISABLE_FCNTL_TRACE")
+])
 
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT
