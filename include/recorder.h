@@ -366,8 +366,8 @@ RECORDER_FORWARD_DECL(PMPI_Comm_create, int, (MPI_Comm comm, MPI_Group group, MP
 // Add MPI_File_seek and MPI_File_seek_shared on 2020/08/27
 RECORDER_FORWARD_DECL(PMPI_File_seek, int, (MPI_File fh, MPI_Offset offset, int whence));
 RECORDER_FORWARD_DECL(PMPI_File_seek_shared, int, (MPI_File fh, MPI_Offset offset, int whence));
-
-
+// Add MPI_Ibcast on 2020/11/13
+RECORDER_FORWARD_DECL(PMPI_Ibcast, int, (void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm, MPI_Request *request));
 
 
 /* NOTE: using HDF5 1.8 version */

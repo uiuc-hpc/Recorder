@@ -156,6 +156,13 @@ int RECORDER_MPI_DECL(MPI_Bcast)(void *buffer, int count, MPI_Datatype datatype,
     RECORDER_INTERCEPTOR(5, args);
 }
 
+int RECORDER_MPI_DECL(MPI_Ibcast)(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ibcast, (buffer, count, datatype, root, comm, request));
+    size_t r = *request;
+    char **args = assemble_args_list(6, ptoa(buffer), itoa(count), type2name(datatype), itoa(root), comm2name(comm), itoa(r));
+    RECORDER_INTERCEPTOR(6, args);
+}
+
 int RECORDER_MPI_DECL(MPI_Gather)(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         int rcount, MPI_Datatype rtype, int root, MPI_Comm comm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Gather, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm));
@@ -633,3 +640,4 @@ int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
     char **args = assemble_args_list(2, ptoa(fh), itoa(*offset));
     RECORDER_INTERCEPTOR(2, args);
 }
+

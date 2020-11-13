@@ -66,6 +66,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    MPI_Request req;
+    MPI_Ibcast(a, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
+    MPI_Wait(&req, MPI_STATUS_IGNORE);
+
     MPI_Finalize();
 
     return 0;

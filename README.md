@@ -115,6 +115,7 @@ Change Log
 ----------
 **Recorder 2.1.7** Nov 11, 2020
 1. Add fcntl() support. Only support commands defined in [POSIX standard](https://pubs.opengroup.org/onlinepubs/009695399/functions/fcntl.html).
+2. Add support for MPI_Ibcast()
 
 **Recorder 2.1.6** Nov 05, 2020
 1. Generate unique id for communicators 
