@@ -104,6 +104,9 @@ $RECORDER_ROOT/bin/recorder2text /path/to/your_trace_folder/
 ```
 This will generate text fomart traces under `/path/to/your_trace_folder/_text`.
 
+Dataset
+-----------
+[14 HPC applications](https://doi.org/10.6075/J0Z899X4)
 
 Publications
 -----------
