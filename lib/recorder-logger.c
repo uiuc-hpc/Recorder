@@ -273,10 +273,12 @@ void logger_init(int rank, int nprocs) {
     __logger.recordWindow[0].args = NULL;
     __logger.recordWindow[0].func_id = -1;
 
-    if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1) {
-        RECORDER_REAL_CALL(remove) ("recorder-logs");
+    if(rank == 0) {
+        if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1) {
+            RECORDER_REAL_CALL(remove) ("recorder-logs");
+        }
+        RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
-    RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     char logfile_name[256];
     char metafile_name[256];
