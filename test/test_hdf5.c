@@ -11,6 +11,8 @@ int main() {
     hsize_t dims[2];
     herr_t status;
 
+    hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
     file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     // Create data space for the dataset

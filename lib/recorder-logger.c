@@ -261,6 +261,7 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(remove);
     MAP_OR_FAIL(access);
     MAP_OR_FAIL(mkdir);
+    MAP_OR_FAIL(PMPI_Barrier);
 
     // Initialize the global values
     __filename_hashtable = NULL;
@@ -278,7 +279,9 @@ void logger_init(int rank, int nprocs) {
             RECORDER_REAL_CALL(remove) ("recorder-logs");
         }
         RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
     }
+    RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
     char logfile_name[256];
     char metafile_name[256];
