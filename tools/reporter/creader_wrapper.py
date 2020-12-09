@@ -69,7 +69,7 @@ class RecorderReader:
     def __init__(self, logs_dir):
         filedir = os.path.dirname(__file__)
         parpardir = os.path.join(os.path.join(filedir, os.pardir), os.pardir)
-        libreader_path = os.path.join(parpardir, "lib/librreader.so")
+        libreader_path = os.path.join(parpardir, "tools/.libs/librreader.so")
 
         libreader = cdll.LoadLibrary(libreader_path)
         libreader.read_records.restype = POINTER(Record)
