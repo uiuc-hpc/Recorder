@@ -78,6 +78,7 @@ void logger_exit();
 void write_record(Record record);
 
 /* util.c */
+void util_init();
 long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
@@ -89,7 +90,6 @@ char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);
 unsigned char get_function_id_by_name(const char* name);
 char* realrealpath(const char* path);           // return the absolute path (mapped to id in string)
-
 
 
 #ifdef RECORDER_PRELOAD

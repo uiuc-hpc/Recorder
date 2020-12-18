@@ -10,6 +10,16 @@
 bool __recording;
 FilenameHashTable* __filename_hashtable;
 
+// Log pointer addresses in the trace file?
+bool log_pointer;
+
+
+void util_init() {
+    log_pointer = false;
+    const char* comp_mode = getenv("RECORDER_LOG_POINTER");
+    if(comp_mode)
+        log_pointer = atoi(comp_mode);
+}
 
 /*
  * Some of functions are not made by the application
@@ -68,8 +78,14 @@ inline char* ftoa(double val) {
 
 /* Pointer to string */
 inline char* ptoa(const void *ptr) {
-    char *str = calloc(16, sizeof(char));
-    sprintf(str, "%p", ptr);
+    char* str;
+    if(log_pointer) {
+        str = calloc(16, sizeof(char));
+        sprintf(str, "%p", ptr);
+    } else {
+        str = calloc(3, sizeof(char));
+        str[0] = '%'; str[1] = 'p';
+    }
     return str;
 }
 
