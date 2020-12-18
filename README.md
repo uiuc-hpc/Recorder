@@ -63,7 +63,7 @@ If MPI or HDF5 is not installed in standard locations, you may need to set CFLGA
 (2) Logging pointers
 
 Since v2.1.8, Recorder by default does not log the pointers (memory addresses) any more as they provide little information yet
-cost a lot of spaces.
+cost a lot of space.
 However, you can change this behaviour by set the enviroment `RECORDER_LOG_POINTER` to 1.
 
 
@@ -130,7 +130,7 @@ Change Log
 
 **Recorder 2.1.8** Dec 18, 2020
 1. Add MPI_Test, MPI_Testany, MPI_Testsome, MPI_Testall
-2. Do not log pointers by default as it delivers no so much information
+2. Do not log pointers by default as it delivers not so much information
 
 **Recorder 2.1.7** Nov 11, 2020
 1. Add fcntl() support. Only support commands defined in [POSIX standard](https://pubs.opengroup.org/onlinepubs/009695399/functions/fcntl.html).
