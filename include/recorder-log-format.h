@@ -165,7 +165,8 @@ static const char* func_list[] = {
     "PMPI_File_get_size",           "PMPI_Ibcast",
     // Added 2020/12/18
     "PMPI_Test",                    "PMPI_Testall",             "PMPI_Testsome",
-    "PMPI_Testany",
+    "PMPI_Testany",                 "PMPI_Ireduce",             "PMPI_Iscatter",
+    "PMPI_Igather",                 "PMPI_Ialltoall",
 
     // HDF5 I/O - 74 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     "H5Fflush", // File interface
@@ -261,7 +262,8 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,
     // Added 2020/12/18
     0b00000000,  0b00000000,  0b00000000,
-    0b00000000,
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,  0b00000000,
 
 
     // HDF5 I/O - 74 functions

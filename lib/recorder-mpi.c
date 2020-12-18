@@ -642,13 +642,13 @@ int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
 }
 
 
-// Add MPI_Test/MPI_Testany/MPI_Testsome/MPI_Testall on 2020 12/18
+// Add MPI_Test, MPI_Testany, MPI_Testsome, MPI_Testall,
+// MPI_Ireduce and MPI_Igather on 2020 12/18
 int RECORDER_MPI_DECL(MPI_Test) (MPI_Request *request, int *flag, MPI_Status *status) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Test, (request, flag, status));
     char **args = assemble_args_list(3, itoa(*request), itoa(*flag), status2str(status));
     RECORDER_INTERCEPTOR(3, args);
 }
-
 int RECORDER_MPI_DECL(MPI_Testall) (int count, MPI_Request requests[], int *flag, MPI_Status statuses[]) {
     int i;
     size_t arr[count];
@@ -660,7 +660,6 @@ int RECORDER_MPI_DECL(MPI_Testall) (int count, MPI_Request requests[], int *flag
     char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*flag), ptoa(statuses));
     RECORDER_INTERCEPTOR(4, args);
 }
-
 int RECORDER_MPI_DECL(MPI_Testsome) (int incount, MPI_Request requests[], int *outcount, int indices[], MPI_Status statuses[]) {
     int i;
     size_t arr[incount];
@@ -687,3 +686,29 @@ int RECORDER_MPI_DECL(MPI_Testany) (int count, MPI_Request requests[], int *indx
     char **args = assemble_args_list(5, itoa(count), requests_str, itoa(*indx), itoa(*flag), status2str(status));
     RECORDER_INTERCEPTOR(5, args);
 }
+
+int RECORDER_MPI_DECL(MPI_Ireduce) (const void *sbuf, void *rbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ireduce, (sbuf, rbuf, count, datatype, op, root, comm, request));
+    char **args = assemble_args_list(8, ptoa(sbuf), ptoa(rbuf), itoa(count), type2name(datatype),
+                                    itoa(op), itoa(root), comm2name(comm), itoa(*request));
+    RECORDER_INTERCEPTOR(8, args);
+}
+int RECORDER_MPI_DECL(PMPI_Igather) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Igather, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm, request));
+    char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype),
+                                        ptoa(rbuf), itoa(rcount), type2name(rtype), itoa(root), comm2name(comm), itoa(*request));
+    RECORDER_INTERCEPTOR(9, args);
+}
+int RECORDER_MPI_DECL(PMPI_Iscatter) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Iscatter, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm, request));
+    char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype),
+                                        ptoa(rbuf), itoa(rcount), type2name(rtype), itoa(root), comm2name(comm), itoa(*request));
+    RECORDER_INTERCEPTOR(9, args);
+}
+int RECORDER_MPI_DECL(PMPI_Ialltoall) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, MPI_Comm comm, MPI_Request * request) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ialltoall, (sbuf, scount, stype, rbuf, rcount, rtype, comm, request));
+    char **args = assemble_args_list(8, ptoa(sbuf), itoa(scount), type2name(stype),
+                                        ptoa(rbuf), itoa(rcount), type2name(rtype), comm2name(comm), itoa(*request));
+    RECORDER_INTERCEPTOR(8, args);
+}
+
