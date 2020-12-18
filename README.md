@@ -29,7 +29,7 @@ Installation
 
 *Note that your application and Recorder must use the same version of HDF5 and MPI.*
 
-**1. Install manually (recommended) **
+**1. Install manually (recommended)**
 
 ```bash
 git clone https://github.com/uiuc-hpc/Recorder.git
@@ -48,7 +48,7 @@ Options for `configure` can be used to disable one ore more levels of traces. Va
  * --disable-hdf5
 
 
-**Other options: **
+**Other options:**
 
 (1) `fcntl`:
 
