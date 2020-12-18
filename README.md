@@ -29,7 +29,7 @@ Installation
 
 *Note that your application and Recorder must use the same version of HDF5 and MPI.*
 
-**1. Install manually**
+**1. Install manually (recommended) **
 
 ```bash
 git clone https://github.com/uiuc-hpc/Recorder.git
@@ -47,14 +47,25 @@ Options for `configure` can be used to disable one ore more levels of traces. Va
  * --disable-mpi
  * --disable-hdf5
 
-Note on `fcntl`:
-In v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
-are supported. If non-POSIX commands used, please disable fcntl tracing at configure time with `--disable-fcntl`.
+
+**Other options: **
+
+(1) `fcntl`:
+
+Since v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
+are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `--disable-fcntl`.
  
 If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
 ```bash
 ./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
 ```
+
+(2) Logging pointers
+
+Since v2.1.8, Recorder by default does not log the pointers (memory addresses) any more as they provide little information yet
+cost a lot of spaces.
+However, you can change this behaviour by set the enviroment `RECORDER_LOG_POINTER` to 1.
+
 
 **2. Install from Spack**
 ```bash
@@ -116,6 +127,11 @@ Publications
 
 Change Log
 ----------
+
+**Recorder 2.1.8** Dec 18, 2020
+1. Add MPI_Test, MPI_Testany, MPI_Testsome, MPI_Testall
+2. Do not log pointers by default as it delivers no so much information
+
 **Recorder 2.1.7** Nov 11, 2020
 1. Add fcntl() support. Only support commands defined in [POSIX standard](https://pubs.opengroup.org/onlinepubs/009695399/functions/fcntl.html).
 2. Add support for MPI_Ibcast()
