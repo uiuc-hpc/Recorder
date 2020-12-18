@@ -129,8 +129,9 @@ Change Log
 ----------
 
 **Recorder 2.1.8** Dec 18, 2020
-1. Add MPI_Test, MPI_Testany, MPI_Testsome, MPI_Testall
-2. Do not log pointers by default as it delivers not so much information
+1. Add MPI_Test, MPI_Testany, MPI_Testsome and MPI_Testall
+2. Add MPI_Ireduce, MPI_Iscatter, MPI_Igather and MPI_Ialltoall
+3. Do not log pointers by default as it delivers not so much information
 
 **Recorder 2.1.7** Nov 11, 2020
 1. Add fcntl() support. Only support commands defined in [POSIX standard](https://pubs.opengroup.org/onlinepubs/009695399/functions/fcntl.html).
