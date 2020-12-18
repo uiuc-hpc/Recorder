@@ -163,6 +163,9 @@ static const char* func_list[] = {
     "PMPI_File_seek",               "PMPI_File_seek_shared",
     // Added 2020/11/05, 2020/11/13
     "PMPI_File_get_size",           "PMPI_Ibcast",
+    // Added 2020/12/18
+    "PMPI_Test",                    "PMPI_Testall",             "PMPI_Testsome",
+    "PMPI_Testany",
 
     // HDF5 I/O - 74 functions
     "H5Fcreate",            "H5Fopen",              "H5Fclose",     "H5Fflush", // File interface
@@ -219,7 +222,7 @@ static char filename_arg_pos[] = {
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000000, // tmpfile
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000000, // remove
 
-    // MPI 80 functions
+    // MPI 84 functions
     // Only MPI_File_open has the filename argument
     0b00000000,  0b00000000,  0b00000000,
     0b00000000,  0b00000000,  0b00000000,
@@ -256,6 +259,10 @@ static char filename_arg_pos[] = {
     0b00000000,  0b00000000,  0b00000000,
     // Added 2020/11/05, 2020/11/13
     0b00000000,  0b00000000,
+    // Added 2020/12/18
+    0b00000000,  0b00000000,  0b00000000,
+    0b00000000,
+
 
     // HDF5 I/O - 74 functions
     // Only H5Fcreate and H5Fopen have filename arguments

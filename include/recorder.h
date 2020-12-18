@@ -368,6 +368,11 @@ RECORDER_FORWARD_DECL(PMPI_File_seek, int, (MPI_File fh, MPI_Offset offset, int 
 RECORDER_FORWARD_DECL(PMPI_File_seek_shared, int, (MPI_File fh, MPI_Offset offset, int whence));
 // Add MPI_Ibcast on 2020/11/13
 RECORDER_FORWARD_DECL(PMPI_Ibcast, int, (void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm, MPI_Request *request));
+// Add MPI_Test, MPI_Testany, MPI_Testsome, MPI_Testall on 2020/12/18
+RECORDER_FORWARD_DECL(PMPI_Test, int, (MPI_Request *request, int *flag, MPI_Status *status));
+RECORDER_FORWARD_DECL(PMPI_Testall, int, (int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[]));
+RECORDER_FORWARD_DECL(PMPI_Testsome, int, (int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]));
+RECORDER_FORWARD_DECL(PMPI_Testany, int, (int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status * status));
 
 
 /* NOTE: using HDF5 1.8 version */

@@ -641,3 +641,49 @@ int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
+
+// Add MPI_Test/MPI_Testany/MPI_Testsome/MPI_Testall on 2020 12/18
+int RECORDER_MPI_DECL(MPI_Test) (MPI_Request *request, int *flag, MPI_Status *status) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Test, (request, flag, status));
+    char **args = assemble_args_list(3, itoa(*request), itoa(*flag), status2str(status));
+    RECORDER_INTERCEPTOR(3, args);
+}
+
+int RECORDER_MPI_DECL(MPI_Testall) (int count, MPI_Request requests[], int *flag, MPI_Status statuses[]) {
+    int i;
+    size_t arr[count];
+    for(i = 0; i < count; i++)
+        arr[i] = requests[i];
+    char* requests_str = arrtoa(arr, count);
+
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Testall, (count, requests, flag, statuses));
+    char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*flag), ptoa(statuses));
+    RECORDER_INTERCEPTOR(4, args);
+}
+
+int RECORDER_MPI_DECL(MPI_Testsome) (int incount, MPI_Request requests[], int *outcount, int indices[], MPI_Status statuses[]) {
+    int i;
+    size_t arr[incount];
+    for(i = 0; i < incount; i++)
+        arr[i] = (size_t) requests[i];
+    char* requests_str = arrtoa(arr, incount);
+
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Testsome, (incount, requests, outcount, indices, statuses));
+    size_t arr2[*outcount];
+    for(i = 0; i < *outcount; i++)
+        arr2[i] = (size_t) indices[i];
+    char* indices_str = arrtoa(arr2, *outcount);
+    char **args = assemble_args_list(5, itoa(incount), requests_str, itoa(*outcount), indices_str, ptoa(statuses));
+    RECORDER_INTERCEPTOR(5, args);
+}
+int RECORDER_MPI_DECL(MPI_Testany) (int count, MPI_Request requests[], int *indx, int *flag, MPI_Status *status) {
+    int i;
+    size_t arr[count];
+    for(i = 0; i < count; i++)
+        arr[i] = (size_t) requests[i];
+    char* requests_str = arrtoa(arr, count);
+
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Testany, (count, requests, indx, flag, status));
+    char **args = assemble_args_list(5, itoa(count), requests_str, itoa(*indx), itoa(*flag), status2str(status));
+    RECORDER_INTERCEPTOR(5, args);
+}
