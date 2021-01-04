@@ -16,9 +16,9 @@ bool log_pointer;
 
 void util_init() {
     log_pointer = false;
-    const char* comp_mode = getenv("RECORDER_LOG_POINTER");
-    if(comp_mode)
-        log_pointer = atoi(comp_mode);
+    const char* s = getenv("RECORDER_LOG_POINTER");
+    if(s)
+        log_pointer = atoi(s);
 }
 
 /*
