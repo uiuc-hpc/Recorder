@@ -219,17 +219,17 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
         writeInBinary(__logger.dataFile, new_record);
     }
 
-    for(i = 0; i < __logger.recordWindow[2].arg_count; i++) {
-        if(__logger.recordWindow[2].args[i])
-            free(__logger.recordWindow[2].args[i]);
-    }
-    if(__logger.recordWindow[2].args)
-        free(__logger.recordWindow[2].args);
+    // Free the oldest record in the window
+    for(i = 0; i < __logger.recordWindow[RECORD_WINDOW_SIZE].arg_count; i++)
+        if(__logger.recordWindow[RECORD_WINDOW_SIZE].args[i])
+            free(__logger.recordWindow[RECORD_WINDOW_SIZE].args[i]);
+    if(__logger.recordWindow[RECORD_WINDOW_SIZE].args)
+        free(__logger.recordWindow[RECORD_WINDOW_SIZE].args);
 
-    __logger.recordWindow[2] = __logger.recordWindow[1];
-    __logger.recordWindow[1] = __logger.recordWindow[0];
+    // Move the sliding window
+    for(i = RECORD_WINDOW_SIZE-1; i > 0; i--)
+        __logger.recordWindow[i] = __logger.recordWindow[i-1];
     __logger.recordWindow[0] = new_record;
-
 }
 
 
@@ -279,7 +279,6 @@ void logger_init(int rank, int nprocs) {
             RECORDER_REAL_CALL(remove) ("recorder-logs");
         }
         RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
