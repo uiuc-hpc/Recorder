@@ -333,6 +333,10 @@ void logger_init(int rank, int nprocs) {
 void logger_exit() {
     __recording = false;    // set the extern global
 
+    int i;
+    for(i = 0; i < RECORD_WINDOW_SIZE; i++)
+        free_record(&(__logger.recordWindow[i]));
+
     /* Write out local metadata information */
     __logger.localDef.num_files = HASH_COUNT(__filename_hashtable);
     __logger.localDef.start_timestamp = __logger.startTimestamp;
