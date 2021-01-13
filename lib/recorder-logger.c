@@ -54,7 +54,7 @@ struct MemBuf {
 struct MemBuf __membuf;
 
 void membufDestroy(struct MemBuf *membuf) {
-    recorder_free(membuf->buffer, membuf->size);
+    free(membuf->buffer);
     membuf->pos = 0;
 }
 void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
@@ -75,7 +75,7 @@ void membufDump(struct MemBuf *membuf) {
 }
 void membufInit(struct MemBuf* membuf) {
     membuf->size = 6*1024*1024;            // 12M
-    membuf->buffer = recorder_malloc(membuf->size);
+    membuf->buffer = malloc(membuf->size);
     membuf->pos = 0;
     membuf->destroy = membufDestroy;
     membuf->append = membufAppend;
@@ -236,10 +236,6 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
 
 
 void write_record(Record record) {
-    if (!__recording)  {
-        free_record(&record);
-        return;       // have not initialized yet
-    }
 
     __logger.localDef.total_records++;
     __logger.localDef.function_count[record.func_id]++;

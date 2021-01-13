@@ -26,13 +26,20 @@ void utils_finalize() {
 }
 
 void* recorder_malloc(size_t size) {
+    if(size == 0)
+        return NULL;
+
     memory_usage += size;
-    //printf("malloc: %ld, now: %ld\n", size, memory_usage);
+    //if(__recording)
+    //    printf("malloc: %ld, now: %ld\n", size, memory_usage);
     return malloc(size);
 }
 void recorder_free(void* ptr, size_t size) {
+    if(size == 0 || ptr == NULL)
+        return;
     memory_usage -= size;
-    //printf("free: %ld, now: %ld\n", size, memory_usage);
+    //if(__recording)
+    //    printf("free: %ld, now: %ld\n", size, memory_usage);
     free(ptr);
 }
 

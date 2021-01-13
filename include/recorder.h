@@ -75,6 +75,7 @@ extern FilenameHashTable* __filename_hashtable;         // map <filename, intege
 /* logger.c */
 void logger_init(int rank, int nprocs);
 void logger_exit();
+void free_record(Record *record);
 void write_record(Record record);
 
 /* util.c */
@@ -178,6 +179,7 @@ char* realrealpath(const char* path);           // return the absolute path (map
     };
 
 
+
 /**
  * I/O Interceptor
  * Phase 2:
@@ -189,7 +191,10 @@ char* realrealpath(const char* path);           // return the absolute path (map
 #define RECORDER_INTERCEPTOR(record_arg_count, record_args)                         \
     record.arg_count = record_arg_count;                                            \
     record.args = record_args;                                                      \
-    write_record(record);                                                           \
+    if(!__recording)                                                                \
+        free_record(&record);                                                       \
+    else                                                                            \
+        write_record(record);                                                       \
     return res;
 
 
