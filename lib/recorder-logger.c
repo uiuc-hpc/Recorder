@@ -220,6 +220,7 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
         diff_record.func_id = ref_window_id;
         diff_record.res = new_record.res;
         writeInBinary(__logger.dataFile, diff_record);
+        free_record(&diff_record);
     } else {
         new_record.status = 0b00000000;
         writeInBinary(__logger.dataFile, new_record);
