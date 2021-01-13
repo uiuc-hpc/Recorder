@@ -172,8 +172,9 @@ void free_record(Record *record) {
     if(record == NULL || record->args == NULL)
         return;
     int i;
-    for(i = 0; i < record->arg_count; i++)
+    for(i = 0; i < record->arg_count; i++) {
         free(record->args[i]);
+    }
     recorder_free(record->args, sizeof(char*)*record->arg_count);
     record->args = NULL;
 }
@@ -220,13 +221,13 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
         diff_record.func_id = ref_window_id;
         diff_record.res = new_record.res;
         writeInBinary(__logger.dataFile, diff_record);
-        free_record(&diff_record);
     } else {
         new_record.status = 0b00000000;
         writeInBinary(__logger.dataFile, new_record);
     }
 
     // Free the oldest record in the window
+    free_record(&diff_record);
     free_record(&(__logger.recordWindow[RECORD_WINDOW_SIZE-1]));
 
     // Move the sliding window
