@@ -113,7 +113,7 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
                                 0b10010000, 0b10100000, 0b11000000};
     for(i = 0; i < old_record.arg_count; i++) {
         if(strcmp(old_record.args[i], new_record.args[i]) !=0) {
-            diff_record.args[idx++] = new_record.args[i];
+            diff_record.args[idx++] = strdup(new_record.args[i]);
             diff_record.status = diff_record.status | diff_bits[i];
         }
     }
@@ -370,5 +370,6 @@ void logger_exit() {
         __logger.dataFile = NULL;
     }
 
-    //utils_finalize();
+    if(__logger.rank == 0)
+        utils_finalize();
 }
