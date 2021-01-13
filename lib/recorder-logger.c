@@ -54,7 +54,7 @@ struct MemBuf {
 struct MemBuf __membuf;
 
 void membufDestroy(struct MemBuf *membuf) {
-    free(membuf->buffer);
+    recorder_free(membuf->buffer, membuf->size);
     membuf->pos = 0;
 }
 void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
@@ -75,7 +75,7 @@ void membufDump(struct MemBuf *membuf) {
 }
 void membufInit(struct MemBuf* membuf) {
     membuf->size = 6*1024*1024;            // 12M
-    membuf->buffer = malloc(membuf->size);
+    membuf->buffer = recorder_malloc(membuf->size);
     membuf->pos = 0;
     membuf->destroy = membufDestroy;
     membuf->append = membufAppend;
