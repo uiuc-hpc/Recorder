@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     MPI_Info_create(&info);
     MPI_Info_set(info, "cb_nodes", "2");
 
-    /* IO-Realted MPI Calls */
+    // IO-Realted MPI Calls
     MPI_File fh;
     MPI_Status status;
     MPI_Offset offset;
@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
     int recv, send;
     MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
 
-
     MPI_Finalize();
+
 
     return 0;
 }

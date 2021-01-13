@@ -79,6 +79,9 @@ void write_record(Record record);
 
 /* util.c */
 void util_init();
+void utils_finalize();
+void* recorder_malloc(size_t size);
+void recorder_free(void* ptr, size_t size);
 long get_file_size(const char *filename);       // return the size of a file
 int exclude_filename(const char *filename);     // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp

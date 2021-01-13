@@ -7,7 +7,7 @@
 
 
 #define TIME_RESOLUTION 0.000001
-#define RECORD_WINDOW_SIZE 3        // A sliding window for peephole compression
+#define RECORD_WINDOW_SIZE 4        // A sliding window for peephole compression
 
 /**
  * External global values, initialized here
@@ -45,7 +45,7 @@ struct MemBuf {
     void *buffer;
     int size;
     int pos;
-    void (*release) (struct MemBuf*);
+    void (*destroy) (struct MemBuf*);
     void (*append)(struct MemBuf*, const void* ptr, int length);
     void (*dump) (struct MemBuf*);
 };
@@ -53,8 +53,8 @@ struct MemBuf {
 // global object to access the MemBuf methods
 struct MemBuf __membuf;
 
-void membufRelease(struct MemBuf *membuf) {
-    free(membuf->buffer);
+void membufDestroy(struct MemBuf *membuf) {
+    recorder_free(membuf->buffer, membuf->size);
     membuf->pos = 0;
 }
 void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
@@ -75,9 +75,9 @@ void membufDump(struct MemBuf *membuf) {
 }
 void membufInit(struct MemBuf* membuf) {
     membuf->size = 6*1024*1024;            // 12M
-    membuf->buffer = malloc(membuf->size);
+    membuf->buffer = recorder_malloc(membuf->size);
     membuf->pos = 0;
-    membuf->release = membufRelease;
+    membuf->destroy = membufDestroy;
     membuf->append = membufAppend;
     membuf->dump = membufDump;
 }
@@ -96,11 +96,6 @@ static inline int startsWith(const char *pre, const char *str) {
 static inline Record get_diff_record(Record old_record, Record new_record) {
     Record diff_record;
     diff_record.status = 0b10000000;
-    diff_record.arg_count = 999;    // initialize an impossible large value at first
-
-    // Same function should normally have the same number of arguments
-    if (old_record.arg_count != new_record.arg_count)
-        return diff_record;
 
     // Get the number of different arguments
     int count = 0;
@@ -113,15 +108,13 @@ static inline Record get_diff_record(Record old_record, Record new_record) {
     // record.status keeps track the position of different arguments
     diff_record.arg_count = count;
     int idx = 0;
-    diff_record.args = malloc(sizeof(char *) * count);
+    diff_record.args = recorder_malloc(sizeof(char *) * count);
     static char diff_bits[] = {0b10000001, 0b10000010, 0b10000100, 0b10001000,
                                 0b10010000, 0b10100000, 0b11000000};
     for(i = 0; i < old_record.arg_count; i++) {
         if(strcmp(old_record.args[i], new_record.args[i]) !=0) {
             diff_record.args[idx++] = new_record.args[i];
-            if(i < 7) {
-                diff_record.status = diff_record.status | diff_bits[i];
-            }
+            diff_record.status = diff_record.status | diff_bits[i];
         }
     }
     return diff_record;
@@ -175,35 +168,48 @@ static inline void writeInBinary(FILE *f, Record record) {
     writeArguments(f, record);
 }
 
+void free_record(Record *record) {
+    if(record == NULL || record->args == NULL)
+        return;
+    int i;
+    for(i = 0; i < record->arg_count; i++)
+        free(record->args[i]);
+    recorder_free(record->args, sizeof(char*)*record->arg_count);
+    record->args = NULL;
+}
 
 // Mode 3. Write in Recorder format (binary + peephole compression)
 static inline void writeInRecorder(FILE* f, Record new_record) {
 
     bool compress = false;
     Record diff_record;
+    diff_record.args = NULL;
     int min_diff_count = 999;
     char ref_window_id;
     int i;
     for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
-        Record record = __logger.recordWindow[i];
+        Record old_record = __logger.recordWindow[i];
+
         // Only meets the following conditions that we consider to compress it:
         // 1. same function as the one in sliding window
-        // 2. has [1, 7] arguments
+        // 2. have same number of arguments; have only 1 ~ 7 arguments
         // 3. the number of different arguments is less the number of total arguments
-        if ((record.func_id == new_record.func_id) && (new_record.arg_count < 8) &&
-             (new_record.arg_count > 0) && (record.arg_count > 0)) {
-            Record tmp_record = get_diff_record(record, new_record);
+        if ((old_record.func_id == new_record.func_id) &&
+            (new_record.arg_count == old_record.arg_count) &&
+            (new_record.arg_count < 8) && (new_record.arg_count > 0)) {
 
-            // Cond.4
-            if(tmp_record.arg_count >= new_record.arg_count)
-                continue;
+            Record tmp_record = get_diff_record(old_record, new_record);
 
             // Currently has the minimum number of different arguments
             if(tmp_record.arg_count < min_diff_count) {
+                free_record(&diff_record);
+
                 min_diff_count = tmp_record.arg_count;
+                diff_record = tmp_record;
                 ref_window_id = i;
                 compress = true;
-                diff_record = tmp_record;
+            } else {
+                free_record(&tmp_record);
             }
         }
     }
@@ -220,11 +226,7 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
     }
 
     // Free the oldest record in the window
-    for(i = 0; i < __logger.recordWindow[RECORD_WINDOW_SIZE].arg_count; i++)
-        if(__logger.recordWindow[RECORD_WINDOW_SIZE].args[i])
-            free(__logger.recordWindow[RECORD_WINDOW_SIZE].args[i]);
-    if(__logger.recordWindow[RECORD_WINDOW_SIZE].args)
-        free(__logger.recordWindow[RECORD_WINDOW_SIZE].args);
+    free_record(&(__logger.recordWindow[RECORD_WINDOW_SIZE-1]));
 
     // Move the sliding window
     for(i = RECORD_WINDOW_SIZE-1; i > 0; i--)
@@ -234,7 +236,10 @@ static inline void writeInRecorder(FILE* f, Record new_record) {
 
 
 void write_record(Record record) {
-    if (!__recording) return;       // have not initialized yet
+    if (!__recording)  {
+        free_record(&record);
+        return;       // have not initialized yet
+    }
 
     __logger.localDef.total_records++;
     __logger.localDef.function_count[record.func_id]++;
@@ -269,6 +274,7 @@ void logger_init(int rank, int nprocs) {
     __logger.startTimestamp = recorder_wtime();
     int i;
     for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
+        __logger.recordWindow[i].arg_count = 0;
         __logger.recordWindow[i].args = NULL;
         __logger.recordWindow[i].func_id = -1;
     }
@@ -356,11 +362,13 @@ void logger_exit() {
     }
 
     __membuf.dump(&__membuf);
-    __membuf.release(&__membuf);
+    __membuf.destroy(&__membuf);
 
     /* Close the log file */
     if ( __logger.dataFile) {
         RECORDER_REAL_CALL(fclose) (__logger.dataFile);
         __logger.dataFile = NULL;
     }
+
+    //utils_finalize();
 }

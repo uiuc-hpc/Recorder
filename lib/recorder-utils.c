@@ -11,8 +11,8 @@ bool __recording;
 FilenameHashTable* __filename_hashtable;
 
 // Log pointer addresses in the trace file?
-bool log_pointer;
-
+static bool log_pointer = false;
+static size_t memory_usage = 0;
 
 void util_init() {
     log_pointer = false;
@@ -20,6 +20,22 @@ void util_init() {
     if(s)
         log_pointer = atoi(s);
 }
+
+void utils_finalize() {
+    printf("memory usage: %ld\n", memory_usage);
+}
+
+void* recorder_malloc(size_t size) {
+    memory_usage += size;
+    //printf("malloc: %ld, now: %ld\n", size, memory_usage);
+    return malloc(size);
+}
+void recorder_free(void* ptr, size_t size) {
+    memory_usage -= size;
+    //printf("free: %ld, now: %ld\n", size, memory_usage);
+    free(ptr);
+}
+
 
 /*
  * Some of functions are not made by the application
@@ -113,7 +129,7 @@ inline char* arrtoa(size_t arr[], int count) {
 
 /* Put many arguments (char *) in a list (char**) */
 inline char** assemble_args_list(int arg_count, ...) {
-    char** args = malloc(sizeof(char*) * arg_count);
+    char** args = recorder_malloc(sizeof(char*) * arg_count);
     int i;
     va_list valist;
     va_start(valist, arg_count);
