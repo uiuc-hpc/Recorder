@@ -7,7 +7,7 @@
 
 
 #define TIME_RESOLUTION 0.000001
-#define RECORD_WINDOW_SIZE 4        // A sliding window for peephole compression
+#define RECORD_WINDOW_SIZE 3        // A sliding window for peephole compression
 
 /**
  * External global values, initialized here
@@ -243,9 +243,11 @@ void write_record(Record record) {
     switch(__logger.compMode) {
         case COMP_TEXT:     // 0
             writeInText(__logger.dataFile, record);
+            free_record(&record);
             break;
         case COMP_BINARY:   // 1
             writeInBinary(__logger.dataFile, record);
+            free_record(&record);
             break;
         default:            // 2, default if compMode not set
             writeInRecorder(__logger.dataFile, record);
