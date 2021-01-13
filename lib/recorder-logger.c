@@ -267,12 +267,11 @@ void logger_init(int rank, int nprocs) {
     __filename_hashtable = NULL;
     __logger.rank = rank;
     __logger.startTimestamp = recorder_wtime();
-    __logger.recordWindow[2].args = NULL;
-    __logger.recordWindow[2].func_id = -1;
-    __logger.recordWindow[1].args = NULL;
-    __logger.recordWindow[1].func_id = -1;
-    __logger.recordWindow[0].args = NULL;
-    __logger.recordWindow[0].func_id = -1;
+    int i;
+    for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
+        __logger.recordWindow[i].args = NULL;
+        __logger.recordWindow[i].func_id = -1;
+    }
 
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1) {
