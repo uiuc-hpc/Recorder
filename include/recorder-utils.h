@@ -1,0 +1,28 @@
+#ifndef _RECORDER_UTILS_H_
+#define _RECORDER_UTILS_H_
+
+typedef struct FilenameHashTable_t {
+    char name[PATH_MAX];             // key
+    UT_hash_handle hh;
+} FilenameHashTable;
+
+
+void utils_init();
+void utils_finalize();
+void* recorder_malloc(size_t size);
+void recorder_free(void* ptr, size_t size);
+long get_file_size(const char *filename);       // return the size of a file
+int exclude_filename(const char *filename);     // if include the file in trace
+double recorder_wtime(void);                    // return the timestamp
+char* itoa(size_t val);                         // convert an integer to string
+char* ftoa(double val);                         // convert a float to string
+char* ptoa(const void* ptr);                    // convert a pointer to string
+char* arrtoa(size_t arr[], int count);          // convert an array of size_t to a string
+char** assemble_args_list(int arg_count, ...);
+const char* get_function_name_by_id(int id);
+unsigned char get_function_id_by_name(const char* name);
+char* realrealpath(const char* path);           // return the absolute path (mapped to id in string)
+FilenameHashTable* get_filename_map();
+
+
+#endif

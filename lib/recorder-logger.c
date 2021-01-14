@@ -13,7 +13,6 @@
  * External global values, initialized here
  */
 bool __recording;
-FilenameHashTable* __filename_hashtable;
 
 
 struct Logger {
@@ -274,7 +273,6 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(PMPI_Barrier);
 
     // Initialize the global values
-    __filename_hashtable = NULL;
     __logger.rank = rank;
     __logger.startTimestamp = recorder_wtime();
     int i;
@@ -331,7 +329,7 @@ void logger_init(int rank, int nprocs) {
 }
 
 
-void logger_exit() {
+void logger_finalize() {
     __recording = false;    // set the extern global
 
     int i;
@@ -339,7 +337,8 @@ void logger_exit() {
         free_record(__logger.recordWindow[i]);
 
     /* Write out local metadata information */
-    __logger.localDef.num_files = HASH_COUNT(__filename_hashtable);
+    FilenameHashTable* filename_table = get_filename_map();
+    __logger.localDef.num_files = HASH_COUNT(filename_table);
     __logger.localDef.start_timestamp = __logger.startTimestamp;
     __logger.localDef.end_timestamp = recorder_wtime();
     RECORDER_REAL_CALL(fwrite) (&__logger.localDef, sizeof(__logger.localDef), 1, __logger.metaFile);
@@ -349,7 +348,7 @@ void logger_exit() {
      * won't be intercepted. */
     FilenameHashTable *item, *tmp;
     int id = 0;
-    HASH_ITER(hh, __filename_hashtable, item, tmp) {
+    HASH_ITER(hh, filename_table, item, tmp) {
         int filename_len = strlen(item->name);
         size_t file_size = get_file_size(item->name);
         RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __logger.metaFile);
@@ -358,8 +357,6 @@ void logger_exit() {
         RECORDER_REAL_CALL(fwrite) (item->name, sizeof(char), filename_len, __logger.metaFile);
         id++;
     }
-
-    HASH_CLEAR(hh, __filename_hashtable);
 
     if ( __logger.metaFile) {
         RECORDER_REAL_CALL(fclose) (__logger.metaFile);
@@ -374,7 +371,4 @@ void logger_exit() {
         RECORDER_REAL_CALL(fclose) (__logger.dataFile);
         __logger.dataFile = NULL;
     }
-
-    if(__logger.rank == 0)
-        utils_finalize();
 }

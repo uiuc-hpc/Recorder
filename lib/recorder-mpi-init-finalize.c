@@ -64,12 +64,13 @@ void recorder_init(int *argc, char ***argv) {
     RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
 
     logger_init(rank, nprocs);
-    util_init();
+    utils_init();
     local_tstart = RECORDER_REAL_CALL(PMPI_Wtime)();
 }
 
-void recorder_exit() {
-    logger_exit();
+void recorder_finalize() {
+    logger_finalize();
+    utils_finalize();
 
     local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
     //double min_tstart, max_tend;
@@ -102,13 +103,13 @@ int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
 }
 
 int PMPI_Finalize(void) {
-    recorder_exit();
+    recorder_finalize();
     MAP_OR_FAIL(PMPI_Finalize);
     return RECORDER_REAL_CALL(PMPI_Finalize) ();
 }
 
 int MPI_Finalize(void) {
-    recorder_exit();
+    recorder_finalize();
     MAP_OR_FAIL(PMPI_Finalize);
     int res = RECORDER_REAL_CALL(PMPI_Finalize) ();
     return res;

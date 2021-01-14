@@ -57,7 +57,6 @@
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
-
 #include "recorder.h"
 
 #ifndef HAVE_OFF64_T

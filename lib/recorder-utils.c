@@ -2,19 +2,21 @@
 #include <sys/time.h>   // for gettimeofday()
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include "recorder.h"
+#include "recorder-utils.h"
 
 
 /*
  * External global values defined in recorder.h
  */
 bool __recording;
-FilenameHashTable* __filename_hashtable;
 
 // Log pointer addresses in the trace file?
 static bool log_pointer = false;
 static size_t memory_usage = 0;
+static FilenameHashTable* filename_table = NULL;
 
-void util_init() {
+
+void utils_init() {
     log_pointer = false;
     const char* s = getenv("RECORDER_LOG_POINTER");
     if(s)
@@ -22,7 +24,18 @@ void util_init() {
 }
 
 void utils_finalize() {
+    // Destroy the hash table for filenames mapping
+    FilenameHashTable *current, *tmp;
+    HASH_ITER(hh, filename_table, current, tmp) {
+        HASH_DEL(filename_table, current);
+        recorder_free(current, sizeof(FilenameHashTable));
+    }
+
     printf("memory usage: %ld\n", memory_usage);
+}
+
+FilenameHashTable* get_filename_map() {
+    return filename_table;
 }
 
 void* recorder_malloc(size_t size) {
@@ -42,7 +55,6 @@ void recorder_free(void* ptr, size_t size) {
     //    printf("free: %ld, now: %ld\n", size, memory_usage);
     free(ptr);
 }
-
 
 /*
  * Some of functions are not made by the application
@@ -177,22 +189,22 @@ unsigned char get_function_id_by_name(const char* name) {
 inline char* realrealpath(const char *path) {
     if(!__recording) return strdup(path);
 
-    FilenameHashTable *entry = malloc(sizeof(FilenameHashTable));
+    FilenameHashTable *entry = recorder_malloc(sizeof(FilenameHashTable));
 
     char* res = realpath(path, entry->name);    // we do not intercept realpath()
     if (res == NULL)                            // realpath() could return NULL on error
         strcpy(entry->name, path);
 
     FilenameHashTable *found;
-    HASH_FIND_STR(__filename_hashtable, entry->name, found);
+    HASH_FIND_STR(filename_table, entry->name, found);
 
     // return duplicated name, because we need to free record.args later
     if(found) {
-        free(entry);
+        recorder_free(entry, sizeof(FilenameHashTable));
         return strdup(found->name);
     } else {
         // insert to hashtable
-        HASH_ADD_STR(__filename_hashtable, name, entry);
+        HASH_ADD_STR(filename_table, name, entry);
         return strdup(entry->name);
     }
 }

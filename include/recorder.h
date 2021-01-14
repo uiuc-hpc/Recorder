@@ -54,6 +54,7 @@
 #include <stdbool.h>
 #include "hdf5.h"
 #include "uthash.h"
+#include "recorder-utils.h"
 #include "recorder-log-format.h"
 
 #define __D_MPI_REQUEST MPIO_Request
@@ -63,37 +64,13 @@
 #define CONST
 #endif
 
-typedef struct FilenameHashTable_t {
-    char name[PATH_MAX];             // key
-    UT_hash_handle hh;
-} FilenameHashTable;
-
 extern bool __recording;                                // Only true after init() before exit() so we won't track unwanted functions and files
-extern FilenameHashTable* __filename_hashtable;         // map <filename, integer>
-
 
 /* logger.c */
 void logger_init(int rank, int nprocs);
-void logger_exit();
+void logger_finalize();
 void free_record(Record *record);
 void write_record(Record *record);
-
-/* util.c */
-void util_init();
-void utils_finalize();
-void* recorder_malloc(size_t size);
-void recorder_free(void* ptr, size_t size);
-long get_file_size(const char *filename);       // return the size of a file
-int exclude_filename(const char *filename);     // if include the file in trace
-double recorder_wtime(void);                    // return the timestamp
-char* itoa(size_t val);                      // convert a integer to string
-char* ftoa(double val);                         // convert a float to string
-char* ptoa(const void* ptr);                    // convert a pointer to string
-char* arrtoa(size_t arr[], int count);          // convert an array of size_t to a string
-char** assemble_args_list(int arg_count, ...);
-const char* get_function_name_by_id(int id);
-unsigned char get_function_id_by_name(const char* name);
-char* realrealpath(const char* path);           // return the absolute path (mapped to id in string)
 
 
 #ifdef RECORDER_PRELOAD
