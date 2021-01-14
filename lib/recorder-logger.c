@@ -7,80 +7,66 @@
 
 
 #define TIME_RESOLUTION 0.000001
-#define RECORD_WINDOW_SIZE 3        // A sliding window for peephole compression
-
-/**
- * External global values, initialized here
- */
-bool __recording;
+#define RECORD_WINDOW_SIZE 3                    // A sliding window for peephole compression
+#define MEMBUF_SIZE 6*1024*1024                 // Memory buffer size, default 6MB
+#define VERSION_STR "2.1.9"
 
 
-struct Logger {
+struct RecorderLogger {
     int rank;
-    FILE *dataFile;                     // log file
-    FILE *metaFile;                     // metadata file
-
+    FILE *trace_file;                           // log file
+    FILE *meta_file;                            // metadata file
     double startTimestamp;
-
-    RecorderLocalDef localDef;          // Local metadata information
-
-    CompressionMode compMode;           // Compression Mode
-
-    // For Recorder Compression Mode
-    Record* recordWindow[RECORD_WINDOW_SIZE];
+    RecorderLocalDef localDef;                  // Local metadata information
+    CompressionMode compMode;                   // Compression Mode
+    Record* recordWindow[RECORD_WINDOW_SIZE];   // For Recorder Compression Mode
 };
 
-// Global object to access the Logger fileds
-struct Logger __logger;
-
-
-/**
- * ------------------------------------------------------------- //
- *
+/*
  * Memery buffer to hold records. Write out when its full
- *
  */
 struct MemBuf {
     void *buffer;
     int size;
     int pos;
-    void (*destroy) (struct MemBuf*);
-    void (*append)(struct MemBuf*, const void* ptr, int length);
-    void (*dump) (struct MemBuf*);
 };
 
-// global object to access the MemBuf methods
-struct MemBuf __membuf;
 
-void membufDestroy(struct MemBuf *membuf) {
-    recorder_free(membuf->buffer, membuf->size);
+
+// Global objects
+struct RecorderLogger logger;
+struct MemBuf membuf;
+
+// External global values, initialized here
+bool __recording;
+
+
+void membuf_dump(struct MemBuf *membuf) {
+    RECORDER_REAL_CALL(fwrite) (membuf->buffer, 1, membuf->pos, logger.trace_file);
     membuf->pos = 0;
 }
-void membufAppend(struct MemBuf* membuf, const void *ptr, int length) {
+void membuf_init(struct MemBuf* membuf) {
+    membuf->buffer = recorder_malloc(MEMBUF_SIZE);
+    membuf->pos = 0;
+}
+void membuf_destroy(struct MemBuf *membuf) {
+    if(membuf->pos > 0)
+        membuf_dump(membuf);
+    recorder_free(membuf->buffer, MEMBUF_SIZE);
+}
+void membuf_append(struct MemBuf* membuf, const void *ptr, int length) {
     if (length >= membuf->size) {
-        membuf->dump(membuf);
-        RECORDER_REAL_CALL(fwrite) (ptr, 1, length, __logger.dataFile);
+        membuf_dump(membuf);
+        RECORDER_REAL_CALL(fwrite) (ptr, 1, length, logger.trace_file);
         return;
     }
     if (membuf->pos + length >= membuf->size) {
-        membuf->dump(membuf);
+        membuf_dump(membuf);
     }
     memcpy(membuf->buffer+membuf->pos, ptr, length);
     membuf->pos += length;
 }
-void membufDump(struct MemBuf *membuf) {
-    RECORDER_REAL_CALL(fwrite) (membuf->buffer, 1, membuf->pos, __logger.dataFile);
-    membuf->pos = 0;
-}
-void membufInit(struct MemBuf* membuf) {
-    membuf->size = 6*1024*1024;            // 12M
-    membuf->buffer = recorder_malloc(membuf->size);
-    membuf->pos = 0;
-    membuf->destroy = membufDestroy;
-    membuf->append = membufAppend;
-    membuf->dump = membufDump;
-}
-// --------------- End of Memory Buffer ------------------------ //
+
 
 
 
@@ -128,43 +114,45 @@ void write_record_arguments(FILE* f, Record *record) {
     char invalid_str[] = "???";
     int i, j;
     for(i = 0; i < arg_count; i++) {
-        __membuf.append(&__membuf, " ", 1);
+        membuf_append(&membuf, " ", 1);
         if(args[i]) {
             for(j = 0; j < strlen(args[i]); j++)
                 if(args[i][j] == ' ') args[i][j] = '_';
-            __membuf.append(&__membuf, args[i], strlen(args[i]));
+            membuf_append(&membuf, args[i], strlen(args[i]));
         } else
-            __membuf.append(&__membuf, invalid_str, strlen(invalid_str));
+            membuf_append(&membuf, invalid_str, strlen(invalid_str));
     }
-    __membuf.append(&__membuf, "\n", 1);
+    membuf_append(&membuf, "\n", 1);
 }
 
 /* Mode 1. Write record in plan text format */
 // tstart tend function args...
-void write_in_text(FILE *f, Record *record) {
+void write_in_text(Record *record) {
+    FILE *f = logger.trace_file;
     const char* func = get_function_name_by_id(record->func_id);
     char* tstart = ftoa(record->tstart);
     char* tend = ftoa(record->tend);
     char* res = itoa(record->res);
-    __membuf.append(&__membuf, tstart, strlen(tstart));
-    __membuf.append(&__membuf, " ", 1);
-    __membuf.append(&__membuf, tend, strlen(tend));
-    __membuf.append(&__membuf, " ", 1);
-    __membuf.append(&__membuf, res, strlen(res));
-    __membuf.append(&__membuf, " ", 1);
-    __membuf.append(&__membuf, func, strlen(func));
+    membuf_append(&membuf, tstart, strlen(tstart));
+    membuf_append(&membuf, " ", 1);
+    membuf_append(&membuf, tend, strlen(tend));
+    membuf_append(&membuf, " ", 1);
+    membuf_append(&membuf, res, strlen(res));
+    membuf_append(&membuf, " ", 1);
+    membuf_append(&membuf, func, strlen(func));
     write_record_arguments(f, record);
 }
 
 // Mode 2. Write in binary format, no compression
-void write_in_binary(FILE *f, Record *record) {
-    int tstart = (record->tstart - __logger.startTimestamp) / TIME_RESOLUTION;
-    int tend   = (record->tend - __logger.startTimestamp) / TIME_RESOLUTION;
-    __membuf.append(&__membuf, &(record->status), sizeof(record->status));
-    __membuf.append(&__membuf, &tstart, sizeof(tstart));
-    __membuf.append(&__membuf, &tend, sizeof(tend));
-    __membuf.append(&__membuf, &(record->res), sizeof(record->res));
-    __membuf.append(&__membuf, &(record->func_id), sizeof(record->func_id));
+void write_in_binary(Record *record) {
+    FILE *f = logger.trace_file;
+    int tstart = (record->tstart - logger.startTimestamp) / TIME_RESOLUTION;
+    int tend   = (record->tend - logger.startTimestamp) / TIME_RESOLUTION;
+    membuf_append(&membuf, &(record->status), sizeof(record->status));
+    membuf_append(&membuf, &tstart, sizeof(tstart));
+    membuf_append(&membuf, &tend, sizeof(tend));
+    membuf_append(&membuf, &(record->res), sizeof(record->res));
+    membuf_append(&membuf, &(record->func_id), sizeof(record->func_id));
     write_record_arguments(f, record);
 }
 
@@ -184,7 +172,7 @@ void free_record(Record *record) {
 }
 
 // Mode 3. Write in Recorder format (binary + peephole compression)
-void write_in_recorder(FILE* f, Record *new_record) {
+void write_in_recorder(Record *new_record) {
 
     bool compress = false;
     Record *diff_record = NULL;
@@ -192,7 +180,7 @@ void write_in_recorder(FILE* f, Record *new_record) {
     char ref_window_id;
     int i;
     for(i = 0; i < RECORD_WINDOW_SIZE; i++) {
-        Record *old_record = __logger.recordWindow[i];
+        Record *old_record = logger.recordWindow[i];
         if(old_record == NULL) break;
 
         // Only meets the following conditions that we consider to compress it:
@@ -225,38 +213,38 @@ void write_in_recorder(FILE* f, Record *new_record) {
         diff_record->tend = new_record->tend;
         diff_record->func_id = ref_window_id;
         diff_record->res = new_record->res;
-        write_in_binary(__logger.dataFile, diff_record);
+        write_in_binary(diff_record);
     } else {
         new_record->status = 0b00000000;
-        write_in_binary(__logger.dataFile, new_record);
+        write_in_binary(new_record);
     }
 
     // Free the oldest record in the window
     free_record(diff_record);
-    free_record(__logger.recordWindow[RECORD_WINDOW_SIZE-1]);
+    free_record(logger.recordWindow[RECORD_WINDOW_SIZE-1]);
 
     // Move the sliding window
     for(i = RECORD_WINDOW_SIZE-1; i > 0; i--)
-        __logger.recordWindow[i] = __logger.recordWindow[i-1];
-    __logger.recordWindow[0] = new_record;
+        logger.recordWindow[i] = logger.recordWindow[i-1];
+    logger.recordWindow[0] = new_record;
 }
 
 
 void write_record(Record *record) {
-    __logger.localDef.total_records++;
-    __logger.localDef.function_count[record->func_id]++;
+    logger.localDef.total_records++;
+    logger.localDef.function_count[record->func_id]++;
 
-    switch(__logger.compMode) {
+    switch(logger.compMode) {
         case COMP_TEXT:     // 0
-            write_in_text(__logger.dataFile, record);
+            write_in_text(record);
             free_record(record);
             break;
         case COMP_BINARY:   // 1
-            write_in_binary(__logger.dataFile, record);
+            write_in_binary(record);
             free_record(record);
             break;
         default:            // 2, default if compMode not set
-            write_in_recorder(__logger.dataFile, record);
+            write_in_recorder(record);
             break;
     }
 }
@@ -273,11 +261,11 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(PMPI_Barrier);
 
     // Initialize the global values
-    __logger.rank = rank;
-    __logger.startTimestamp = recorder_wtime();
+    logger.rank = rank;
+    logger.startTimestamp = recorder_wtime();
     int i;
     for(i = 0; i < RECORD_WINDOW_SIZE; i++)
-        __logger.recordWindow[i] = NULL;
+        logger.recordWindow[i] = NULL;
 
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1)
@@ -290,20 +278,20 @@ void logger_init(int rank, int nprocs) {
     char metafile_name[256];
     sprintf(logfile_name, "recorder-logs/%d.itf", rank);
     sprintf(metafile_name, "recorder-logs/%d.mt", rank);
-    __logger.dataFile = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
-    __logger.metaFile = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
+    logger.trace_file = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
+    logger.meta_file = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
 
     // Global metadata, include compression mode, time resolution
-    __logger.compMode = COMP_RECORDER;
+    logger.compMode = COMP_RECORDER;
     const char* comp_mode = getenv("RECORDER_COMPRESSION_MODE");
-    if (comp_mode) __logger.compMode = atoi(comp_mode);
+    if (comp_mode) logger.compMode = atoi(comp_mode);
 
     if (rank == 0) {
         FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("recorder-logs/recorder.mt", "wb");
         RecorderGlobalDef global_def = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
-            .compression_mode = __logger.compMode,
+            .compression_mode = logger.compMode,
             .peephole_window_size = RECORD_WINDOW_SIZE
         };
         RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
@@ -320,11 +308,11 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(global_metafh);
 
         FILE* version_file = RECORDER_REAL_CALL(fopen) ("recorder-logs/VERSION", "w");
-        RECORDER_REAL_CALL(fwrite) ("2.1.8", 5, 1, version_file);
+        RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
         RECORDER_REAL_CALL(fclose)(version_file);
     }
 
-    membufInit(&__membuf);
+    membuf_init(&membuf);
     __recording = true;     // set the extern globals
 }
 
@@ -334,14 +322,14 @@ void logger_finalize() {
 
     int i;
     for(i = 0; i < RECORD_WINDOW_SIZE; i++)
-        free_record(__logger.recordWindow[i]);
+        free_record(logger.recordWindow[i]);
 
     /* Write out local metadata information */
     FilenameHashTable* filename_table = get_filename_map();
-    __logger.localDef.num_files = HASH_COUNT(filename_table);
-    __logger.localDef.start_timestamp = __logger.startTimestamp;
-    __logger.localDef.end_timestamp = recorder_wtime();
-    RECORDER_REAL_CALL(fwrite) (&__logger.localDef, sizeof(__logger.localDef), 1, __logger.metaFile);
+    logger.localDef.num_files = HASH_COUNT(filename_table);
+    logger.localDef.start_timestamp = logger.startTimestamp;
+    logger.localDef.end_timestamp = recorder_wtime();
+    RECORDER_REAL_CALL(fwrite) (&logger.localDef, sizeof(logger.localDef), 1, logger.meta_file);
 
     /* Write out filename mappings, we call stat() to get file size
      * since is already closed (null), the stat() function
@@ -351,24 +339,21 @@ void logger_finalize() {
     HASH_ITER(hh, filename_table, item, tmp) {
         int filename_len = strlen(item->name);
         size_t file_size = get_file_size(item->name);
-        RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, __logger.metaFile);
-        RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, __logger.metaFile);
-        RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, __logger.metaFile);
-        RECORDER_REAL_CALL(fwrite) (item->name, sizeof(char), filename_len, __logger.metaFile);
+        RECORDER_REAL_CALL(fwrite) (&id, sizeof(id), 1, logger.meta_file);
+        RECORDER_REAL_CALL(fwrite) (&file_size, sizeof(file_size), 1, logger.meta_file);
+        RECORDER_REAL_CALL(fwrite) (&filename_len, sizeof(filename_len), 1, logger.meta_file);
+        RECORDER_REAL_CALL(fwrite) (item->name, sizeof(char), filename_len, logger.meta_file);
         id++;
     }
 
-    if ( __logger.metaFile) {
-        RECORDER_REAL_CALL(fclose) (__logger.metaFile);
-        __logger.metaFile = NULL;
+    membuf_destroy(&membuf);
+
+    if ( logger.trace_file) {
+        RECORDER_REAL_CALL(fclose) (logger.trace_file);
+        logger.trace_file = NULL;
     }
-
-    __membuf.dump(&__membuf);
-    __membuf.destroy(&__membuf);
-
-    /* Close the log file */
-    if ( __logger.dataFile) {
-        RECORDER_REAL_CALL(fclose) (__logger.dataFile);
-        __logger.dataFile = NULL;
+    if ( logger.meta_file) {
+        RECORDER_REAL_CALL(fclose) (logger.meta_file);
+        logger.meta_file = NULL;
     }
 }
