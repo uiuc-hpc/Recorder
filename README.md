@@ -128,6 +128,10 @@ Publications
 Change Log
 ----------
 
+**Recorder 2.1.9** Jan 14, 2021
+1. Clean up the code
+2. Fixed a few memory leak issues
+
 **Recorder 2.1.8** Dec 18, 2020
 1. Add MPI_Test, MPI_Testany, MPI_Testsome and MPI_Testall
 2. Add MPI_Ireduce, MPI_Iscatter, MPI_Igather and MPI_Ialltoall
