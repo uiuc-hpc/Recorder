@@ -126,7 +126,7 @@ int RECORDER_POSIX_DECL(msync)(void *addr, size_t length, int flags) {
 
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR_NOIO(int, creat, (path, mode));
-    record.res = res;
+    record->res = res;
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -134,7 +134,7 @@ int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
 int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR_NOIO(int, creat64, (path, mode));
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
-    record.res = res;
+    record->res = res;
     RECORDER_INTERCEPTOR(2, args);
 }
 
@@ -146,13 +146,13 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
         va_end(arg);
         RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags, mode));
         char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
-        record.res = res;
+        record->res = res;
         RECORDER_INTERCEPTOR(3, args);
 
     } else {
         RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags));
         char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
-        record.res = res;
+        record->res = res;
         RECORDER_INTERCEPTOR(2, args);
     }
 }
@@ -164,12 +164,12 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
         int mode = va_arg(arg, int);
         va_end(arg);
         RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags, mode));
-        record.res = res;
+        record->res = res;
         char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
         RECORDER_INTERCEPTOR(3, args);
     } else {
         RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags));
-        record.res = res;
+        record->res = res;
         char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
         RECORDER_INTERCEPTOR(2, args);
     }
@@ -177,14 +177,14 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
 
 FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
-    record.res = stream2fd(res);
+    record->res = stream2fd(res);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen, (path, mode));
-    record.res = stream2fd(res);
+    record->res = stream2fd(res);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -492,13 +492,13 @@ int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
 
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
     RECORDER_INTERCEPTOR_NOIO(int, dup, (oldfd));
-    record.res = res;
+    record->res = res;
     char** args = assemble_args_list(1, itoa(oldfd));
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(dup2)(int oldfd, int newfd) {
     RECORDER_INTERCEPTOR_NOIO(int, dup2, (oldfd, newfd));
-    record.res = res;
+    record->res = res;
     char** args = assemble_args_list(2, itoa(oldfd), itoa(newfd));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -520,7 +520,7 @@ mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
 }
 FILE* RECORDER_POSIX_DECL(fdopen)(int fd, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fdopen, (fd, mode));
-    record.res = stream2fd(res);
+    record->res = stream2fd(res);
     char** args = assemble_args_list(2, itoa(fd), ptoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -541,7 +541,7 @@ int RECORDER_POSIX_DECL(faccessat)(int fd, const char *path, int amode, int flag
 }
 FILE* RECORDER_POSIX_DECL(tmpfile)(void) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, tmpfile, ());
-    record.res = stream2fd(res);
+    record->res = stream2fd(res);
     char **args = NULL;
     RECORDER_INTERCEPTOR(0, args);
 }

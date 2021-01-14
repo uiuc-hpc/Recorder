@@ -76,7 +76,7 @@ extern FilenameHashTable* __filename_hashtable;         // map <filename, intege
 void logger_init(int rank, int nprocs);
 void logger_exit();
 void free_record(Record *record);
-void write_record(Record record);
+void write_record(Record *record);
 
 /* util.c */
 void util_init();
@@ -172,12 +172,11 @@ char* realrealpath(const char* path);           // return the absolute path (map
     double tstart = recorder_wtime();                                               \
     ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
     double tend = recorder_wtime();                                                 \
-    Record record = {                                                               \
-        .tstart = tstart,                                                           \
-        .func_id = get_function_id_by_name(#func),                                  \
-        .tend = tend                                                                \
-    };
-
+    Record *record = recorder_malloc(sizeof(Record));                               \
+    record->tstart = tstart;                                                        \
+    record->func_id = get_function_id_by_name(#func);                               \
+    record->tend = tend;                                                            \
+    record->res = 0;
 
 
 /**
@@ -189,10 +188,10 @@ char* realrealpath(const char* path);           // return the absolute path (map
  *
  */
 #define RECORDER_INTERCEPTOR(record_arg_count, record_args)                         \
-    record.arg_count = record_arg_count;                                            \
-    record.args = record_args;                                                      \
+    record->arg_count = record_arg_count;                                           \
+    record->args = record_args;                                                     \
     if(!__recording)                                                                \
-        free_record(&record);                                                       \
+        free_record(record);                                                        \
     else                                                                            \
         write_record(record);                                                       \
     return res;
