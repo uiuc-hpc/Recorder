@@ -31,6 +31,8 @@ int main() {
     close(fd);
 
     FILE* fp = fopen("./workfile.out", "w");
+    fseeko(fp, 10, SEEK_CUR);
+    ftello(fp);
     fclose(fp);
 
     int a, b;

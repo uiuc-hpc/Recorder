@@ -31,7 +31,7 @@ void utils_finalize() {
         recorder_free(current, sizeof(FilenameHashTable));
     }
 
-    printf("memory usage: %ld\n", memory_usage);
+    //printf("memory usage: %ld\n", memory_usage);
 }
 
 FilenameHashTable* get_filename_map() {

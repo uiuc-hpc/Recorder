@@ -560,3 +560,14 @@ int RECORDER_POSIX_DECL(ftruncate)(int fd, off_t length) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
+// Added 01/15/2021, (fseeko is used by MILC)
+int RECORDER_POSIX_DECL(fseeko)(FILE *stream, off_t offset, int whence) {
+    RECORDER_INTERCEPTOR_NOIO(int, fseeko, (stream, offset, whence));
+    char** args = assemble_args_list(3, stream2fdstr(stream), itoa(offset), itoa(whence));
+    RECORDER_INTERCEPTOR(3, args);
+}
+off_t RECORDER_POSIX_DECL(ftello)(FILE *stream) {
+    RECORDER_INTERCEPTOR_NOIO(long, ftello, (stream));
+    char** args = assemble_args_list(1, stream2fdstr(stream));
+    RECORDER_INTERCEPTOR(1, args)
+}

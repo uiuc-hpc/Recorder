@@ -109,7 +109,7 @@ typedef struct RecorderLocalDef_t {
 
 
 static const char* func_list[] = {
-    // POSIX I/O - 70 functions
+    // POSIX I/O - 72 functions
     "creat",        "creat64",      "open",         "open64",   "close",
     "write",        "read",         "lseek",        "lseek64",  "pread",
     "pread64",      "pwrite",       "pwrite64",     "readv",    "writev",
@@ -124,6 +124,8 @@ static const char* func_list[] = {
     "dup",          "dup2",         "pipe",         "mkfifo",   "umask",
     "fdopen",       "fileno",       "access",       "faccessat","tmpfile",
     "remove",       "truncate",     "ftruncate",    "vfprintf", "msync",
+    "fseeko",       "ftello",
+
 
     // MPI 84 functions
     "PMPI_File_close",              "PMPI_File_set_size",       "PMPI_File_iread_at",
@@ -207,7 +209,7 @@ static const char* func_list[] = {
  *
  */
 static char filename_arg_pos[] = {
-    // POSIX - 70 functions
+    // POSIX - 72 functions
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000001,
@@ -222,6 +224,7 @@ static char filename_arg_pos[] = {
     0b00000001,  0b00000011,  0b00000000,  0b00000001,  0b00000000, // umask
     0b00000001,  0b00000001,  0b00000001,  0b00000011,  0b00000000, // tmpfile
     0b00000001,  0b00000001,  0b00000001,  0b00000001,  0b00000000, // remove
+    0b00000001,  0b00000001,
 
     // MPI 84 functions
     // Only MPI_File_open has the filename argument

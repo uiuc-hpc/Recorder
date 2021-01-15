@@ -251,6 +251,9 @@ RECORDER_FORWARD_DECL(tmpfile, FILE*, (void));
 RECORDER_FORWARD_DECL(remove, int, (const char *pathname));
 RECORDER_FORWARD_DECL(truncate, int, (const char *pathname, off_t length));
 RECORDER_FORWARD_DECL(ftruncate, int, (int fd, off_t length));
+// Added 01/15/2021
+RECORDER_FORWARD_DECL(fseeko, int, (FILE *stream, off_t offset, int whence));
+RECORDER_FORWARD_DECL(ftello, off_t, (FILE *stream));
 
 // Others
 //int statfs(const char *path, struct statfs *buf);
