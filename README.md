@@ -131,6 +131,7 @@ Change Log
 **Recorder 2.1.9** Jan 14, 2021
 1. Clean up the code
 2. Fixed a few memory leak issues
+3. Add support for fseeko and ftello
 
 **Recorder 2.1.8** Dec 18, 2020
 1. Add MPI_Test, MPI_Testany, MPI_Testsome and MPI_Testall
