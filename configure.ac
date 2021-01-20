@@ -1,7 +1,7 @@
 AC_INIT([Recorder], 2.1.9)
 
-AC_PROG_CC([mpicc])
-AC_PROG_CXX([mpicxx])
+AC_PROG_CC([mpicc cc])
+AC_PROG_CXX([mpicxx CC])
 AC_CONFIG_MACRO_DIRS([m4])
 
 
