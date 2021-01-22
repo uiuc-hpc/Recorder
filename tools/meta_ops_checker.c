@@ -71,9 +71,9 @@ void test(Record *records, int len, RecorderReader *reader) {
 void print_metadata_ops(RecorderReader *reader) {
     printf("\n\n");
     const char* included_funcs[] = {
-        "__xstat",      "__xstat64",    "__lxstat", "__lxstat64", "__fxstat",     "__fxstat64",
-        "mmap",         "getcwd",       "mkdir",        "chdir",
-        "umask",        "unlink",        "access",
+        "__xstat",      "__xstat64",    "__lxstat", "__lxstat64",   "__fxstat",     "__fxstat64",
+        "mmap",         "getcwd",       "mkdir",    "chdir",        "opendir",      "readdir",  "closedir",
+        "umask",        "unlink",       "readlink", "access",
         "ftruncate",    "fileno",       "faccessat"
     };
     int i;
