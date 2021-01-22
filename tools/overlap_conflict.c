@@ -64,7 +64,7 @@ void detect_overlaps(IntervalsMap *IM, int num_files) {
             if(i1->offset+i1->count <= i2->offset)
                 continue;
 
-            printf("%s, i1(%d, %d, %d, %d), i2(%d, %d, %d, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
+            printf("%s, i1(%d, %ld, %ld, %d), i2(%d, %ld, %ld, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
             if(i1->isRead && i2->isRead)                // RAR
                 overlaps[same_rank][0] += 1;
@@ -153,6 +153,9 @@ void detect_conflicts(IntervalsMap *IM, int num_files) {
             }
 
             if(!conflict) continue;
+
+            printf("%s, i1(%d, %ld, %ld, %d), i2(%d, %ld, %ld, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
+
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
 
             if(starts_later->isRead)     // RAW
@@ -193,7 +196,7 @@ int main(int argc, char* argv[]) {
 
     access_patterns(IM, num_files);
     //detect_overlaps(IM, num_files);
-    detect_conflicts(IM, num_files);
+    //detect_conflicts(IM, num_files);
 
     for(i = 0; i < num_files; i++) {
         free(IM[i].filename);

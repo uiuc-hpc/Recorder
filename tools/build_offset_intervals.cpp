@@ -48,7 +48,7 @@ size_t get_eof(string filename, unordered_map<string, size_t> local_eof, unorder
  * This function must be called after intervals of IntervalsMap have been filled.
  * Also, records need to be sorted by tstart, which we did in build_offset_intervals().
  */
-void setup_open_close_commit(vector<RRecord> records, int nprocs, IntervalsMap *IM, int num_files, int semantics) {
+void setup_open_close_commit(RecorderReader &reader, vector<RRecord> records, int nprocs, IntervalsMap *IM, int num_files, int semantics) {
     int i, j, rank;
     unordered_map<string, vector<double>> topens[nprocs];
     unordered_map<string, vector<double>> tcloses[nprocs];
@@ -59,7 +59,7 @@ void setup_open_close_commit(vector<RRecord> records, int nprocs, IntervalsMap *
     for(i = 0; i < records.size(); i++) {
         RRecord rr = records[i];
         Record *R = rr.record;
-        const char* func = func_list[R->func_id];
+        const char* func = reader.func_list[R->func_id];
 
         int fd = -1;
         string filename;
@@ -130,7 +130,7 @@ void setup_open_close_commit(vector<RRecord> records, int nprocs, IntervalsMap *
     }
 }
 
-void handle_data_operation(RRecord &rr,
+void handle_data_operation(RecorderReader &reader, RRecord &rr,
                             unordered_map<int, string> &filemap,                 // <fd, filename>
                             unordered_map<int, size_t> &offset_book,             // <fd, current offset>
                             unordered_map<string, size_t> &local_eof,            // <filename, eof> (locally)
@@ -139,7 +139,7 @@ void handle_data_operation(RRecord &rr,
                             int semantics )
 {
     Record *R = rr.record;
-    const char* func = func_list[R->func_id];
+    const char* func = reader.func_list[R->func_id];
 
     if(!strstr(func, "read") && !strstr(func, "write"))
         return;
@@ -193,7 +193,7 @@ void handle_data_operation(RRecord &rr,
 }
 
 
-void handle_metadata_operation(RRecord &rr,
+void handle_metadata_operation(RecorderReader &reader, RRecord &rr,
                                 unordered_map<int, string> &filemap,                 // <fd, filename>
                                 unordered_map<int, size_t> &offset_book,             // <fd, current offset>
                                 unordered_map<string, size_t> &local_eof,            // <filename, eof> (locally)
@@ -203,7 +203,7 @@ void handle_metadata_operation(RRecord &rr,
 
     int rank = rr.rank;
     Record *R = rr.record;
-    const char* func = func_list[R->func_id];
+    const char* func = reader.func_list[R->func_id];
 
     string filename;
 
@@ -236,10 +236,11 @@ void handle_metadata_operation(RRecord &rr,
         if(flag & O_APPEND)
             offset_book[fd] = get_eof(filename, local_eof, global_eof);
 
-    } else if(strstr(func, "seek")) {
+    } else if(strstr(func, "seek") || strstr(func, "seeko")) {
         int fd = atoi(R->args[0]);
         int offset = atoi(R->args[1]);
         int whence = atoi(R->args[2]);
+
         if(filemap.find(fd) == filemap.end()) return;
         filename = filemap[fd];
 
@@ -287,7 +288,7 @@ vector<RRecord> flatten_and_sort_records(RecorderReader reader) {
         for(j = 0; j < reader.RLDs[rank].total_records; j++) {
 
             Record *r = &(reader.records[rank][j]);
-            const char* func = func_list[r->func_id];
+            const char* func = reader.func_list[r->func_id];
             if(strstr(func,"MPI") || strstr(func, "H5") || strstr(func, "dir") || strstr(func, "link"))
                 continue;
 
@@ -323,14 +324,12 @@ IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int 
 
         RRecord rr = records[i];
 
-        handle_metadata_operation(rr, filemaps[rr.rank], offset_books[rr.rank],
+        handle_metadata_operation(reader, rr, filemaps[rr.rank], offset_books[rr.rank],
                                     local_eofs[rr.rank], global_eof);
 
-        handle_data_operation(rr, filemaps[rr.rank], offset_books[rr.rank],
+        handle_data_operation(reader, rr, filemaps[rr.rank], offset_books[rr.rank],
                                 local_eofs[rr.rank], global_eof, intervals, semantics);
     }
-
-
 
     // Now we have the list of intervals for all files
     // We copy it from the vector to a C style pointer
@@ -357,19 +356,7 @@ IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int 
     }
 
     // Fill in topens, tcloses and tcommits
-    setup_open_close_commit(records, reader.RGD.total_ranks, IM, *num_files, semantics);
+    setup_open_close_commit(reader, records, reader.RGD.total_ranks, IM, *num_files, semantics);
 
     return IM;
 }
-
-/*
-int main(int argc, char* argv[]) {
-    RecorderReader reader;
-    int num_files;
-    recorder_read_traces(argv[1], &reader);
-
-    build_offset_intervals(reader, &num_files);
-
-    return 0;
-}
-*/
