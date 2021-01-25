@@ -128,6 +128,10 @@ Publications
 Change Log
 ----------
 
+**Recorder 2.2.0** Jan 25, 2021
+1. Add support for MPI_Cart_sub, MPI_Comm_split_type, etc.
+2. Assign each MPI_Comm object a globally unique id.
+
 **Recorder 2.1.9** Jan 14, 2021
 1. Clean up the code
 2. Fixed a few memory leak issues

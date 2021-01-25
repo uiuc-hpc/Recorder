@@ -9,7 +9,7 @@
 #define TIME_RESOLUTION 0.000001
 #define RECORD_WINDOW_SIZE 3                    // A sliding window for peephole compression
 #define MEMBUF_SIZE 6*1024*1024                 // Memory buffer size, default 6MB
-#define VERSION_STR "2.1.9"
+#define VERSION_STR "2.2.0"
 
 
 struct RecorderLogger {
