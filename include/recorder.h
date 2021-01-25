@@ -368,7 +368,7 @@ RECORDER_FORWARD_DECL(PMPI_Ialltoall, int, (const void *sendbuf, int sendcount, 
 // Add on 2021/01/25
 RECORDER_FORWARD_DECL(PMPI_Comm_free, int, (MPI_Comm *comm));
 RECORDER_FORWARD_DECL(PMPI_Cart_sub, int, (MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm));
-
+RECORDER_FORWARD_DECL(PMPI_Comm_split_type, int, (MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm));
 
 
 

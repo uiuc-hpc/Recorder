@@ -75,10 +75,6 @@ typedef struct MPICommHash_t {
 } MPICommHash;
 static MPICommHash *mpi_comm_table = NULL;
 
-
-static int split_times;         // how many time we see MPI_Comm_split
-static int dup_times;
-
 void add_mpi_comm(MPI_Comm *newcomm) {
     if(newcomm == NULL || *newcomm == MPI_COMM_NULL)
         return;
@@ -728,3 +724,10 @@ int RECORDER_MPI_DECL(MPI_Cart_sub) (MPI_Comm comm, const int remain_dims[], MPI
     RECORDER_INTERCEPTOR(3, args);
 }
 
+
+int RECORDER_MPI_DECL(MPI_Comm_split_type) (MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split_type, (comm, split_type, key, info, newcomm));
+    add_mpi_comm(newcomm);
+    char **args = assemble_args_list(5, comm2name(&comm), itoa(split_type), itoa(key), ptoa(&info), comm2name(newcomm));
+    RECORDER_INTERCEPTOR(5, args);
+}
