@@ -40,17 +40,17 @@ make
 make install
 ```
 
+If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+```bash
+./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
+```
+
 By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
 
 Options for `configure` can be used to disable one ore more levels of traces. Valid options:
  * --disable-posix
  * --disable-mpi
  * --disable-hdf5
-
-If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
-```bash
-./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
-```
 
 **Other options:**
 
