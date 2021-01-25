@@ -720,3 +720,11 @@ int RECORDER_MPI_DECL(MPI_Comm_free) (MPI_Comm *comm) {
     char **args = assemble_args_list(1, comm_name);
     RECORDER_INTERCEPTOR(1, args);
 }
+
+int RECORDER_MPI_DECL(MPI_Cart_sub) (MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Cart_sub, (comm, remain_dims, newcomm));
+    add_mpi_comm(newcomm);
+    char **args = assemble_args_list(3, comm2name(&comm), ptoa(remain_dims), comm2name(newcomm));
+    RECORDER_INTERCEPTOR(3, args);
+}
+
