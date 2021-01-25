@@ -47,6 +47,10 @@ Options for `configure` can be used to disable one ore more levels of traces. Va
  * --disable-mpi
  * --disable-hdf5
 
+If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+```bash
+./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
+```
 
 **Other options:**
 
@@ -55,11 +59,6 @@ Options for `configure` can be used to disable one ore more levels of traces. Va
 Since v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
 are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `--disable-fcntl`.
  
-If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
-```bash
-./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
-```
-
 (2) Logging pointers
 
 Since v2.1.8, Recorder by default does not log the pointers (memory addresses) any more as they provide little information yet
