@@ -16,7 +16,6 @@ int main(int argc, char *argv[]) {
 
     MPI_Comm comm;
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
-    MPI_Comm_free(&comm);
 
     MPI_Datatype type = MPI_LONG_INT;
     MPI_Type_commit(&type);
@@ -25,7 +24,8 @@ int main(int argc, char *argv[]) {
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
 
-    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
+    MPI_Comm_free(&comm);
 
     void *sbuf = processor_name;
     int scount = name_len;
