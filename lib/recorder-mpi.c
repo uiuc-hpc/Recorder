@@ -111,7 +111,7 @@ char* comm2name(MPI_Comm *comm) {
         if(entry)
             return strdup(entry->id);
         else
-            return strdup("MPI_COMM_NULL");
+            return strdup("MPI_COMM_UNKNOWN");
     }
 }
 
