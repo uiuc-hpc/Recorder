@@ -69,10 +69,11 @@
 #endif
 
 
-
 int depth;
 static int split_times;         // how many time we see MPI_Comm_split
 static int dup_times;
+
+
 
 static inline char *comm2name(MPI_Comm comm) {
     int len = 0;
@@ -119,14 +120,12 @@ static inline char* whence2name(int whence) {
  * Intercept the following functions
  */
 int RECORDER_MPI_DECL(MPI_Comm_size)(MPI_Comm comm, int *size) {
-    // TODO: size is only know after the function call
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_size, (comm, size));
     char **args = assemble_args_list(2, comm2name(comm), itoa(*size));
     RECORDER_INTERCEPTOR(2, args);
 }
 
 int RECORDER_MPI_DECL(MPI_Comm_rank)(MPI_Comm comm, int *rank) {
-    // TODO: rank is only know after the function call
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_rank, (comm, rank));
     char **args = assemble_args_list(2, comm2name(comm), itoa(*rank));
     RECORDER_INTERCEPTOR(2, args);
@@ -693,22 +692,29 @@ int RECORDER_MPI_DECL(MPI_Ireduce) (const void *sbuf, void *rbuf, int count, MPI
                                     itoa(op), itoa(root), comm2name(comm), itoa(*request));
     RECORDER_INTERCEPTOR(8, args);
 }
-int RECORDER_MPI_DECL(PMPI_Igather) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
+int RECORDER_MPI_DECL(MPI_Igather) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Igather, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm, request));
     char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype),
                                         ptoa(rbuf), itoa(rcount), type2name(rtype), itoa(root), comm2name(comm), itoa(*request));
     RECORDER_INTERCEPTOR(9, args);
 }
-int RECORDER_MPI_DECL(PMPI_Iscatter) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
+int RECORDER_MPI_DECL(MPI_Iscatter) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Request *request) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Iscatter, (sbuf, scount, stype, rbuf, rcount, rtype, root, comm, request));
     char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype),
                                         ptoa(rbuf), itoa(rcount), type2name(rtype), itoa(root), comm2name(comm), itoa(*request));
     RECORDER_INTERCEPTOR(9, args);
 }
-int RECORDER_MPI_DECL(PMPI_Ialltoall) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, MPI_Comm comm, MPI_Request * request) {
+int RECORDER_MPI_DECL(MPI_Ialltoall) (const void *sbuf, int scount, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, MPI_Comm comm, MPI_Request * request) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ialltoall, (sbuf, scount, stype, rbuf, rcount, rtype, comm, request));
     char **args = assemble_args_list(8, ptoa(sbuf), itoa(scount), type2name(stype),
                                         ptoa(rbuf), itoa(rcount), type2name(rtype), comm2name(comm), itoa(*request));
     RECORDER_INTERCEPTOR(8, args);
 }
 
+// Add MPI_Comm_Free on 2021/01/25
+int RECORDER_MPI_DECL(MPI_Comm_free) (MPI_Comm *comm) {
+    char* comm_name = comm2name(*comm);
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_free, (comm));
+    char **args = assemble_args_list(1, comm_name);
+    RECORDER_INTERCEPTOR(1, args);
+}

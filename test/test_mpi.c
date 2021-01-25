@@ -12,11 +12,11 @@ int main(int argc, char *argv[]) {
     int world_size;
 
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm comm;
+    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+    MPI_Comm_free(&comm);
 
     MPI_Datatype type = MPI_LONG_INT;
     MPI_Type_commit(&type);
@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
 
     int recv, send;
     MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
+
 
     MPI_Finalize();
 

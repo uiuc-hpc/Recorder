@@ -365,6 +365,8 @@ RECORDER_FORWARD_DECL(PMPI_Ireduce, int, (const void *sendbuf, void *recvbuf, in
 RECORDER_FORWARD_DECL(PMPI_Igather, int, (const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request));
 RECORDER_FORWARD_DECL(PMPI_Iscatter, int, (const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request));
 RECORDER_FORWARD_DECL(PMPI_Ialltoall, int, (const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request * request));
+// Add MPI_Comm_free on 2021/01/25
+RECORDER_FORWARD_DECL(PMPI_Comm_free, int, (MPI_Comm *comm));
 
 
 
