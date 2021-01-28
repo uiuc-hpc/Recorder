@@ -1,5 +1,7 @@
 AC_INIT([Recorder], 2.2.0)
 
+AM_SILENT_RULES([yes])
+
 AC_PROG_CC([mpicc cc])
 AC_PROG_CXX([mpicxx CC])
 AC_CONFIG_MACRO_DIRS([m4])

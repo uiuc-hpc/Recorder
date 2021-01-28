@@ -8,7 +8,8 @@ from bokeh.embed import components
 from bokeh.models import FixedTicker, ColumnDataSource, LabelSet
 from prettytable import PrettyTable
 
-from creader_wrapper import RecorderReader
+#from creader_wrapper import RecorderReader
+from recorder_viz import RecorderReader
 from html_writer import HTMLWriter
 from build_offset_intervals import ignore_files
 from build_offset_intervals import build_offset_intervals
