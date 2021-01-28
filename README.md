@@ -1,4 +1,4 @@
-Recorder 2.1
+Recorder 2.2
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
