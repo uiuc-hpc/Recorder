@@ -91,20 +91,7 @@ mpirun can be changed to your workload manager, e.g. srun.
 
 The trace files will be written to the current directory.
 
-**2. Visualization**
-
-We use Python libraries [pandas](https://pandas.pydata.org/), [bokeh](https://docs.bokeh.org/) and [prettytable](https://pypi.org/project/PrettyTable/) to generate the report.<br>
-Please install those dependencies first.
-Also, the visulation may take some time if there are a large number of I/O records.
-
-```bash
-python $RECORDER_ROOT/bin/reporter/reporter.py /path/to/your_trace_folder/
-```
-The visualization report (recorder-report.html) will be written into the current directory.
-Below are some example graphs generated from the [FLASH](http://flash.uchicago.edu) traces.
-![showoff](./test/showoff.jpg)
-
-**3. Human-readable traces?**
+**2. Human-readable traces**
 
 Recorder uses its own binary tracing format to compress and store traces.
 
@@ -113,6 +100,13 @@ We provide a tool (recorder2text) that can convert the recorder format traces to
 $RECORDER_ROOT/bin/recorder2text /path/to/your_trace_folder/
 ```
 This will generate text fomart traces under `/path/to/your_trace_folder/_text`.
+
+**3. Post-processing**
+
+We provide a Python library, [recorder-viz](https://pypi.org/project/recorder-viz/), for post-processing tasks.
+
+It can be used to automatically generate detailed visuazation reports, or can be used to directly access the traces information. 
+
 
 Dataset
 -----------
