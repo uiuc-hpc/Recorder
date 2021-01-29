@@ -520,7 +520,7 @@ mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
 FILE* RECORDER_POSIX_DECL(fdopen)(int fd, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fdopen, (fd, mode));
     record->res = stream2fd(res);
-    char** args = assemble_args_list(2, itoa(fd), ptoa(mode));
+    char** args = assemble_args_list(2, itoa(fd), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(fileno)(FILE *stream) {
