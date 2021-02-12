@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Comm comm;
-    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+    MPI_Comm comm = MPI_COMM_WORLD;
+    //MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 
     MPI_Datatype type = MPI_LONG_INT;
     MPI_Type_commit(&type);
@@ -75,9 +75,10 @@ int main(int argc, char *argv[]) {
     }
 
     MPI_Request req;
-    MPI_Ibcast(a, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
+    MPI_Bcast(a, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    //MPI_Ibcast(a, 1, MPI_INT, 0, MPI_COMM_WORLD, &req);
     //MPI_Wait(&req, MPI_STATUS_IGNORE);
-    MPI_Test(&req, &flag, MPI_STATUS_IGNORE);
+    //MPI_Test(&req, &flag, MPI_STATUS_IGNORE);
 
     int recv, send;
     MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
