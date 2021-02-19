@@ -11,6 +11,7 @@ using namespace std;
 
 typedef struct RRecord_t {
     int rank;
+    int seqId;
     Record* record;
 } RRecord;
 
@@ -146,6 +147,7 @@ void handle_data_operation(RecorderReader &reader, RRecord &rr,
 
     Interval I;
     I.rank = rr.rank;
+    I.seqId = rr.seqId;
     I.tstart = R->tstart;
     I.isRead = strstr(func, "read") ? true: false;
 
@@ -295,6 +297,7 @@ vector<RRecord> flatten_and_sort_records(RecorderReader reader) {
             RRecord rr;
             rr.rank = rank;
             rr.record = r;
+            rr.seqId = j;
 
             records.push_back(rr);
         }

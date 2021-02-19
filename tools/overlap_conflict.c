@@ -154,7 +154,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files) {
 
             if(!conflict) continue;
 
-            printf("%s, i1(%d, %ld, %ld, %d), i2(%d, %ld, %ld, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
+            printf("%s, i1(%d-%d, %ld, %ld, %d), i2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
 
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
 
@@ -194,9 +194,9 @@ int main(int argc, char* argv[]) {
     int i, rank, num_files;
     IntervalsMap *IM = build_offset_intervals(reader, &num_files, semantics);
 
-    access_patterns(IM, num_files);
+    //access_patterns(IM, num_files);
     //detect_overlaps(IM, num_files);
-    //detect_conflicts(IM, num_files);
+    detect_conflicts(IM, num_files);
 
     for(i = 0; i < num_files; i++) {
         free(IM[i].filename);

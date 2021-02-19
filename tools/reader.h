@@ -17,6 +17,7 @@ typedef struct RecorderReader_t {
 
 typedef struct Interval_t {
     int rank;
+    int seqId;              // The sequence id of the I/O call
     double tstart;
     size_t offset;
     size_t count;
