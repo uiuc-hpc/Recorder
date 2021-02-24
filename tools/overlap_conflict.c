@@ -155,6 +155,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files) {
             if(!conflict) continue;
 
             printf("%s, i1(%d-%d, %ld, %ld, %d), i2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
+            //printf("%d-%d, %d-%d\n", i1->rank, i1->seqId, i2->rank, i2->seqId);
 
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
 
