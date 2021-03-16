@@ -99,14 +99,14 @@ inline double recorder_wtime(void) {
 
 /* Integer to stirng */
 inline char* itoa(size_t val) {
-    char *str = calloc(16, sizeof(char));
+    char *str = calloc(32, sizeof(char));
     sprintf(str, "%ld", val);
     return str;
 }
 
-/* Integer to stirng */
+/* float to stirng */
 inline char* ftoa(double val) {
-    char *str = calloc(24, sizeof(char));
+    char *str = calloc(32, sizeof(char));
     sprintf(str, "%f", val);
     return str;
 }
