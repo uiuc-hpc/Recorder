@@ -102,7 +102,11 @@ double get_neighbor_op_timestamp(double current, double *tops, int count, bool n
     return -1;
 }
 
-void detect_conflicts(IntervalsMap *IM, int num_files) {
+void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
+    FILE* conflict_file;
+    char path[512];
+    sprintf(path, "%s/conflicts.txt", base_dir);
+    conflict_file = fopen(path, "w");
 
     int idx, i;
     for(idx = 0; idx < num_files; idx++) {
@@ -155,7 +159,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files) {
             if(!conflict) continue;
 
             printf("%s, i1(%d-%d, %ld, %ld, %d), i2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
-            //printf("%d-%d, %d-%d\n", i1->rank, i1->seqId, i2->rank, i2->seqId);
+            fprintf(conflict_file, "%d-%d, %d-%d\n", i1->rank, i1->seqId, i2->rank, i2->seqId);
 
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
 
@@ -168,6 +172,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files) {
         if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2))
             printf("%s, Conflicts RAW: D-%d,S-%d, WAW: D-%d,S-%d\n", filename, conflicts[0][0], conflicts[1][0], conflicts[0][1], conflicts[1][1]);
     }
+    fclose(conflict_file);
 }
 
 
@@ -197,7 +202,7 @@ int main(int argc, char* argv[]) {
 
     //access_patterns(IM, num_files);
     //detect_overlaps(IM, num_files);
-    detect_conflicts(IM, num_files);
+    detect_conflicts(IM, num_files, argv[1]);
 
     for(i = 0; i < num_files; i++) {
         free(IM[i].filename);
