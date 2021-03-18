@@ -110,7 +110,7 @@ It can be used to automatically generate detailed visuazation reports, or can be
 
 Dataset
 -----------
-[14 HPC applications](https://doi.org/10.6075/J0Z899X4)
+[Traces from 17 HPC applications](https://doi.org/10.6075/J0Z899X4)
 
 Publications
 -----------
