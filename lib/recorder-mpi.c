@@ -83,6 +83,7 @@ typedef struct MPIFileHash_t {
 static MPICommHash *mpi_comm_table = NULL;
 static MPIFileHash *mpi_file_table = NULL;
 static int mpi_file_id = 0;
+static int mpi_comm_id = 0;
 
 void add_mpi_file(MPI_Comm comm, MPI_File *file) {
     if(file == NULL)
@@ -134,7 +135,7 @@ void add_mpi_comm(MPI_Comm *newcomm) {
     // in the hash table.
     char *id = calloc(32, sizeof(char));
     if(new_rank == 0)
-        sprintf(id, "%d%d", *newcomm, new_rank);
+        sprintf(id, "%d-%d", world_rank, mpi_comm_id++);
     PMPI_Bcast(id, 32, MPI_BYTE, 0, *newcomm);
     entry->id = id;
 
