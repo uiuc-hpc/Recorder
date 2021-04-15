@@ -77,9 +77,9 @@ char** get_record_arguments(char* str, int arg_count) {
 }
 
 
-Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
+Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD) {
 
-    Record *records = (Record*) malloc(sizeof(Record) * len);
+    Record *records = (Record*) malloc(sizeof(Record) * RLD->total_records);
 
     FILE* fp = fopen(path, "r+b");
 
@@ -107,8 +107,8 @@ Record* read_records(char* path, int len, RecorderGlobalDef *RGD) {
         memcpy(&(r->res), content+rec_start_pos+9, 4);
         memcpy(&(r->func_id), content+rec_start_pos+13, 1);
 
-        r->tstart = tstart * RGD->time_resolution;
-        r->tend = tend * RGD->time_resolution;
+        r->tstart = RLD->start_timestamp + tstart * RGD->time_resolution;
+        r->tend = RLD->start_timestamp + tend * RGD->time_resolution;
         r->arg_count = 0;
 
         // 2. Then arguments splited by ' '
@@ -224,7 +224,7 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
         read_local_metadata(local_metadata_file, &(reader->RLDs[rank]));
 
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
-        reader->records[rank] = read_records(log_file, reader->RLDs[rank].total_records, &reader->RGD);
+        reader->records[rank] = read_records(log_file, &(reader->RLDs[rank]), &(reader->RGD));
         decompress_records(reader->records[rank], reader->RLDs[rank].total_records);
         sort_records_by_tstart(reader->records[rank], reader->RLDs[rank].total_records);
         printf("\rRead trace file for rank %d, records: %d", rank, reader->RLDs[rank].total_records);
