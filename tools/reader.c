@@ -107,8 +107,8 @@ Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD) 
         memcpy(&(r->res), content+rec_start_pos+9, 4);
         memcpy(&(r->func_id), content+rec_start_pos+13, 1);
 
-        r->tstart = RLD->start_timestamp + tstart * RGD->time_resolution;
-        r->tend = RLD->start_timestamp + tend * RGD->time_resolution;
+        r->tstart = tstart * RGD->time_resolution;
+        r->tend = tend * RGD->time_resolution;
         r->arg_count = 0;
 
         // 2. Then arguments splited by ' '
