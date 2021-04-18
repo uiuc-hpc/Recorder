@@ -65,6 +65,9 @@ Since v2.1.8, Recorder by default does not log the pointers (memory addresses) a
 cost a lot of space.
 However, you can change this behaviour by set the enviroment `RECORDER_LOG_POINTER` to 1.
 
+(3) Control where Recorder stores the traces:
+
+Set enviroment variable `RECORDER_TRACES_DIR` to the path where you want the traces stored.
 
 **2. Install from Spack**
 ```bash
