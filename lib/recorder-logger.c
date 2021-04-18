@@ -267,17 +267,28 @@ void logger_init(int rank, int nprocs) {
     for(i = 0; i < RECORD_WINDOW_SIZE; i++)
         logger.recordWindow[i] = NULL;
 
+
+    const char* base_dir = getenv("RECORDER_TRACES_DIR");
+    char traces_dir[1024] = {0};
+    char logfile_name[1024] = {0};
+    char metafile_name[1024] = {0};
+    char global_meta_filename[1024] = {0};
+    if(base_dir)
+        sprintf(traces_dir, "%s/recorder-logs", base_dir);
+    else
+        sprintf(traces_dir, "recorder-logs"); // current directory
+    sprintf(logfile_name, "%s/%d.itf", traces_dir, rank);
+    sprintf(metafile_name, "%s/%d.mt", traces_dir, rank);
+    sprintf(global_meta_filename, "%s/recorder.mt", traces_dir);
+
     if(rank == 0) {
-        if(RECORDER_REAL_CALL(access)  ("recorder-logs", F_OK) != -1)
-            RECORDER_REAL_CALL(remove) ("recorder-logs");
-        RECORDER_REAL_CALL(mkdir) ("recorder-logs", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if(RECORDER_REAL_CALL(access)  (traces_dir, F_OK) != -1)
+            RECORDER_REAL_CALL(remove) (traces_dir);
+        RECORDER_REAL_CALL(mkdir) (traces_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
-    char logfile_name[256];
-    char metafile_name[256];
-    sprintf(logfile_name, "recorder-logs/%d.itf", rank);
-    sprintf(metafile_name, "recorder-logs/%d.mt", rank);
+
     logger.trace_file = RECORDER_REAL_CALL(fopen) (logfile_name, "wb");
     logger.meta_file = RECORDER_REAL_CALL(fopen) (metafile_name, "wb");
 
@@ -287,7 +298,7 @@ void logger_init(int rank, int nprocs) {
     if (comp_mode) logger.compMode = atoi(comp_mode);
 
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_REAL_CALL(fopen) ("recorder-logs/recorder.mt", "wb");
+        FILE* global_metafh = RECORDER_REAL_CALL(fopen) (global_meta_filename, "wb");
         RecorderGlobalDef global_def = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
@@ -307,7 +318,9 @@ void logger_init(int rank, int nprocs) {
         }
         RECORDER_REAL_CALL(fclose)(global_metafh);
 
-        FILE* version_file = RECORDER_REAL_CALL(fopen) ("recorder-logs/VERSION", "w");
+        char version_filename[1024];
+        sprintf(version_filename, "%s/VERSION", traces_dir);
+        FILE* version_file = RECORDER_REAL_CALL(fopen) (version_filename, "w");
         RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
         RECORDER_REAL_CALL(fclose)(version_file);
     }
