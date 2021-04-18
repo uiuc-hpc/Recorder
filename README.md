@@ -63,11 +63,13 @@ are supported. If non-POSIX commands were used, please disable fcntl tracing at 
 
 Since v2.1.8, Recorder by default does not log the pointers (memory addresses) any more as they provide little information yet
 cost a lot of space.
-However, you can change this behaviour by set the enviroment `RECORDER_LOG_POINTER` to 1.
+However, you can change this behaviour by set the enviroment variable `RECORDER_LOG_POINTER` to 1.
 
 (3) Control where Recorder stores the traces:
 
-Set enviroment variable `RECORDER_TRACES_DIR` to the path where you want the traces stored.
+By default Recorder will output the traces to the current working directory.
+You can use the enviroment variable `RECORDER_TRACES_DIR` to specifiy the path where you want the traces stored.
+Make sure that every process has the persmission to write to that directory. 
 
 **2. Install from Spack**
 ```bash
