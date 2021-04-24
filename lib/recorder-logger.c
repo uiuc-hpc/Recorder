@@ -164,7 +164,7 @@ void free_record(Record *record) {
         int i;
         for(i = 0; i < record->arg_count; i++)
             free(record->args[i]);
-        recorder_free(record->args, sizeof(char**)*record->arg_count);
+        recorder_free(record->args, sizeof(char*)*record->arg_count);
     }
 
     record->args = NULL;
