@@ -2,7 +2,11 @@
 ### Verify if I/O operations are properly synchronized uder specific semantics
 ------------------------------
 
+
+
 Suppose `$RECORDER_DIR` is the install location of Recorder.
+
+Dependencies: `recorder-viz` and `networkx`. Both can be installed using pip.
 
 Steps:
 1. Run program with Recorder to generate traces.
