@@ -359,13 +359,13 @@ int RECORDER_MPI_DECL(MPI_File_close)(MPI_File *fh) {
 
 int RECORDER_MPI_DECL(MPI_File_sync)(MPI_File fh) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_sync, (fh));
-    char **args = assemble_args_list(1, ptoa(&fh));
+    char **args = assemble_args_list(1, file2id(&fh));
     RECORDER_INTERCEPTOR(1, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_set_size)(MPI_File fh, MPI_Offset size) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_set_size, (fh, size));
-    char **args = assemble_args_list(2, ptoa(&fh), itoa(size));
+    char **args = assemble_args_list(2, file2id(&fh), itoa(size));
     RECORDER_INTERCEPTOR(2, args);
 }
 

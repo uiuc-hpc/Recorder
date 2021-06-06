@@ -1,22 +1,20 @@
 #include "hdf5.h"
 #include "mpi.h"
 
-#define FILE "workfile.out"
+#define FILE_NAME_1 "workfile.1.out"
+#define FILE_NAME_2 "workfile.2.out"
 
-int main(int argc, char *argv[]) {
-
-    MPI_Init(&argc, &argv);
-
+void parallel_hdf5_test(const char* filename) {
     hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-    //H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-    H5Pset_fapl_split(plist_id, "-metadata.h5", H5P_DEFAULT, "-data.h5", H5P_DEFAULT);
+    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    //H5Pset_fapl_split(plist_id, "-metadata.h5", H5P_DEFAULT, "-data.h5", H5P_DEFAULT);
 
     hid_t file_id, dataset_id, dataspace_id, attr_id;
     hsize_t dims[2] = {2, 3};
     herr_t status;
     int data[] = {100, 100, 100, 100, 100, 100};
 
-    file_id = H5Fcreate(FILE, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
     dataspace_id = H5Screate_simple(2, dims, NULL);
 
     dataset_id = H5Dcreate2(file_id, "/dest", H5T_STD_I32BE, dataspace_id,
@@ -42,6 +40,14 @@ int main(int argc, char *argv[]) {
     H5Sclose(dataspace_id);
     H5Pclose(plist_id);
     H5Fclose(file_id);
+}
+
+int main(int argc, char *argv[]) {
+
+    MPI_Init(&argc, &argv);
+
+    parallel_hdf5_test(FILE_NAME_1);
+    parallel_hdf5_test(FILE_NAME_2);
 
     MPI_Finalize();
     return 0;
