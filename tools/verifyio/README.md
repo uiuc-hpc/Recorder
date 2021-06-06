@@ -15,7 +15,7 @@ Steps:
    
 3. Finally run the verification code, which checks if those conflicting operations are properly synchronzied.
    
-   `python ./verifyio /path/to/traces /path/to/traces/conflicts.txt`
+   `python ./verifyio.py /path/to/traces /path/to/traces/conflicts.txt`
    
    
    
