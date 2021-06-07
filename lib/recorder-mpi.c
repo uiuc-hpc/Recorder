@@ -268,11 +268,13 @@ int RECORDER_MPI_DECL(MPI_Scatterv)(CONST void *sbuf, CONST int *scount, CONST i
 
 }
 
-/*
-   int MPI_Allgather(CONST void* sbuf, int scount, MPI_Datatype stype, void* rbuf,
-   int rcount, MPI_Datatype rtype, MPI_Comm comm ) {
-   }
-   */
+int MPI_Allgather(CONST void* sbuf, int scount, MPI_Datatype stype, void* rbuf,
+        CONST int rcount, MPI_Datatype rtype, MPI_Comm comm) {
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Allgather, (sbuf, scount, stype, rbuf, rcount, rtype, comm));
+    char **args = assemble_args_list(7, ptoa(sbuf), itoa(scount), type2name(stype),
+                                        ptoa(rbuf), itoa(rcount), type2name(rtype), comm2name(&comm));
+    RECORDER_INTERCEPTOR(7, args);
+}
 
 int RECORDER_MPI_DECL(MPI_Allgatherv)(CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf,
         CONST int *rcount, CONST int *displs, MPI_Datatype rtype, MPI_Comm comm) {
