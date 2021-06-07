@@ -1,4 +1,4 @@
-import sys
+import sys, argparse
 import networkx as nx
 from recorder_viz import RecorderReader
 from match_mpi import match_mpi_calls
@@ -53,8 +53,8 @@ def check_mpi_semantics(G, nodes, pairs):
 
     print("Conflicting pairs: %d" %len(pairs))
     for pair in pairs:
-        p1, p2 = pair[0], pair[1]
-        if p1.rank == p2.rank: continue
+        p1, p2 = pair[0], pair[1]                   # of Call class
+        if p1.rank == p2.rank: continue             # Same rank conflicts do no cause a issue on most file systems.
 
         idx1, idx2 = -1, -1
         for i in range(len(nodes[p1.rank])):
@@ -98,19 +98,28 @@ def check_mpi_semantics(G, nodes, pairs):
 
     return properly_synchronized
 
+
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("traces_folder")
+    parser.add_argument("conflicts_file", default=None)
+    parser.add_argument("--semantics", type=str, choices=["posix", "mpi"], default="mpi", help="Verify if I/O operations are properly synchronized under the specific semantics")
+    args = parser.parse_args()
+    sync_calls_only = args.semantics == "mpi"
+
     reader = RecorderReader(sys.argv[1])
-    nodes, edges = match_mpi_calls(reader)
+    nodes, edges = match_mpi_calls(reader, sync_calls_only)
 
     # Add the I/O nodes (conflicting I/O accesses)
     # to the graph. We add them after the match()
     # because they are not used for synchronizaitons
     total_nodes = 0
-    if len(sys.argv) == 3:
-        conflicting_nodes, pairs = read_conflicting_accesses(sys.argv[2], reader.GM.total_ranks)
+    if args.conflicts_file:
+        conflicting_nodes, pairs = read_conflicting_accesses(args.conflicts_file, reader.GM.total_ranks)
 
     for rank in range(reader.GM.total_ranks):
-        if len(sys.argv) == 3:
+        if args.conflicts_file:
             nodes[rank] += conflicting_nodes[rank]
         nodes[rank] = sorted(nodes[rank], key=lambda x: x.index)
         total_nodes += len(nodes[rank])
@@ -121,6 +130,9 @@ if __name__ == "__main__":
     # plot_graph(G, reader.GM.total_ranks)
     # run_vector_clock(G)
 
-    if len(sys.argv) == 3:
-        #check_posix_semantics(G, pairs)
-        check_mpi_semantics(G, nodes, pairs)
+    if args.conflicts_file:
+        print("\nUse %s semantics" %args.semantics)
+        if sync_calls_only:
+            check_mpi_semantics(G, nodes, pairs)
+        else:
+            check_posix_semantics(G, pairs)

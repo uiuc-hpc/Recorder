@@ -332,28 +332,42 @@ def find_recv(send_call, nodes, translate):
             return
 
 
-def match_mpi_calls(reader):
+'''
+mpi_sync_calls=True will include only the calls
+that guarantee synchronization, this flag is used
+for checking MPI semantics
+'''
+def match_mpi_calls(reader, mpi_sync_calls=False):
+
+    bcast_calls =  ['MPI_Bcast', 'MPI_Ibcast']
+    redgat_calls = ['MPI_Reduce', 'MPI_Ireduce', 'MPI_Gather', 'MPI_Igather', 'MPI_Gatherv', 'MPI_Igatherv']
+    coll_calls =   ['MPI_Barrier', 'MPI_Allreduce', 'MPI_Allgatherv', 'MPI_Allgatherv', 'MPI_Alltoall', 'MPI_Reduce_scatter',
+                    'MPI_File_open', 'MPI_File_close', 'MPI_File_read_all', 'MPI_File_read_at_all', 'MPI_File_read_order',
+                    'MPI_File_write_all', 'MPI_File_write_at_all', 'MPI_File_write_ordered', 'MPI_File_set_size',
+                    'MPI_File_set_view', 'MPI_File_sync', 'MPI_Comm_dup', 'MPI_Comm_split', 'MPI_Comm_split_type',
+                    'MPI_Cart_create', 'MPI_Cart_sub']
+
+    if mpi_sync_calls:
+        bcast_calls =  []
+        redgat_calls = ['MPI_Reduce_scatter', 'MPI_Reduce_scatter_block']
+        coll_calls =   ['MPI_Barrier', 'MPI_Allgather', 'MPI_Alltoall', 'MPI_Alltoallv', 'MPI_Alltoallw', 'MPI_Allreduce']
 
     translate = get_translation_table(reader)
     nodes = generate_mpi_nodes(reader)
 
     for rank in range(len(nodes)):
         for node in nodes[rank]:
-            if node.call in ['MPI_Bcast', 'MPI_Ibcast']:
+            if node.call in bcast_calls:
                 root = local2global(translate, node.comm, node.src)
                 if root == rank:
                     match_bcast(node, nodes)
 
-            if node.call in ['MPI_Reduce', 'MPI_Ireduce', 'MPI_Gather', 'MPI_Igather', 'MPI_Gatherv', 'MPI_Igatherv']:
+            if node.call in redgat_calls:
                 root = local2global(translate, node.comm, node.dst)
                 if root == rank:
                     match_redgat(node, nodes)
 
-            if node.call in ['MPI_Barrier', 'MPI_Allreduce', 'MPI_Allgatherv', 'MPI_Alltoall', 'MPI_Reduce_scatter',
-                    'MPI_File_open', 'MPI_File_close', 'MPI_File_read_all', 'MPI_File_read_at_all', 'MPI_File_read_ordered',
-                    'MPI_File_write_all', 'MPI_File_write_at_all', 'MPI_File_write_ordered', 'MPI_File_set_size',
-                    'MPI_File_set_view', 'MPI_File_sync', 'MPI_Comm_dup', 'MPI_Comm_split', 'MPI_Comm_split_type',
-                    'MPI_Cart_create', 'MPI_Cart_sub']:
+            if node.call in coll_calls:
                 match_collectives(node, nodes, translate)
 
             if node.call in ['MPI_Send','MPI_Ssend','MPI_Isend','MPI_Sendrecv']:
