@@ -17,7 +17,6 @@ static FilenameHashTable* filename_table = NULL;
 
 
 void utils_init() {
-    MAP_OR_FAIL(PMPI_Wtime);
     log_pointer = false;
     const char* s = getenv("RECORDER_LOG_POINTER");
     if(s)

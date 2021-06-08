@@ -58,20 +58,19 @@ static int rank, nprocs;
 void recorder_init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Comm_size)
     MAP_OR_FAIL(PMPI_Comm_rank)
-    MAP_OR_FAIL(PMPI_Wtime)
     RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
     RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
 
     logger_init(rank, nprocs);
     utils_init();
-    local_tstart = RECORDER_REAL_CALL(PMPI_Wtime)();
+    local_tstart = recorder_wtime();
 }
 
 void recorder_finalize() {
     logger_finalize();
     utils_finalize();
 
-    local_tend = RECORDER_REAL_CALL(PMPI_Wtime)();
+    local_tend = recorder_wtime();
 
     if (rank == 0)
         printf("[Recorder] elapsed time on rank 0: %.2f\n", local_tend-local_tstart);
