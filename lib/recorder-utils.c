@@ -93,10 +93,11 @@ inline long get_file_size(const char *filename) {
 }
 
 inline double recorder_wtime(void) {
-  //struct timeval time;
-  //gettimeofday(&time, NULL);
-  //return (time.tv_sec + ((double)time.tv_usec / 1000000));
-  return PMPI_Wtime();
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return (time.tv_sec + ((double)time.tv_usec / 1000000));
+  // Cannot use PMPI_Wtime here as MPI_Init may not be initialized
+  //return PMPI_Wtime();
 }
 
 /* Integer to stirng */

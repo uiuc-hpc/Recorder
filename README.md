@@ -61,9 +61,9 @@ are supported. If non-POSIX commands were used, please disable fcntl tracing at 
  
 (2) Logging pointers
 
-Since v2.1.8, Recorder by default does not log the pointers (memory addresses) any more as they provide little information yet
+Since v2.1.8, Recorder by default does not log the pointers (memory addresses) anymore as they provide little information yet
 cost a lot of space.
-However, you can change this behaviour by set the enviroment variable `RECORDER_LOG_POINTER` to 1.
+However, you can change this behaviour by setting the enviroment variable `RECORDER_LOG_POINTER` to 1.
 
 (3) Control where Recorder stores the traces:
 

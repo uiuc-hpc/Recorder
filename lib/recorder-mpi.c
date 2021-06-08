@@ -268,6 +268,7 @@ int RECORDER_MPI_DECL(MPI_Scatterv)(CONST void *sbuf, CONST int *scount, CONST i
 
 }
 
+
 int RECORDER_MPI_DECL(MPI_Allgather)(CONST void* sbuf, int scount, MPI_Datatype stype, void* rbuf,
         CONST int rcount, MPI_Datatype rtype, MPI_Comm comm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Allgather, (sbuf, scount, stype, rbuf, rcount, rtype, comm));
@@ -361,13 +362,13 @@ int RECORDER_MPI_DECL(MPI_File_close)(MPI_File *fh) {
 
 int RECORDER_MPI_DECL(MPI_File_sync)(MPI_File fh) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_sync, (fh));
-    char **args = assemble_args_list(1, ptoa(&fh));
+    char **args = assemble_args_list(1, file2id(&fh));
     RECORDER_INTERCEPTOR(1, args);
 }
 
 int RECORDER_MPI_DECL(MPI_File_set_size)(MPI_File fh, MPI_Offset size) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_set_size, (fh, size));
-    char **args = assemble_args_list(2, ptoa(&fh), itoa(size));
+    char **args = assemble_args_list(2, file2id(&fh), itoa(size));
     RECORDER_INTERCEPTOR(2, args);
 }
 
