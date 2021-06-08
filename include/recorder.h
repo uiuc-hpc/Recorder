@@ -296,7 +296,6 @@ RECORDER_FORWARD_DECL(PMPI_Finalize, int, ());
 RECORDER_FORWARD_DECL(PMPI_Finalized, int, (int *flag));
 RECORDER_FORWARD_DECL(PMPI_Init, int, (int *argc, char ***argv));
 RECORDER_FORWARD_DECL(PMPI_Init_thread, int, (int *argc, char ***argv, int required, int *provided));
-RECORDER_FORWARD_DECL(PMPI_Wtime, double, ());
 RECORDER_FORWARD_DECL(PMPI_Comm_rank, int, (MPI_Comm comm, int *rank));
 RECORDER_FORWARD_DECL(PMPI_Comm_size, int, (MPI_Comm comm, int *size));
 RECORDER_FORWARD_DECL(PMPI_Get_processor_name, int, (char *name, int *resultlen));
@@ -315,14 +314,6 @@ RECORDER_FORWARD_DECL(PMPI_Allreduce, int, (CONST void *sendbuf, void *recvbuf, 
 RECORDER_FORWARD_DECL(PMPI_Reduce_scatter, int, (CONST void *sbuf, void *rbuf, CONST int *rcounts, MPI_Datatype stype, MPI_Op op, MPI_Comm comm));
 RECORDER_FORWARD_DECL(PMPI_Scan, int, (CONST void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm));
 RECORDER_FORWARD_DECL(PMPI_Type_commit, int, (MPI_Datatype * datatype));
-RECORDER_FORWARD_DECL(PMPI_Type_contiguous, int, (int count, MPI_Datatype oldtype, MPI_Datatype *newtype));
-RECORDER_FORWARD_DECL(PMPI_Type_extent, int, (MPI_Datatype datatype, MPI_Aint * extent));
-RECORDER_FORWARD_DECL(PMPI_Type_free, int, (MPI_Datatype * datatype));
-RECORDER_FORWARD_DECL(PMPI_Type_hindexed, int, (int count, int *array_of_blocklengths, MPI_Aint *array_of_displacements, MPI_Datatype oldtype, MPI_Datatype *newtype));
-RECORDER_FORWARD_DECL(PMPI_Op_create, int, (MPI_User_function * function, int commute, MPI_Op *op));
-RECORDER_FORWARD_DECL(PMPI_Op_free, int, (MPI_Op * op));
-RECORDER_FORWARD_DECL(PMPI_Type_get_envelope, int, (MPI_Datatype datatype, int *num_integers, int *num_addresses, int *num_datatypes, int *combiner));
-RECORDER_FORWARD_DECL(PMPI_Type_size, int, (MPI_Datatype datatype, int *size));
 RECORDER_FORWARD_DECL(PMPI_Type_create_darray, int, (int size, int rank, int ndims, CONST int array_of_gsizes[], CONST int array_of_distribs[],CONST int array_of_dargs[], CONST int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype));
 RECORDER_FORWARD_DECL(PMPI_File_get_size, int, (MPI_File fh, MPI_Offset *size));
 
@@ -337,10 +328,6 @@ RECORDER_FORWARD_DECL(PMPI_Recv, int, (void *buf, int count, MPI_Datatype dataty
 RECORDER_FORWARD_DECL(PMPI_Sendrecv, int, (CONST void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status));
 RECORDER_FORWARD_DECL(PMPI_Isend, int, (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request));
 RECORDER_FORWARD_DECL(PMPI_Irecv, int, (void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request));
-// Add 3 MPI_Info related functions on 2020/02/24
-RECORDER_FORWARD_DECL(PMPI_Info_create, int, (MPI_Info *info));
-RECORDER_FORWARD_DECL(PMPI_Info_set, int, (MPI_Info info, CONST char *key, CONST char *value));
-RECORDER_FORWARD_DECL(PMPI_Info_get, int, (MPI_Info info, CONST char *key, int valuelen, char *value, int *flag));
 // Add MPI_Waitall, MPI_Waitsome, MPI_Waitany, MPI_Ssend on 2020/08/06
 RECORDER_FORWARD_DECL(PMPI_Waitall, int, (int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]));
 RECORDER_FORWARD_DECL(PMPI_Waitsome, int, (int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]));
