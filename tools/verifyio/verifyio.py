@@ -44,7 +44,7 @@ def print_shortest_path(G, src, dst, nodes):
     path_str = ""
     for key in selected_keys:
         path_str += " -> (%s)%s" %(key, key2func(key))
-    print path
+    print(path)
     return path_str
 
 
@@ -83,9 +83,9 @@ def check_mpi_semantics(G, nodes, pairs):
                 prev_sync = record
                 break
 
-        src = graph_node_key(next_sync)
-        dst = graph_node_key(prev_sync)
-        reachable = (next_sync and prev_sync) and has_path(G, src, dst)
+        src = None if not next_sync else graph_node_key(next_sync)
+        dst = None if not prev_sync else graph_node_key(prev_sync)
+        reachable = (bool) ( (next_sync and prev_sync) and has_path(G, src, dst) )
         print("%s --> %s, properly synchronized: %s" %(graph_node_key(pair[0]), graph_node_key(pair[1]), reachable))
 
         if reachable:
