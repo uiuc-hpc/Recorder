@@ -447,15 +447,15 @@ void RECORDER_POSIX_DECL(rewinddir)(DIR *dir) {
 
 }
 */
-int RECORDER_POSIX_DECL(mknod)(const char *path, mode_t mode, dev_t dev) {
-    RECORDER_INTERCEPTOR_NOIO(int, mknod, (path, mode, dev));
-    char** args = assemble_args_list(3, realrealpath(path), itoa(mode), itoa(dev));
-    RECORDER_INTERCEPTOR(3, args);
-}
-int RECORDER_POSIX_DECL(mknodat)(int fd, const char *path, mode_t mode, dev_t dev) {
-    RECORDER_INTERCEPTOR_NOIO(int, mknodat, (fd, path, mode, dev));
-    char** args = assemble_args_list(4, itoa(fd), realrealpath(path), itoa(mode), itoa(dev));
+int RECORDER_POSIX_DECL(__xmknod)(int ver, const char *path, mode_t mode, dev_t dev) {
+    RECORDER_INTERCEPTOR_NOIO(int, __xmknod, (ver, path, mode, dev));
+    char** args = assemble_args_list(4, itoa(ver), realrealpath(path), itoa(mode), itoa(dev));
     RECORDER_INTERCEPTOR(4, args);
+}
+int RECORDER_POSIX_DECL(__xmknodat)(int ver, int fd, const char *path, mode_t mode, dev_t dev) {
+    RECORDER_INTERCEPTOR_NOIO(int, __xmknodat, (ver, fd, path, mode, dev));
+    char** args = assemble_args_list(5, itoa(ver), itoa(fd), realrealpath(path), itoa(mode), itoa(dev));
+    RECORDER_INTERCEPTOR(5, args);
 }
 // Advanced File Operations
 // TODO: third argument
