@@ -234,8 +234,8 @@ RECORDER_FORWARD_DECL(opendir, DIR*, (const char *name));
 RECORDER_FORWARD_DECL(readdir, struct dirent*, (DIR *dir));
 RECORDER_FORWARD_DECL(closedir, int, (DIR *dir));
 RECORDER_FORWARD_DECL(rewinddir, void, (DIR *dir));
-RECORDER_FORWARD_DECL(__xmknod, int, (const char *path, mode_t mode, dev_t dev));
-RECORDER_FORWARD_DECL(__xmknodat, int, (int fd, const char *path, mode_t mode, dev_t dev));
+RECORDER_FORWARD_DECL(__xmknod, int, (int ver, const char *path, mode_t mode, dev_t dev));
+RECORDER_FORWARD_DECL(__xmknodat, int, (int ver, int fd, const char *path, mode_t mode, dev_t dev));
 // Advanced File Operations
 RECORDER_FORWARD_DECL(fcntl, int, (int fd, int cmd, ...));
 RECORDER_FORWARD_DECL(dup, int, (int oldfd));
