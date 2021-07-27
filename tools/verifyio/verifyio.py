@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("traces_folder")
-    parser.add_argument("conflicts_file", default=None)
+    parser.add_argument("conflicts_file", nargs='?', default=None)
     parser.add_argument("--semantics", type=str, choices=["posix", "mpi"], default="mpi", help="Verify if I/O operations are properly synchronized under the specific semantics")
     args = parser.parse_args()
     sync_calls_only = args.semantics == "mpi"
