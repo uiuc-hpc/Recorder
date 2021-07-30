@@ -1,4 +1,4 @@
-import sys, argparse
+import sys, argparse, time
 import networkx as nx
 from recorder_viz import RecorderReader
 from match_mpi import match_mpi_calls
@@ -109,7 +109,11 @@ if __name__ == "__main__":
     sync_calls_only = args.semantics == "mpi"
 
     reader = RecorderReader(sys.argv[1])
+
+    t1 = time.time()
     nodes, edges = match_mpi_calls(reader, sync_calls_only)
+    t2 = time.time()
+    print(t2-t1)
 
     # Add the I/O nodes (conflicting I/O accesses)
     # to the graph. We add them after the match()
