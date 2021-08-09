@@ -10,12 +10,12 @@ def check_posix_semantics(G, pairs):
 
     print("Conflicting pairs: %d" %len(pairs))
     for pair in pairs:
-        src = graph_node_key(pair[0])
-        dst = graph_node_key(pair[1])
-        reachable = has_path(G, src, dst)
+        n1 = graph_node_key(pair[0])
+        n2 = graph_node_key(pair[1])
+        reachable = has_path(G, n1, n2) or has_path(G, n1, n2)
         if not reachable: properly_synchronized = False
         if not properly_synchronized:
-            print("Conflicting I/O operations: %s --> %s, properly synchronized: %s %s %s" %(src, dst, properly_synchronized, G.nodes[src], G.nodes[dst]))
+            print("Conflicting I/O operations: %s <--> %s, properly synchronized: %s %s %s" %(n1, n2, properly_synchronized))
 
     return properly_synchronized
 

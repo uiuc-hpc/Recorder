@@ -42,7 +42,10 @@ def read_conflicting_accesses(path, total_ranks):
             conflicts[c2.rank].append(c2)
             exist_nodes.add(pair[1])
 
-        # Sort by seq_id
-        pairs.append( sorted([c1, c2], key=lambda x: x.index) )
+        # To test for properly synchonization
+        # We can ignore the conflicting pair on
+        # same node.
+        if c1.rank != c2.rank:
+            pairs.append([c1, c2])
 
     return conflicts, pairs

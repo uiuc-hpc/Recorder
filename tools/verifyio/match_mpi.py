@@ -177,8 +177,8 @@ def match_pt2pt(send_call, context, translate):
                     t = (wait_call.rank, wait_call.index, wait_call.func, wait_call.tend)
                     break
 
-    #if t == None:
-    #    print("TODO not possible", h, send_call.dst, global_dst, send_call.stag)
+    if t == None:
+        print("TODO not possible", h, send_call.dst, global_dst, send_call.stag)
     edges.append((h, t))
 
 
