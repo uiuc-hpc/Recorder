@@ -6,7 +6,6 @@ class Call:
         self.index = int(index) # Sequence Id of the call
         self.call = call
         self.func = call
-
         self.key = ""
 
 class MPICall(Call):
@@ -30,6 +29,11 @@ class MPICall(Call):
 
     def get_key(self):
         return self.key
+
+    def is_blocking_call(self):
+        if self.call and self.call.startswith("MPI_I"):
+            return False
+        return True
 
 class VerifyIOContext:
     def __init__(self, reader, mpi_sync_calls):
@@ -126,7 +130,7 @@ class VerifyIOContext:
                 elif call == 'MPI_Ibcast':
                     skip, src, comm, req = False, args[3], args[4], args[5]
                 elif call == 'MPI_Reduce':
-                    skip, dst, comm = False, args[5], args[6]
+                    skip, src, comm = False, args[5], args[6]
                 elif call == 'MPI_Ireduce':
                     skip, dst, comm, req = False, args[5], args[6], args[7]
                 elif call == 'MPI_Gather':

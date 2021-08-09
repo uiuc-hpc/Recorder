@@ -14,7 +14,8 @@ def check_posix_semantics(G, pairs):
         dst = graph_node_key(pair[1])
         reachable = has_path(G, src, dst)
         if not reachable: properly_synchronized = False
-        print("Conflicting I/O operations: %s --> %s, properly synchronized: %s" %(src, dst, reachable))
+        if not properly_synchronized:
+            print("Conflicting I/O operations: %s --> %s, properly synchronized: %s %s %s" %(src, dst, properly_synchronized, G.nodes[src], G.nodes[dst]))
 
     return properly_synchronized
 
@@ -127,6 +128,8 @@ if __name__ == "__main__":
             nodes[rank] += conflicting_nodes[rank]
         nodes[rank] = sorted(nodes[rank], key=lambda x: x.index)
         total_nodes += len(nodes[rank])
+
+
 
     G = generate_graph(nodes, edges, include_vc=False)
     print("Nodes: %d, Edges: %d" %(len(G.nodes()), len(G.edges())))

@@ -96,7 +96,7 @@ def find_wait_test_call(req, rank, context):
                 inx = wait_call.req.index(req)
                 if str(inx) in wait_call.tindx:
                     found = wait_call
-                    wait_call.req.remove(inx)
+                    wait_call.req.remove(req)
                     wait_call.reqflag = wait_call.reqflag - 1
                     if wait_call.reqflag == 0:
                         context.wait_test_calls[rank].remove(idx)
@@ -113,7 +113,6 @@ def add_to_edge(h, t, node, is_all_to_all):
             h.append((node.rank, node.index, node.func, node.tstart, node.tend))
         else:
             t.append((node.rank, node.index, node.func, node.tstart, node.tend))
-            pass
 
 def match_collectives(node, context, translate):
     h = []
@@ -127,16 +126,15 @@ def match_collectives(node, context, translate):
             other_idx = context.coll_calls[rank][key][0]
             other = context.all_calls[rank][other_idx]
 
+            # Blocking calls
+            if node.is_blocking_call():
+                add_to_edge(h, t, other, is_alltoall)
             # Non-blocking calls
-            if node.call.startswith("MPI_I"):
-                # TODO should start from current dst_node
+            else:
                 wait_node = find_wait_test_call(other.req, rank, context)
                 if wait_node:
                     add_to_edge(h, t, wait_node, is_alltoall)
                     h.append((wait_node.rank, wait_node.index, wait_node.func))
-            # Blocking calls
-            else:
-                add_to_edge(h, t, other, is_alltoall)
 
             # If no more call nodes have this key, then remove this key from the dict
             context.coll_calls[rank][key].pop(0)
@@ -144,7 +142,7 @@ def match_collectives(node, context, translate):
                 context.coll_calls[rank].pop(key)
 
             other.call = None
-            break;
+
 
     node.call = None
     edges.append((h, t))
@@ -160,30 +158,27 @@ def match_pt2pt(send_call, context, translate):
 
     for recv_call_idx in context.recv_calls[global_dst]:
         recv_call = context.all_calls[global_dst][recv_call_idx]
-        if recv_call.comm != comm:
-            continue
 
-        if recv_call.call == 'MPI_Recv' or recv_call.call == 'MPI_Sendrecv':
-            if recv_call.src is not None:
-                global_src = local2global(translate, comm, recv_call.src)
-                if (global_src == send_call.rank or global_src == ANY_SOURCE) and \
-                   (recv_call.rtag == send_call.stag or recv_call.rtag == ANY_TAG):
-                    t = (recv_call.rank, recv_call.index, recv_call.func, recv_call.tend)
-                    context.recv_calls[global_dst].remove(recv_call_idx)
-                    break
+        # Check for comm, src, and tag.
+        if recv_call.comm != comm: continue
 
-        elif recv_call.call == 'MPI_Irecv':
-            global_src = local2global(translate, comm, recv_call.src)
-            if (global_src == send_call.rank or global_src == ANY_SOURCE) and \
-               (recv_call.rtag == send_call.stag or recv_call.rtag == ANY_TAG):
-                req = recv_call.req
-                context.recv_calls[global_dst].remove(recv_call_idx)
-                # TODO should start from current node
-                wait_call = find_wait_test_call(req, global_dst, context)
+        global_src = local2global(translate, comm, recv_call.src)
+        if  (global_src == send_call.rank or global_src == ANY_SOURCE) and \
+            (recv_call.rtag == send_call.stag or recv_call.rtag == ANY_TAG):
+
+            context.recv_calls[global_dst].remove(recv_call_idx)
+
+            if recv_call.is_blocking_call():
+                t = (recv_call.rank, recv_call.index, recv_call.func, recv_call.tend)
+                break
+            else:
+                wait_call = find_wait_test_call(recv_call.req, global_dst, context)
                 if wait_call:
                     t = (wait_call.rank, wait_call.index, wait_call.func, wait_call.tend)
                     break
 
+    #if t == None:
+    #    print("TODO not possible", h, send_call.dst, global_dst, send_call.stag)
     edges.append((h, t))
 
 
