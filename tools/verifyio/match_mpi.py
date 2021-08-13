@@ -1,8 +1,7 @@
 import sys
 from gen_nodes import VerifyIOContext
+import gen_nodes
 
-ANY_SOURCE = -2
-ANY_TAG = -1
 edges = []
 
 class com_node:
@@ -57,31 +56,39 @@ def get_translation_table(reader):
 
 # Local rank to global rank
 def local2global(translate_table, comm_id, local_rank):
-    if local_rank == ANY_SOURCE:
-        return ANY_SOURCE
     if local_rank >= 0:
         return translate_table[comm_id][local_rank]
-    return -1
+    # ANY_SOURCE
+    return local_rank
 
 
 #####################  DEFINING FUNCTIONS TO MATCH CALLS #########################
 
-def find_wait_test_call(req, rank, context):
+def find_wait_test_call(req, rank, context, need_match_src_tag=False, src=0, tag=0):
 
     found = None
 
+    # We don't check the flag here, we checked it at gen_nodes.py
+    # We are certain that calls in wait_test_calls all have completed
+    # rquests
     for idx in context.wait_test_calls[rank]:
         wait_call = context.all_calls[rank][idx]
         func = wait_call.call
 
         if (func == 'MPI_Wait' or func == 'MPI_Waitall') or \
-           ((func == 'MPI_Test' or func == 'MPI_Testall') and (wait_call.reqflag > 0)):
+           (func == 'MPI_Test' or func == 'MPI_Testall') :
             if req in wait_call.req:
-                found = wait_call
-                wait_call.req.remove(req)
-                if(len(wait_call.req) == 0):
-                    context.wait_test_calls[rank].remove(idx)
-                break
+                if need_match_src_tag:
+                    if src==wait_call.src and tag==wait_call.rtag:
+                        found = wait_call
+                else:
+                    found = wait_call
+
+                if found:
+                    wait_call.req.remove(req)
+                    if(len(wait_call.req) == 0):
+                        context.wait_test_calls[rank].remove(idx)
+                    break
 
         elif func == 'MPI_Waitany' or func == 'MPI_Testany':
             if req in wait_call.req:
@@ -97,8 +104,8 @@ def find_wait_test_call(req, rank, context):
                 if str(inx) in wait_call.tindx:
                     found = wait_call
                     wait_call.req.remove(req)
-                    wait_call.reqflag = wait_call.reqflag - 1
-                    if wait_call.reqflag == 0:
+                    wait_call.tindx.remove(str(inx))
+                    if len(wait_call.tindx) == 0:
                         context.wait_test_calls[rank].remove(idx)
                     break
     return found
@@ -163,25 +170,25 @@ def match_pt2pt(send_call, context, translate):
         if recv_call.comm != comm: continue
 
         global_src = local2global(translate, comm, recv_call.src)
-        if  (global_src == send_call.rank or global_src == ANY_SOURCE) and \
-            (recv_call.rtag == send_call.stag or recv_call.rtag == ANY_TAG):
-
-            context.recv_calls[global_dst].remove(recv_call_idx)
+        if (global_src == send_call.rank or global_src == gen_nodes.ANY_SOURCE) and \
+           (recv_call.rtag == send_call.stag or recv_call.rtag == gen_nodes.ANY_TAG):
 
             if recv_call.is_blocking_call():
                 t = (recv_call.rank, recv_call.index, recv_call.func, recv_call.tend)
-                break
             else:
-                wait_call = find_wait_test_call(recv_call.req, global_dst, context)
+                if recv_call.rtag == gen_nodes.ANY_TAG or global_src == gen_nodes.ANY_SOURCE:
+                    wait_call = find_wait_test_call(recv_call.req, global_dst, context, True, send_call.rank, send_call.stag)
+                else:
+                    wait_call = find_wait_test_call(recv_call.req, global_dst, context)
                 if wait_call:
                     t = (wait_call.rank, wait_call.index, wait_call.func, wait_call.tend)
-                    break
-                else:
-                    print("Here???")
+
+        if t:
+            context.recv_calls[global_dst].remove(recv_call_idx)
             break
 
-    #if t == None:
-    #    print("TODO not possible", h, global_dst, send_call.stag)
+    if t == None:
+        print("TODO not possible", h, global_dst, send_call.stag)
     edges.append((h, t))
 
 
@@ -214,11 +221,13 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
     # validate result
     for rank in range(context.num_ranks):
         if len(context.recv_calls[rank]) != 0:
-            print("No! rank %d still has unmatched recvs: %d" %(rank, len(context.recv_calls[rank])))
+            print("Rank %d still has unmatched recvs: %d" %(rank, len(context.recv_calls[rank])))
             for idx in context.recv_calls[rank]:
                 recv_call = context.all_calls[rank][idx]
-                print(recv_call.index, recv_call.func, recv_call.src, recv_call.rtag)
+                #print(recv_call.index, recv_call.func, recv_call.src, recv_call.rtag)
         if len(context.coll_calls[rank]) != 0:
-            print("No! rank %d still has unmatched colls: %d" %(rank, len(context.coll_calls[rank])))
+            print("Rank %d still has unmatched colls: %d" %(rank, len(context.coll_calls[rank])))
+        if len(context.wait_test_calls[rank]) != 0:
+            print("Rank %d still has unmatched wait/test: %d" %(rank, len(context.wait_test_calls[rank])))
 
     return context.all_calls, edges

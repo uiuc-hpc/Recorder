@@ -1,5 +1,8 @@
 from itertools import repeat
-import match_mpi
+
+ANY_SOURCE = -2
+ANY_TAG = -1
+
 
 class Call:
     def __init__(self, rank, index, call):
@@ -80,6 +83,12 @@ class VerifyIOContext:
         return False
 
     def generate_mpi_nodes(self, reader):
+        def mpi_status_to_src_tag(status_str):
+            if status_str.startswith("["):
+                return status_str[1:-1].split("_")[0], status_str[1:-1].split("_")[1]
+            else:   # MPI_STATUS_IGNORE
+                return 0, 0
+
         ignored_calls = set()
 
         func_list = reader.funcs
@@ -99,20 +108,17 @@ class VerifyIOContext:
                 elif call == 'MPI_Recv':
                     skip, src, rtag, comm = False, args[3],args[4], args[5]
                     # get the actual source from MPI_Status
-                    if int(src) == match_mpi.ANY_SOURCE:
+                    if int(src) == ANY_SOURCE:
                         src = args[6][1:-1].split("_")[0]
-                    if int(rtag) == match_mpi.ANY_TAG:
+                    if int(rtag) == ANY_TAG:
                         rtag = args[6][1:-1].split("_")[1]
                 elif call == 'MPI_Sendrecv':
                     skip, src, dst, stag, rtag, comm = False, args[8], args[3], args[4], args[9], args[10]
                 elif call == 'MPI_Irecv':
                     skip, src, rtag, comm, req = False, args[3], args[4], args[5], args[6]
-                    if int(src) == match_mpi.ANY_SOURCE:
-                        print("TODO: any source in MPI_Irecv")
-                    if int(rtag) == match_mpi.ANY_TAG:
-                        print("TODO: any tag in MPI_Irecv")
                 elif call == 'MPI_Wait':
                     skip, req = False, set([args[0]])
+                    src, rtag = mpi_status_to_src_tag(args[1])
                 elif call == 'MPI_Waitall':
                     reqs = args[1][1:-1].split(',')
                     skip, req = False, set(reqs)
@@ -125,6 +131,7 @@ class VerifyIOContext:
                     skip, req, reqflag, tindx = False, reqs, int(args[2]), tind
                 elif call == 'MPI_Test':
                     skip, req, reqflag = False, set([args[0]]), int(args[1])
+                    src, rtag = mpi_status_to_src_tag(args[2])
                 elif call == 'MPI_Testall':
                     reqs = args[1][1:-1].split(',')
                     skip, req, reqflag = False, set(reqs), int(args[2])
