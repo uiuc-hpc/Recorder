@@ -1,4 +1,5 @@
 from itertools import repeat
+import match_mpi
 
 class Call:
     def __init__(self, rank, index, call):
@@ -40,6 +41,7 @@ class VerifyIOContext:
         self.num_ranks = reader.GM.total_ranks
         self.all_calls       = [[] for i in repeat(None, self.num_ranks)]
         self.recv_calls      = [[] for i in repeat(None, self.num_ranks)]
+        self.send_calls      = [0 for i in repeat(None, self.num_ranks)]
         self.wait_test_calls = [[] for i in repeat(None, self.num_ranks)]
         self.coll_calls      = [{} for i in repeat(None, self.num_ranks)]
 
@@ -96,10 +98,19 @@ class VerifyIOContext:
                     skip, dst, stag, comm = False, args[3], args[4], args[5]
                 elif call == 'MPI_Recv':
                     skip, src, rtag, comm = False, args[3],args[4], args[5]
+                    # get the actual source from MPI_Status
+                    if int(src) == match_mpi.ANY_SOURCE:
+                        src = args[6][1:-1].split("_")[0]
+                    if int(rtag) == match_mpi.ANY_TAG:
+                        print("TODO: any tag in MPI_Recv")
                 elif call == 'MPI_Sendrecv':
                     skip, src, dst, stag, rtag, comm = False, args[8], args[3], args[4], args[9], args[10]
                 elif call == 'MPI_Irecv':
                     skip, src, rtag, comm, req = False, args[3], args[4], args[5], args[6]
+                    if int(src) == match_mpi.ANY_SOURCE:
+                        print("TODO: any source in MPI_Irecv")
+                    if int(rtag) == match_mpi.ANY_TAG:
+                        print("TODO: any tag in MPI_Irecv")
                 elif call == 'MPI_Wait':
                     skip, req = False, set([args[0]])
                 elif call == 'MPI_Waitall':
@@ -201,6 +212,8 @@ class VerifyIOContext:
                             self.coll_calls[rank][key].append(idx)
                         else:
                             self.coll_calls[rank][key] = [idx]
+                    if self.is_send_call(call):
+                        self.send_calls[rank] += 1
                     if self.is_recv_call(call):
                         self.recv_calls[rank].append(idx)
                     if call.startswith("MPI_Wait") or call.startswith("MPI_Test"):
