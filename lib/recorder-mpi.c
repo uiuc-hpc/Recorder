@@ -174,7 +174,7 @@ static inline char* status2str(MPI_Status *status) {
     if(status == MPI_STATUS_IGNORE)
         strcpy(tmp, "MPI_STATUS_IGNORE");
     else
-        sprintf(tmp, "[%d %d %d]", status->MPI_SOURCE, status->MPI_TAG, status->MPI_ERROR);
+        sprintf(tmp, "[%d %d]", status->MPI_SOURCE, status->MPI_TAG);
     return tmp;
 }
 
@@ -186,6 +186,18 @@ static inline char* whence2name(int whence) {
     if(whence == MPI_SEEK_END)
         return strdup("MPI_SEEK_END");
 }
+
+/**
+ * For MPI_Wait and MPI_Test we always fill in MPI_Status
+ * even if user passed MPI_STATUS_IGNORE.
+ *
+ * The purpose is that later when we match MPI calls
+ * we are sure we can find out the recveive src/tag.
+ * even in this case:
+ *      Irecv(ang_source) + MPI_Wait(MPI_STATUS_IGNORE);
+ */
+
+
 
 
 /**
@@ -568,8 +580,8 @@ int RECORDER_MPI_DECL(MPI_Cart_shift) (MPI_Comm comm, int direction, int disp, i
 }
 int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
     size_t r = *request;
-    MPI_Status *status_p = (status == MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status));
+    MPI_Status *status_p = (status==MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status_p));
     char** args = assemble_args_list(2, itoa(r), status2str(status_p));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -695,7 +707,7 @@ int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
 // MPI_Ireduce and MPI_Igather on 2020 12/18
 int RECORDER_MPI_DECL(MPI_Test) (MPI_Request *request, int *flag, MPI_Status *status) {
     size_t r = *request;
-    MPI_Status *status_p = (status == MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
+    MPI_Status *status_p = (status==MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Test, (request, flag, status_p));
     char **args = assemble_args_list(3, itoa(r), itoa(*flag), status2str(status_p));
     RECORDER_INTERCEPTOR(3, args);
