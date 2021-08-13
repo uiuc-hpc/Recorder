@@ -58,6 +58,7 @@
 #include <zlib.h>
 #include <assert.h>
 #include <search.h>
+#include <alloca.h>
 
 #include "mpi.h"
 #include "recorder.h"
@@ -567,8 +568,9 @@ int RECORDER_MPI_DECL(MPI_Cart_shift) (MPI_Comm comm, int direction, int disp, i
 }
 int RECORDER_MPI_DECL(MPI_Wait) (MPI_Request *request, MPI_Status *status) {
     size_t r = *request;
+    MPI_Status *status_p = (status == MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Wait, (request, status));
-    char **args = assemble_args_list(2, itoa(r), status2str(status));
+    char** args = assemble_args_list(2, itoa(r), status2str(status_p));
     RECORDER_INTERCEPTOR(2, args);
 }
 
@@ -693,8 +695,9 @@ int RECORDER_MPI_DECL(MPI_File_get_size) (MPI_File fh, MPI_Offset *offset) {
 // MPI_Ireduce and MPI_Igather on 2020 12/18
 int RECORDER_MPI_DECL(MPI_Test) (MPI_Request *request, int *flag, MPI_Status *status) {
     size_t r = *request;
-    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Test, (request, flag, status));
-    char **args = assemble_args_list(3, itoa(r), itoa(*flag), status2str(status));
+    MPI_Status *status_p = (status == MPI_STATUS_IGNORE) ? alloca(sizeof(MPI_Status)) : status;
+    RECORDER_INTERCEPTOR_NOIO(int, PMPI_Test, (request, flag, status_p));
+    char **args = assemble_args_list(3, itoa(r), itoa(*flag), status2str(status_p));
     RECORDER_INTERCEPTOR(3, args);
 }
 int RECORDER_MPI_DECL(MPI_Testall) (int count, MPI_Request requests[], int *flag, MPI_Status statuses[]) {
