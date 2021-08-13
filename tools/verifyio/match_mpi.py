@@ -75,7 +75,7 @@ def find_wait_test_call(req, rank, context):
         func = wait_call.call
 
         if (func == 'MPI_Wait' or func == 'MPI_Waitall') or \
-           ((func == 'MPI_Test' or func == 'MPI_Testall')):
+           ((func == 'MPI_Test' or func == 'MPI_Testall') and (wait_call.reqflag > 0)):
             if req in wait_call.req:
                 found = wait_call
                 wait_call.req.remove(req)
@@ -176,9 +176,12 @@ def match_pt2pt(send_call, context, translate):
                 if wait_call:
                     t = (wait_call.rank, wait_call.index, wait_call.func, wait_call.tend)
                     break
+                else:
+                    print("Here???")
+            break
 
-    if t == None:
-        print("TODO not possible", h, send_call.dst, global_dst, send_call.stag)
+    #if t == None:
+    #    print("TODO not possible", h, global_dst, send_call.stag)
     edges.append((h, t))
 
 
@@ -195,8 +198,11 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
     context = VerifyIOContext(reader, mpi_sync_calls)
     context.generate_mpi_nodes(reader)
 
-    for rank in range(context.num_ranks):
 
+    for rank in range(context.num_ranks):
+        print("Rank: %d, recv calls: %d, send calls: %d" %(rank, len(context.recv_calls[rank]), context.send_calls[rank]))
+
+    for rank in range(context.num_ranks):
         for node in context.all_calls[rank]:
 
             if context.is_coll_call(node.call):
@@ -206,11 +212,13 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
                 match_pt2pt(node, context, translate)
 
     # validate result
-    '''
     for rank in range(context.num_ranks):
         if len(context.recv_calls[rank]) != 0:
-            print("No!")
+            print("No! rank %d still has unmatched recvs: %d" %(rank, len(context.recv_calls[rank])))
+            for idx in context.recv_calls[rank]:
+                recv_call = context.all_calls[rank][idx]
+                print(recv_call.index, recv_call.func, recv_call.src, recv_call.rtag)
         if len(context.coll_calls[rank]) != 0:
-            print("No!", context.coll_calls[rank])
-    '''
+            print("No! rank %d still has unmatched colls: %d" %(rank, len(context.coll_calls[rank])))
+
     return context.all_calls, edges

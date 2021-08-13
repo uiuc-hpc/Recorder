@@ -130,7 +130,6 @@ if __name__ == "__main__":
         total_nodes += len(nodes[rank])
 
 
-
     G = generate_graph(nodes, edges, include_vc=False)
     print("Nodes: %d, Edges: %d" %(len(G.nodes()), len(G.edges())))
 

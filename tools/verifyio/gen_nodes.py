@@ -102,7 +102,7 @@ class VerifyIOContext:
                     if int(src) == match_mpi.ANY_SOURCE:
                         src = args[6][1:-1].split("_")[0]
                     if int(rtag) == match_mpi.ANY_TAG:
-                        print("TODO: any tag in MPI_Recv")
+                        rtag = args[6][1:-1].split("_")[1]
                 elif call == 'MPI_Sendrecv':
                     skip, src, dst, stag, rtag, comm = False, args[8], args[3], args[4], args[9], args[10]
                 elif call == 'MPI_Irecv':
