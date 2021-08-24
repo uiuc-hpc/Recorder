@@ -120,9 +120,10 @@ char* file2id(MPI_File *file) {
     }
 }
 
-void add_mpi_comm(MPI_Comm *newcomm) {
+// Return the relative rank in the new communicator
+int add_mpi_comm(MPI_Comm *newcomm) {
     if(newcomm == NULL || *newcomm == MPI_COMM_NULL)
-        return;
+        return - 1;
     int new_rank, world_rank;
     PMPI_Comm_rank(*newcomm, &new_rank);
     PMPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -141,6 +142,7 @@ void add_mpi_comm(MPI_Comm *newcomm) {
     entry->id = id;
 
     HASH_ADD_KEYPTR(hh, mpi_comm_table, entry->key, sizeof(MPI_Comm), entry);
+    return new_rank;
 }
 
 char* comm2name(MPI_Comm *comm) {
@@ -564,9 +566,9 @@ int RECORDER_MPI_DECL(MPI_Cart_rank) (MPI_Comm comm, CONST int coords[], int *ra
 }
 int RECORDER_MPI_DECL(MPI_Cart_create) (MPI_Comm comm_old, int ndims, CONST int dims[], CONST int periods[], int reorder, MPI_Comm *comm_cart) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Cart_create, (comm_old, ndims, dims, periods, reorder, comm_cart));
-    add_mpi_comm(comm_cart);
-    char **args = assemble_args_list(6, comm2name(&comm_old), itoa(ndims), ptoa(dims), ptoa(periods), itoa(reorder), comm2name(comm_cart));
-    RECORDER_INTERCEPTOR(6, args)
+    int newrank = add_mpi_comm(comm_cart);
+    char **args = assemble_args_list(7, comm2name(&comm_old), itoa(ndims), ptoa(dims), ptoa(periods), itoa(reorder), comm2name(comm_cart), itoa(newrank));
+    RECORDER_INTERCEPTOR(7, args)
 }
 int RECORDER_MPI_DECL(MPI_Cart_get) (MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Cart_get, (comm, maxdims, dims, periods, coords));
@@ -664,23 +666,23 @@ int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datat
 
 int RECORDER_MPI_DECL(MPI_Comm_split) (MPI_Comm comm, int color, int key, MPI_Comm *newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split, (comm, color, key, newcomm));
-    add_mpi_comm(newcomm);
-    char **args = assemble_args_list(4, comm2name(&comm), itoa(color), itoa(key), comm2name(newcomm));
-    RECORDER_INTERCEPTOR(4, args);
+    int newrank = add_mpi_comm(newcomm);
+    char **args = assemble_args_list(5, comm2name(&comm), itoa(color), itoa(key), comm2name(newcomm), itoa(newrank));
+    RECORDER_INTERCEPTOR(5, args);
 }
 
 int RECORDER_MPI_DECL(MPI_Comm_create) (MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_create, (comm, group, newcomm));
-    add_mpi_comm(newcomm);
-    char **args = assemble_args_list(3, comm2name(&comm), itoa(group), comm2name(newcomm));
-    RECORDER_INTERCEPTOR(3, args);
+    int newrank = add_mpi_comm(newcomm);
+    char **args = assemble_args_list(4, comm2name(&comm), itoa(group), comm2name(newcomm), itoa(newrank));
+    RECORDER_INTERCEPTOR(4, args);
 }
 
 int RECORDER_MPI_DECL(MPI_Comm_dup) (MPI_Comm comm, MPI_Comm *newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_dup, (comm, newcomm));
-    add_mpi_comm(newcomm);
-    char **args = assemble_args_list(2, comm2name(&comm), comm2name(newcomm));
-    RECORDER_INTERCEPTOR(2, args);
+    int newrank = add_mpi_comm(newcomm);
+    char **args = assemble_args_list(3, comm2name(&comm), comm2name(newcomm), itoa(newrank));
+    RECORDER_INTERCEPTOR(3, args);
 }
 
 
@@ -794,15 +796,15 @@ int RECORDER_MPI_DECL(MPI_Comm_free) (MPI_Comm *comm) {
 
 int RECORDER_MPI_DECL(MPI_Cart_sub) (MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Cart_sub, (comm, remain_dims, newcomm));
-    add_mpi_comm(newcomm);
-    char **args = assemble_args_list(3, comm2name(&comm), ptoa(remain_dims), comm2name(newcomm));
-    RECORDER_INTERCEPTOR(3, args);
+    int newrank = add_mpi_comm(newcomm);
+    char **args = assemble_args_list(4, comm2name(&comm), ptoa(remain_dims), comm2name(newcomm), itoa(newrank));
+    RECORDER_INTERCEPTOR(4, args);
 }
 
 
 int RECORDER_MPI_DECL(MPI_Comm_split_type) (MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Comm_split_type, (comm, split_type, key, info, newcomm));
-    add_mpi_comm(newcomm);
-    char **args = assemble_args_list(5, comm2name(&comm), itoa(split_type), itoa(key), ptoa(&info), comm2name(newcomm));
-    RECORDER_INTERCEPTOR(5, args);
+    int newrank = add_mpi_comm(newcomm);
+    char **args = assemble_args_list(6, comm2name(&comm), itoa(split_type), itoa(key), ptoa(&info), comm2name(newcomm), itoa(newrank));
+    RECORDER_INTERCEPTOR(6, args);
 }
