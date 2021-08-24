@@ -12,7 +12,8 @@ class com_node:
 def get_translation_table(reader):
     func_list = reader.funcs
 
-    new_comms = {}
+    translate = {}
+    translate['MPI_COMM_WORLD'] = range(reader.GM.total_ranks)
 
     for rank in range(reader.GM.total_ranks):
         records = reader.records[rank]
@@ -20,38 +21,31 @@ def get_translation_table(reader):
             record = records[i]
             call = func_list[record.func_id]
 
-            uid, order, world_rank = None, rank, rank
+            comm_id, local_rank, world_rank = None, rank, rank
 
             if call == 'MPI_Comm_split':
-                uid = record.args[3]
-                order = int(record.args[2])
+                comm_id = record.args[3]
+                local_rank = int(record.args[4])
             if call == 'MPI_Comm_split_type':
-                uid = record.args[4]
-                order = int(record.args[2])
+                comm_id = record.args[4]
+                local_rank = int(record.args[5])
             if call == 'MPI_Comm_dup':
-                uid = record.args[1]
+                comm_id = record.args[1]
+                local_rank = int(record.args[2])
             if call == 'MPI_Cart_create':
-                uid = record.args[5]
+                comm_id = record.args[5]
+                local_rank = int(record.args[6])
             if call == 'MPI_Comm_create':
-                uid = record.args[2]
+                comm_id = record.args[2]
+                local_rank = int(record.args[3])
             if call == 'MPI_Cart_sub':
-                uid = record.args[2]
+                comm_id = record.args[2]
+                local_rank = int(record.args[3])
 
-            if uid:
-                if uid in new_comms:
-                    new_comms[uid].append((order, world_rank))
-                else:
-                    new_comms[uid] = [(order, world_rank)]
-
-    translate = {}
-    translate['MPI_COMM_WORLD'] = range(reader.GM.total_ranks)
-
-    for uid, procs in new_comms.items():
-        translate[uid] = []
-        procs.sort(key = lambda x: x[1])
-        for order, world_rank in procs:
-            translate[uid].append(world_rank)
-
+            if comm_id:
+                if comm_id not in translate:
+                    translate[comm_id] = range(reader.GM.total_ranks)
+                translate[comm_id][local_rank] = world_rank
     return translate
 
 # Local rank to global rank
@@ -170,6 +164,7 @@ def match_pt2pt(send_call, context, translate):
         if recv_call.comm != comm: continue
 
         global_src = local2global(translate, comm, recv_call.src)
+
         if (global_src == send_call.rank or global_src == gen_nodes.ANY_SOURCE) and \
            (recv_call.rtag == send_call.stag or recv_call.rtag == gen_nodes.ANY_TAG):
 
