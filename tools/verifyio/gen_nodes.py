@@ -1,4 +1,5 @@
 from itertools import repeat
+import match_mpi
 
 ANY_SOURCE = -2
 ANY_TAG = -1
@@ -43,7 +44,7 @@ class VerifyIOContext:
     def __init__(self, reader, mpi_sync_calls):
         self.num_ranks = reader.GM.total_ranks
         self.all_calls       = [[] for i in repeat(None, self.num_ranks)]
-        self.recv_calls      = [[] for i in repeat(None, self.num_ranks)]
+        self.recv_calls      = [[[] for i in repeat(None, self.num_ranks)] for j in repeat(None, self.num_ranks)]
         self.send_calls      = [0 for i in repeat(None, self.num_ranks)]
         self.wait_test_calls = [[] for i in repeat(None, self.num_ranks)]
         self.coll_calls      = [{} for i in repeat(None, self.num_ranks)]
@@ -82,7 +83,7 @@ class VerifyIOContext:
             return True
         return False
 
-    def generate_mpi_nodes(self, reader):
+    def generate_mpi_nodes(self, reader, translate):
         def mpi_status_to_src_tag(status_str):
             if status_str.startswith("["):
                 return status_str[1:-1].split("_")[0], status_str[1:-1].split("_")[1]
@@ -222,7 +223,8 @@ class VerifyIOContext:
                     if self.is_send_call(call):
                         self.send_calls[rank] += 1
                     if self.is_recv_call(call):
-                        self.recv_calls[rank].append(idx)
+                        global_src = match_mpi.local2global(translate, comm, int(src))
+                        self.recv_calls[rank][global_src].append(idx)
                     if call.startswith("MPI_Wait") or call.startswith("MPI_Test"):
                         self.wait_test_calls[rank].append(idx)
 

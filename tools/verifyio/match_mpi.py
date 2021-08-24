@@ -1,6 +1,5 @@
 import sys
 from gen_nodes import VerifyIOContext
-import gen_nodes
 
 edges = []
 
@@ -156,17 +155,15 @@ def match_pt2pt(send_call, context, translate):
 
     comm = send_call.comm
     global_dst =  local2global(translate, comm, send_call.dst)
+    global_src = send_call.rank
 
-    for recv_call_idx in context.recv_calls[global_dst]:
+    for recv_call_idx in context.recv_calls[global_dst][global_src]:
         recv_call = context.all_calls[global_dst][recv_call_idx]
 
         # Check for comm, src, and tag.
         if recv_call.comm != comm: continue
 
-        global_src = local2global(translate, comm, recv_call.src)
-
-        if (global_src == send_call.rank or global_src == gen_nodes.ANY_SOURCE) and \
-           (recv_call.rtag == send_call.stag or recv_call.rtag == gen_nodes.ANY_TAG):
+        if (recv_call.rtag == send_call.stag or recv_call.rtag == gen_nodes.ANY_TAG):
 
             if recv_call.is_blocking_call():
                 t = (recv_call.rank, recv_call.index, recv_call.func, recv_call.tend)
@@ -179,7 +176,7 @@ def match_pt2pt(send_call, context, translate):
                     t = (wait_call.rank, wait_call.index, wait_call.func, wait_call.tend)
 
         if t:
-            context.recv_calls[global_dst].remove(recv_call_idx)
+            context.recv_calls[global_dst][global_src].remove(recv_call_idx)
             break
 
     if t == None:
@@ -198,8 +195,7 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
     translate = get_translation_table(reader)
 
     context = VerifyIOContext(reader, mpi_sync_calls)
-    context.generate_mpi_nodes(reader)
-
+    context.generate_mpi_nodes(reader, translate)
 
     for rank in range(context.num_ranks):
         print("Rank: %d, recv calls: %d, send calls: %d" %(rank, len(context.recv_calls[rank]), context.send_calls[rank]))
@@ -215,11 +211,11 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
 
     # validate result
     for rank in range(context.num_ranks):
-        if len(context.recv_calls[rank]) != 0:
-            print("Rank %d still has unmatched recvs: %d" %(rank, len(context.recv_calls[rank])))
-            for idx in context.recv_calls[rank]:
-                recv_call = context.all_calls[rank][idx]
-                #print(recv_call.index, recv_call.func, recv_call.src, recv_call.rtag)
+        recvs_sum = 0
+        for i in range(context.num_ranks):
+            recvs_sum += len(context.recv_calls[rank][i])
+        if recvs_sum:
+            print("Rank %d still has unmatched recvs: %d" %(rank, recvs_sum))
         if len(context.coll_calls[rank]) != 0:
             print("Rank %d still has unmatched colls: %d" %(rank, len(context.coll_calls[rank])))
         if len(context.wait_test_calls[rank]) != 0:
