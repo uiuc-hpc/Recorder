@@ -117,6 +117,7 @@ void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, 
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
     RECORDER_INTERCEPTOR(6, args);
 }
+
 int RECORDER_POSIX_DECL(msync)(void *addr, size_t length, int flags) {
     RECORDER_INTERCEPTOR_NOIO(int, msync, (addr, length, flags));
     char** args = assemble_args_list(3, ptoa(addr), itoa(length), itoa(flags));
@@ -441,13 +442,8 @@ int RECORDER_POSIX_DECL(closedir)(DIR *dir) {
 /*
 void RECORDER_POSIX_DECL(rewinddir)(DIR *dir) {
     // TODO
-    char log_text[TRACE_LEN];
-    sprintf(log_text, "rewinddir (%p)", dir);
-    RECORDER_INTERCEPTOR(rewinddir, NULL, (dir), NULL, 0, 0, log_text)
 
 }
-*/
-/*
 int RECORDER_POSIX_DECL(__xmknod)(int ver, const char *path, mode_t mode, dev_t dev) {
     RECORDER_INTERCEPTOR_NOIO(int, __xmknod, (ver, path, mode, dev));
     char** args = assemble_args_list(4, itoa(ver), realrealpath(path), itoa(mode), itoa(dev));
@@ -459,11 +455,12 @@ int RECORDER_POSIX_DECL(__xmknodat)(int ver, int fd, const char *path, mode_t mo
     RECORDER_INTERCEPTOR(5, args);
 }
 */
+
 // Advanced File Operations
 // TODO: third argument
 #ifndef DISABLE_FCNTL_TRACE
 int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
-    if(cmd==F_DUPFD || cmd==F_SETFD || cmd==F_SETFL || cmd==F_SETOWN) {            // arg: int
+    if(cmd==F_DUPFD || cmd==F_DUPFD_CLOEXEC || cmd==F_SETFD || cmd==F_SETFL || cmd==F_SETOWN) {            // arg: int
         va_list arg;
         va_start(arg, cmd);
         int val = va_arg(arg, int);
@@ -483,7 +480,7 @@ int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd, lk));
         char** args = assemble_args_list(3, itoa(fd), itoa(cmd), itoa(lk->l_type));
         RECORDER_INTERCEPTOR(3, args);
-    } else {                                                                        // assume arg: void
+    } else {                        // assume arg: void, cmd==F_GETOWN_EX || cmd==F_SETOWN_EX ||cmd==F_GETSIG || cmd==F_SETSIG)
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd));
         char** args = assemble_args_list(2, itoa(fd), itoa(cmd));
         RECORDER_INTERCEPTOR(2, args);
@@ -519,6 +516,7 @@ mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
     char** args = assemble_args_list(1, itoa(mask));
     RECORDER_INTERCEPTOR(1, args);
 }
+
 FILE* RECORDER_POSIX_DECL(fdopen)(int fd, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fdopen, (fd, mode));
     record->res = stream2fd(res);
