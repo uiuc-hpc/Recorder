@@ -127,6 +127,9 @@ Publications
 
 Change Log
 ----------
+**Recorder 2.2.1** Aug 25, 2021
+1. Include the code for verifying I/O synchronizations (tools/verifyio).
+2. Add support for multi-threaded programs.
 
 **Recorder 2.2.0** Jan 25, 2021
 1. Add support for MPI_Cart_sub, MPI_Comm_split_type, etc.
