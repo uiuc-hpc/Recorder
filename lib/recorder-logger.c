@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <pthread.h>
 #include <errno.h>
 #include "recorder.h"
 
@@ -9,8 +10,9 @@
 #define TIME_RESOLUTION 0.000001
 #define RECORD_WINDOW_SIZE 3                    // A sliding window for peephole compression
 #define MEMBUF_SIZE 6*1024*1024                 // Memory buffer size, default 6MB
-#define VERSION_STR "2.2.0"
+#define VERSION_STR "2.2.1"
 
+pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct RecorderLogger {
     int rank;
@@ -173,6 +175,7 @@ void free_record(Record *record) {
 
 // Mode 3. Write in Recorder format (binary + peephole compression)
 void write_in_recorder(Record *new_record) {
+    pthread_mutex_lock(&g_mutex);
 
     bool compress = false;
     Record *diff_record = NULL;
@@ -227,6 +230,8 @@ void write_in_recorder(Record *new_record) {
     for(i = RECORD_WINDOW_SIZE-1; i > 0; i--)
         logger.recordWindow[i] = logger.recordWindow[i-1];
     logger.recordWindow[0] = new_record;
+
+    pthread_mutex_unlock(&g_mutex);
 }
 
 
