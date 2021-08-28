@@ -13,7 +13,6 @@ bool __recording;
 // Log pointer addresses in the trace file?
 static bool log_pointer = false;
 static size_t memory_usage = 0;
-static FilenameHashTable* filename_table = NULL;
 
 
 void utils_init() {
@@ -24,19 +23,8 @@ void utils_init() {
 }
 
 void utils_finalize() {
-    // Destroy the hash table for filenames mapping
-    FilenameHashTable *current, *tmp;
-    HASH_ITER(hh, filename_table, current, tmp) {
-        HASH_DEL(filename_table, current);
-        recorder_free(current, sizeof(FilenameHashTable));
-    }
-
-    //printf("memory usage: %ld\n", memory_usage);
 }
 
-FilenameHashTable* get_filename_map() {
-    return filename_table;
-}
 
 void* recorder_malloc(size_t size) {
     if(size == 0)
@@ -186,28 +174,22 @@ unsigned char get_function_id_by_name(const char* name) {
 
 /*
  * My implementation to replace realpath() system call
- * return the filename id from the hashmap
  */
 inline char* realrealpath(const char *path) {
     if(!__recording) return strdup(path);
 
-    FilenameHashTable *entry = recorder_malloc(sizeof(FilenameHashTable));
-
-    char* res = realpath(path, entry->name);    // we do not intercept realpath()
+    char* res = realpath(path, NULL);    // we do not intercept realpath()
     if (res == NULL)                            // realpath() could return NULL on error
-        strcpy(entry->name, path);
+        return strdup(path);
+    return res;
+}
 
-    FilenameHashTable *found;
-    HASH_FIND_STR(filename_table, entry->name, found);
-
-    // return duplicated name, because we need to free record.args later
-    if(found) {
-        recorder_free(entry, sizeof(FilenameHashTable));
-        return strdup(found->name);
-    } else {
-        // insert to hashtable
-        HASH_ADD_STR(filename_table, name, entry);
-        return strdup(entry->name);
+int min_in_array(int* arr, size_t len) {
+    int min_val = arr[0];
+    for(int i = 1; i < len; i++) {
+        if(arr[i] < min_val)
+            min_val = arr[i];
     }
+    return min_val;
 }
 

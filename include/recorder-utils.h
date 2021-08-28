@@ -1,11 +1,6 @@
 #ifndef _RECORDER_UTILS_H_
 #define _RECORDER_UTILS_H_
 
-typedef struct FilenameHashTable_t {
-    char name[PATH_MAX];             // key
-    UT_hash_handle hh;
-} FilenameHashTable;
-
 
 void utils_init();
 void utils_finalize();
@@ -22,7 +17,8 @@ char** assemble_args_list(int arg_count, ...);
 const char* get_function_name_by_id(int id);
 unsigned char get_function_id_by_name(const char* name);
 char* realrealpath(const char* path);           // return the absolute path (mapped to id in string)
-FilenameHashTable* get_filename_map();
+
+int min_in_array(int* arr, size_t len);
 
 
 #endif

@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
+#include <uthash.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
@@ -82,16 +83,20 @@ typedef struct Record_t {
     int res;                    // result returned from the original function call
 } Record;
 
+typedef struct RecordHash_t {
+    void *key;
+    int key_len;
+    int rank;
+    int terminal_id;
+    int count;
+    UT_hash_handle hh;
+} RecordHash;
 
-// Compression method, use peephole compression by default
-enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_RECORDER=2, COMP_ZLIB=3 };
-typedef enum CompressionMode_t CompressionMode;
 
 
 typedef struct RecorderGlobalDef_t {
     double time_resolution;
     int total_ranks;
-    CompressionMode compression_mode;
     int peephole_window_size;
 } RecorderGlobalDef;
 
