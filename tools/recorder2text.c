@@ -27,8 +27,8 @@ void write_to_textfile(const char* path, Record *records, int len, RecorderReade
 int main(int argc, char **argv) {
 
     char textfile_dir[256], textfile_path[256];
-    //sprintf(textfile_dir, "%s/_text", argv[1]);
-    sprintf(textfile_dir, "./_text");
+    sprintf(textfile_dir, "%s/_text", argv[1]);
+    //sprintf(textfile_dir, "./_text");
     mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     RecorderReader reader;
