@@ -56,16 +56,16 @@ cmake -DCMAKE_INSTALL_PREFIX=[install location] -DCMAKE_PREFIX_PATH=[semicolon s
 By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
 
 Options for `cmake` can be used to disable one ore more levels of traces. You can use ccmake utility as well. Valid options:
- * -DRECORDER_DISABLE_POSIX_TRACE
- * -DRECORDER_DISABLE_MPIO_TRACE
- * -DRECORDER_DISABLE_HDF5_TRACE
+ * -DRECORDER_ENABLE_POSIX_TRACE
+ * -DRECORDER_ENABLE_MPIO_TRACE
+ * -DRECORDER_ENABLE_HDF5_TRACE
 
 **Other options:**
 
 (1) `fcntl`:
 
 Since v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
-are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `-DRECORDER_DISABLE_FCNTL_TRACE`.
+are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `-DRECORDER_ENABLE_FCNTL_TRACE`.
  
 (2) Logging pointers
 
