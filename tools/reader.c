@@ -1,16 +1,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "./reader.h"
 
 void read_global_metadata(char* path, RecorderGlobalDef *RGD) {
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
+    assert(fp != NULL);
     fread(RGD, sizeof(RecorderGlobalDef), 1, fp);
     fclose(fp);
 }
 
 void read_func_list(char* path, RecorderReader *reader) {
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
 
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp) - sizeof(RecorderGlobalDef);
@@ -36,7 +38,7 @@ void read_func_list(char* path, RecorderReader *reader) {
 
 
 void read_local_metadata(char* path, RecorderLocalDef *RLD) {
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
     fread(RLD, sizeof(RecorderLocalDef), 1, fp);
 
     RLD->filemap = (char**) malloc(sizeof(char*) * RLD->num_files);
@@ -81,7 +83,7 @@ Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD) 
 
     Record *records = (Record*) malloc(sizeof(Record) * RLD->total_records);
 
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
 
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp);
@@ -95,7 +97,8 @@ Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD) 
     long rec_start_pos = 0;
 
     int i, ri = 0;
-    while(rec_start_pos < fsize) {
+    // TODO the trace could contain more than RLD->total_records. where is wrong?
+    while(rec_start_pos < fsize && ri < RLD->total_records) {
         // read one record
         Record *r = &(records[ri++]);
 
@@ -209,11 +212,9 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
     char local_metadata_file[256];
     char log_file[256];
 
-
     sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
     read_global_metadata(global_metadata_file, &(reader->RGD));
     read_func_list(global_metadata_file, reader);
-
 
     reader->RLDs = (RecorderLocalDef*) malloc(sizeof(RecorderLocalDef) * reader->RGD.total_ranks);
     reader->records = (Record**) malloc(sizeof(Record*) * reader->RGD.total_ranks);
@@ -225,8 +226,10 @@ void recorder_read_traces(const char* logs_dir, RecorderReader *reader) {
 
         sprintf(log_file, "%s/%d.itf", logs_dir, rank);
         reader->records[rank] = read_records(log_file, &(reader->RLDs[rank]), &(reader->RGD));
+
         decompress_records(reader->records[rank], reader->RLDs[rank].total_records);
         sort_records_by_tstart(reader->records[rank], reader->RLDs[rank].total_records);
+
         printf("\rRead trace file for rank %d, records: %d", rank, reader->RLDs[rank].total_records);
         fflush(stdout);
     }
