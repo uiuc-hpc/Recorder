@@ -107,12 +107,12 @@ int RECORDER_POSIX_DECL(fdatasync)(int fd) {
     RECORDER_INTERCEPTOR(1, args);
 }
 
-void* RECORDER_POSIX_DECL(mmap64)(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
+extern inline void* RECORDER_POSIX_DECL(mmap64)(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
     RECORDER_INTERCEPTOR_NOIO(void*, mmap64, (addr, length, prot, flags, fd, offset));
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
     RECORDER_INTERCEPTOR(6, args);
 }
-void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+extern inline void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     RECORDER_INTERCEPTOR_NOIO(void*, mmap, (addr, length, prot, flags, fd, offset));
     char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
     RECORDER_INTERCEPTOR(6, args);
@@ -124,21 +124,21 @@ int RECORDER_POSIX_DECL(msync)(void *addr, size_t length, int flags) {
     RECORDER_INTERCEPTOR(3, args);
 }
 
-int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
+extern inline int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR_NOIO(int, creat, (path, mode));
     record->res = res;
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
-int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
+extern inline int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR_NOIO(int, creat64, (path, mode));
     char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
     record->res = res;
     RECORDER_INTERCEPTOR(2, args);
 }
 
-int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
+extern inline int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -157,7 +157,7 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
     }
 }
 
-int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
+extern inline int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -175,14 +175,14 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
     }
 }
 
-FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
+extern inline FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
     record->res = stream2fd(res);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
-FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
+extern inline FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen, (path, mode));
     record->res = stream2fd(res);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
@@ -197,54 +197,54 @@ FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
  * This means stat(), lstat(), fstat() are just wrappers in GLIC and dlsym() is not able to hook them.
  * So wee need to hook __xstat(), __lxstat(), and __fxstat()
  */
-int RECORDER_POSIX_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
+extern inline int RECORDER_POSIX_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __xstat, (vers, path, buf));
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
-int RECORDER_POSIX_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
+extern inline int RECORDER_POSIX_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __xstat64, (vers, path, buf));
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
-int RECORDER_POSIX_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
+extern inline int RECORDER_POSIX_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __lxstat, (vers, path, buf));
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
-int RECORDER_POSIX_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
+extern inline int RECORDER_POSIX_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __lxstat64, (vers, path, buf));
     char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
-int RECORDER_POSIX_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
+extern inline int RECORDER_POSIX_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __fxstat, (vers, fd, buf));
     char** args = assemble_args_list(3, itoa(vers), itoa(fd), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
-int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
+extern inline int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
     RECORDER_INTERCEPTOR_NOIO(int, __fxstat64, (vers, fd, buf));
     char** args = assemble_args_list(3, itoa(vers), itoa(fd), ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
 
-ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
+extern inline ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread64, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
-ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
+extern inline ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
 
-ssize_t RECORDER_POSIX_DECL(pwrite64)(int fd, const void *buf, size_t count, off64_t offset) {
+extern inline ssize_t RECORDER_POSIX_DECL(pwrite64)(int fd, const void *buf, size_t count, off64_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pwrite64, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
-ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
+extern inline ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pwrite, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
@@ -327,13 +327,13 @@ long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
     RECORDER_INTERCEPTOR(1, args)
 }
 
-off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
+extern inline off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
     RECORDER_INTERCEPTOR_NOIO(off64_t, lseek64, (fd, offset, whence));
     char** args = assemble_args_list(3, itoa(fd), itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
 }
 
-off_t RECORDER_POSIX_DECL(lseek)(int fd, off_t offset, int whence) {
+extern inline off_t RECORDER_POSIX_DECL(lseek)(int fd, off_t offset, int whence) {
     RECORDER_INTERCEPTOR_NOIO(off_t, lseek, (fd, offset, whence));
     char** args = assemble_args_list(3, itoa(fd), itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
