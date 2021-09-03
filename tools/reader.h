@@ -1,4 +1,4 @@
-#ifndef _RECORDER_READER_H_
+	#ifndef _RECORDER_READER_H_
 #define _RECORDER_READER_H_
 #include <stdbool.h>
 #include "recorder-log-format.h"
@@ -37,8 +37,10 @@ typedef struct IntervalsMap_t {
     double **tcloses;
     double **tcommits;
 } IntervalsMap;
-
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 void read_global_metadata(char* path, RecorderGlobalDef *RGD);
 
 void read_local_metadata(char* path, RecorderLocalDef *RLD);
@@ -52,5 +54,7 @@ void release_resources(RecorderReader *reader);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

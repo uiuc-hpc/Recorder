@@ -6,6 +6,15 @@ AC_PROG_CC([mpicc cc])
 AC_PROG_CXX([mpicxx CC])
 AC_CONFIG_MACRO_DIRS([m4])
 
+AC_ARG_ENABLE([parquet],
+[  --enable-parquet    Turn on Parquet convertor],
+[case "${enableval}" in
+  yes) parquet=true ;;
+  no)  parquet=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-parquet]) ;;
+esac],[parquet=false])
+AM_CONDITIONAL([PARQUET], [test x$parquet = xtrue])
+
 
 AC_ARG_ENABLE([posix], 
     AS_HELP_STRING([--disable-posix], [Disable POSIX tracing]))

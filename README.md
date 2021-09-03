@@ -24,6 +24,13 @@ the tracing implementation where the timestamp, function name, and function
 parameters are recorded. The original HDF5 function is called after this
 recording process. The mechanism is the same for the MPI and POSIX layers.
 
+Dependencies
+------------
+
+ - MPI > 3
+ - HDF5
+ - Arrow > 5.0.0
+
 Installation
 ------------
 
@@ -40,7 +47,7 @@ make
 make install
 ```
 
-If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+If MPI, HDF5, or arrow is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
 ```bash
 ./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
 ```
