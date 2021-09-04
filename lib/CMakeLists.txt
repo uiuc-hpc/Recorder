@@ -89,12 +89,10 @@ recorder_set_lib_options(recorder "recorder" ${RECORDER_LIBTYPE})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(RECORDER_HEADERS
-        ${CMAKE_SOURCE_DIR}/recorder.h
-        ${CMAKE_SOURCE_DIR}/recorder-log-format.h
-        ${CMAKE_SOURCE_DIR}/recorder-sequitur.h
-        ${CMAKE_SOURCE_DIR}/recorder-utils.h
-        ${CMAKE_SOURCE_DIR}/uthash.h
-        ${CMAKE_SOURCE_DIR}/utlist.h
+        ${CMAKE_SOURCE_DIR}/include/recorder.h
+        ${CMAKE_SOURCE_DIR}/include/recorder-log-format.h
+        ${CMAKE_SOURCE_DIR}/include/recorder-utils.h
+        ${CMAKE_SOURCE_DIR}/include/uthash.h
         )
 
 #-----------------------------------------------------------------------------
