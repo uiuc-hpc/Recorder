@@ -35,14 +35,13 @@ int main(int argc, char **argv) {
     RecorderReader reader;
     recorder_init_reader(argv[1], &reader);
 
-    int entries;
-    CallSignature *cst;
-    RuleHash *cfg;
-    cst = recorder_read_cst(&reader, 0, &entries);
-    cfg = recorder_read_cfg(&reader, 0);
+    CST cst;
+    CFG cfg;
+    recorder_read_cst(&reader, 0, &cst);
+    recorder_read_cfg(&reader, 0, &cfg);
 
-    recorder_free_cst(cst, entries);
-    recorder_free_cfg(cfg);
+    recorder_free_cst(&cst);
+    recorder_free_cfg(&cfg);
 
     recorder_free_reader(&reader);
 

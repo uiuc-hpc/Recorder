@@ -39,13 +39,16 @@ typedef struct IntervalsMap_t {
 
 
 
-
 typedef struct CallSignature_t {
     int terminal;
     int key_len;
     char* key;
 } CallSignature;
 
+typedef struct CST_t {
+    int entries;
+    CallSignature *cst_list;
+} CST;
 
 typedef struct RuleHash_t {
     int rule_id;
@@ -54,11 +57,20 @@ typedef struct RuleHash_t {
     UT_hash_handle hh;
 } RuleHash;
 
+typedef struct CFG_t {
+    int rules;
+    RuleHash* cfg_head;
+} CFG;
+
+
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
-CallSignature* recorder_read_cst(RecorderReader *reader, int rank, int* entries);
-void recorder_free_cst(CallSignature* cst, int entries);
-RuleHash* recorder_read_cfg(RecorderReader *reader, int rank);
-void recorder_free_cfg(RuleHash* cfg);
+
+void recorder_read_cst(RecorderReader *reader, int rank, CST *cst);
+void recorder_free_cst(CST *cst);
+
+void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
+void recorder_free_cfg(CFG *cfg);
+
 void recorder_free_reader(RecorderReader *reader);
 
 

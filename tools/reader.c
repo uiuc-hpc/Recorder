@@ -173,44 +173,42 @@ CallSignature* read_cst_file(const char* path, int *entries) {
     return cst;
 }
 
-void recorder_free_cst(CallSignature *cst, int entries) {
-    for(int i = 0; i < entries; i++)
-        free(cst[i].key);
-    free(cst);
+void recorder_free_cst(CST* cst) {
+    for(int i = 0; i < cst->entries; i++)
+        free(cst->cst_list[i].key);
+    free(cst->cst_list);
 }
 
-void recorder_free_cfg(RuleHash* cfg) {
+void recorder_free_cfg(CFG* cfg) {
     RuleHash *r, *tmp;
-    HASH_ITER(hh, cfg, r, tmp) {
-        HASH_DEL(cfg, r);
+    HASH_ITER(hh, cfg->cfg_head, r, tmp) {
+        HASH_DEL(cfg->cfg_head, r);
         free(r->rule_body);
         free(r);
     }
 }
 
-CallSignature* recorder_read_cst(RecorderReader *reader, int rank, int *entries) {
+void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
+
     char cst_filename[1096] = {0};
     sprintf(cst_filename, "%s/%d.cst", reader->logs_dir, rank);
 
-    CallSignature *cst = read_cst_file(cst_filename, entries);
-    for(int i = 0; i < *entries; i++) {
-        printf("%d, terminal %d, key len: %d\n", i, cst[i].terminal, cst[i].key_len);
+    cst->cst_list = read_cst_file(cst_filename, &cst->entries);
+    for(int i = 0; i < cst->entries; i++) {
+        printf("%d, terminal %d, key len: %d\n", i, cst->cst_list[i].terminal, cst->cst_list[i].key_len);
     }
-
-    return cst;
 }
 
-RuleHash* recorder_read_cfg(RecorderReader *reader, int rank) {
+void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
     char cfg_filename[1096] = {0};
     sprintf(cfg_filename, "%s/%d.cfg", reader->logs_dir, rank);
 
     FILE* f = fopen(cfg_filename, "rb");
 
-    int rules;
-    fread(&rules, sizeof(int), 1, f);
+    fread(&cfg->rules, sizeof(int), 1, f);
 
-    RuleHash* cfg = NULL;
-    for(int i = 0; i < rules; i++) {
+    cfg->cfg_head = NULL;
+    for(int i = 0; i < cfg->rules; i++) {
         RuleHash *rule = malloc(sizeof(RuleHash));
 
         fread(&(rule->rule_id), sizeof(int), 1, f);
@@ -219,9 +217,11 @@ RuleHash* recorder_read_cfg(RecorderReader *reader, int rank) {
 
         rule->rule_body = (int*) malloc(sizeof(int)*rule->symbols*2);
         fread(rule->rule_body, sizeof(int), rule->symbols*2, f);
-        HASH_ADD_INT(cfg, rule_id, rule);
+        HASH_ADD_INT(cfg->cfg_head, rule_id, rule);
     }
     fclose(f);
-    return cfg;
 }
 
+
+void recorder_decode_records() {
+}
