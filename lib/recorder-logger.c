@@ -46,16 +46,19 @@ char* compose_call_key(Record *record, int* key_len) {
     char invalid_str[] = "???";
     int invalid_str_len = strlen(invalid_str);
 
-    *key_len = sizeof(record->func_id) + sizeof(record->res) + sizeof(record->arg_count) + arg_count;
+    int arg_strlen = arg_count;
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
             for(int j = 0; j < strlen(args[i]); j++)
                 if(args[i][j] == ' ') args[i][j] = '_';
-            *key_len += strlen(args[i]);
+            arg_strlen += strlen(args[i]);
         } else {
-            *key_len += strlen(invalid_str);
+            arg_strlen += strlen(invalid_str);
         }
     }
+
+    *key_len = sizeof(record->func_id) + sizeof(record->res) + sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+
 
     char* key = recorder_malloc(*key_len);
     int pos = 0;
@@ -65,6 +68,8 @@ char* compose_call_key(Record *record, int* key_len) {
     pos += sizeof(record->res);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
+    memcpy(key+pos, &arg_strlen, sizeof(int));
+    pos += sizeof(int);
 
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
