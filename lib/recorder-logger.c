@@ -9,7 +9,8 @@
 
 
 #define TIME_RESOLUTION 0.000001
-#define VERSION_STR "2.2.1"
+#define VERSION_STR "2.2.3"
+
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -45,7 +46,7 @@ char* compose_call_key(Record *record, int* key_len) {
     char invalid_str[] = "???";
     int invalid_str_len = strlen(invalid_str);
 
-    *key_len = sizeof(record->func_id) + sizeof(record->res) + arg_count;
+    *key_len = sizeof(record->func_id) + sizeof(record->res) + sizeof(record->arg_count) + arg_count;
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
             for(int j = 0; j < strlen(args[i]); j++)
@@ -62,16 +63,19 @@ char* compose_call_key(Record *record, int* key_len) {
     pos += sizeof(record->func_id);
     memcpy(key+pos, &record->res, sizeof(record->res));
     pos += sizeof(record->res);
+    memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
+    pos += sizeof(record->arg_count);
 
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
-            strcpy(key+pos, args[i]);
-            pos[key+strlen(args[i])] = ' ';
-            pos += strlen(args[i]) + 1;
+            memcpy(key+pos, args[i], strlen(args[i]));
+            pos += strlen(args[i]);
         } else {
-            strcpy(key+pos, invalid_str);
+            memcpy(key+pos, invalid_str, strlen(invalid_str));
             pos += invalid_str_len;
         }
+        key[pos] = ' ';
+        pos += 1;
     }
 
     return key;
@@ -116,7 +120,7 @@ void write_record(Record *record) {
         HASH_ADD_KEYPTR(hh, logger.cst, entry->key, entry->key_len, entry);
     }
 
-    //append_terminal(logger.grammer, entry->terminal_id, 1);
+    append_terminal(&logger.cfg, entry->terminal_id, 1);
     free_record(record);
 
     pthread_mutex_unlock(&g_mutex);
@@ -242,7 +246,6 @@ void dump_cfg_local() {
     RECORDER_REAL_CALL(fwrite)(data, sizeof(int), count, f);
     RECORDER_REAL_CALL(fclose)(f);
 }
-
 
 void logger_finalize() {
 

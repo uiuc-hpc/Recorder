@@ -10,9 +10,8 @@
 
 typedef struct RecorderReader_t {
     RecorderGlobalDef RGD;
-    RecorderLocalDef *RLDs;
-    Record **records;       //records[rank] is a list of records of that rank
     char func_list[256][64];
+    char logs_dir[1024];
 } RecorderReader;
 
 typedef struct Interval_t {
@@ -39,16 +38,28 @@ typedef struct IntervalsMap_t {
 } IntervalsMap;
 
 
-void read_global_metadata(char* path, RecorderGlobalDef *RGD);
 
-void read_local_metadata(char* path, RecorderLocalDef *RLD);
 
-Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD);
+typedef struct CallSignature_t {
+    int terminal;
+    int key_len;
+    char* key;
+} CallSignature;
 
-void decompress_records(Record* records, int len);
 
-void recorder_read_traces(const char* logs_dir, RecorderReader *reader);
-void release_resources(RecorderReader *reader);
+typedef struct RuleHash_t {
+    int rule_id;
+    int *rule_body;     // 2i+0: val of symbol i,  2i+1: exp of symbol i
+    int symbols;        // There are a total of 2*symbols integers in the rule body
+    UT_hash_handle hh;
+} RuleHash;
+
+void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
+CallSignature* recorder_read_cst(RecorderReader *reader, int rank, int* entries);
+void recorder_free_cst(CallSignature* cst, int entries);
+RuleHash* recorder_read_cfg(RecorderReader *reader, int rank);
+void recorder_free_cfg(RuleHash* cfg);
+void recorder_free_reader(RecorderReader *reader);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);

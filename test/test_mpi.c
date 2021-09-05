@@ -83,6 +83,9 @@ int main(int argc, char *argv[]) {
     int recv, send;
     MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
 
+    for(int i = 0; i < 10; i++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
 
     MPI_Finalize();
 

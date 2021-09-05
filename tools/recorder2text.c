@@ -8,6 +8,7 @@
 /*
  * Write all original records (encoded and compressed) to text file
  */
+/*
 void write_to_textfile(const char* path, Record *records, int len, RecorderReader *reader) {
     int i, arg_id;
 
@@ -23,6 +24,7 @@ void write_to_textfile(const char* path, Record *records, int len, RecorderReade
     }
     fclose(out_file);
 }
+*/
 
 int main(int argc, char **argv) {
 
@@ -31,18 +33,19 @@ int main(int argc, char **argv) {
     mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     RecorderReader reader;
-    recorder_read_traces(argv[1], &reader);
+    recorder_init_reader(argv[1], &reader);
 
-    int rank;
-    for(rank = 0; rank < reader.RGD.total_ranks; rank++) {
+    int entries;
+    CallSignature *cst;
+    RuleHash *cfg;
+    cst = recorder_read_cst(&reader, 0, &entries);
+    cfg = recorder_read_cfg(&reader, 0);
 
-        sprintf(textfile_path, "%s/%d.txt" , textfile_dir, rank);
+    recorder_free_cst(cst, entries);
+    recorder_free_cfg(cfg);
 
-        Record* records = reader.records[rank];
-        write_to_textfile(textfile_path, records, reader.RLDs[rank].total_records, &reader);
-    }
+    recorder_free_reader(&reader);
 
-    release_resources(&reader);
 
     return 0;
 }

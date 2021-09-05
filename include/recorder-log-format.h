@@ -78,7 +78,7 @@ typedef struct Record_t {
     char status;                // peephole compressed or not
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
-    int arg_count;
+    unsigned char arg_count;
     char **args;                // Store all arguments in array
     int res;                    // result returned from the original function call
 } Record;
