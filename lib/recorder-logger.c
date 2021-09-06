@@ -27,7 +27,7 @@ struct RecorderLogger {
 
     double start_ts;
     FILE*  ts_file;
-    int*   ts;          // memory buffer for timestamps (tstart, tend)
+    int*   ts;          // memory buffer for timestamps (tstart, tend-tstart)
     int    ts_index;    // current position of ts buffer, spill to file once full.
 };
 
@@ -138,7 +138,7 @@ void write_record(Record *record) {
     int tstart = (record->tstart-logger.start_ts) / TIME_RESOLUTION;
     int tend   = (record->tend-logger.start_ts)   / TIME_RESOLUTION;
     logger.ts[logger.ts_index++] = tstart;
-    logger.ts[logger.ts_index++] = tend;
+    logger.ts[logger.ts_index++] = tend-tstart;     // we store the duration to enable higher compression ratio.
     if(logger.ts_index == TS_BUFFER_ELEMENTS) {
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
         logger.ts_index = 0;

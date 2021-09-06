@@ -177,7 +177,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
                 int ts[2];
                 fread(ts, sizeof(int), 2, ts_file);
                 record.tstart = ts[0] * reader->metadata.time_resolution;
-                record.tend   = ts[1] * reader->metadata.time_resolution;
+                record.tend   = ts[1] * reader->metadata.time_resolution + record.tstart;
 
                 user_op(&record, user_arg);
 
