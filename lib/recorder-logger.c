@@ -196,6 +196,8 @@ void logger_init(int rank, int nprocs) {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
             .start_ts  = logger.start_ts,
+            .ts_buffer_elements = TS_BUFFER_ELEMENTS,
+            .ts_compression_algo = TS_COMPRESSION_NO,
         };
         RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 

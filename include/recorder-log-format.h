@@ -73,6 +73,7 @@
 #endif
 #endif
 
+
 /* For each function call in the trace file */
 typedef struct Record_t {
     char status;                // peephole compressed or not
@@ -92,10 +93,17 @@ typedef struct RecordHash_t {
     UT_hash_handle hh;
 } RecordHash;
 
+
+#define TS_COMPRESSION_NO   0
+#define TS_COMPRESSION_ZLIB 1
+#define TS_COMPRESSION_ZFP  2
+
 typedef struct RecorderMetadata_t {
+    int    total_ranks;
     double start_ts;
     double time_resolution;
-    int total_ranks;
+    int    ts_buffer_elements;
+    int    ts_compression_algo; // timestamp compression algorithm
 } RecorderMetadata;
 
 
