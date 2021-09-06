@@ -9,7 +9,8 @@
 #define SESSION_SEMANTICS 2
 
 typedef struct RecorderReader_t {
-    RecorderGlobalDef RGD;
+    int total_ranks;
+    double time_resolution;
     char func_list[256][64];
     char logs_dir[1024];
 } RecorderReader;
@@ -64,6 +65,7 @@ typedef struct CFG_t {
 
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
+void recorder_free_reader(RecorderReader *reader);
 
 void recorder_read_cst(RecorderReader *reader, int rank, CST *cst);
 void recorder_free_cst(CST *cst);
@@ -71,7 +73,8 @@ void recorder_free_cst(CST *cst);
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
-void recorder_free_reader(RecorderReader *reader);
+void recorder_decode_records(CST *cst, CFG *cfg, void (*user_op)(Record* r, int exp, void* user_arg), void* user_arg);
+const char* recorder_get_func_name(RecorderReader* reader, int func_id);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);

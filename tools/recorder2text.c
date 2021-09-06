@@ -5,46 +5,49 @@
 #include <sys/types.h>
 #include "reader.h"
 
-/*
- * Write all original records (encoded and compressed) to text file
- */
-/*
-void write_to_textfile(const char* path, Record *records, int len, RecorderReader *reader) {
-    int i, arg_id;
+RecorderReader reader;
 
-    FILE* out_file = fopen(path, "w");
-    for(i = 0; i < len; i++) {
-        Record record = records[i];
-        fprintf(out_file, "%f %f %d %s (", record.tstart, record.tend, record.res, reader->func_list[record.func_id]);
-        for(arg_id = 0; arg_id < record.arg_count; arg_id++) {
-            char *arg = record.args[arg_id];
-            fprintf(out_file, " %s", arg);
+void write_to_textfile(Record *record, int exp, void* fout) {
+    FILE* f = (FILE*) fout;
+
+    for(int i = 0; i < exp; i++) {
+        fprintf(f, "%f %f %d %s (", record->tstart, record->tend, record->res,
+                                            recorder_get_func_name(&reader, record->func_id));
+        for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+            char *arg = record->args[arg_id];
+            fprintf(f, " %s", arg);
         }
-        fprintf(out_file, " )\n");
+        fprintf(f, " )\n");
     }
-    fclose(out_file);
 }
-*/
 
 int main(int argc, char **argv) {
 
-    char textfile_dir[256], textfile_path[256];
+    char textfile_dir[256];
+    char textfile_path[256];
     sprintf(textfile_dir, "%s/_text", argv[1]);
     mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    RecorderReader reader;
     recorder_init_reader(argv[1], &reader);
 
-    CST cst;
-    CFG cfg;
-    recorder_read_cst(&reader, 0, &cst);
-    recorder_read_cfg(&reader, 0, &cfg);
+    for(int rank = 0; rank < reader.total_ranks; rank++) {
+        CST cst;
+        CFG cfg;
+        recorder_read_cst(&reader, rank, &cst);
+        recorder_read_cfg(&reader, rank, &cfg);
 
-    recorder_free_cst(&cst);
-    recorder_free_cfg(&cfg);
+        sprintf(textfile_path, "%s/%d.txt", textfile_dir, rank);
+        FILE* fout = fopen(textfile_path, "w");
+
+        recorder_decode_records(&cst, &cfg, write_to_textfile, fout);
+
+        fclose(fout);
+
+        recorder_free_cst(&cst);
+        recorder_free_cfg(&cfg);
+    }
 
     recorder_free_reader(&reader);
-
 
     return 0;
 }

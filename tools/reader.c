@@ -35,142 +35,55 @@ void read_func_list(char* path, RecorderReader *reader) {
     fclose(fp);
 }
 
-/*
-
-// Return an array of char*, where each element is an argument
-// The input is the original arguments string
-char** get_record_arguments(char* str, int arg_count) {
-
-char** args = (char**) malloc(sizeof(char*) * arg_count);
-
-int i = 0;
-char* token = strtok(str, " ");
-
-while( token != NULL ) {
-args[i++] = strdup(token);
-token = strtok(NULL, " ");
-}
-
-return args;
-}
-
-
-Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD) {
-
-Record *records = (Record*) malloc(sizeof(Record) * RLD->total_records);
-
-FILE* fp = fopen(path, "r+b");
-
-fseek(fp, 0, SEEK_END);
-long fsize = ftell(fp);
-fseek(fp, 0, SEEK_SET);
-
-char *content = (char*)malloc(fsize);
-fread(content, 1, fsize, fp);
-
-
-long args_start_pos = 0;
-long rec_start_pos = 0;
-
-int i, ri = 0;
-while(rec_start_pos < fsize) {
-// read one record
-Record *r = &(records[ri++]);
-
-// 1. First 14 bytes: status, tstart, tend, func_id, res;
-int tstart; int tend;
-memcpy(&(r->status), content+rec_start_pos+0, 1);
-memcpy(&tstart, content+rec_start_pos+1, 4);
-memcpy(&tend, content+rec_start_pos+5, 4);
-memcpy(&(r->res), content+rec_start_pos+9, 4);
-memcpy(&(r->func_id), content+rec_start_pos+13, 1);
-
-r->tstart = tstart * RGD->time_resolution;
-r->tend = tend * RGD->time_resolution;
-r->arg_count = 0;
-
-// 2. Then arguments splited by ' '
-// '\n' marks the end of one record
-args_start_pos = rec_start_pos + 15;
-for(i = rec_start_pos+14; i < fsize; i++) {
-if(' ' == content[i])
-r->arg_count++;
-if('\n' == content[i]) {
-rec_start_pos = i + 1;
-break;
-}
-}
-
-if(r->arg_count) {
-int len = rec_start_pos-args_start_pos;
-char* arguments_str = (char*) malloc(sizeof(char) * len);
-memcpy(arguments_str, content+args_start_pos, len-1);
-arguments_str[len-1] = 0;
-r->args = get_record_arguments(arguments_str, r->arg_count);
-free(arguments_str);
-}
-}
-
-free(content);
-fclose(fp);
-
-return records;
-}
-
-void release_resources(RecorderReader *reader) {
-    int ranks = reader->RGD.total_ranks;
-
-    int i, j, rank;
-    for (rank = 0; rank < ranks; rank++) {
-
-        Record* records = reader->records[rank];
-        for(i = 0; i < reader->RLDs[rank].total_records; i++) {
-            for(j = 0; j < records[i].arg_count; j++)
-                free(records[i].args[j]);
-            free(records[i].args);
-        }
-
-        free(records);
-    }
-    free(reader->records);
-    free(reader->RLDs);
-}
-*/
-
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 
     char global_metadata_file[256];
     strcpy(reader->logs_dir, logs_dir);
 
+    RecorderGlobalDef RGD;
     sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
-    read_global_metadata(global_metadata_file, &(reader->RGD));
+    read_global_metadata(global_metadata_file, &RGD);
+    reader->total_ranks = RGD.total_ranks;
+    reader->time_resolution = RGD.time_resolution;
+
     read_func_list(global_metadata_file, reader);
 }
 
 void recorder_free_reader(RecorderReader *reader) {
 }
 
+const char* recorder_get_func_name(RecorderReader* reader, int func_id) {
+    return reader->func_list[func_id];
+}
 
-CallSignature* read_cst_file(const char* path, int *entries) {
-    FILE* f = fopen(path, "rb");
+void cs_to_record(CallSignature *cs, Record *record) {
+    char* key = cs->key;
 
-    int key_len, terminal;
-    fread(entries, sizeof(int), 1, f);
+    int pos = 0;
+    memcpy(&record->func_id, key+pos, sizeof(record->func_id));
+    pos += sizeof(record->func_id);
+    memcpy(&record->res, key+pos, sizeof(record->res));
+    pos += sizeof(record->res);
+    memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
+    pos += sizeof(record->arg_count);
 
-    CallSignature *cst = malloc(*entries * sizeof(CallSignature));
+    record->args = malloc(sizeof(char*) * record->arg_count);
 
-    for(int i = 0; i < *entries; i++) {
-        fread(&cst[i].terminal, sizeof(int), 1, f);
-        fread(&cst[i].key_len, sizeof(int), 1, f);
+    int arg_strlen;
+    memcpy(&arg_strlen, key+pos, sizeof(int));
+    pos += sizeof(int);
 
-        cst[i].key = malloc(cst[i].key_len);
-        fread(cst[i].key, 1, cst[i].key_len, f);
-
-        assert(terminal < *entries);
+    char* arg_str = key+pos;
+    int ai = 0;
+    int start = 0;
+    for(int i = 0; i < arg_strlen; i++) {
+        if(arg_str[i] == ' ') {
+            record->args[ai++] = strndup(arg_str+start, (i-start));
+            start = i + 1;
+        }
     }
 
-    fclose(f);
-    return cst;
+    assert(ai == record->arg_count);
 }
 
 void recorder_free_cst(CST* cst) {
@@ -188,15 +101,36 @@ void recorder_free_cfg(CFG* cfg) {
     }
 }
 
-void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
+void recorder_free_record(Record* r) {
+    for(int i = 0; i < r->arg_count; i++)
+        free(r->args[i]);
+    free(r->args);
+}
 
+void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
     char cst_filename[1096] = {0};
     sprintf(cst_filename, "%s/%d.cst", reader->logs_dir, rank);
 
-    cst->cst_list = read_cst_file(cst_filename, &cst->entries);
+    FILE* f = fopen(cst_filename, "rb");
+
+    int key_len, terminal;
+    fread(&cst->entries, sizeof(int), 1, f);
+
+    cst->cst_list = malloc(cst->entries * sizeof(CallSignature));
+
     for(int i = 0; i < cst->entries; i++) {
-        printf("%d, terminal %d, key len: %d\n", i, cst->cst_list[i].terminal, cst->cst_list[i].key_len);
+        fread(&cst->cst_list[i].terminal, sizeof(int), 1, f);
+        fread(&cst->cst_list[i].key_len, sizeof(int), 1, f);
+
+        cst->cst_list[i].key = malloc(cst->cst_list[i].key_len);
+        fread(cst->cst_list[i].key, 1, cst->cst_list[i].key_len, f);
+
+        assert(terminal < cst->entries);
     }
+    fclose(f);
+
+    //for(int i = 0; i < cst->entries; i++)
+    //    printf("%d, terminal %d, key len: %d\n", i, cst->cst_list[i].terminal, cst->cst_list[i].key_len);
 }
 
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
@@ -213,7 +147,7 @@ void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
 
         fread(&(rule->rule_id), sizeof(int), 1, f);
         fread(&(rule->symbols), sizeof(int), 1, f);
-        printf("rule id: %d, symbols: %d\n", rule->rule_id, rule->symbols);
+        //printf("rule id: %d, symbols: %d\n", rule->rule_id, rule->symbols);
 
         rule->rule_body = (int*) malloc(sizeof(int)*rule->symbols*2);
         fread(rule->rule_body, sizeof(int), rule->symbols*2, f);
@@ -223,5 +157,29 @@ void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
 }
 
 
-void recorder_decode_records() {
+#define TERMINAL_START_ID 0
+
+void rule_application(RuleHash* rules, int rule_id, CallSignature *cst_list, void (*user_op)(Record*, int, void*), void* user_arg) {
+    RuleHash *rule = NULL;
+    HASH_FIND_INT(rules, &rule_id, rule);
+    assert(rule != NULL);
+
+    for(int i = 0; i < rule->symbols; i++) {
+        int sym_val = rule->rule_body[2*i+0];
+        int sym_exp = rule->rule_body[2*i+1];
+        if (sym_val >= TERMINAL_START_ID) { // terminal
+            Record record;
+            cs_to_record(&cst_list[sym_val], &record);
+            user_op(&record, sym_exp, user_arg);
+            recorder_free_record(&record);
+        } else {                            // non-terminal (i.e., rule)
+            for(int j = 0; j < sym_exp; j++)
+                rule_application(rules, sym_val, cst_list, user_op, user_arg);
+        }
+    }
 }
+
+void recorder_decode_records(CST *cst, CFG *cfg, void (*user_op)(Record*, int, void*), void* user_arg) {
+    rule_application(cfg->cfg_head, -1, cst->cst_list, user_op, user_arg);
+}
+
