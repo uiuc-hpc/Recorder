@@ -7,8 +7,8 @@
 
 RecorderReader reader;
 
-void write_to_textfile(Record *record, void* fout) {
-    FILE* f = (FILE*) fout;
+void write_to_textfile(Record *record, void* arg) {
+    FILE* f = (FILE*) arg;
 
     fprintf(f, "%f %f %d %s (", record->tstart, record->tend, record->res,
                                         recorder_get_func_name(&reader, record->func_id));
