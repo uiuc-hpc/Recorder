@@ -4,10 +4,10 @@
 #include <assert.h>
 #include "./reader.h"
 
-void read_global_metadata(char* path, RecorderGlobalDef *RGD) {
+void read_metadata(char* path, RecorderMetadata *metadata) {
     FILE* fp = fopen(path, "rb");
     assert(fp != NULL);
-    fread(RGD, sizeof(RecorderGlobalDef), 1, fp);
+    fread(metadata, sizeof(RecorderMetadata), 1, fp);
     fclose(fp);
 }
 
@@ -15,10 +15,10 @@ void read_func_list(char* path, RecorderReader *reader) {
     FILE* fp = fopen(path, "rb");
 
     fseek(fp, 0, SEEK_END);
-    long fsize = ftell(fp) - sizeof(RecorderGlobalDef);
+    long fsize = ftell(fp) - sizeof(RecorderMetadata);
     char buf[fsize];
 
-    fseek(fp, sizeof(RecorderGlobalDef), SEEK_SET); // skip GlobalDef object
+    fseek(fp, sizeof(RecorderMetadata), SEEK_SET); // skip RecorderMetadata object
     fread(buf, 1, fsize, fp);
 
     int start_pos = 0, end_pos = 0;
@@ -38,17 +38,12 @@ void read_func_list(char* path, RecorderReader *reader) {
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 
-    char global_metadata_file[1024];
+    char metadata_file[1024];
     strcpy(reader->logs_dir, logs_dir);
 
-    RecorderGlobalDef RGD;
-    sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
-    read_global_metadata(global_metadata_file, &RGD);
-
-    reader->total_ranks = RGD.total_ranks;
-    reader->time_resolution = RGD.time_resolution;
-
-    read_func_list(global_metadata_file, reader);
+    sprintf(metadata_file, "%s/recorder.mt", logs_dir);
+    read_metadata(metadata_file, &reader->metadata);
+    read_func_list(metadata_file, reader);
 }
 
 void recorder_free_reader(RecorderReader *reader) {
@@ -181,8 +176,8 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
                 // Fill in timestamps
                 int ts[2];
                 fread(ts, sizeof(int), 2, ts_file);
-                record.tstart = ts[0] * reader->time_resolution;
-                record.tend   = ts[1] * reader->time_resolution;
+                record.tstart = ts[0] * reader->metadata.time_resolution;
+                record.tend   = ts[1] * reader->metadata.time_resolution;
 
                 user_op(&record, user_arg);
 

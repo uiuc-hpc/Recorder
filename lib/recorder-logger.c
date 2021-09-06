@@ -10,7 +10,6 @@
 
 #define TIME_RESOLUTION 0.000001
 #define VERSION_STR "2.2.3"
-
 #define TS_BUFFER_ELEMENTS 1024
 
 
@@ -27,9 +26,9 @@ struct RecorderLogger {
     char cfg_path[1024];
 
     double start_ts;
-    FILE *ts_file;
-    int* ts;
-    int  ts_index;
+    FILE*  ts_file;
+    int*   ts;          // memory buffer for timestamps (tstart, tend)
+    int    ts_index;    // current position of ts buffer, spill to file once full.
 };
 
 struct RecorderLogger logger;
@@ -40,8 +39,9 @@ static int current_terminal_id = 0;
 bool __recording;
 
 
+
 /**
- * Key: func_id + ret + all arguments in string
+ * Key: func_id + res + all arguments in string
  *
  * arguments seperated by space ' '
  */
@@ -166,19 +166,15 @@ void logger_init(int rank, int nprocs) {
     logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
     logger.ts_index = 0;
 
-
     const char* base_dir = getenv("RECORDER_TRACES_DIR");
-    char global_meta_filename[1024] = {0};
-
     if(base_dir)
         sprintf(logger.traces_dir, "%s/recorder-logs", base_dir);
     else
         sprintf(logger.traces_dir, "recorder-logs"); // current directory
 
+
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
-    sprintf(global_meta_filename, "%s/recorder.mt", logger.traces_dir);
-
 
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
@@ -187,27 +183,31 @@ void logger_init(int rank, int nprocs) {
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
+
     char ts_filename[1024];
     sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);
     logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
 
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_REAL_CALL(fopen) (global_meta_filename, "wb");
-        RecorderGlobalDef global_def = {
+        char metadata_filename[1024] = {0};
+        sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
+        FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
+        RecorderMetadata metadata = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
+            .start_ts  = logger.start_ts,
         };
-        RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
+        RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
         for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
             const char *funcname = get_function_name_by_id(i);
             if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
-                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, global_metafh);
+                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, metafh);
             else
-                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
-            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
+                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
+            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
         }
-        RECORDER_REAL_CALL(fclose)(global_metafh);
+        RECORDER_REAL_CALL(fclose)(metafh);
 
         char version_filename[1024];
         sprintf(version_filename, "%s/VERSION", logger.traces_dir);

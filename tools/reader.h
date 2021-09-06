@@ -9,8 +9,9 @@
 #define SESSION_SEMANTICS 2
 
 typedef struct RecorderReader_t {
-    int total_ranks;
-    double time_resolution;
+
+    RecorderMetadata metadata;
+
     char func_list[256][64];
     char logs_dir[1024];
 } RecorderReader;

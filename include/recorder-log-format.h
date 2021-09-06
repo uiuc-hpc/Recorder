@@ -92,25 +92,11 @@ typedef struct RecordHash_t {
     UT_hash_handle hh;
 } RecordHash;
 
-
-
-typedef struct RecorderGlobalDef_t {
+typedef struct RecorderMetadata_t {
+    double start_ts;
     double time_resolution;
     int total_ranks;
-    int peephole_window_size;
-} RecorderGlobalDef;
-
-
-typedef struct RecorderLocalDef_t {
-    double start_timestamp;
-    double end_timestamp;
-    int num_files;                  // number of files accessed by the rank
-    int total_records;              // total number of records we have written
-    char **filemap;                 // mapping of filenames and integer ids. only set when read the local def file
-    size_t *file_sizes;             // size of each file accessed. only set when read back the local def file
-    int function_count[256];        // counting the functions at runtime
-} RecorderLocalDef;
-
+} RecorderMetadata;
 
 
 static const char* func_list[] = {
