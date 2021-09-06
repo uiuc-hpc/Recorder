@@ -75,6 +75,16 @@ void recorder_free_cst(CST *cst);
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
+/**
+ * This function reads all records of a rank
+ *
+ * For each record decoded, the user_op() function
+ * will be called with the decoded record
+ *
+ * void user_op(Record *r, void* user_arg);
+ * void* user_arg can be used to pass in user argument.
+ *
+ */
 void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
 
