@@ -5,13 +5,14 @@
 #include "./reader.h"
 
 void read_global_metadata(char* path, RecorderGlobalDef *RGD) {
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
+    assert(fp != NULL);
     fread(RGD, sizeof(RecorderGlobalDef), 1, fp);
     fclose(fp);
 }
 
 void read_func_list(char* path, RecorderReader *reader) {
-    FILE* fp = fopen(path, "r+b");
+    FILE* fp = fopen(path, "rb");
 
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp) - sizeof(RecorderGlobalDef);
@@ -37,12 +38,13 @@ void read_func_list(char* path, RecorderReader *reader) {
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 
-    char global_metadata_file[256];
+    char global_metadata_file[1024];
     strcpy(reader->logs_dir, logs_dir);
 
     RecorderGlobalDef RGD;
     sprintf(global_metadata_file, "%s/recorder.mt", logs_dir);
     read_global_metadata(global_metadata_file, &RGD);
+
     reader->total_ranks = RGD.total_ranks;
     reader->time_resolution = RGD.time_resolution;
 
