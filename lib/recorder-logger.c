@@ -18,7 +18,6 @@ pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct RecorderLogger {
     int rank;
-    double startTimestamp;
 
     Grammar     cfg;
     RecordHash* cst;
@@ -27,6 +26,7 @@ struct RecorderLogger {
     char cst_path[1024];
     char cfg_path[1024];
 
+    double start_ts;
     FILE *ts_file;
     int* ts;
     int  ts_index;
@@ -135,13 +135,13 @@ void write_record(Record *record) {
     free_record(record);
 
     // write timestamps
-    int tstart = record->tstart / TIME_RESOLUTION;
-    int tend   = record->tend   / TIME_RESOLUTION;
+    int tstart = (record->tstart-logger.start_ts) / TIME_RESOLUTION;
+    int tend   = (record->tend-logger.start_ts)   / TIME_RESOLUTION;
     logger.ts[logger.ts_index++] = tstart;
     logger.ts[logger.ts_index++] = tend;
     if(logger.ts_index == TS_BUFFER_ELEMENTS) {
-        fwrite(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
-        logger.ts = 0;
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
+        logger.ts_index = 0;
     }
 
     pthread_mutex_unlock(&g_mutex);
@@ -160,7 +160,7 @@ void logger_init(int rank, int nprocs) {
 
     // Initialize the global values
     logger.rank = rank;
-    logger.startTimestamp = recorder_wtime();
+    logger.start_ts = recorder_wtime();
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
     logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
@@ -279,10 +279,9 @@ void logger_finalize() {
 
     __recording = false;    // set the extern global
 
-
     if(logger.ts_index > 0)
-        fwrite(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
-    fclose(logger.ts_file);
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+    RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
 
     dump_cst_local();

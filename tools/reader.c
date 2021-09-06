@@ -108,6 +108,7 @@ void recorder_free_record(Record* r) {
 }
 
 void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
+    cst->rank = rank;
     char cst_filename[1096] = {0};
     sprintf(cst_filename, "%s/%d.cst", reader->logs_dir, rank);
 
@@ -134,6 +135,7 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
 }
 
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
+    cfg->rank = rank;
     char cfg_filename[1096] = {0};
     sprintf(cfg_filename, "%s/%d.cfg", reader->logs_dir, rank);
 
@@ -159,7 +161,9 @@ void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
 
 #define TERMINAL_START_ID 0
 
-void rule_application(RuleHash* rules, int rule_id, CallSignature *cst_list, void (*user_op)(Record*, int, void*), void* user_arg) {
+void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, CallSignature *cst_list, FILE* ts_file,
+                      void (*user_op)(Record*, void*), void* user_arg) {
+
     RuleHash *rule = NULL;
     HASH_FIND_INT(rules, &rule_id, rule);
     assert(rule != NULL);
@@ -168,18 +172,38 @@ void rule_application(RuleHash* rules, int rule_id, CallSignature *cst_list, voi
         int sym_val = rule->rule_body[2*i+0];
         int sym_exp = rule->rule_body[2*i+1];
         if (sym_val >= TERMINAL_START_ID) { // terminal
-            Record record;
-            cs_to_record(&cst_list[sym_val], &record);
-            user_op(&record, sym_exp, user_arg);
-            recorder_free_record(&record);
+            for(int j = 0; j < sym_exp; j++) {
+                Record record;
+                cs_to_record(&cst_list[sym_val], &record);
+
+                // Fill in timestamps
+                int ts[2];
+                fread(ts, sizeof(int), 2, ts_file);
+                record.tstart = ts[0] * reader->time_resolution;
+                record.tend   = ts[1] * reader->time_resolution;
+
+                user_op(&record, user_arg);
+
+                recorder_free_record(&record);
+            }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
-                rule_application(rules, sym_val, cst_list, user_op, user_arg);
+                rule_application(reader, rules, sym_val, cst_list, ts_file, user_op, user_arg);
         }
     }
 }
 
-void recorder_decode_records(CST *cst, CFG *cfg, void (*user_op)(Record*, int, void*), void* user_arg) {
-    rule_application(cfg->cfg_head, -1, cst->cst_list, user_op, user_arg);
+void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record*, void*), void* user_arg) {
+
+    assert(cst->rank == cfg->rank);
+
+    char ts_filename[1096] = {0};
+    sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
+    FILE* ts_file = fopen(ts_filename, "rb");
+
+    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg);
+
+    fclose(ts_file);
 }
 

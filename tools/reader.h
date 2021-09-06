@@ -47,6 +47,7 @@ typedef struct CallSignature_t {
 } CallSignature;
 
 typedef struct CST_t {
+    int rank;
     int entries;
     CallSignature *cst_list;
 } CST;
@@ -59,6 +60,7 @@ typedef struct RuleHash_t {
 } RuleHash;
 
 typedef struct CFG_t {
+    int rank;
     int rules;
     RuleHash* cfg_head;
 } CFG;
@@ -73,7 +75,9 @@ void recorder_free_cst(CST *cst);
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
-void recorder_decode_records(CST *cst, CFG *cfg, void (*user_op)(Record* r, int exp, void* user_arg), void* user_arg);
+void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record* r, void* user_arg), void* user_arg);
+
 const char* recorder_get_func_name(RecorderReader* reader, int func_id);
 
 

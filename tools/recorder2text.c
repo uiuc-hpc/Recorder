@@ -7,18 +7,17 @@
 
 RecorderReader reader;
 
-void write_to_textfile(Record *record, int exp, void* fout) {
+void write_to_textfile(Record *record, void* fout) {
     FILE* f = (FILE*) fout;
 
-    for(int i = 0; i < exp; i++) {
-        fprintf(f, "%f %f %d %s (", record->tstart, record->tend, record->res,
-                                            recorder_get_func_name(&reader, record->func_id));
-        for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
-            char *arg = record->args[arg_id];
-            fprintf(f, " %s", arg);
-        }
-        fprintf(f, " )\n");
+    fprintf(f, "%f %f %d %s (", record->tstart, record->tend, record->res,
+                                        recorder_get_func_name(&reader, record->func_id));
+    for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+        char *arg = record->args[arg_id];
+        fprintf(f, " %s", arg);
     }
+
+    fprintf(f, " )\n");
 }
 
 int main(int argc, char **argv) {
@@ -39,7 +38,7 @@ int main(int argc, char **argv) {
         sprintf(textfile_path, "%s/%d.txt", textfile_dir, rank);
         FILE* fout = fopen(textfile_path, "w");
 
-        recorder_decode_records(&cst, &cfg, write_to_textfile, fout);
+        recorder_decode_records(&reader, &cst, &cfg, write_to_textfile, fout);
 
         fclose(fout);
 
