@@ -11,9 +11,10 @@
 #define TIME_RESOLUTION 0.000001
 #define VERSION_STR "2.2.3"
 
+#define TS_BUFFER_ELEMENTS 1024
+
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 struct RecorderLogger {
     int rank;
@@ -25,7 +26,12 @@ struct RecorderLogger {
     char traces_dir[512];
     char cst_path[1024];
     char cfg_path[1024];
+
+    FILE *ts_file;
+    int* ts;
+    int  ts_index;
 };
+
 struct RecorderLogger logger;
 
 static int current_terminal_id = 0;
@@ -128,6 +134,16 @@ void write_record(Record *record) {
     append_terminal(&logger.cfg, entry->terminal_id, 1);
     free_record(record);
 
+    // write timestamps
+    int tstart = record->tstart / TIME_RESOLUTION;
+    int tend   = record->tend   / TIME_RESOLUTION;
+    logger.ts[logger.ts_index++] = tstart;
+    logger.ts[logger.ts_index++] = tend;
+    if(logger.ts_index == TS_BUFFER_ELEMENTS) {
+        fwrite(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
+        logger.ts = 0;
+    }
+
     pthread_mutex_unlock(&g_mutex);
 }
 
@@ -147,6 +163,9 @@ void logger_init(int rank, int nprocs) {
     logger.startTimestamp = recorder_wtime();
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
+    logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
+    logger.ts_index = 0;
+
 
     const char* base_dir = getenv("RECORDER_TRACES_DIR");
     char global_meta_filename[1024] = {0};
@@ -160,6 +179,7 @@ void logger_init(int rank, int nprocs) {
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
     sprintf(global_meta_filename, "%s/recorder.mt", logger.traces_dir);
 
+
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
             RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
@@ -167,6 +187,9 @@ void logger_init(int rank, int nprocs) {
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
+    char ts_filename[1024];
+    sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);
+    logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
 
     if (rank == 0) {
         FILE* global_metafh = RECORDER_REAL_CALL(fopen) (global_meta_filename, "wb");
@@ -256,8 +279,15 @@ void logger_finalize() {
 
     __recording = false;    // set the extern global
 
+
+    if(logger.ts_index > 0)
+        fwrite(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+    fclose(logger.ts_file);
+    recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
+
     dump_cst_local();
     cleanup_cst(logger.cst);
     dump_cfg_local();
     sequitur_cleanup(&logger.cfg);
 }
+
