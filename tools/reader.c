@@ -38,7 +38,6 @@ void read_func_list(char* path, RecorderReader *reader) {
 }
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
-
     char metadata_file[1024];
     strcpy(reader->logs_dir, logs_dir);
 

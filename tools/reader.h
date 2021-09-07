@@ -39,7 +39,10 @@ typedef struct IntervalsMap_t {
     double **tcommits;
 } IntervalsMap;
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct CallSignature_t {
     int terminal;
@@ -93,5 +96,7 @@ const char* recorder_get_func_name(RecorderReader* reader, int func_id);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

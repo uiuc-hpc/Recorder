@@ -24,6 +24,13 @@ the tracing implementation where the timestamp, function name, and function
 parameters are recorded. The original HDF5 function is called after this
 recording process. The mechanism is the same for the MPI and POSIX layers.
 
+Dependencies
+------------
+
+ - MPI > 3
+ - HDF5
+ - Arrow > 5.0.0
+
 Installation
 ------------
 
@@ -34,30 +41,31 @@ Installation
 ```bash
 git clone https://github.com/uiuc-hpc/Recorder.git
 cd Recorder
-./autogen.sh
-./configure --prefix=[install location]
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=[install location] ../
 make
 make install
 ```
 
-If MPI or HDF5 is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+If MPI, HDF5, or arrow is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
 ```bash
-./configure --prefix=[install location] CFLAGS=-I/path/to/hdf5/include LDFLAGS=-L/path/to/hdf5/lib
+cmake -DCMAKE_INSTALL_PREFIX=[install location] -DCMAKE_PREFIX_PATH=[semicolon separated depedencies dir]
 ```
 
 By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
 
-Options for `configure` can be used to disable one ore more levels of traces. Valid options:
- * --disable-posix
- * --disable-mpi
- * --disable-hdf5
+Options for `cmake` can be used to disable one ore more levels of traces. You can use ccmake utility as well. Valid options:
+ * -DRECORDER_ENABLE_POSIX_TRACE
+ * -DRECORDER_ENABLE_MPIO_TRACE
+ * -DRECORDER_ENABLE_HDF5_TRACE
 
 **Other options:**
 
 (1) `fcntl`:
 
 Since v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
-are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `--disable-fcntl`.
+are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `-DRECORDER_ENABLE_FCNTL_TRACE`.
  
 (2) Logging pointers
 
@@ -127,6 +135,9 @@ Publications
 
 Change Log
 ----------
+**Recorder 2.2.1** Aug 25, 2021
+1. Include the code for verifying I/O synchronizations (tools/verifyio).
+2. Add support for multi-threaded programs.
 
 **Recorder 2.2.0** Jan 25, 2021
 1. Add support for MPI_Cart_sub, MPI_Comm_split_type, etc.
