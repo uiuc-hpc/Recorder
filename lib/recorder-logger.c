@@ -183,7 +183,6 @@ void logger_init(int rank, int nprocs) {
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
-
     char ts_filename[1024];
     sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);
     logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");

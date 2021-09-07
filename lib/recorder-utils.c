@@ -1,28 +1,124 @@
 #define _GNU_SOURCE
 #include <sys/time.h>   // for gettimeofday()
 #include <stdarg.h>     // for va_list, va_start and va_end
+#include <assert.h>
 #include "recorder.h"
 #include "recorder-utils.h"
 
 
-/*
- * External global values defined in recorder.h
- */
-bool __recording;
-
 // Log pointer addresses in the trace file?
-static bool log_pointer = false;
+static bool   log_pointer = false;
 static size_t memory_usage = 0;
 
+
+char** inclusion_prefix;
+char** exclusion_prefix;
+
+/**
+ * Similar to python str.split(delim)
+ * This returns a list of tokens splited by delim
+ * need to free the memory after use.
+ *
+ * This function can not handle two delim in a row.
+ * e.g., AB\n\nCC
+ */
+char** str_split(char* a_str, const char a_delim) {
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp) {
+        if (a_delim == *tmp) {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result) {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+        while (token) {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+    return result;
+}
+
+char** read_prefix_list(const char* path) {
+    MAP_OR_FAIL(fopen);
+    MAP_OR_FAIL(fseek);
+    MAP_OR_FAIL(ftell);
+    MAP_OR_FAIL(fread);
+    MAP_OR_FAIL(fclose);
+
+    FILE* f = RECORDER_REAL_CALL(fopen)(path, "r");
+    assert(f != NULL);
+
+    RECORDER_REAL_CALL(fseek)(f, 0, SEEK_END);
+    size_t fsize = RECORDER_REAL_CALL(ftell)(f);
+    RECORDER_REAL_CALL(fseek)(f, 0, SEEK_SET);
+    char* data = recorder_malloc(fsize);
+
+    RECORDER_REAL_CALL(fread)(data, 1, fsize, f);
+    RECORDER_REAL_CALL(fclose)(f);
+
+    char** res = str_split(data, '\n');
+    recorder_free(data, fsize);
+
+    return res;
+}
 
 void utils_init() {
     log_pointer = false;
     const char* s = getenv("RECORDER_LOG_POINTER");
     if(s)
         log_pointer = atoi(s);
+
+    exclusion_prefix = NULL;
+    inclusion_prefix = NULL;
+
+    const char *exclusion_fname = getenv("RECORDER_EXCLUSION_FILE");
+    if(exclusion_fname)
+        exclusion_prefix = read_prefix_list(exclusion_fname);
+
+    const char *inclusion_fname = getenv("RECORDER_INCLUSION_FILE");
+    if(inclusion_fname)
+        inclusion_prefix = read_prefix_list(inclusion_fname);
 }
 
+
 void utils_finalize() {
+    if(inclusion_prefix) {
+        for (int i = 0; *(inclusion_prefix + i); i++) {
+            free(*(inclusion_prefix + i));
+        }
+        free(inclusion_prefix);
+    }
+    if(exclusion_prefix) {
+        for (int i = 0; *(exclusion_prefix + i); i++) {
+            free(*(exclusion_prefix + i));
+        }
+        free(exclusion_prefix);
+    }
 }
 
 
@@ -31,42 +127,42 @@ void* recorder_malloc(size_t size) {
         return NULL;
 
     memory_usage += size;
-    //if(__recording)
-    //    printf("malloc: %ld, now: %ld\n", size, memory_usage);
     return malloc(size);
 }
 void recorder_free(void* ptr, size_t size) {
     if(size == 0 || ptr == NULL)
         return;
     memory_usage -= size;
-    //if(__recording)
-    //    printf("free: %ld, now: %ld\n", size, memory_usage);
     free(ptr);
 }
 
 /*
  * Some of functions are not made by the application
- * And they are operating on wierd files
- * We should not include them in the trace file
+ * And they are operating on many strange-name files
  *
- * return 1 if we should ignore the file
+ * return 1 if we the filename exists in the inclusion list
+ * or not exists in the exclusion list.
  */
-inline int exclude_filename(const char *filename) {
-    if (filename == NULL) return 0; // pass
+inline int accept_filename(const char *filename) {
+    if (filename == NULL) return 0;
 
-    /* these are paths that we will not trace */
-    // TODO put these in configuration file?
-    static const char *exclusions[] = {"/dev/", "/proc", "/sys", "/etc", "/usr/tce/packages",
-                        "pipe:[", "anon_inode:[", "socket:[", NULL};
-    int i = 0;
-    // Need to make sure both parameters for strncmp are not NULL, otherwise its gonna crash
-    while(exclusions[i] != NULL) {
-        int find = strncmp(exclusions[i], filename, strlen(exclusions[i]));
-        if (find == 0)      // find it. should ignore this filename
-            return 1;
-        i++;
+    if(inclusion_prefix) {
+        for (int i = 0; *(inclusion_prefix + i); i++) {
+            char* prefix = inclusion_prefix[i];
+            if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
+                return 1;
+        }
     }
-    return 0;
+
+    if(exclusion_prefix) {
+        for (int i = 0; *(exclusion_prefix + i); i++) {
+            char* prefix = exclusion_prefix[i];
+            if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
+                return 0;
+        }
+    }
+
+    return 1;
 }
 
 inline long get_file_size(const char *filename) {
@@ -176,10 +272,8 @@ unsigned char get_function_id_by_name(const char* name) {
  * My implementation to replace realpath() system call
  */
 inline char* realrealpath(const char *path) {
-    if(!__recording) return strdup(path);
-
-    char* res = realpath(path, NULL);    // we do not intercept realpath()
-    if (res == NULL)                            // realpath() could return NULL on error
+    char* res = realpath(path, NULL);   // we do not intercept realpath()
+    if (res == NULL)                    // realpath() could return NULL on error
         return strdup(path);
     return res;
 }

@@ -7,7 +7,7 @@ void utils_finalize();
 void* recorder_malloc(size_t size);
 void recorder_free(void* ptr, size_t size);
 long get_file_size(const char *filename);       // return the size of a file
-int exclude_filename(const char *filename);     // if include the file in trace
+int accept_filename(const char *filename);      // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
 char* itoa(size_t val);                         // convert an integer to string
 char* ftoa(double val);                         // convert a float to string
