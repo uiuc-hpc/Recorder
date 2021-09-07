@@ -43,10 +43,9 @@ char** str_split(char* a_str, const char a_delim) {
     /* Add space for trailing token. */
     count += last_comma < (a_str + strlen(a_str) - 1);
 
-    /* Add space for terminating null string so caller
-       knows where the list of returned strings ends. */
-    count++;
-
+    /* Allocate an extra one for NULL pointer
+     * so the caller knows the end of the list */
+    count += 1;
     result = malloc(sizeof(char*) * count);
 
     if (result) {
@@ -54,11 +53,11 @@ char** str_split(char* a_str, const char a_delim) {
         char* token = strtok(a_str, delim);
         while (token) {
             assert(idx < count);
-            *(result + idx++) = strdup(token);
+            result[idx++] = strdup(token);
             token = strtok(0, delim);
         }
         assert(idx == count - 1);
-        *(result + idx) = 0;
+        result[idx] = NULL;
     }
     return result;
 }
@@ -76,7 +75,8 @@ char** read_prefix_list(const char* path) {
     RECORDER_REAL_CALL(fseek)(f, 0, SEEK_END);
     size_t fsize = RECORDER_REAL_CALL(ftell)(f);
     RECORDER_REAL_CALL(fseek)(f, 0, SEEK_SET);
-    char* data = recorder_malloc(fsize);
+    char* data = recorder_malloc(fsize+1);
+    data[fsize] = 0;
 
     RECORDER_REAL_CALL(fread)(data, 1, fsize, f);
     RECORDER_REAL_CALL(fclose)(f);
@@ -108,17 +108,13 @@ void utils_init() {
 
 void utils_finalize() {
     if(inclusion_prefix) {
-        for (int i = 0; *(inclusion_prefix + i); i++) {
-            char* tmp = inclusion_prefix[i];
-            //printf("here; %s\n", tmp);
-            free(*(inclusion_prefix + i));
-        }
+        for (int i = 0; inclusion_prefix[i] != NULL; i++)
+            free(inclusion_prefix[i]);
         free(inclusion_prefix);
     }
     if(exclusion_prefix) {
-        for (int i = 0; *(exclusion_prefix + i); i++) {
-            free(*(exclusion_prefix + i));
-        }
+        for (int i = 0; exclusion_prefix[i] != NULL; i++)
+            free(exclusion_prefix[i]);
         free(exclusion_prefix);
     }
 }
@@ -149,7 +145,7 @@ inline int accept_filename(const char *filename) {
     if (filename == NULL) return 0;
 
     if(inclusion_prefix) {
-        for (int i = 0; *(inclusion_prefix + i); i++) {
+        for (int i = 0; inclusion_prefix[i] != NULL; i++) {
             char* prefix = inclusion_prefix[i];
             if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
                 return 1;
@@ -158,7 +154,7 @@ inline int accept_filename(const char *filename) {
     }
 
     if(exclusion_prefix) {
-        for (int i = 0; *(exclusion_prefix + i); i++) {
+        for (int i = 0; exclusion_prefix[i] != NULL; i++) {
             char* prefix = exclusion_prefix[i];
             if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
                 return 0;
