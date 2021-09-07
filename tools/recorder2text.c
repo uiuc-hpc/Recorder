@@ -10,8 +10,8 @@ RecorderReader reader;
 void write_to_textfile(Record *record, void* arg) {
     FILE* f = (FILE*) arg;
 
-    fprintf(f, "%f %f %s (", record->tstart, record->tend,
-                                recorder_get_func_name(&reader, record->func_id));
+    fprintf(f, "%f %f %s (", record->tstart, record->tend, // record->tid
+                             recorder_get_func_name(&reader, record->func_id));
     for(int arg_id = 0; arg_id < record->arg_count; arg_id++) {
         char *arg = record->args[arg_id];
         fprintf(f, " %s", arg);

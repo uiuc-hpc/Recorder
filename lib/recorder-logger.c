@@ -63,11 +63,14 @@ char* compose_call_key(Record *record, int* key_len) {
         }
     }
 
-    *key_len = sizeof(record->func_id) + sizeof(record->arg_count) + sizeof(int) + arg_strlen;
-
+    // thread id, func id, arg count, arg strlen, arg str
+    *key_len = sizeof(pthread_t) + sizeof(record->func_id) +
+               sizeof(record->arg_count) + sizeof(int) + arg_strlen;
 
     char* key = recorder_malloc(*key_len);
     int pos = 0;
+    memcpy(key+pos, &record->tid, sizeof(pthread_t));
+    pos += sizeof(pthread_t);
     memcpy(key+pos, &record->func_id, sizeof(record->func_id));
     pos += sizeof(record->func_id);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));

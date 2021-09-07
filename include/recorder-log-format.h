@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <uthash.h>
+#include <pthread.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
@@ -80,6 +81,7 @@ typedef struct Record_t {
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
+    pthread_t tid;
     char **args;                // Store all arguments in array
 } Record;
 
