@@ -2,9 +2,9 @@ name: Build Recorder
 
 on:
   push:
-    branches: [ pilgrim ]
+    branches: [ master ]
   pull_request:
-    branches: [ pilgrim ]
+    branches: [ master ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
