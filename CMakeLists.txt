@@ -100,11 +100,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
             "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(NOT "${CMAKE_CXX_STANDARD}")
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-endif()
+#if(NOT "${CMAKE_CXX_STANDARD}")
+#    set(CMAKE_CXX_STANDARD 17)
+#    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#    set(CMAKE_CXX_EXTENSIONS OFF)
+#endif()
 
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
@@ -139,7 +139,11 @@ else()
 endif()
 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -Wno-unused-result")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -std=c99")
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
+endif()
+
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (NOT "${CMAKE_CXX_FLAGS_DEBUG}" MATCHES ".*-g3.*")
