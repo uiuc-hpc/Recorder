@@ -60,8 +60,6 @@ void cs_to_record(CallSignature *cs, Record *record) {
     int pos = 0;
     memcpy(&record->func_id, key+pos, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(&record->res, key+pos, sizeof(record->res));
-    pos += sizeof(record->res);
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 

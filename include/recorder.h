@@ -153,7 +153,6 @@ void write_record(Record *record);
     record->tstart = tstart;                                                        \
     record->func_id = get_function_id_by_name(#func);                               \
     record->tend = tend;                                                            \
-    record->res = 0;
 
 
 /**

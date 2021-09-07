@@ -63,15 +63,13 @@ char* compose_call_key(Record *record, int* key_len) {
         }
     }
 
-    *key_len = sizeof(record->func_id) + sizeof(record->res) + sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+    *key_len = sizeof(record->func_id) + sizeof(record->arg_count) + sizeof(int) + arg_strlen;
 
 
     char* key = recorder_malloc(*key_len);
     int pos = 0;
     memcpy(key+pos, &record->func_id, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(key+pos, &record->res, sizeof(record->res));
-    pos += sizeof(record->res);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
     memcpy(key+pos, &arg_strlen, sizeof(int));

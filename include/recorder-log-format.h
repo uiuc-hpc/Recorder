@@ -81,7 +81,6 @@ typedef struct Record_t {
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
     char **args;                // Store all arguments in array
-    int res;                    // result returned from the original function call
 } Record;
 
 typedef struct RecordHash_t {
