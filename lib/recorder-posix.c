@@ -67,7 +67,7 @@ int depth;
 
 static int recorder_mem_alignment = 1;
 
-static inline int stream2fd(FILE *fp) {
+inline int stream2fd(FILE *fp) {
     // Need to map the fileno funciton, because here - this file
     // may be invoked even before MPI_Init in recorder-mpi-initialize.c
     // also note that fileno causes segmentation fault if fp is NULL
@@ -77,7 +77,7 @@ static inline int stream2fd(FILE *fp) {
     return fd;
 }
 
-static inline char* stream2fdstr(FILE *fp) {
+inline char* stream2fdstr(FILE *fp) {
     if (fp == NULL) return NULL;
     return itoa(stream2fd(fp));
 }
@@ -138,7 +138,7 @@ extern inline int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
-extern inline int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
+int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -157,7 +157,7 @@ extern inline int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) 
     }
 }
 
-extern inline int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
+int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
         va_start(arg, flags);
@@ -228,12 +228,12 @@ extern inline int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat6
     RECORDER_INTERCEPTOR(3, args);
 }
 
-extern inline ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
+ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread64, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
-extern inline ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
+ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread, (fd, buf, count, offset));
     char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
