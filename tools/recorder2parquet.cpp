@@ -38,7 +38,7 @@ ParquetWriter::ParquetWriter(int _rank, char* _path) {
 }
 
 void ParquetWriter::finish(void) {
-    std::shared_ptr<arrow::Array> rankArray,resArray,arg_countArray, tstartArray, tendArray,
+    std::shared_ptr<arrow::Array> rankArray, arg_countArray, tstartArray, tendArray,
                                 func_idArray, argsArray[10];
     rankBuilder.Finish(&rankArray);
     tstartBuilder.Finish(&tstartArray);
@@ -49,8 +49,8 @@ void ParquetWriter::finish(void) {
         args_Builder[arg_id].Finish(&argsArray[arg_id]);
     }
 
-    auto table = arrow::Table::Make(schema, {rankArray  , tstartArray  , tendArray  ,
-                            func_idArray  , resArray  , arg_countArray  ,
+    auto table = arrow::Table::Make(schema, {rankArray, tstartArray, tendArray,
+                            func_idArray, arg_countArray  ,
                             argsArray[0], argsArray[1], argsArray[2],
                             argsArray[3], argsArray[4], argsArray[5],
                             argsArray[6], argsArray[7], argsArray[8],
