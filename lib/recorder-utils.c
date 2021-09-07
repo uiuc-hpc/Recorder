@@ -109,6 +109,8 @@ void utils_init() {
 void utils_finalize() {
     if(inclusion_prefix) {
         for (int i = 0; *(inclusion_prefix + i); i++) {
+            char* tmp = inclusion_prefix[i];
+            //printf("here; %s\n", tmp);
             free(*(inclusion_prefix + i));
         }
         free(inclusion_prefix);
@@ -152,6 +154,7 @@ inline int accept_filename(const char *filename) {
             if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
                 return 1;
         }
+        return 0;
     }
 
     if(exclusion_prefix) {
@@ -160,6 +163,7 @@ inline int accept_filename(const char *filename) {
             if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
                 return 0;
         }
+        return 1;
     }
 
     return 1;

@@ -128,7 +128,9 @@ static inline char* stream2name(FILE* stream) {
     if(_fname== NULL || !accept_filename(_fname)) {                 \
         MAP_OR_FAIL(func)                                           \
         return RECORDER_REAL_CALL(func) func_args;                  \
-    }
+    }                                                               \
+    assert(accept_filename(_fname) == 1);
+
 
 /**
  * Caller need to guarantee that the filename
@@ -138,13 +140,13 @@ static inline void add_to_map(char* filename, void* arg, int arg_type) {
     if(arg_type == ARG_TYPE_STREAM) {        // FILE* stream
         stream_map_t *entry = malloc(sizeof(stream_map_t));
         entry->stream = (FILE*) arg;
-        entry->filename = strdup(filename);
+        entry->filename = realrealpath(filename);
         HASH_ADD_PTR(stream2name_map, stream, entry);
     }
     if(arg_type == ARG_TYPE_FD) {
         fd_map_t *entry = malloc(sizeof(fd_map_t));
         entry->fd = *((int*) arg);
-        entry->filename = strdup(filename);
+        entry->filename = realrealpath(filename);
         HASH_ADD_INT(fd2name_map, fd, entry);
     }
 }
@@ -496,8 +498,9 @@ int RECORDER_POSIX_DECL(link)(const char *oldpath, const char *newpath) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(unlink)(const char *pathname) {
+    GET_CHECK_FILENAME(unlink, (pathname), pathname, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, unlink, (pathname));
-    char** args = assemble_args_list(1, realrealpath(pathname));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(linkat)(int fd1, const char *path1, int fd2, const char *path2, int flag) {
