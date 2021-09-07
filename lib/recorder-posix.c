@@ -84,7 +84,7 @@ typedef struct fd_map {
 static stream_map_t* stream2name_map;
 static fd_map_t*     fd2name_map;
 
-static inline char* fd2name(int fd) {
+inline char* fd2name(int fd) {
     fd_map_t *entry = NULL;
     HASH_FIND_INT(fd2name_map, &fd, entry);
     if(entry)
@@ -92,7 +92,7 @@ static inline char* fd2name(int fd) {
     return NULL;
 }
 
-static inline char* stream2name(FILE* stream) {
+inline char* stream2name(FILE* stream) {
     stream_map_t *entry = NULL;
     HASH_FIND_PTR(stream2name_map, &stream, entry);
     if(entry)
@@ -136,7 +136,7 @@ static inline char* stream2name(FILE* stream) {
  * Caller need to guarantee that the filename
  * is accepted.
  */
-static inline void add_to_map(char* filename, void* arg, int arg_type) {
+inline void add_to_map(char* filename, void* arg, int arg_type) {
     if(arg_type == ARG_TYPE_STREAM) {        // FILE* stream
         stream_map_t *entry = malloc(sizeof(stream_map_t));
         entry->stream = (FILE*) arg;
@@ -151,7 +151,7 @@ static inline void add_to_map(char* filename, void* arg, int arg_type) {
     }
 }
 
-static inline void remove_from_map(void* arg, int arg_type) {
+inline void remove_from_map(void* arg, int arg_type) {
     if(arg_type == ARG_TYPE_FD) {
         int fd = (*(int*) arg);
         fd_map_t *entry = NULL;
@@ -245,7 +245,6 @@ int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
     RECORDER_INTERCEPTOR(2, args);
 }
 
-extern inline
 int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
@@ -267,7 +266,6 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
     }
 }
 
-extern inline
 int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
     if (flags & O_CREAT) {
         va_list arg;
@@ -301,7 +299,7 @@ extern inline
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
     GET_CHECK_FILENAME(fopen, (path, mode), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
-    record->res = stream2fd(res);
+    add_to_map(_fname, res, ARG_TYPE_STREAM);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -361,7 +359,6 @@ int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
     RECORDER_INTERCEPTOR(3, args);
 }
 
-extern inline
 ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
     GET_CHECK_FILENAME(pread64, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread64, (fd, buf, count, offset));
@@ -369,7 +366,6 @@ ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t of
     RECORDER_INTERCEPTOR(4, args);
 }
 
-extern inline
 ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
     GET_CHECK_FILENAME(pread, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread, (fd, buf, count, offset));

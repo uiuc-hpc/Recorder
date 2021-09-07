@@ -8,12 +8,19 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 #------------------------------------------------------------------------------
 set(RECORDER_SRCS
         ${CMAKE_SOURCE_DIR}/include/recorder.h
+        ${CMAKE_SOURCE_DIR}/include/recorder-sequitur.h
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi-init-finalize.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c)
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-symbol.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-digram.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-logger.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-utils.c)
+
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
@@ -93,7 +100,7 @@ set(RECORDER_HEADERS
         ${CMAKE_SOURCE_DIR}/include/recorder-log-format.h
         ${CMAKE_SOURCE_DIR}/include/recorder-utils.h
         ${CMAKE_SOURCE_DIR}/include/uthash.h
-        )
+    )
 
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install

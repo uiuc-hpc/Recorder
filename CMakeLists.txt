@@ -139,7 +139,7 @@ else()
 endif()
 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -Wno-unused-result")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if (NOT "${CMAKE_CXX_FLAGS_DEBUG}" MATCHES ".*-g3.*")
