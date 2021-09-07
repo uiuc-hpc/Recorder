@@ -2,6 +2,7 @@
 bin_PROGRAMS = recorder2text
 lib_LTLIBRARIES = librreader.la
 
+AM_CFLAGS = -std=c99
 AM_CPPFLAGS = -I$(top_srcdir)/include -Wno-unused-result
 AM_CXXFLAGS = -std=c++11
 

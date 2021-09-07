@@ -1,5 +1,4 @@
 
-
 lib_LTLIBRARIES = librecorder.la
 
 
@@ -15,6 +14,6 @@ librecorder_la_SOURCES = recorder-hdf5.c recorder-logger.c \
 						 recorder-sequitur-utils.c
 
 
-librecorder_la_CFLAGS = -I$(top_srcdir)/include -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD $(disabled_layers)
+librecorder_la_CFLAGS = -I$(top_srcdir)/include -D_LARGEFILE64_SOURCE -DRECORDER_PRELOAD $(disabled_layers) -std=c99
 librecorder_la_LDFLAGS = -lpthread -lhdf5 -version-info 0:0:0
 
