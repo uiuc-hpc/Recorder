@@ -25,6 +25,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libhdf5-mpi-dev
+        
+    - name: Install Apache Arrow and Parquet
+      run: |
+        sudo apt update
+        sudo apt install -y -V ca-certificates lsb-release wget
+        wget https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+        sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+        sudo apt update
+        sudo apt install -y -V libarrow-dev
+        sudo apt install -y -V libparquet-dev
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
