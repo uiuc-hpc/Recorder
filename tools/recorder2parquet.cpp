@@ -11,7 +11,7 @@
 struct ParquetWriter {
     int rank;
     char* path;
-    arrow::Int32Builder rankBuilder, arg_countBuilder;
+    arrow::Int32Builder rankBuilder, threadBuilder, arg_countBuilder;
     arrow::FloatBuilder tstartBuilder, tendBuilder;
     arrow::StringBuilder func_idBuilder, args_Builder[10];
 
@@ -26,7 +26,7 @@ ParquetWriter::ParquetWriter(int _rank, char* _path) {
     rank = _rank;
     path = _path;
     schema = arrow::schema(
-                {arrow::field("rank", arrow::int32()),
+                {arrow::field("rank", arrow::int32()), arrow::field("thread_id", arrow::int32()),
                 arrow::field("tstart", arrow::float32()), arrow::field("tend", arrow::float32()),
                 arrow::field("func_id", arrow::utf8()),
                 arrow::field("arg_count", arrow::int32()), arrow::field("args_1", arrow::utf8()),
@@ -38,9 +38,10 @@ ParquetWriter::ParquetWriter(int _rank, char* _path) {
 }
 
 void ParquetWriter::finish(void) {
-    std::shared_ptr<arrow::Array> rankArray, arg_countArray, tstartArray, tendArray,
+    std::shared_ptr<arrow::Array> rankArray, threadArray, arg_countArray, tstartArray, tendArray,
                                 func_idArray, argsArray[10];
     rankBuilder.Finish(&rankArray);
+    threadBuilder.Finish(&threadArray);
     tstartBuilder.Finish(&tstartArray);
     tendBuilder.Finish(&tendArray);
     func_idBuilder.Finish(&func_idArray);
@@ -49,7 +50,7 @@ void ParquetWriter::finish(void) {
         args_Builder[arg_id].Finish(&argsArray[arg_id]);
     }
 
-    auto table = arrow::Table::Make(schema, {rankArray, tstartArray, tendArray,
+    auto table = arrow::Table::Make(schema, {rankArray,threadArray, tstartArray, tendArray,
                             func_idArray, arg_countArray  ,
                             argsArray[0], argsArray[1], argsArray[2],
                             argsArray[3], argsArray[4], argsArray[5],
@@ -67,6 +68,7 @@ void handle_one_record(Record* record, void* arg) {
     ParquetWriter *writer = (ParquetWriter*) arg;
 
     writer->rankBuilder.Append(writer->rank);
+    writer->threadBuilder.Append(record->tid);
     writer->tstartBuilder.Append(record->tstart);
     writer->tendBuilder.Append(record->tend);
     writer->func_idBuilder.Append(recorder_get_func_name(&reader, record->func_id));
@@ -110,4 +112,3 @@ int main(int argc, char **argv) {
     recorder_free_reader(&reader);
     return 0;
 }
-
