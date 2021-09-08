@@ -9,10 +9,11 @@
 #define SESSION_SEMANTICS 2
 
 typedef struct RecorderReader_t {
-    RecorderGlobalDef RGD;
-    RecorderLocalDef *RLDs;
-    Record **records;       //records[rank] is a list of records of that rank
+
+    RecorderMetadata metadata;
+
     char func_list[256][64];
+    char logs_dir[1024];
 } RecorderReader;
 
 typedef struct Interval_t {
@@ -38,19 +39,64 @@ typedef struct IntervalsMap_t {
     double **tcommits;
 } IntervalsMap;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-void read_global_metadata(char* path, RecorderGlobalDef *RGD);
+typedef struct CallSignature_t {
+    int terminal;
+    int key_len;
+    char* key;
+} CallSignature;
 
-void read_local_metadata(char* path, RecorderLocalDef *RLD);
+typedef struct CST_t {
+    int rank;
+    int entries;
+    CallSignature *cst_list;
+} CST;
 
-Record* read_records(char* path, RecorderLocalDef* RLD, RecorderGlobalDef *RGD);
+typedef struct RuleHash_t {
+    int rule_id;
+    int *rule_body;     // 2i+0: val of symbol i,  2i+1: exp of symbol i
+    int symbols;        // There are a total of 2*symbols integers in the rule body
+    UT_hash_handle hh;
+} RuleHash;
 
-void decompress_records(Record* records, int len);
+typedef struct CFG_t {
+    int rank;
+    int rules;
+    RuleHash* cfg_head;
+} CFG;
 
-void recorder_read_traces(const char* logs_dir, RecorderReader *reader);
-void release_resources(RecorderReader *reader);
+
+void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
+void recorder_free_reader(RecorderReader *reader);
+
+void recorder_read_cst(RecorderReader *reader, int rank, CST *cst);
+void recorder_free_cst(CST *cst);
+
+void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
+void recorder_free_cfg(CFG *cfg);
+
+/**
+ * This function reads all records of a rank
+ *
+ * For each record decoded, the user_op() function
+ * will be called with the decoded record
+ *
+ * void user_op(Record *r, void* user_arg);
+ * void* user_arg can be used to pass in user argument.
+ *
+ */
+void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record* r, void* user_arg), void* user_arg);
+
+const char* recorder_get_func_name(RecorderReader* reader, int func_id);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -63,58 +63,158 @@
 typedef int64_t off64_t;
 #endif
 
-int depth;
-
 static int recorder_mem_alignment = 1;
 
-static inline int stream2fd(FILE *fp) {
-    // Need to map the fileno funciton, because here - this file
-    // may be invoked even before MPI_Init in recorder-mpi-initialize.c
-    // also note that fileno causes segmentation fault if fp is NULL
-    if (fp == NULL) return -1;
-    MAP_OR_FAIL(fileno)
-    int fd = RECORDER_REAL_CALL(fileno(fp));
-    return fd;
+
+typedef struct stream_map {
+    char* filename;
+    FILE* stream;       // key
+    UT_hash_handle hh;
+} stream_map_t;
+
+typedef struct fd_map {
+    char* filename;
+    int fd;             // key
+    UT_hash_handle hh;
+} fd_map_t;
+
+static stream_map_t* stream2name_map;
+static fd_map_t*     fd2name_map;
+
+inline char* fd2name(int fd) {
+    fd_map_t *entry = NULL;
+    HASH_FIND_INT(fd2name_map, &fd, entry);
+    if(entry)
+        return strdup(entry->filename);     // duplicate the filename as it will be release in free_record()
+    return NULL;
 }
 
-static inline char* stream2fdstr(FILE *fp) {
-    if (fp == NULL) return NULL;
-    return itoa(stream2fd(fp));
+inline char* stream2name(FILE* stream) {
+    stream_map_t *entry = NULL;
+    HASH_FIND_PTR(stream2name_map, &stream, entry);
+    if(entry)
+        return strdup(entry->filename);
+    return NULL;
+}
+
+
+/**
+ * Given char* path, int fd or FILE* stream
+ * in the argument void* f_arg.  Get the absolute
+ * filename and check if we should intercept this call.
+ *
+ * If not, we directly call the real call and return
+ * If so, the absolution name is stored in _fname
+ *
+ */
+#define ARG_TYPE_FD         0
+#define ARG_TYPE_STREAM     1
+#define ARG_TYPE_PATH       2
+
+#define GET_CHECK_FILENAME(func, func_args, f_arg, f_arg_type)      \
+    char* _fname = NULL;                                            \
+    if(logger_initialized()) {                                      \
+        if(f_arg_type == ARG_TYPE_PATH)                             \
+            _fname = realrealpath((char*) f_arg);                   \
+        if(f_arg_type == ARG_TYPE_STREAM)                           \
+            _fname = stream2name((FILE*) f_arg);                    \
+        if(f_arg_type == ARG_TYPE_FD)                               \
+            _fname = fd2name(*(int*) f_arg);                        \
+    }                                                               \
+                                                                    \
+    if(_fname== NULL || !accept_filename(_fname)) {                 \
+        MAP_OR_FAIL(func)                                           \
+        return RECORDER_REAL_CALL(func) func_args;                  \
+    }                                                               \
+    assert(accept_filename(_fname) == 1);
+
+
+/**
+ * Caller need to guarantee that the filename
+ * is accepted.
+ */
+inline void add_to_map(char* filename, void* arg, int arg_type) {
+    if(arg_type == ARG_TYPE_STREAM) {        // FILE* stream
+        stream_map_t *entry = malloc(sizeof(stream_map_t));
+        entry->stream = (FILE*) arg;
+        entry->filename = realrealpath(filename);
+        HASH_ADD_PTR(stream2name_map, stream, entry);
+    }
+    if(arg_type == ARG_TYPE_FD) {
+        fd_map_t *entry = malloc(sizeof(fd_map_t));
+        entry->fd = *((int*) arg);
+        entry->filename = realrealpath(filename);
+        HASH_ADD_INT(fd2name_map, fd, entry);
+    }
+}
+
+inline void remove_from_map(void* arg, int arg_type) {
+    if(arg_type == ARG_TYPE_FD) {
+        int fd = (*(int*) arg);
+        fd_map_t *entry = NULL;
+        HASH_FIND_INT(fd2name_map, &fd, entry);
+        if(entry) {
+            HASH_DEL(fd2name_map, entry);
+            free(entry->filename);
+            free(entry);
+        }
+    }
+    if(arg_type == ARG_TYPE_STREAM) {
+        FILE* stream = (FILE*) arg;
+        stream_map_t *entry = NULL;
+        HASH_FIND_PTR(stream2name_map, &stream, entry);
+        if(entry) {
+            HASH_DEL(stream2name_map, entry);
+            free(entry->filename);
+            free(entry);
+        }
+    }
 }
 
 
 int RECORDER_POSIX_DECL(close)(int fd) {
+    GET_CHECK_FILENAME(close, (fd), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, close, (fd));
-    char** args = assemble_args_list(1, itoa(fd));
+    remove_from_map(&fd, ARG_TYPE_FD);
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 
-int RECORDER_POSIX_DECL(fclose)(FILE *fp) {
-    char** args = assemble_args_list(1, stream2fdstr(fp));  // get the fd first otherwise fp will be NULL after went through close
-    RECORDER_INTERCEPTOR_NOIO(int, fclose, (fp));
+int RECORDER_POSIX_DECL(fclose)(FILE *stream) {
+    GET_CHECK_FILENAME(fclose, (stream), stream, ARG_TYPE_STREAM);
+    char** args = assemble_args_list(1, _fname);
+    remove_from_map(stream, ARG_TYPE_STREAM);
+    RECORDER_INTERCEPTOR_NOIO(int, fclose, (stream));
     RECORDER_INTERCEPTOR(1, args);
 }
 
 int RECORDER_POSIX_DECL(fsync)(int fd) {
+    GET_CHECK_FILENAME(fsync, (fd), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, fsync, (fd));
-    char** args = assemble_args_list(1, itoa(fd));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 
 int RECORDER_POSIX_DECL(fdatasync)(int fd) {
+    GET_CHECK_FILENAME(fdatasync, (fd), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, fdatasync, (fd));
-    char** args = assemble_args_list(1, itoa(fd));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 
+extern inline
 void* RECORDER_POSIX_DECL(mmap64)(void *addr, size_t length, int prot, int flags, int fd, off64_t offset) {
+    GET_CHECK_FILENAME(mmap64, (addr, length, prot, flags, fd, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(void*, mmap64, (addr, length, prot, flags, fd, offset));
-    char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
+    char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), _fname, itoa(offset));
     RECORDER_INTERCEPTOR(6, args);
 }
+
+extern inline
 void* RECORDER_POSIX_DECL(mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    GET_CHECK_FILENAME(mmap, (addr, length, prot, flags, fd, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(void*, mmap, (addr, length, prot, flags, fd, offset));
-    char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), itoa(fd), itoa(offset));
+    char** args = assemble_args_list(6, ptoa(addr), itoa(length), itoa(prot), itoa(flags), _fname, itoa(offset));
     RECORDER_INTERCEPTOR(6, args);
 }
 
@@ -124,17 +224,21 @@ int RECORDER_POSIX_DECL(msync)(void *addr, size_t length, int flags) {
     RECORDER_INTERCEPTOR(3, args);
 }
 
+extern inline
 int RECORDER_POSIX_DECL(creat)(const char *path, mode_t mode) {
+    GET_CHECK_FILENAME(creat, (path, mode), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, creat, (path, mode));
-    record->res = res;
-    char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
+    add_to_map(_fname, &res, ARG_TYPE_FD);
+    char** args = assemble_args_list(2, _fname, itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
+extern inline
 int RECORDER_POSIX_DECL(creat64)(const char *path, mode_t mode) {
+    GET_CHECK_FILENAME(creat64, (path, mode), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, creat64, (path, mode));
-    char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
-    record->res = res;
+    add_to_map(_fname, &res, ARG_TYPE_FD);
+    char** args = assemble_args_list(2, _fname, itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
@@ -144,15 +248,17 @@ int RECORDER_POSIX_DECL(open64)(const char *path, int flags, ...) {
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
+        GET_CHECK_FILENAME(open64, (path, flags, mode), path, ARG_TYPE_PATH);
         RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags, mode));
-        char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
-        record->res = res;
+        add_to_map(_fname, &res, ARG_TYPE_FD);
+        char** args = assemble_args_list(3, _fname, itoa(flags), itoa(mode));
         RECORDER_INTERCEPTOR(3, args);
 
     } else {
+        GET_CHECK_FILENAME(open64, (path, flags), path, ARG_TYPE_PATH);
         RECORDER_INTERCEPTOR_NOIO(int, open64, (path, flags));
-        char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
-        record->res = res;
+        add_to_map(_fname, &res, ARG_TYPE_FD);
+        char** args = assemble_args_list(2, _fname, itoa(flags));
         RECORDER_INTERCEPTOR(2, args);
     }
 }
@@ -163,28 +269,34 @@ int RECORDER_POSIX_DECL(open)(const char *path, int flags, ...) {
         va_start(arg, flags);
         int mode = va_arg(arg, int);
         va_end(arg);
+        GET_CHECK_FILENAME(open, (path, flags, mode), path, ARG_TYPE_PATH);
         RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags, mode));
-        record->res = res;
-        char** args = assemble_args_list(3, realrealpath(path), itoa(flags), itoa(mode));
+        add_to_map(_fname, &res, ARG_TYPE_FD);
+        char** args = assemble_args_list(3, _fname, itoa(flags), itoa(mode));
         RECORDER_INTERCEPTOR(3, args);
     } else {
+        GET_CHECK_FILENAME(open, (path, flags), path, ARG_TYPE_PATH);
         RECORDER_INTERCEPTOR_NOIO(int, open, (path, flags));
-        record->res = res;
-        char** args = assemble_args_list(2, realrealpath(path), itoa(flags));
+        add_to_map(_fname, &res, ARG_TYPE_FD);
+        char** args = assemble_args_list(2, _fname, itoa(flags));
         RECORDER_INTERCEPTOR(2, args);
     }
 }
 
+extern inline
 FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
-    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
-    record->res = stream2fd(res);
-    char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
+    GET_CHECK_FILENAME(fopen64, (path, mode), path, ARG_TYPE_PATH);
+    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode));
+    add_to_map(_fname, res, ARG_TYPE_STREAM);
+    char** args = assemble_args_list(2, _fname, strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 
+extern inline
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
-    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen, (path, mode));
-    record->res = stream2fd(res);
+    GET_CHECK_FILENAME(fopen, (path, mode), path, ARG_TYPE_PATH);
+    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
+    add_to_map(_fname, res, ARG_TYPE_STREAM);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -197,85 +309,110 @@ FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
  * This means stat(), lstat(), fstat() are just wrappers in GLIC and dlsym() is not able to hook them.
  * So wee need to hook __xstat(), __lxstat(), and __fxstat()
  */
+extern inline
 int RECORDER_POSIX_DECL(__xstat)(int vers, const char *path, struct stat *buf) {
+    GET_CHECK_FILENAME(__xstat, (vers, path, buf), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, __xstat, (vers, path, buf));
-    char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
+
+extern inline
 int RECORDER_POSIX_DECL(__xstat64)(int vers, const char *path, struct stat64 *buf) {
+    GET_CHECK_FILENAME(__xstat64, (vers, path, buf), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, __xstat64, (vers, path, buf));
-    char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
+
+extern inline
 int RECORDER_POSIX_DECL(__lxstat)(int vers, const char *path, struct stat *buf) {
+    GET_CHECK_FILENAME(__lxstat, (vers, path, buf), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, __lxstat, (vers, path, buf));
-    char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
+extern inline
 int RECORDER_POSIX_DECL(__lxstat64)(int vers, const char *path, struct stat64 *buf) {
+    GET_CHECK_FILENAME(__lxstat64, (vers, path, buf), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, __lxstat64, (vers, path, buf));
-    char** args = assemble_args_list(3, itoa(vers), realrealpath(path), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
+
+extern inline
 int RECORDER_POSIX_DECL(__fxstat)(int vers, int fd, struct stat *buf) {
+    GET_CHECK_FILENAME(__fxstat, (vers, fd, buf), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, __fxstat, (vers, fd, buf));
-    char** args = assemble_args_list(3, itoa(vers), itoa(fd), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
+
+extern inline
 int RECORDER_POSIX_DECL(__fxstat64)(int vers, int fd, struct stat64 *buf) {
+    GET_CHECK_FILENAME(__fxstat64, (vers, fd, buf), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, __fxstat64, (vers, fd, buf));
-    char** args = assemble_args_list(3, itoa(vers), itoa(fd), ptoa(buf));
+    char** args = assemble_args_list(3, itoa(vers), _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 ssize_t RECORDER_POSIX_DECL(pread64)(int fd, void *buf, size_t count, off64_t offset) {
+    GET_CHECK_FILENAME(pread64, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread64, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
+
 ssize_t RECORDER_POSIX_DECL(pread)(int fd, void *buf, size_t count, off_t offset) {
+    GET_CHECK_FILENAME(pread, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pread, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
 
+extern inline
 ssize_t RECORDER_POSIX_DECL(pwrite64)(int fd, const void *buf, size_t count, off64_t offset) {
+    GET_CHECK_FILENAME(pwrite64, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pwrite64, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
+extern inline
 ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
+    GET_CHECK_FILENAME(pwrite, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pwrite, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, itoa(fd), ptoa(buf), itoa(count), itoa(offset));
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR(4, args);
 }
-
 
 ssize_t RECORDER_POSIX_DECL(readv)(int fd, const struct iovec *iov, int iovcnt) {
+    GET_CHECK_FILENAME(readv, (fd, iov, iovcnt), &fd, ARG_TYPE_FD);
     // Return total bytes as the second argument
     // So during post-processing we know both the offset and bytes count
     int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         total += iov[i].iov_len;
     RECORDER_INTERCEPTOR_NOIO(ssize_t, readv, (fd, iov, iovcnt));
-    char** args = assemble_args_list(3, itoa(fd), itoa(total), itoa(iovcnt));
+    char** args = assemble_args_list(3, _fname, itoa(total), itoa(iovcnt));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 ssize_t RECORDER_POSIX_DECL(writev)(int fd, const struct iovec *iov, int iovcnt) {
+    GET_CHECK_FILENAME(writev, (fd, iov, iovcnt), &fd, ARG_TYPE_FD);
     // Return total bytes as the second argument
     // So during post-processing we know both the offset and bytes count
     int total = 0; int i = 0;
     for (i = 0; i < iovcnt; i++)
         total += iov[i].iov_len;
     RECORDER_INTERCEPTOR_NOIO(ssize_t, writev, (fd, iov, iovcnt));
-    char** args = assemble_args_list(3, itoa(fd), itoa(total), itoa(iovcnt));
+    char** args = assemble_args_list(3, _fname, itoa(total), itoa(iovcnt));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 size_t RECORDER_POSIX_DECL(fread)(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    GET_CHECK_FILENAME(fread, (ptr, size, nmemb, stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(size_t, fread, (ptr, size, nmemb, stream));
-    char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), stream2fdstr(stream));
+    char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), _fname);
     RECORDER_INTERCEPTOR(4, args);
 }
 
@@ -284,8 +421,9 @@ size_t RECORDER_POSIX_DECL(fwrite)(const void *ptr, size_t size, size_t nmemb, F
     // int aligned_flag = 0;
     //if ((unsigned long)ptr % recorder_mem_alignment == 0)
     //    aligned_flag = 1;
+    GET_CHECK_FILENAME(fwrite, (ptr, size, nmemb, stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(size_t, fwrite, (ptr, size, nmemb, stream));
-    char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), stream2fdstr(stream));
+    char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), _fname);
     RECORDER_INTERCEPTOR(4, args);
 }
 
@@ -297,45 +435,54 @@ int RECORDER_POSIX_DECL(fprintf)(FILE *stream, const char *format, ...) {
     va_end(fprintf_args);
 
     va_start(fprintf_args, format);
+    GET_CHECK_FILENAME(vfprintf, (stream, format, fprintf_args), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(size_t, vfprintf, (stream, format, fprintf_args));
     va_end(fprintf_args);
-    char** args = assemble_args_list(2, stream2fdstr(stream), itoa(size));
+    char** args = assemble_args_list(2, _fname, itoa(size));
     RECORDER_INTERCEPTOR(2, args);
 }
 
 ssize_t RECORDER_POSIX_DECL(read)(int fd, void *buf, size_t count) {
+    GET_CHECK_FILENAME(read, (fd, buf, count), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, read, (fd, buf, count));
-    char** args = assemble_args_list(3, itoa(fd), ptoa(buf), itoa(count));
+    char** args = assemble_args_list(3, _fname, ptoa(buf), itoa(count));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 ssize_t RECORDER_POSIX_DECL(write)(int fd, const void *buf, size_t count) {
+    GET_CHECK_FILENAME(write, (fd, buf, count), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, write, (fd, buf, count));
-    char** args = assemble_args_list(3, itoa(fd), ptoa(buf), itoa(count));
+    char** args = assemble_args_list(3, _fname, ptoa(buf), itoa(count));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 int RECORDER_POSIX_DECL(fseek)(FILE *stream, long offset, int whence) {
+    GET_CHECK_FILENAME(fseek, (stream, offset, whence), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(int, fseek, (stream, offset, whence));
-    char** args = assemble_args_list(3, stream2fdstr(stream), itoa(offset), itoa(whence));
+    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
+    GET_CHECK_FILENAME(ftell, (stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(long, ftell, (stream));
-    char** args = assemble_args_list(1, stream2fdstr(stream));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args)
 }
 
+extern inline
 off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
+    GET_CHECK_FILENAME(lseek64, (fd, offset, whence), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(off64_t, lseek64, (fd, offset, whence));
-    char** args = assemble_args_list(3, itoa(fd), itoa(offset), itoa(whence));
+    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
 }
 
+extern inline
 off_t RECORDER_POSIX_DECL(lseek)(int fd, off_t offset, int whence) {
+    GET_CHECK_FILENAME(lseek, (fd, offset, whence), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(off_t, lseek, (fd, offset, whence));
-    char** args = assemble_args_list(3, itoa(fd), itoa(offset), itoa(whence));
+    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
 }
 
@@ -347,18 +494,21 @@ char* RECORDER_POSIX_DECL(getcwd)(char *buf, size_t size) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(mkdir)(const char *pathname, mode_t mode) {
+    GET_CHECK_FILENAME(mkdir, (pathname, mode), pathname, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, mkdir, (pathname, mode));
-    char** args = assemble_args_list(2, realrealpath(pathname), itoa(mode));
+    char** args = assemble_args_list(2, _fname, itoa(mode));
     RECORDER_INTERCEPTOR(2, args)
 }
 int RECORDER_POSIX_DECL(rmdir)(const char *pathname) {
+    GET_CHECK_FILENAME(rmdir, (pathname), pathname, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, rmdir, (pathname));
-    char** args = assemble_args_list(1, realrealpath(pathname));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(chdir)(const char *path) {
+    GET_CHECK_FILENAME(chdir, (path), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, chdir, (path));
-    char** args = assemble_args_list(1, realrealpath(path));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(link)(const char *oldpath, const char *newpath) {
@@ -367,8 +517,9 @@ int RECORDER_POSIX_DECL(link)(const char *oldpath, const char *newpath) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(unlink)(const char *pathname) {
+    GET_CHECK_FILENAME(unlink, (pathname), pathname, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, unlink, (pathname));
-    char** args = assemble_args_list(1, realrealpath(pathname));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(linkat)(int fd1, const char *path1, int fd2, const char *path2, int flag) {
@@ -382,19 +533,22 @@ int RECORDER_POSIX_DECL(symlink)(const char *path1, const char *path2) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(symlinkat)(const char *path1, int fd, const char *path2) {
+    GET_CHECK_FILENAME(symlinkat, (path1, fd, path2), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, symlinkat, (path1, fd, path2));
-    char** args = assemble_args_list(3, realrealpath(path1), itoa(fd), realrealpath(path2));
+    char** args = assemble_args_list(3, realrealpath(path1), _fname, realrealpath(path2));
     RECORDER_INTERCEPTOR(3, args);
 }
 ssize_t RECORDER_POSIX_DECL(readlink)(const char *path, char *buf, size_t bufsize) {
+    GET_CHECK_FILENAME(readlink, (path, buf, bufsize), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, readlink, (path, buf, bufsize));
-    char** args = assemble_args_list(3, realrealpath(path), ptoa(buf), itoa(bufsize));
+    char** args = assemble_args_list(3, _fname, ptoa(buf), itoa(bufsize));
     RECORDER_INTERCEPTOR(3, args);
 }
 
 ssize_t RECORDER_POSIX_DECL(readlinkat)(int fd, const char *path, char *buf, size_t bufsize) {
+    GET_CHECK_FILENAME(readlinkat, (fd, path, buf, bufsize), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, readlinkat, (fd, path, buf, bufsize));
-    char** args = assemble_args_list(4, itoa(fd), realrealpath(path), ptoa(buf), itoa(bufsize));
+    char** args = assemble_args_list(4, _fname, realrealpath(path), ptoa(buf), itoa(bufsize));
     RECORDER_INTERCEPTOR(4, args);
 }
 
@@ -404,28 +558,33 @@ int RECORDER_POSIX_DECL(rename)(const char *oldpath, const char *newpath) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(chmod)(const char *path, mode_t mode) {
+    GET_CHECK_FILENAME(chmod, (path, mode), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, chmod, (path, mode));
-    char** args = assemble_args_list(2, realrealpath(path), itoa(mode));
+    char** args = assemble_args_list(2, _fname, itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(chown)(const char *path, uid_t owner, gid_t group) {
+    GET_CHECK_FILENAME(chown, (path, owner, group), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, chown, (path, owner, group));
-    char** args = assemble_args_list(3, realrealpath(path), itoa(owner), itoa(group));
+    char** args = assemble_args_list(3, _fname, itoa(owner), itoa(group));
     RECORDER_INTERCEPTOR(3, args);
 }
 int RECORDER_POSIX_DECL(lchown)(const char *path, uid_t owner, gid_t group) {
+    GET_CHECK_FILENAME(lchown, (path, owner, group), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, lchown, (path, owner, group));
-    char** args = assemble_args_list(3, realrealpath(path), itoa(owner), itoa(group));
+    char** args = assemble_args_list(3, _fname, itoa(owner), itoa(group));
     RECORDER_INTERCEPTOR(3, args);
 }
 int RECORDER_POSIX_DECL(utime)(const char *filename, const struct utimbuf *buf) {
+    GET_CHECK_FILENAME(utime, (filename, buf), filename, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, utime, (filename, buf));
-    char** args = assemble_args_list(2, realrealpath(filename), ptoa(buf));
+    char** args = assemble_args_list(2, _fname, ptoa(buf));
     RECORDER_INTERCEPTOR(2, args);
 }
 DIR* RECORDER_POSIX_DECL(opendir)(const char *name) {
+    GET_CHECK_FILENAME(opendir, (name), name, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(DIR*, opendir, (name));
-    char** args = assemble_args_list(1, realrealpath(name));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 struct dirent* RECORDER_POSIX_DECL(readdir)(DIR *dir) {
@@ -446,12 +605,12 @@ void RECORDER_POSIX_DECL(rewinddir)(DIR *dir) {
 }
 int RECORDER_POSIX_DECL(__xmknod)(int ver, const char *path, mode_t mode, dev_t dev) {
     RECORDER_INTERCEPTOR_NOIO(int, __xmknod, (ver, path, mode, dev));
-    char** args = assemble_args_list(4, itoa(ver), realrealpath(path), itoa(mode), itoa(dev));
+    char** args = assemble_args_list(4, itoa(ver), _fnametmp, itoa(mode), itoa(dev));
     RECORDER_INTERCEPTOR(4, args);
 }
 int RECORDER_POSIX_DECL(__xmknodat)(int ver, int fd, const char *path, mode_t mode, dev_t dev) {
     RECORDER_INTERCEPTOR_NOIO(int, __xmknodat, (ver, fd, path, mode, dev));
-    char** args = assemble_args_list(5, itoa(ver), itoa(fd), realrealpath(path), itoa(mode), itoa(dev));
+    char** args = assemble_args_list(5, itoa(ver), _fname, _fnametmp, itoa(mode), itoa(dev));
     RECORDER_INTERCEPTOR(5, args);
 }
 */
@@ -465,38 +624,50 @@ int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
         va_start(arg, cmd);
         int val = va_arg(arg, int);
         va_end(arg);
+
+        GET_CHECK_FILENAME(fcntl, (fd, cmd, val), &fd, ARG_TYPE_FD);
+
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd, val));
-        char** args = assemble_args_list(3, itoa(fd), itoa(cmd), itoa(val));
+        char** args = assemble_args_list(3, _fname, itoa(cmd), itoa(val));
         RECORDER_INTERCEPTOR(3, args);
     } else if(cmd==F_GETFD || cmd==F_GETFL || cmd==F_GETOWN) {                     // arg: void
+
+        GET_CHECK_FILENAME(fcntl, (fd, cmd), &fd, ARG_TYPE_FD);
+
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd));
-        char** args = assemble_args_list(2, itoa(fd), itoa(cmd));
+        char** args = assemble_args_list(2, _fname, itoa(cmd));
         RECORDER_INTERCEPTOR(2, args);
     } else if(cmd==F_SETLK || cmd==F_SETLKW || cmd==F_GETLK) {
         va_list arg;
         va_start(arg, cmd);
         struct flock *lk = va_arg(arg, struct flock*);
         va_end(arg);
+
+        GET_CHECK_FILENAME(fcntl, (fd, cmd, lk), &fd, ARG_TYPE_FD);
+
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd, lk));
-        char** args = assemble_args_list(3, itoa(fd), itoa(cmd), itoa(lk->l_type));
+        char** args = assemble_args_list(3, _fname, itoa(cmd), itoa(lk->l_type));
         RECORDER_INTERCEPTOR(3, args);
     } else {                        // assume arg: void, cmd==F_GETOWN_EX || cmd==F_SETOWN_EX ||cmd==F_GETSIG || cmd==F_SETSIG)
+        GET_CHECK_FILENAME(fcntl, (fd, cmd), &fd, ARG_TYPE_FD);
         RECORDER_INTERCEPTOR_NOIO(int, fcntl, (fd, cmd));
-        char** args = assemble_args_list(2, itoa(fd), itoa(cmd));
+        char** args = assemble_args_list(2, _fname, itoa(cmd));
         RECORDER_INTERCEPTOR(2, args);
     }
 }
 #endif
 
 int RECORDER_POSIX_DECL(dup)(int oldfd) {
+    GET_CHECK_FILENAME(dup, (oldfd), &oldfd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, dup, (oldfd));
-    record->res = res;
+    add_to_map(_fname, &res, ARG_TYPE_FD);
     char** args = assemble_args_list(1, itoa(oldfd));
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(dup2)(int oldfd, int newfd) {
+    GET_CHECK_FILENAME(dup2, (oldfd, newfd), &oldfd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, dup2, (oldfd, newfd));
-    record->res = res;
+    add_to_map(_fname, &res, ARG_TYPE_FD);
     char** args = assemble_args_list(2, itoa(oldfd), itoa(newfd));
     RECORDER_INTERCEPTOR(2, args);
 }
@@ -507,8 +678,9 @@ int RECORDER_POSIX_DECL(pipe)(int pipefd[2]) {
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(mkfifo)(const char *pathname, mode_t mode) {
+    GET_CHECK_FILENAME(mkfifo, (pathname, mode), pathname, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, mkfifo, (pathname, mode));
-    char** args = assemble_args_list(2, realrealpath(pathname), itoa(mode));
+    char** args = assemble_args_list(2, _fname, itoa(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
@@ -518,56 +690,65 @@ mode_t RECORDER_POSIX_DECL(umask)(mode_t mask) {
 }
 
 FILE* RECORDER_POSIX_DECL(fdopen)(int fd, const char *mode) {
+    GET_CHECK_FILENAME(fdopen, (fd, mode), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(FILE*, fdopen, (fd, mode));
-    record->res = stream2fd(res);
-    char** args = assemble_args_list(2, itoa(fd), strdup(mode));
+    add_to_map(_fname, res, ARG_TYPE_STREAM);
+    char** args = assemble_args_list(2, _fname, strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(fileno)(FILE *stream) {
+    GET_CHECK_FILENAME(fileno, (stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(int, fileno, (stream));
-    char** args = assemble_args_list(1, stream2fdstr(stream));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(access)(const char *path, int amode) {
+    GET_CHECK_FILENAME(access, (path, amode), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, access, (path, amode));
-    char** args = assemble_args_list(2, realrealpath(path), itoa(amode));
+    char** args = assemble_args_list(2, _fname, itoa(amode));
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(faccessat)(int fd, const char *path, int amode, int flag) {
+    GET_CHECK_FILENAME(faccessat, (fd, path, amode, flag), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, faccessat, (fd, path, amode, flag));
-    char** args = assemble_args_list(4, itoa(fd), realrealpath(path), itoa(amode), itoa(flag));
+    char** args = assemble_args_list(4, _fname, realrealpath(path), itoa(amode), itoa(flag));
     RECORDER_INTERCEPTOR(4, args);
 }
 FILE* RECORDER_POSIX_DECL(tmpfile)(void) {
+    // TODO get and check filename of tmpfile
     RECORDER_INTERCEPTOR_NOIO(FILE*, tmpfile, ());
-    record->res = stream2fd(res);
     char **args = NULL;
     RECORDER_INTERCEPTOR(0, args);
 }
 int RECORDER_POSIX_DECL(remove)(const char *path) {
+    GET_CHECK_FILENAME(remove, (path), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, remove, (path));
-    char** args = assemble_args_list(1, realrealpath(path));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args)
 }
 int RECORDER_POSIX_DECL(truncate)(const char *path, off_t length) {
+    GET_CHECK_FILENAME(truncate, (path, length), path, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, truncate, (path, length));
-    char** args = assemble_args_list(2, realrealpath(path), itoa(length));
+    char** args = assemble_args_list(2, _fname, itoa(length));
     RECORDER_INTERCEPTOR(2, args);
 }
 int RECORDER_POSIX_DECL(ftruncate)(int fd, off_t length) {
+    GET_CHECK_FILENAME(ftruncate, (fd, length), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(int, ftruncate, (fd, length));
-    char** args = assemble_args_list(2, itoa(fd), itoa(length));
+    char** args = assemble_args_list(2, _fname, itoa(length));
     RECORDER_INTERCEPTOR(2, args);
 }
 
 // Added 01/15/2021, (fseeko is used by MILC)
 int RECORDER_POSIX_DECL(fseeko)(FILE *stream, off_t offset, int whence) {
+    GET_CHECK_FILENAME(fseeko, (stream, offset, whence), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(int, fseeko, (stream, offset, whence));
-    char** args = assemble_args_list(3, stream2fdstr(stream), itoa(offset), itoa(whence));
+    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
     RECORDER_INTERCEPTOR(3, args);
 }
 off_t RECORDER_POSIX_DECL(ftello)(FILE *stream) {
+    GET_CHECK_FILENAME(ftello, (stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(long, ftello, (stream));
-    char** args = assemble_args_list(1, stream2fdstr(stream));
+    char** args = assemble_args_list(1, _fname);
     RECORDER_INTERCEPTOR(1, args)
 }

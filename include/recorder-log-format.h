@@ -45,6 +45,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
+#include <uthash.h>
+#include <pthread.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
@@ -72,40 +74,39 @@
 #endif
 #endif
 
+
 /* For each function call in the trace file */
 typedef struct Record_t {
-    char status;                // peephole compressed or not
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
-    int arg_count;
+    unsigned char arg_count;
+    pthread_t tid;
     char **args;                // Store all arguments in array
-    int res;                    // result returned from the original function call
 } Record;
 
+typedef struct RecordHash_t {
+    void *key;
+    int key_len;
+    int rank;
+    int terminal_id;
+    int count;
+    UT_hash_handle hh;
+} RecordHash;
 
-// Compression method, use peephole compression by default
-enum CompressionMode_t { COMP_TEXT=0, COMP_BINARY=1, COMP_RECORDER=2, COMP_ZLIB=3 };
-typedef enum CompressionMode_t CompressionMode;
 
+#define TS_COMPRESSION_NO   0
+#define TS_COMPRESSION_ZLIB 1
+#define TS_COMPRESSION_ZFP  2
 
-typedef struct RecorderGlobalDef_t {
+#define RECORDER_USER_FUNCTION 255
+
+typedef struct RecorderMetadata_t {
+    int    total_ranks;
+    double start_ts;
     double time_resolution;
-    int total_ranks;
-    CompressionMode compression_mode;
-    int peephole_window_size;
-} RecorderGlobalDef;
-
-
-typedef struct RecorderLocalDef_t {
-    double start_timestamp;
-    double end_timestamp;
-    int num_files;                  // number of files accessed by the rank
-    int total_records;              // total number of records we have written
-    char **filemap;                 // mapping of filenames and integer ids. only set when read the local def file
-    size_t *file_sizes;             // size of each file accessed. only set when read back the local def file
-    int function_count[256];        // counting the functions at runtime
-} RecorderLocalDef;
-
+    int    ts_buffer_elements;
+    int    ts_compression_algo; // timestamp compression algorithm
+} RecorderMetadata;
 
 
 static const char* func_list[] = {

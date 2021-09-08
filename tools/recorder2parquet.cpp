@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
     recorder_init_reader(argv[1], &reader);
 
-    for(int rank = 0; rank < reader.metadata.total_ranks; rank++) {
+    for(int rank = 1; rank < reader.metadata.total_ranks; rank++) {
 
         CST cst;
         CFG cfg;

@@ -1,0 +1,17 @@
+#-----------------------------------------------------------------------------
+# Config file for compiling against the build directory
+#-----------------------------------------------------------------------------
+get_filename_component(SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+#-----------------------------------------------------------------------------
+# Directories
+#-----------------------------------------------------------------------------
+set(RECORDER_INCLUDE_DIR "@RECORDER_INCLUDES_INSTALL_TIME@")
+
+#-----------------------------------------------------------------------------
+# Version Strings
+#-----------------------------------------------------------------------------
+set(RECORDER_VERSION_STRING  @RECORDER_PACKAGE_VERSION@)
+set(RECORDER_VERSION_MAJOR   @RECORDER_VERSION_MAJOR@)
+set(RECORDER_VERSION_MINOR   @RECORDER_VERSION_MINOR@)
+set(RECORDER_VERSION_PATCH   @RECORDER_VERSION_PATCH@)

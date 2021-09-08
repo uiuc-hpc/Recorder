@@ -98,3 +98,5 @@ tools/metaops_checker
 tools/figures/
 install
 *.html
+
+/build/
