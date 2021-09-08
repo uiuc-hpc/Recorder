@@ -15,6 +15,8 @@
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static bool initialized = false;
+
 struct RecorderLogger {
     int rank;
 
@@ -34,9 +36,6 @@ struct RecorderLogger {
 struct RecorderLogger logger;
 
 static int current_terminal_id = 0;
-
-// External global values, initialized here
-bool __recording;
 
 
 
@@ -133,7 +132,6 @@ void write_record(Record *record) {
     }
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
-    free_record(record);
 
     // write timestamps
     int tstart = (record->tstart-logger.start_ts) / TIME_RESOLUTION;
@@ -145,7 +143,13 @@ void write_record(Record *record) {
         logger.ts_index = 0;
     }
 
+    free_record(record);
+
     pthread_mutex_unlock(&g_mutex);
+}
+
+bool logger_initialized() {
+    return initialized;
 }
 
 void logger_init(int rank, int nprocs) {
@@ -218,7 +222,7 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(version_file);
     }
 
-    __recording = true;     // set the extern globals
+    initialized = true;
 }
 
 void* serialize_cst(RecordHash *table, size_t *len) {
@@ -279,7 +283,7 @@ void dump_cfg_local() {
 
 void logger_finalize() {
 
-    __recording = false;    // set the extern global
+    initialized = false;
 
     if(logger.ts_index > 0)
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);

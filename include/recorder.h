@@ -64,11 +64,11 @@
 #define CONST
 #endif
 
-extern bool __recording;                                // Only true after init() before exit() so we won't track unwanted functions and files
 
 /* logger.c */
 void logger_init(int rank, int nprocs);
 void logger_finalize();
+bool logger_initialized();
 void free_record(Record *record);
 void write_record(Record *record);
 
@@ -167,7 +167,7 @@ void write_record(Record *record);
 #define RECORDER_INTERCEPTOR(record_arg_count, record_args)                         \
     record->arg_count = record_arg_count;                                           \
     record->args = record_args;                                                     \
-    if(!__recording)                                                                \
+    if(!logger_initialized())                                                       \
         free_record(record);                                                        \
     else                                                                            \
         write_record(record);                                                       \

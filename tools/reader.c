@@ -50,6 +50,8 @@ void recorder_free_reader(RecorderReader *reader) {
 }
 
 const char* recorder_get_func_name(RecorderReader* reader, int func_id) {
+    if(func_id == RECORDER_USER_FUNCTION)
+        return "user_function";
     return reader->func_list[func_id];
 }
 

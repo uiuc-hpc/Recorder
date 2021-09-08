@@ -249,6 +249,9 @@ inline char** assemble_args_list(int arg_count, ...) {
  * func_list is a fixed string list defined in recorder-log-format.h
  */
 inline const char* get_function_name_by_id(int id) {
+    if (id == RECORDER_USER_FUNCTION)
+        return "user_function";
+
     size_t count = sizeof(func_list) / sizeof(char *);
     if (id < 0 || id >= count ) {
         printf("[Recorder ERROR] Wrong function id: %d\n", id);

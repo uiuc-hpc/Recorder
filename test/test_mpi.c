@@ -5,6 +5,13 @@ typedef enum { false, true } bool;
 
 static int rank;
 
+void testfunc1() {
+}
+void testfunc2() {
+}
+void testfunc3() {
+}
+
 
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
@@ -87,8 +94,11 @@ int main(int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
-    MPI_Finalize();
+    testfunc1();
+    testfunc2();
+    testfunc3();
 
+    MPI_Finalize();
 
     return 0;
 }

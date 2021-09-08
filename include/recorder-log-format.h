@@ -77,7 +77,6 @@
 
 /* For each function call in the trace file */
 typedef struct Record_t {
-    char status;                // peephole compressed or not
     double tstart, tend;
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
@@ -98,6 +97,8 @@ typedef struct RecordHash_t {
 #define TS_COMPRESSION_NO   0
 #define TS_COMPRESSION_ZLIB 1
 #define TS_COMPRESSION_ZFP  2
+
+#define RECORDER_USER_FUNCTION 255
 
 typedef struct RecorderMetadata_t {
     int    total_ranks;

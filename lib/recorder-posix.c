@@ -63,11 +63,8 @@
 typedef int64_t off64_t;
 #endif
 
-
-int depth;
 static int recorder_mem_alignment = 1;
 
-bool __recording;   // global variable in recorder.h
 
 typedef struct stream_map {
     char* filename;
@@ -116,7 +113,7 @@ inline char* stream2name(FILE* stream) {
 
 #define GET_CHECK_FILENAME(func, func_args, f_arg, f_arg_type)      \
     char* _fname = NULL;                                            \
-    if(__recording) {                                               \
+    if(logger_initialized()) {                                      \
         if(f_arg_type == ARG_TYPE_PATH)                             \
             _fname = realrealpath((char*) f_arg);                   \
         if(f_arg_type == ARG_TYPE_STREAM)                           \
