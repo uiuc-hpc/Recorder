@@ -3,12 +3,13 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "reader.h"
 #include <parquet/stream_writer.h>
 #include <parquet/column_writer.h>
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <stdint-gcc.h>
+#include <mpi.h>
+#include "reader.h"
 
 using parquet::LogicalType;
 using parquet::Repetition;
@@ -112,15 +113,33 @@ void handle_one_record(Record* record, void* arg) {
     }
 }
 
+int min(int a, int b) { return a < b ? a : b; }
+int max(int a, int b) { return a > b ? a : b; }
+
+
 int main(int argc, char **argv) {
 
     char parquet_file_dir[256], parquet_file_path[256];
     sprintf(parquet_file_dir, "%s/_parquet", argv[1]);
     mkdir(parquet_file_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
+    int mpi_size, mpi_rank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    if(mpi_rank == 0)
+        mkdir(parquet_file_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    MPI_Barrier(MPI_COMM_WORLD);
+
     recorder_init_reader(argv[1], &reader);
 
-    for(int rank = 1; rank < reader.metadata.total_ranks; rank++) {
+    // Each rank will process n files (n ranks traces)
+    int n = max(reader.metadata.total_ranks/mpi_size, 1);
+    int start_rank = n * mpi_rank;
+    int end_rank   = min(reader.metadata.total_ranks, n*(mpi_rank+1));
+
+    for(int rank = start_rank; rank < end_rank; rank++) {
 
         CST cst;
         CFG cfg;
@@ -140,5 +159,9 @@ int main(int argc, char **argv) {
     }
 
     recorder_free_reader(&reader);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
+
     return 0;
 }

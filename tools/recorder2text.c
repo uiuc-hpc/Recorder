@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <mpi.h>
 #include "reader.h"
 
 RecorderReader reader;
@@ -27,17 +28,33 @@ void write_to_textfile(Record *record, void* arg) {
     fprintf(f, " )\n");
 }
 
+int min(int a, int b) { return a < b ? a : b; }
+int max(int a, int b) { return a > b ? a : b; }
+
 int main(int argc, char **argv) {
 
     char textfile_dir[256];
     char textfile_path[256];
     sprintf(textfile_dir, "%s/_text", argv[1]);
-    //sprintf(textfile_dir, "./_text");
-    mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    int mpi_size, mpi_rank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    if(mpi_rank == 0)
+        mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     recorder_init_reader(argv[1], &reader);
 
-    for(int rank = 0; rank < reader.metadata.total_ranks; rank++) {
+    // Each rank will process n files (n ranks traces)
+    int n = max(reader.metadata.total_ranks/mpi_size, 1);
+    int start_rank = n * mpi_rank;
+    int end_rank   = min(reader.metadata.total_ranks, n*(mpi_rank+1));
+
+    for(int rank = start_rank; rank < end_rank; rank++) {
+
         CST cst;
         CFG cfg;
         recorder_read_cst(&reader, rank, &cst);
@@ -56,6 +73,9 @@ int main(int argc, char **argv) {
     }
 
     recorder_free_reader(&reader);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
 
     return 0;
 }
