@@ -3,20 +3,40 @@
 #------------------------------------------------------------------------------
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+
 #------------------------------------------------------------------------------
 # FLAGS for building
 #------------------------------------------------------------------------------
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result -std=c++11")
+
+
+find_package(MPI REQUIRED)
+if(MPI_FOUND)
+    include_directories(${MPI_CXX_INCLUDE_DIRS})
+    set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${MPI_C_INCLUDE_DIRS}
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
+            )
+    set(RECORDER_EXT_LIB_DEPENDENCIES
+            ${MPI_C_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+else()
+    message(STATUS, "MPI not found")
+endif()
+
+
+
 
 #------------------------------------------------------------------------------
 # Tools
 #------------------------------------------------------------------------------
 
+
 add_library(reader reader.c)
 
 add_executable(recorder2text recorder2text.c)
-target_link_libraries(recorder2text reader)
+target_link_libraries(recorder2text
+                        PUBLIC ${MPI_C_LIBRARIES}
+                        reader
+                     )
 add_dependencies(recorder2text reader)
 
 #add_executable(metaops_checker meta_ops_checker.c)
@@ -26,6 +46,7 @@ add_dependencies(recorder2text reader)
 #add_executable(conflict_detector overlap_conflict.c build_offset_intervals.cpp)
 #target_link_libraries(conflict_detector reader)
 #add_dependencies(conflict_detector reader)
+
 
 if(RECORDER_ENABLE_PARQUET)
     find_package(Arrow REQUIRED)
@@ -44,7 +65,12 @@ if(RECORDER_ENABLE_PARQUET)
     endif()
 
     add_executable(recorder2parquet recorder2parquet.cpp)
-    target_link_libraries(recorder2parquet reader arrow_shared parquet_shared)
+    target_link_libraries(recorder2parquet
+                          PUBLIC ${MPI_C_LIBRARIES}
+                          reader
+                          arrow_shared
+                          parquet_shared
+                         )
     add_dependencies(recorder2parquet reader)
     install(
         TARGETS

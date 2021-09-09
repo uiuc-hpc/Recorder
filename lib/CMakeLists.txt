@@ -79,7 +79,6 @@ target_link_libraries(recorder
         PUBLIC ${HDF5_LIBRARIES}
         PUBLIC ${MPI_C_LIBRARIES}
         PUBLIC pthread
-        PRIVATE $<$<BOOL:${HERMES_COMMUNICATION_MPI}>:MPI::MPI_CXX>
         )
 
 target_compile_definitions(recorder
