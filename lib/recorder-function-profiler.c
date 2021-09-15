@@ -43,7 +43,7 @@ void __cyg_profile_func_enter (void *func,  void *caller)
 
     Dl_info info;
     if(!dladdr(func, &info)) return;
-    if(!info.dli_sname) return;
+    if(!info.dli_sname && !info.dli_fname) return;
 
     //printf("enter %s\n", info.dli_sname);
 
