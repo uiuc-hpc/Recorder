@@ -77,9 +77,7 @@ void __cyg_profile_func_exit (void *func,  void *caller)
 
     Dl_info info;
     if(!dladdr(func, &info)) return;
-    if(!info.dli_sname) return;
-
-    //printf("exit %s\n", info.dli_sname);
+    if(!info.dli_sname && !info.dli_fname) return;
 
     func_hash_t *entry = NULL;
     int key_len;
@@ -95,7 +93,10 @@ void __cyg_profile_func_exit (void *func,  void *caller)
         record->tend = recorder_wtime();
         record->arg_count = 1;
         record->args = recorder_malloc(1*sizeof(char*));
-        record->args[0] = strdup(info.dli_sname);
+        if(info.dli_sname)
+            record->args[0] = strdup(info.dli_sname);
+        else
+            record->args[0] = strdup(info.dli_fname);
 
         LL_DELETE(entry->tstart_head, entry->tstart_head);
         write_record(record);
