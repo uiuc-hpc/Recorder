@@ -77,14 +77,14 @@ void recorder_finalize() {
 }
 
 int PMPI_Init(int *argc, char ***argv) {
-    MAP_OR_FAIL(PMPI_Init)
+    MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
     return ret;
 }
 
 int MPI_Init(int *argc, char ***argv) {
-    MAP_OR_FAIL(PMPI_Init)
+    MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
     recorder_init(argc, argv);
     return ret;

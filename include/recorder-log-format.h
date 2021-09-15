@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <uthash.h>
+#include <pthread.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
@@ -73,14 +74,18 @@
 #endif
 #endif
 
+
 /* For each function call in the trace file */
 typedef struct Record_t {
-    char status;                // peephole compressed or not
     double tstart, tend;
+    unsigned char level;
     unsigned char func_id;      // we have about 200 functions in total
-    int arg_count;
+    unsigned char arg_count;
+    pthread_t tid;
     char **args;                // Store all arguments in array
-    int res;                    // result returned from the original function call
+
+    void* record_stack;         // per-thread record stack of cascading calls
+    struct Record_t *prev, *next;
 } Record;
 
 typedef struct RecordHash_t {
@@ -93,24 +98,19 @@ typedef struct RecordHash_t {
 } RecordHash;
 
 
+#define TS_COMPRESSION_NO   0
+#define TS_COMPRESSION_ZLIB 1
+#define TS_COMPRESSION_ZFP  2
 
-typedef struct RecorderGlobalDef_t {
+#define RECORDER_USER_FUNCTION 255
+
+typedef struct RecorderMetadata_t {
+    int    total_ranks;
+    double start_ts;
     double time_resolution;
-    int total_ranks;
-    int peephole_window_size;
-} RecorderGlobalDef;
-
-
-typedef struct RecorderLocalDef_t {
-    double start_timestamp;
-    double end_timestamp;
-    int num_files;                  // number of files accessed by the rank
-    int total_records;              // total number of records we have written
-    char **filemap;                 // mapping of filenames and integer ids. only set when read the local def file
-    size_t *file_sizes;             // size of each file accessed. only set when read back the local def file
-    int function_count[256];        // counting the functions at runtime
-} RecorderLocalDef;
-
+    int    ts_buffer_elements;
+    int    ts_compression_algo; // timestamp compression algorithm
+} RecorderMetadata;
 
 
 static const char* func_list[] = {

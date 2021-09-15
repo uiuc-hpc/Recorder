@@ -7,16 +7,20 @@
 #include "recorder.h"
 #include "recorder-sequitur.h"
 
-
-#define TIME_RESOLUTION 0.000001
-#define VERSION_STR "2.2.1"
+#define TIME_RESOLUTION     0.000001
+#define VERSION_STR         "2.3.0"
+#define TS_BUFFER_ELEMENTS  1024
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool initialized = false;
 
 
+/**
+ * Per-process CST and CFG
+ */
 struct RecorderLogger {
     int rank;
-    double startTimestamp;
+    int current_cfg_terminal;
 
     Grammar     cfg;
     RecordHash* cst;
@@ -24,17 +28,32 @@ struct RecorderLogger {
     char traces_dir[512];
     char cst_path[1024];
     char cfg_path[1024];
+
+    double start_ts;
+    FILE*  ts_file;
+    int*   ts;          // memory buffer for timestamps (tstart, tend-tstart)
+    int    ts_index;    // current position of ts buffer, spill to file once full.
 };
 struct RecorderLogger logger;
 
-static int current_terminal_id = 0;
 
-// External global values, initialized here
-bool __recording;
+/**
+ * Per-thread FIFO record stack
+ * pthread_t tid as key
+ *
+ * To store cascading calls in tstart order
+ * e.g., H5Dwrite -> MPI_File_write_at -> pwrite
+ */
+struct RecordStack {
+    int level;
+    Record *records;
+    UT_hash_handle hh;
+};
+static struct RecordStack *g_record_stack = NULL;
 
 
 /**
- * Key: func_id + ret + all arguments in string
+ * Key: func_id + res + all arguments in string
  *
  * arguments seperated by space ' '
  */
@@ -45,33 +64,44 @@ char* compose_call_key(Record *record, int* key_len) {
     char invalid_str[] = "???";
     int invalid_str_len = strlen(invalid_str);
 
-    *key_len = sizeof(record->func_id) + sizeof(record->res) + arg_count;
+    int arg_strlen = arg_count;
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
             for(int j = 0; j < strlen(args[i]); j++)
                 if(args[i][j] == ' ') args[i][j] = '_';
-            *key_len += strlen(args[i]);
+            arg_strlen += strlen(args[i]);
         } else {
-            *key_len += strlen(invalid_str);
+            arg_strlen += strlen(invalid_str);
         }
     }
 
+    // thread id, func id, level, arg count, arg strlen, arg str
+    *key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
+               sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+
     char* key = recorder_malloc(*key_len);
     int pos = 0;
+    memcpy(key+pos, &record->tid, sizeof(pthread_t));
+    pos += sizeof(pthread_t);
     memcpy(key+pos, &record->func_id, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(key+pos, &record->res, sizeof(record->res));
-    pos += sizeof(record->res);
+    memcpy(key+pos, &record->level, sizeof(record->level));
+    pos += sizeof(record->level);
+    memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
+    pos += sizeof(record->arg_count);
+    memcpy(key+pos, &arg_strlen, sizeof(int));
+    pos += sizeof(int);
 
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
-            strcpy(key+pos, args[i]);
-            pos[key+strlen(args[i])] = ' ';
-            pos += strlen(args[i]) + 1;
+            memcpy(key+pos, args[i], strlen(args[i]));
+            pos += strlen(args[i]);
         } else {
-            strcpy(key+pos, invalid_str);
+            memcpy(key+pos, invalid_str, strlen(invalid_str));
             pos += invalid_str_len;
         }
+        key[pos] = ' ';
+        pos += 1;
     }
 
     return key;
@@ -94,12 +124,11 @@ void free_record(Record *record) {
     recorder_free(record, sizeof(Record));
 }
 
-
 void write_record(Record *record) {
-    pthread_mutex_lock(&g_mutex);
-
     int key_len;
     char* key = compose_call_key(record, &key_len);
+
+    pthread_mutex_lock(&g_mutex);
 
     RecordHash *entry = NULL;
     HASH_FIND(hh, logger.cst, key, key_len, entry);
@@ -111,15 +140,60 @@ void write_record(Record *record) {
         entry->key = key;
         entry->key_len = key_len;
         entry->rank = logger.rank;
-        entry->terminal_id = current_terminal_id++;
+        entry->terminal_id = logger.current_cfg_terminal++;
         entry->count = 0;
         HASH_ADD_KEYPTR(hh, logger.cst, entry->key, entry->key_len, entry);
     }
 
-    //append_terminal(logger.grammer, entry->terminal_id, 1);
-    free_record(record);
+    append_terminal(&logger.cfg, entry->terminal_id, 1);
+
+    // write timestamps
+    int tstart = (record->tstart-logger.start_ts) / TIME_RESOLUTION;
+    int tend   = (record->tend-logger.start_ts)   / TIME_RESOLUTION;
+    logger.ts[logger.ts_index++] = tstart;
+    logger.ts[logger.ts_index++] = tend-tstart;     // we store the duration to enable higher compression ratio.
+    if(logger.ts_index == TS_BUFFER_ELEMENTS) {
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
+        logger.ts_index = 0;
+    }
 
     pthread_mutex_unlock(&g_mutex);
+}
+
+void logger_record_enter(Record* record) {
+    struct RecordStack *rs;
+    HASH_FIND(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+    if(!rs) {
+        rs = recorder_malloc(sizeof(struct RecordStack));
+        rs->records = NULL;
+        rs->level = 0;
+        HASH_ADD_KEYPTR(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+    }
+
+    DL_APPEND(rs->records, record);
+
+    record->level = rs->level++;
+    record->record_stack = rs;
+}
+
+void logger_record_exit(Record* record) {
+    struct RecordStack *rs = record->record_stack;
+    rs->level--;
+
+    // In most cases, rs->records should only have one record
+    if(rs->level == 0) {
+        Record *current, *tmp;
+        DL_FOREACH_SAFE(rs->records, current, tmp) {
+            DL_DELETE(rs->records, current);
+            write_record(current);
+            free_record(current);
+        }
+    }
+}
+
+
+bool logger_initialized() {
+    return initialized;
 }
 
 void logger_init(int rank, int nprocs) {
@@ -135,21 +209,22 @@ void logger_init(int rank, int nprocs) {
 
     // Initialize the global values
     logger.rank = rank;
-    logger.startTimestamp = recorder_wtime();
+    logger.start_ts = recorder_wtime();
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
+    logger.current_cfg_terminal = 0;
+    logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
+    logger.ts_index = 0;
 
     const char* base_dir = getenv("RECORDER_TRACES_DIR");
-    char global_meta_filename[1024] = {0};
-
     if(base_dir)
         sprintf(logger.traces_dir, "%s/recorder-logs", base_dir);
     else
         sprintf(logger.traces_dir, "recorder-logs"); // current directory
 
+
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
-    sprintf(global_meta_filename, "%s/recorder.mt", logger.traces_dir);
 
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
@@ -158,24 +233,32 @@ void logger_init(int rank, int nprocs) {
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
+    char ts_filename[1024];
+    sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);
+    logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
 
     if (rank == 0) {
-        FILE* global_metafh = RECORDER_REAL_CALL(fopen) (global_meta_filename, "wb");
-        RecorderGlobalDef global_def = {
+        char metadata_filename[1024] = {0};
+        sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
+        FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
+        RecorderMetadata metadata = {
             .time_resolution = TIME_RESOLUTION,
             .total_ranks = nprocs,
+            .start_ts  = logger.start_ts,
+            .ts_buffer_elements = TS_BUFFER_ELEMENTS,
+            .ts_compression_algo = TS_COMPRESSION_NO,
         };
-        RECORDER_REAL_CALL(fwrite)(&global_def, sizeof(RecorderGlobalDef), 1, global_metafh);
+        RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
         for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
             const char *funcname = get_function_name_by_id(i);
             if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
-                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, global_metafh);
+                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, metafh);
             else
-                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, global_metafh);
-            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, global_metafh);
+                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
+            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
         }
-        RECORDER_REAL_CALL(fclose)(global_metafh);
+        RECORDER_REAL_CALL(fclose)(metafh);
 
         char version_filename[1024];
         sprintf(version_filename, "%s/VERSION", logger.traces_dir);
@@ -184,7 +267,7 @@ void logger_init(int rank, int nprocs) {
         RECORDER_REAL_CALL(fclose)(version_file);
     }
 
-    __recording = true;     // set the extern globals
+    initialized = true;
 }
 
 void* serialize_cst(RecordHash *table, size_t *len) {
@@ -243,13 +326,28 @@ void dump_cfg_local() {
     RECORDER_REAL_CALL(fclose)(f);
 }
 
+void cleanup_record_stack() {
+    struct RecordStack *rs, *tmp;
+    HASH_ITER(hh, g_record_stack, rs, tmp) {
+        HASH_DEL(g_record_stack, rs);
+        assert(rs->records == NULL);
+        recorder_free(rs, sizeof(struct RecordStack));
+    }
+}
 
 void logger_finalize() {
 
-    __recording = false;    // set the extern global
+    initialized = false;
 
+    if(logger.ts_index > 0)
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+    RECORDER_REAL_CALL(fclose)(logger.ts_file);
+    recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
+
+    cleanup_record_stack();
     dump_cst_local();
     cleanup_cst(logger.cst);
     dump_cfg_local();
     sequitur_cleanup(&logger.cfg);
 }
+

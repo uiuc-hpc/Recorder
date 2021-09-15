@@ -1,0 +1,8 @@
+/dev
+/proc
+/sys
+/etc
+/usr/tce/packages
+pipe:[
+anon_inode:
+socket:[

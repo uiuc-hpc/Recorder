@@ -3,46 +3,79 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <mpi.h>
 #include "reader.h"
 
-/*
- * Write all original records (encoded and compressed) to text file
- */
-void write_to_textfile(const char* path, Record *records, int len, RecorderReader *reader) {
-    int i, arg_id;
+RecorderReader reader;
 
-    FILE* out_file = fopen(path, "w");
-    for(i = 0; i < len; i++) {
-        Record record = records[i];
-        fprintf(out_file, "%f %f %d %s (", record.tstart, record.tend, record.res, reader->func_list[record.func_id]);
-        for(arg_id = 0; arg_id < record.arg_count; arg_id++) {
-            char *arg = record.args[arg_id];
-            fprintf(out_file, " %s", arg);
-        }
-        fprintf(out_file, " )\n");
+void write_to_textfile(Record *record, void* arg) {
+    FILE* f = (FILE*) arg;
+
+    bool user_func = (record->func_id == RECORDER_USER_FUNCTION);
+
+    const char* func_name = recorder_get_func_name(&reader, record->func_id);
+    if(user_func)
+        func_name = record->args[0];
+
+    fprintf(f, "%.6f %.6f %s %d (", record->tstart, record->tend, // record->tid
+                             func_name, record->level);
+
+    for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
+        char *arg = record->args[arg_id];
+        fprintf(f, " %s", arg);
     }
-    fclose(out_file);
+
+    fprintf(f, " )\n");
 }
+
+int min(int a, int b) { return a < b ? a : b; }
+int max(int a, int b) { return a > b ? a : b; }
 
 int main(int argc, char **argv) {
 
-    char textfile_dir[256], textfile_path[256];
+    char textfile_dir[256];
+    char textfile_path[256];
     sprintf(textfile_dir, "%s/_text", argv[1]);
-    mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    RecorderReader reader;
-    recorder_read_traces(argv[1], &reader);
+    int mpi_size, mpi_rank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
-    int rank;
-    for(rank = 0; rank < reader.RGD.total_ranks; rank++) {
+    if(mpi_rank == 0)
+        mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-        sprintf(textfile_path, "%s/%d.txt" , textfile_dir, rank);
+    recorder_init_reader(argv[1], &reader);
 
-        Record* records = reader.records[rank];
-        write_to_textfile(textfile_path, records, reader.RLDs[rank].total_records, &reader);
+    // Each rank will process n files (n ranks traces)
+    int n = max(reader.metadata.total_ranks/mpi_size, 1);
+    int start_rank = n * mpi_rank;
+    int end_rank   = min(reader.metadata.total_ranks, n*(mpi_rank+1));
+
+    for(int rank = start_rank; rank < end_rank; rank++) {
+
+        CST cst;
+        CFG cfg;
+        recorder_read_cst(&reader, rank, &cst);
+        recorder_read_cfg(&reader, rank, &cfg);
+
+        sprintf(textfile_path, "%s/%d.txt", textfile_dir, rank);
+        FILE* fout = fopen(textfile_path, "w");
+
+        recorder_decode_records(&reader, &cst, &cfg, write_to_textfile, fout);
+
+        fclose(fout);
+
+        printf("\r[Recorder] rank %d, unique call signatures: %d\n", rank, cst.entries);
+        recorder_free_cst(&cst);
+        recorder_free_cfg(&cfg);
     }
 
-    release_resources(&reader);
+    recorder_free_reader(&reader);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
 
     return 0;
 }
