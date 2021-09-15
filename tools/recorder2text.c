@@ -17,8 +17,8 @@ void write_to_textfile(Record *record, void* arg) {
     if(user_func)
         func_name = record->args[0];
 
-    fprintf(f, "%.6f %.6f %s (", record->tstart, record->tend, // record->tid
-                             func_name);
+    fprintf(f, "%.6f %.6f %s %d (", record->tstart, record->tend, // record->tid
+                             func_name, record->level);
 
     for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
         char *arg = record->args[arg_id];

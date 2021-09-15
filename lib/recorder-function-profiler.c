@@ -88,6 +88,7 @@ void __cyg_profile_func_exit (void *func,  void *caller)
     if(entry) {
         Record *record = recorder_malloc(sizeof(Record));
         record->func_id = RECORDER_USER_FUNCTION;
+        record->level = 0;
         record->tid = pthread_self();
         record->tstart = entry->tstart_head->tstart;
         record->tend = recorder_wtime();

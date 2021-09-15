@@ -8,7 +8,7 @@
 #include "recorder-sequitur.h"
 
 #define TIME_RESOLUTION     0.000001
-#define VERSION_STR         "2.2.3"
+#define VERSION_STR         "2.3.0"
 #define TS_BUFFER_ELEMENTS  1024
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -75,8 +75,8 @@ char* compose_call_key(Record *record, int* key_len) {
         }
     }
 
-    // thread id, func id, arg count, arg strlen, arg str
-    *key_len = sizeof(pthread_t) + sizeof(record->func_id) +
+    // thread id, func id, level, arg count, arg strlen, arg str
+    *key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
                sizeof(record->arg_count) + sizeof(int) + arg_strlen;
 
     char* key = recorder_malloc(*key_len);
@@ -85,6 +85,8 @@ char* compose_call_key(Record *record, int* key_len) {
     pos += sizeof(pthread_t);
     memcpy(key+pos, &record->func_id, sizeof(record->func_id));
     pos += sizeof(record->func_id);
+    memcpy(key+pos, &record->level, sizeof(record->level));
+    pos += sizeof(record->level);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
     memcpy(key+pos, &arg_strlen, sizeof(int));
@@ -170,7 +172,7 @@ void logger_record_enter(Record* record) {
 
     DL_APPEND(rs->records, record);
 
-    rs->level++;
+    record->level = rs->level++;
     record->record_stack = rs;
 }
 

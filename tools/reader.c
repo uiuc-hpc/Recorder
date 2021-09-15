@@ -63,6 +63,8 @@ void cs_to_record(CallSignature *cs, Record *record) {
     pos += sizeof(pthread_t);
     memcpy(&record->func_id, key+pos, sizeof(record->func_id));
     pos += sizeof(record->func_id);
+    memcpy(&record->level, key+pos, sizeof(record->level));
+    pos += sizeof(record->level);
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 

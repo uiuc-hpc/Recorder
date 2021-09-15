@@ -78,6 +78,7 @@
 /* For each function call in the trace file */
 typedef struct Record_t {
     double tstart, tend;
+    unsigned char level;
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
     pthread_t tid;
