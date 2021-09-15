@@ -1,6 +1,6 @@
 [![build](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml/badge.svg)](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml)
 
-Recorder 2.2
+Recorder 2.3
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
