@@ -103,12 +103,13 @@ $RECORDER_ROOT/bin/recorder2text /path/to/your_trace_folder/
 ```
 This will generate text fomart traces under `/path/to/your_trace_folder/_text`.
 
+<!---
 **3. Post-processing**
 
 We provide a Python library, [recorder-viz](https://pypi.org/project/recorder-viz/), for post-processing tasks.
 
 It can be used to automatically generate detailed visuazation reports, or can be used to directly access the traces information. 
-
+-->
 
 Dataset
 -----------
