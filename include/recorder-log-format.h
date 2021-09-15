@@ -82,6 +82,9 @@ typedef struct Record_t {
     unsigned char arg_count;
     pthread_t tid;
     char **args;                // Store all arguments in array
+
+    void* record_stack;         // per-thread record stack of cascading calls
+    struct Record_t *prev, *next;
 } Record;
 
 typedef struct RecordHash_t {

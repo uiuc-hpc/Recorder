@@ -69,9 +69,13 @@
 void logger_init(int rank, int nprocs);
 void logger_finalize();
 bool logger_initialized();
+void logger_record_enter(Record *record);
+void logger_record_exit(Record *record);
 void free_record(Record *record);
-void write_record(Record *record);
 
+// TODO only used by ftrace logger
+// Need to see how to replace it with process_one_record()
+void write_record(Record* record);
 
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>
@@ -146,14 +150,16 @@ void write_record(Record *record);
  */
 #define RECORDER_INTERCEPTOR_NOIO(ret, func, real_args)                             \
     MAP_OR_FAIL(func)                                                               \
-    double tstart = recorder_wtime();                                               \
-    ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
-    double tend = recorder_wtime();                                                 \
+    if(!logger_initialized())                                                       \
+        return RECORDER_REAL_CALL(func) real_args ;                                 \
+                                                                                    \
     Record *record = recorder_malloc(sizeof(Record));                               \
-    record->tstart = tstart;                                                        \
     record->func_id = get_function_id_by_name(#func);                               \
-    record->tend = tend;                                                            \
-    record->tid = pthread_self();
+    record->tid = pthread_self();                                                   \
+    logger_record_enter(record);                                                    \
+    record->tstart = recorder_wtime();                                              \
+    ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
+    record->tend = recorder_wtime();
 
 
 /**
@@ -167,10 +173,7 @@ void write_record(Record *record);
 #define RECORDER_INTERCEPTOR(record_arg_count, record_args)                         \
     record->arg_count = record_arg_count;                                           \
     record->args = record_args;                                                     \
-    if(!logger_initialized())                                                       \
-        free_record(record);                                                        \
-    else                                                                            \
-        write_record(record);                                                       \
+    logger_record_exit(record);                                                     \
     return res;
 
 

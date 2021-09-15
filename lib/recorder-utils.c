@@ -131,7 +131,9 @@ void recorder_free(void* ptr, size_t size) {
     if(size == 0 || ptr == NULL)
         return;
     memory_usage -= size;
+
     free(ptr);
+    ptr = NULL;
 }
 
 /*

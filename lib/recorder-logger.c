@@ -7,18 +7,20 @@
 #include "recorder.h"
 #include "recorder-sequitur.h"
 
-
-#define TIME_RESOLUTION 0.000001
-#define VERSION_STR "2.2.3"
-#define TS_BUFFER_ELEMENTS 1024
-
+#define TIME_RESOLUTION     0.000001
+#define VERSION_STR         "2.2.3"
+#define TS_BUFFER_ELEMENTS  1024
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 static bool initialized = false;
 
+
+/**
+ * Per-process CST and CFG
+ */
 struct RecorderLogger {
     int rank;
+    int current_cfg_terminal;
 
     Grammar     cfg;
     RecordHash* cst;
@@ -32,11 +34,22 @@ struct RecorderLogger {
     int*   ts;          // memory buffer for timestamps (tstart, tend-tstart)
     int    ts_index;    // current position of ts buffer, spill to file once full.
 };
-
 struct RecorderLogger logger;
 
-static int current_terminal_id = 0;
 
+/**
+ * Per-thread FIFO record stack
+ * pthread_t tid as key
+ *
+ * To store cascading calls in tstart order
+ * e.g., H5Dwrite -> MPI_File_write_at -> pwrite
+ */
+struct RecordStack {
+    int level;
+    Record *records;
+    UT_hash_handle hh;
+};
+static struct RecordStack *g_record_stack = NULL;
 
 
 /**
@@ -109,12 +122,11 @@ void free_record(Record *record) {
     recorder_free(record, sizeof(Record));
 }
 
-
 void write_record(Record *record) {
-    pthread_mutex_lock(&g_mutex);
-
     int key_len;
     char* key = compose_call_key(record, &key_len);
+
+    pthread_mutex_lock(&g_mutex);
 
     RecordHash *entry = NULL;
     HASH_FIND(hh, logger.cst, key, key_len, entry);
@@ -126,7 +138,7 @@ void write_record(Record *record) {
         entry->key = key;
         entry->key_len = key_len;
         entry->rank = logger.rank;
-        entry->terminal_id = current_terminal_id++;
+        entry->terminal_id = logger.current_cfg_terminal++;
         entry->count = 0;
         HASH_ADD_KEYPTR(hh, logger.cst, entry->key, entry->key_len, entry);
     }
@@ -143,10 +155,40 @@ void write_record(Record *record) {
         logger.ts_index = 0;
     }
 
-    free_record(record);
-
     pthread_mutex_unlock(&g_mutex);
 }
+
+void logger_record_enter(Record* record) {
+    struct RecordStack *rs;
+    HASH_FIND(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+    if(!rs) {
+        rs = recorder_malloc(sizeof(struct RecordStack));
+        rs->records = NULL;
+        rs->level = 0;
+        HASH_ADD_KEYPTR(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+    }
+
+    DL_APPEND(rs->records, record);
+
+    rs->level++;
+    record->record_stack = rs;
+}
+
+void logger_record_exit(Record* record) {
+    struct RecordStack *rs = record->record_stack;
+    rs->level--;
+
+    // In most cases, rs->records should only have one record
+    if(rs->level == 0) {
+        Record *current, *tmp;
+        DL_FOREACH_SAFE(rs->records, current, tmp) {
+            DL_DELETE(rs->records, current);
+            write_record(current);
+            free_record(current);
+        }
+    }
+}
+
 
 bool logger_initialized() {
     return initialized;
@@ -168,6 +210,7 @@ void logger_init(int rank, int nprocs) {
     logger.start_ts = recorder_wtime();
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
+    logger.current_cfg_terminal = 0;
     logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
     logger.ts_index = 0;
 
@@ -281,6 +324,15 @@ void dump_cfg_local() {
     RECORDER_REAL_CALL(fclose)(f);
 }
 
+void cleanup_record_stack() {
+    struct RecordStack *rs, *tmp;
+    HASH_ITER(hh, g_record_stack, rs, tmp) {
+        HASH_DEL(g_record_stack, rs);
+        assert(rs->records == NULL);
+        recorder_free(rs, sizeof(struct RecordStack));
+    }
+}
+
 void logger_finalize() {
 
     initialized = false;
@@ -290,6 +342,7 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
 
+    cleanup_record_stack();
     dump_cst_local();
     cleanup_cst(logger.cst);
     dump_cfg_local();

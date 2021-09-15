@@ -8,6 +8,8 @@
 #define COMMIT_SEMANTICS 1
 #define SESSION_SEMANTICS 2
 
+
+
 typedef struct RecorderReader_t {
 
     RecorderMetadata metadata;
