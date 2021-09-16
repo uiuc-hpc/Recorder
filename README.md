@@ -133,6 +133,7 @@ Change Log
 4. Support multi-threaded programs. Record has a thread id field.
 5. Store records in starting timestamp order.
 6. Store level information for each record.
+7. Add APIs to retrive function type and function name, etc.
 
 **Recorder 2.2.1** Aug 25, 2021
 1. Include the code for verifying I/O synchronizations (tools/verifyio).
