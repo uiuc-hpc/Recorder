@@ -5,6 +5,9 @@
 #include <assert.h>
 #include "./reader.h"
 
+static int mpi_start_idx = -1;
+static int hdf5_start_idx = -1;
+
 void read_metadata(char* path, RecorderMetadata *metadata) {
     FILE* fp = fopen(path, "rb");
     assert(fp != NULL);
@@ -30,6 +33,15 @@ void read_func_list(char* path, RecorderReader *reader) {
             memset(reader->func_list[func_id], 0, sizeof(reader->func_list[func_id]));
             memcpy(reader->func_list[func_id], buf+start_pos, end_pos-start_pos);
             start_pos = end_pos+1;
+
+            if((mpi_start_idx==-1) &&
+                (0==strncmp("MPI", func_list[func_id], 3)))
+                mpi_start_idx = func_id;
+
+            if((hdf5_start_idx==-1) &&
+                (0==strncmp("H5", func_list[func_id], 2)))
+                hdf5_start_idx = func_id;
+
             func_id++;
         }
     }
@@ -49,10 +61,24 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 void recorder_free_reader(RecorderReader *reader) {
 }
 
-const char* recorder_get_func_name(RecorderReader* reader, int func_id) {
-    if(func_id == RECORDER_USER_FUNCTION)
-        return "user_function";
-    return reader->func_list[func_id];
+const char* recorder_get_func_name(RecorderReader* reader, Record* record) {
+    if(record->func_id == RECORDER_USER_FUNCTION)
+        return record->args[0];
+    return reader->func_list[record->func_id];
+}
+
+int recorder_get_func_type(RecorderReader* reader, Record* record) {
+    if(record->func_id < mpi_start_idx)
+        return RECORDER_POSIX;
+    if(record->func_id < hdf5_start_idx) {
+        const char* func_name = recorder_get_func_name(reader, record);
+        if(strncmp(func_name, "MPI_File", 8) == 0)
+            return RECORDER_MPIIO;
+        return RECORDER_MPI;
+    }
+    if(record->func_id == RECORDER_USER_FUNCTION)
+        return RECORDER_FTRACE;
+    return RECORDER_HDF5;
 }
 
 void cs_to_record(CallSignature *cs, Record *record) {

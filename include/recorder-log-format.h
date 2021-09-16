@@ -104,6 +104,14 @@ typedef struct RecordHash_t {
 
 #define RECORDER_USER_FUNCTION 255
 
+
+#define RECORDER_POSIX      0
+#define RECORDER_MPIIO      1
+#define RECORDER_MPI        2
+#define RECORDER_HDF5       3
+#define RECORDER_FTRACE     4
+
+
 typedef struct RecorderMetadata_t {
     int    total_ranks;
     double start_ts;
