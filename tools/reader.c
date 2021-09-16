@@ -35,11 +35,11 @@ void read_func_list(char* path, RecorderReader *reader) {
             start_pos = end_pos+1;
 
             if((mpi_start_idx==-1) &&
-                (0==strncmp("MPI", func_list[func_id], 3)))
+                (NULL!=strstr(reader->func_list[func_id], "MPI")))
                 mpi_start_idx = func_id;
 
             if((hdf5_start_idx==-1) &&
-                (0==strncmp("H5", func_list[func_id], 2)))
+                (NULL!=strstr(reader->func_list[func_id], "H5")))
                 hdf5_start_idx = func_id;
 
             func_id++;
