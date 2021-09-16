@@ -1,6 +1,6 @@
 [![build](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml/badge.svg)](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml)
 
-Recorder 2.2
+Recorder 2.3
 ========
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
@@ -13,25 +13,12 @@ calls at multiple levels of the I/O stack, including HDF5, MPI-IO, and POSIX
 I/O. Recorder requires no modification or recompilation of the application and
 users can control what levels are traced.
 
-
-Description
------------
-
-We chose to build Recorder as a shared library so that it does not require
-modification or recompilation of the application. Recorder uses function
-interpositioning to prioritize itself over standard functions, as shown in the
-Figure below. Once Recorder is specified as the preloading library, it
-intercepts HDF5 function calls issued by the application and reroutes them to
-the tracing implementation where the timestamp, function name, and function
-parameters are recorded. The original HDF5 function is called after this
-recording process. The mechanism is the same for the MPI and POSIX layers.
-
 Dependencies
 ------------
 
- - MPI > 3
+ - MPI
  - HDF5
- - Arrow > 5.0.0
+ - Arrow (optional) > 5.0.0
 
 Installation
 ------------
@@ -116,12 +103,13 @@ $RECORDER_ROOT/bin/recorder2text /path/to/your_trace_folder/
 ```
 This will generate text fomart traces under `/path/to/your_trace_folder/_text`.
 
+<!---
 **3. Post-processing**
 
 We provide a Python library, [recorder-viz](https://pypi.org/project/recorder-viz/), for post-processing tasks.
 
 It can be used to automatically generate detailed visuazation reports, or can be used to directly access the traces information. 
-
+-->
 
 Dataset
 -----------
@@ -137,6 +125,16 @@ Publications
 
 Change Log
 ----------
+
+**Recorder 2.3.0** Sep 15, 2021
+1. Adopt pilgrim copmerssion algorithm.
+2. Implemented a new reader and decorder interface.
+3. Support GNU ftrace functionality.
+4. Support multi-threaded programs. Record has a thread id field.
+5. Store records in starting timestamp order.
+6. Store level information for each record.
+7. Add APIs to retrive function type and function name, etc.
+
 **Recorder 2.2.1** Aug 25, 2021
 1. Include the code for verifying I/O synchronizations (tools/verifyio).
 2. Add support for multi-threaded programs.

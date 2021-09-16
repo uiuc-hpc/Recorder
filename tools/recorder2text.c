@@ -13,12 +13,10 @@ void write_to_textfile(Record *record, void* arg) {
 
     bool user_func = (record->func_id == RECORDER_USER_FUNCTION);
 
-    const char* func_name = recorder_get_func_name(&reader, record->func_id);
-    if(user_func)
-        func_name = record->args[0];
+    const char* func_name = recorder_get_func_name(&reader, record);
 
-    fprintf(f, "%.6f %.6f %s %d (", record->tstart, record->tend, // record->tid
-                             func_name, record->level);
+    fprintf(f, "%.6f %.6f %s %d %d (", record->tstart, record->tend, // record->tid
+                             func_name, record->level, recorder_get_func_type(&reader, record));
 
     for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
         char *arg = record->args[arg_id];

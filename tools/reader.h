@@ -94,7 +94,18 @@ void recorder_free_cfg(CFG *cfg);
 void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
 
-const char* recorder_get_func_name(RecorderReader* reader, int func_id);
+
+const char* recorder_get_func_name(RecorderReader* reader, Record* record);
+
+/*
+ * Return one of the follows (mutual exclusive) :
+ *  - RECORDER_POSIX
+ *  - RECORDER_MPIIO
+ *  - RECORDER_MPI
+ *  - RECORDER_HDF5
+ *  - RECORDER_FTRACE
+ */
+int recorder_get_func_type(RecorderReader* reader, Record* record);
 
 
 IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);

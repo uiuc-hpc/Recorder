@@ -101,7 +101,7 @@ void handle_one_record(Record* record, void* arg) {
     writer->threadBuilder.Append(record->tid);
     writer->tstartBuilder.Append(record->tstart);
     writer->tendBuilder.Append(record->tend);
-    writer->func_idBuilder.Append(recorder_get_func_name(&reader, record->func_id));
+    writer->func_idBuilder.Append(recorder_get_func_name(&reader, record));
     writer->arg_countBuilder.Append(record->arg_count);
 
     for (int arg_id = 0; arg_id < 10; arg_id++) {
