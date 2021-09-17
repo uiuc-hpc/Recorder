@@ -1,7 +1,7 @@
 [![build](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml/badge.svg)](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml)
 
-Recorder 2.3
-========
+# Recorder 2.3
+
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
 We believe that multi-level I/O tracing and trace data analysis tool can help
@@ -13,19 +13,23 @@ calls at multiple levels of the I/O stack, including HDF5, MPI-IO, and POSIX
 I/O. Recorder requires no modification or recompilation of the application and
 users can control what levels are traced.
 
-Dependencies
-------------
+
+
+# Building Recorder
+
+There are two ways to build and install Recorder. The first way is to build Recorder from source using CMake. This is recomended as Recorder is currently under active development.
+
+### 1. Building Recorder with CMake (recommended)
+
+**Dependencies**
 
  - MPI
  - HDF5
  - Arrow (optional) > 5.0.0
 
-Installation
-------------
+*Note that Recorder and the applications you intend to trace must be compiled with the same version of HDF5 and MPI.*
 
-*Note that your application and Recorder must use the same version of HDF5 and MPI.*
-
-**1. Install manually (recommended)**
+**Build & Install**
 
 ```bash
 git clone https://github.com/uiuc-hpc/Recorder.git
@@ -36,6 +40,9 @@ cmake .. -DCMAKE_INSTALL_PREFIX=[install location]
 make
 make install
 ```
+**CMake Options**
+
+(1) Dependencies install location
 
 If MPI, HDF5, or arrow is not installed in standard locations, you may need to use `-DCMAKE_PREFIX_PATH` to indicate their locations:
 ```bash
@@ -44,33 +51,67 @@ cmake ..                                                          \
       -DCMAKE_PREFIX_PATH=[semicolon separated depedencies dir]
 ```
 
-By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
+(2) Enable/disable tracing levels
 
-Options for `cmake` can be used to disable one ore more levels of traces. You can use ccmake utility as well. Valid options:
+By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX. The following options can be used to enable/disable specific levels.
  * -DRECORDER_ENABLE_POSIX_TRACE=[ON|FF]
  * -DRECORDER_ENABLE_MPIO_TRACE=[ON|FF]
  * -DRECORDER_ENABLE_HDF5_TRACE=[ON|FF]
 
-**Other options:**
+(3) Intercepting `fcntl()` call: 
 
-(1) `fcntl`:
+Since v2.1.7, `fcntl(int fd, int cmd, ...)` is intercepted. The commands (2nd argument) defined in POSIX standard
+are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `-DRECORDER_ENABLE_FCNTL_TRACE=OFF`.
 
-Since v2.1.7, fcntl(int fd, int cmd, ...) is intercepted. The commands (2nd argument) defined in POSIX standard
-are supported. If non-POSIX commands were used, please disable fcntl tracing at configure time with `-DRECORDER_ENABLE_FCNTL_TRACE`.
- 
-(2) Logging pointers
+(4) Parquet Converter
 
-Since v2.1.8, Recorder by default does not log the pointers (memory addresses) anymore as they provide little information yet
-cost a lot of space.
+TODO: Add doc.
+
+
+**Features Controled by Environment Variables**
+
+(1) Inclusion/Exclusion prefix list
+
+Many POSIX calls intercepted are made by system libraries, job schedulers, etc. Their I/O accesses are less interesting as they operates on
+file locations such as `/dev, /sys, /usr/lib, etc`. To ignore those calls, you can specifiy a file that contains prefixes that you want to
+exclude:
+
+```bash
+export RECORDER_EXCLUSION_FILE=/path/to/your/exclusion_prefix_file
+
+# This file contains one prefix each line.
+# An example exclusion prefix file is included with Recorder:
+
+Recorder$ cat ./exclusion_prefix.txt 
+/dev
+/proc
+/sys
+/etc
+/usr/tce/packages
+pipe:[
+anon_inode:
+socket:[
+```
+
+Similarly, you can set `RECORDER_INCLUSION_FILE` to specify the inclusion prefixes, so only the POSIX calls that match those prefixes will be recorded.
+
+Note that this feature only applies to POSIX calls. MPI and HDF5 calls are always recorded when enabled.
+
+(2) Storing pointers
+
+Recorder by default does not log the pointers (memory addresses) as they provide little information yet
+cost a lot of space to store.
 However, you can change this behaviour by setting the enviroment variable `RECORDER_LOG_POINTER` to 1.
 
-(3) Control where Recorder stores the traces:
+(3) Location to write traces:
 
 By default Recorder will output the traces to the current working directory.
 You can use the enviroment variable `RECORDER_TRACES_DIR` to specifiy the path where you want the traces stored.
 Make sure that every process has the persmission to write to that directory. 
 
-**2. Install from Spack**
+
+
+### 2. Install from Spack
 ```bash
 spack install recorder
 ```
