@@ -110,10 +110,9 @@ You can use the enviroment variable `RECORDER_TRACES_DIR` to specifiy the path w
 Make sure that every process has the persmission to write to that directory. 
 
 
+### 2. Building Recorder with Spack
 
-### 2. Install from Spack
-
-For now, building Recording with Spack provides less flexibility. We will add the cmake options for spack as well.
+For now, building Recorder with Spack provides less flexibility. We will add the CMake options for spack as well.
 
 ```bash
 spack install recorder
