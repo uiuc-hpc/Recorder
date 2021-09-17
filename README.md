@@ -32,22 +32,24 @@ git clone https://github.com/uiuc-hpc/Recorder.git
 cd Recorder
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=[install location] ../
+cmake .. -DCMAKE_INSTALL_PREFIX=[install location]
 make
 make install
 ```
 
-If MPI, HDF5, or arrow is not installed in standard locations, you may need to set CFLGAS and LDFLAGS to specify their location, e.g.,
+If MPI, HDF5, or arrow is not installed in standard locations, you may need to use `-DCMAKE_PREFIX_PATH` to indicate their locations:
 ```bash
-cmake -DCMAKE_INSTALL_PREFIX=[install location] -DCMAKE_PREFIX_PATH=[semicolon separated depedencies dir]
+cmake ..                                                          \
+      -DCMAKE_INSTALL_PREFIX=[install location]                   \
+      -DCMAKE_PREFIX_PATH=[semicolon separated depedencies dir]
 ```
 
 By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX.
 
 Options for `cmake` can be used to disable one ore more levels of traces. You can use ccmake utility as well. Valid options:
- * -DRECORDER_ENABLE_POSIX_TRACE
- * -DRECORDER_ENABLE_MPIO_TRACE
- * -DRECORDER_ENABLE_HDF5_TRACE
+ * -DRECORDER_ENABLE_POSIX_TRACE=[ON|FF]
+ * -DRECORDER_ENABLE_MPIO_TRACE=[ON|FF]
+ * -DRECORDER_ENABLE_HDF5_TRACE=[ON|FF]
 
 **Other options:**
 
