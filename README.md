@@ -112,6 +112,9 @@ Make sure that every process has the persmission to write to that directory.
 
 
 ### 2. Install from Spack
+
+For now, building Recording with Spack provides less flexibility. We will add the cmake options for spack as well.
+
 ```bash
 spack install recorder
 ```
