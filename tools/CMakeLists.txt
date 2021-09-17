@@ -39,6 +39,11 @@ target_link_libraries(recorder2text
                      )
 add_dependencies(recorder2text reader)
 
+add_executable(recorder2timeline recorder2timeline.cpp)
+target_link_libraries(recorder2timeline
+        PUBLIC ${MPI_CXX_LIBRARIES} reader)
+add_dependencies(recorder2timeline reader)
+
 #add_executable(metaops_checker meta_ops_checker.c)
 #target_link_libraries(metaops_checker reader)
 #add_dependencies(metaops_checker reader)
@@ -49,19 +54,20 @@ add_dependencies(recorder2text reader)
 
 
 if(RECORDER_ENABLE_PARQUET)
+    message("-- " "Configuring Parquet tool: TRUE")
     find_package(Arrow REQUIRED)
     if(${Arrow_FOUND})
-        message(info "Arrow found")
+        message("-- " "Found Arrow: TRUE")
         include_directories(${ARROW_INCLUDE_DIR})
     else()
-        message(info "Arrow not found")
+        message("-- " "Found Arrow: FALSE")
     endif()
     find_package(Parquet REQUIRED)
     if(${Parquet_FOUND})
-        message(info "Parquet found")
+        message("-- " "Found Parquet: TRUE")
         include_directories(${PARQUET_INCLUDE_DIR})
     else()
-        message(info "Parquet not found")
+        message("-- " "Found Parquet: FALSE")
     endif()
 
     add_executable(recorder2parquet recorder2parquet.cpp)
