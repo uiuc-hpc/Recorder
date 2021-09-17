@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -39,6 +40,16 @@ int main() {
     a = 0;
     b = 10;
     fprintf(stderr, "hello world: %d %d\n", a, b);
+
+
+    DIR* dir = opendir("/sys");
+    struct dirent *dent = readdir(dir);
+    do {
+        printf("dent %s\n", dent->d_name);
+        dent = readdir(dir);
+    } while(dent);
+    closedir(dir);
+
     MPI_Finalize();
 
     return 0;
