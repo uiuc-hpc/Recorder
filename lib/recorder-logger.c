@@ -46,6 +46,7 @@ struct RecorderLogger logger;
  */
 struct RecordStack {
     int level;
+    pthread_t tid;
     Record *records;
     UT_hash_handle hh;
 };
@@ -167,7 +168,8 @@ void logger_record_enter(Record* record) {
         rs = recorder_malloc(sizeof(struct RecordStack));
         rs->records = NULL;
         rs->level = 0;
-        HASH_ADD_KEYPTR(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+        rs->tid = record->tid;
+        HASH_ADD(hh, g_record_stack, tid, sizeof(pthread_t), rs);
     }
 
     DL_APPEND(rs->records, record);
