@@ -141,7 +141,7 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
 
     FILE* f = fopen(cst_filename, "rb");
 
-    int key_len
+    int key_len;
     fread(&cst->entries, sizeof(int), 1, f);
 
     cst->cst_list = malloc(cst->entries * sizeof(CallSignature));
