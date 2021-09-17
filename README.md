@@ -15,7 +15,7 @@ users can control what levels are traced.
 
 
 
-# Building Recorder
+## Building Recorder
 
 There are two ways to build and install Recorder. The first way is to build Recorder from source using CMake. This is recomended as Recorder is currently under active development.
 
@@ -124,8 +124,7 @@ E.g., the following command will install Recorder with HDF5 and MPI tracing disa
 spack install recorder~hdf5~mpi
 ```
 
-Usage
-------------
+## Usage
 
 Assume `$RECORDER_ROOT` is the location where you installed Recorder.
 
@@ -156,9 +155,15 @@ We provide a Python library, [recorder-viz](https://pypi.org/project/recorder-vi
 It can be used to automatically generate detailed visuazation reports, or can be used to directly access the traces information. 
 -->
 
-Dataset
------------
+## APIs for post-processing
+
+TODO: we have C APIs (tools/reader.h). Need to doc them.
+
+
+## Dataset
+
 [Traces from 17 HPC applications](https://doi.org/10.6075/J0Z899X4)
+
 
 Publications
 -----------
@@ -167,6 +172,8 @@ Publications
 [Wang, Chen, Jinghan Sun, Marc Snir, Kathryn Mohror, and Elsa Gonsiorowski. "Recorder 2.0: Efficient Parallel I/O Tracing and Analysis." In IEEE International Workshop on High-Performance Storage (HPS), 2020.](https://doi.org/10.1109/IPDPSW50202.2020.00176)
 
 [Luu, Huong, Babak Behzad, Ruth Aydt, and Marianne Winslett. "A multi-level approach for understanding I/O activity in HPC applications." In 2013 IEEE International Conference on Cluster Computing (CLUSTER), 2013.](https://doi.org/10.1109/CLUSTER.2013.6702690)
+
+
 
 Change Log
 ----------
