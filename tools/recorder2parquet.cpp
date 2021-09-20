@@ -23,7 +23,7 @@ struct ParquetWriter {
 
     std::shared_ptr<arrow::Schema> schema;
     const int64_t chunk_size = 1024;
-    const int64_t NUM_ROWS = 1024*1024*1024; // 1B
+    const int64_t NUM_ROWS = 1024*1024*64; // 1B
     int64_t row_group = 0;
     ParquetWriter(int, char*);
 
