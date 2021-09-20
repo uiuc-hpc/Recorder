@@ -21,32 +21,33 @@ struct Writer{
 };
 
 void write_to_json(Record *record, void* arg) {
-    if (record->level == 0) {
+    
+   int cat = recorder_get_func_type(&reader, record);
+   if (record->level == 0 || (cat == 0 || cat == 1 || cat == 3)) {
         Writer *writer = (Writer *) arg;
         bool user_func = (record->func_id == RECORDER_USER_FUNCTION);
-        int cat = recorder_get_func_type(&reader, record);
         const char *func_name = recorder_get_func_name(&reader, record);
 
         if (user_func)
             func_name = record->args[0];
-        int ts = int(record->tstart * 1e6);
+        uint64_t ts = uint64_t(record->tstart / reader.metadata.time_resolution);
         int tid = record->tid;
-        int dur = int((record->tend - record->tstart) * 1e6);
-        if (dur < 0) dur = 0;
+        uint64_t dur = uint64_t((record->tend - record->tstart) / reader.metadata.time_resolution);
+        if (dur <= 0) dur = 0;
         std::stringstream ss;
         ss  << "{\"pid\":"      << writer->rank
             << ",\"tid\":"      << cat
             << ",\"ts\":"       << ts
             << ",\"name\":\""   << func_name
-            << "\",\"cat\":\""  << cat
-            << "\",\"ph\":\"X\""<< ""
-            << ",\"dur\":"      << dur
-            <<",\"args\":\"";
+            << "\",\"cat\":\""  << cat;
+            ss  << "\",\"ph\":\"X\""<< ""
+                << ",\"dur\":"      << dur;
+        ss  <<",\"args\":\"";
         for (int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
             char *arg = record->args[arg_id];
             ss  << " " << arg;
         }
-        ss  << " level: 0\"},\n";
+        ss  << " tend: "<< record->tend  <<"\"},\n";
         writer->outFile << ss.rdbuf();
     }
 }
@@ -118,41 +119,4 @@ int main(int argc, char **argv) {
     MPI_Finalize();
 
     return 0;
-//
-//
-//
-//
-//
-//
-//
-//    int NUM_THREADS = 1;
-//    if (argc > 2) {
-//        NUM_THREADS = atoi(argv[2]);
-//    }
-//    sprintf(textfile_path, "%s/timeline.json", textfile_dir);
-//    std::ofstream outFile;
-//    outFile.open(textfile_path,std::ofstream::trunc| std::ofstream::out);
-//    outFile << "{\"traceEvents\": [";
-//    outFile.close();
-//    pthread_t threads[NUM_THREADS];
-//    Writer global[NUM_THREADS];
-//    for (long t = 0; t < NUM_THREADS; t++) {
-//        global[t].my_rank = t;
-//        global[t].total_ranks = NUM_THREADS;
-//        global[t].filename = textfile_path;
-//        int rc = pthread_create(&threads[t], NULL, execute, &global[t]);
-//        if (rc) {
-//            perror("pthread_create failed.");
-//            exit(1);
-//        }
-//    }
-//    for (long t = 0; t < NUM_THREADS; t++) {
-//        pthread_join(threads[t], NULL);
-//    }
-//    outFile.open(textfile_path,std::ofstream::out| std::ofstream::app);
-//    outFile << "],\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}";
-//    outFile.close();
-//    recorder_free_reader(&reader);
-//
-//    return 0;
 }
