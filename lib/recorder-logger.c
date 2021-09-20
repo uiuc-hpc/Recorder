@@ -29,10 +29,11 @@ struct RecorderLogger {
     char cst_path[1024];
     char cfg_path[1024];
 
-    double start_ts;
-    FILE*  ts_file;
-    int*   ts;          // memory buffer for timestamps (tstart, tend-tstart)
-    int    ts_index;    // current position of ts buffer, spill to file once full.
+    double    start_ts;
+    double    prev_tstart; // delta compression for timestamps
+    FILE*     ts_file;
+    uint32_t* ts;          // memory buffer for timestamps (tstart, tend-tstart)
+    int       ts_index;    // current position of ts buffer, spill to file once full.
 };
 struct RecorderLogger logger;
 
@@ -149,12 +150,13 @@ void write_record(Record *record) {
     append_terminal(&logger.cfg, entry->terminal_id, 1);
 
     // write timestamps
-    int tstart = (record->tstart-logger.start_ts) / TIME_RESOLUTION;
-    int tend   = (record->tend-logger.start_ts)   / TIME_RESOLUTION;
-    logger.ts[logger.ts_index++] = tstart;
-    logger.ts[logger.ts_index++] = tend-tstart;     // we store the duration to enable higher compression ratio.
+    uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / TIME_RESOLUTION;
+    uint32_t delta_tend   = (record->tend-logger.prev_tstart)   / TIME_RESOLUTION;
+    logger.prev_tstart = record->tstart;
+    logger.ts[logger.ts_index++] = delta_tstart;
+    logger.ts[logger.ts_index++] = delta_tend;
     if(logger.ts_index == TS_BUFFER_ELEMENTS) {
-        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), TS_BUFFER_ELEMENTS, logger.ts_file);
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), TS_BUFFER_ELEMENTS, logger.ts_file);
         logger.ts_index = 0;
     }
 
@@ -212,6 +214,7 @@ void logger_init(int rank, int nprocs) {
     // Initialize the global values
     logger.rank = rank;
     logger.start_ts = recorder_wtime();
+    logger.prev_tstart = logger.start_ts;
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;

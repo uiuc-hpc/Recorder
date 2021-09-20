@@ -8,6 +8,8 @@
 static int mpi_start_idx = -1;
 static int hdf5_start_idx = -1;
 
+static double prev_tstart = 0;
+
 void read_metadata(char* path, RecorderMetadata *metadata) {
     FILE* fp = fopen(path, "rb");
     assert(fp != NULL);
@@ -204,10 +206,11 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
                 cs_to_record(&cst_list[sym_val], &record);
 
                 // Fill in timestamps
-                int ts[2];
-                fread(ts, sizeof(int), 2, ts_file);
-                record.tstart = ts[0] * reader->metadata.time_resolution;
-                record.tend   = ts[1] * reader->metadata.time_resolution + record.tstart;
+                uint32_t ts[2];
+                fread(ts, sizeof(uint32_t), 2, ts_file);
+                record.tstart = ts[0] * reader->metadata.time_resolution + prev_tstart;
+                record.tend   = ts[1] * reader->metadata.time_resolution + prev_tstart;
+                prev_tstart = record.tstart;
 
                 user_op(&record, user_arg);
 
