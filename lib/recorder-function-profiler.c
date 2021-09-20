@@ -92,12 +92,10 @@ void __cyg_profile_func_exit (void *func,  void *caller)
         record->tid = pthread_self();
         record->tstart = entry->tstart_head->tstart;
         record->tend = recorder_wtime();
-        record->arg_count = 1;
-        record->args = recorder_malloc(1*sizeof(char*));
-        if(info.dli_sname)
-            record->args[0] = strdup(info.dli_sname);
-        else
-            record->args[0] = strdup(info.dli_fname);
+        record->arg_count = 2;
+        record->args = recorder_malloc(record->arg_count*sizeof(char*));
+        record->args[0] = strdup(info.dli_fname?info.dli_fname:"???");
+        record->args[1] = strdup(info.dli_sname?info.dli_sname:"???");
 
         LL_DELETE(entry->tstart_head, entry->tstart_head);
         write_record(record);
