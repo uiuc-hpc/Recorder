@@ -595,8 +595,8 @@ struct dirent* RECORDER_POSIX_DECL(readdir)(DIR *dir) {
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(closedir)(DIR *dir) {
-    char** args = assemble_args_list(1, ptoa(dir));
     RECORDER_INTERCEPTOR_NOIO(int, closedir, (dir));
+    char** args = assemble_args_list(1, ptoa(dir)); // TODO dir is not availble after a success closedir() call
     RECORDER_INTERCEPTOR(1, args);
 }
 /*

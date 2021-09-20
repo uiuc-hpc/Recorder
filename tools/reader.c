@@ -34,11 +34,12 @@ void read_func_list(char* path, RecorderReader *reader) {
             memcpy(reader->func_list[func_id], buf+start_pos, end_pos-start_pos);
             start_pos = end_pos+1;
             if((mpi_start_idx==-1) &&
-                (strstr(func_list[func_id], "MPI") != NULL))
+                (NULL!=strstr(reader->func_list[func_id], "MPI")))
                 mpi_start_idx = func_id;
 
             if((hdf5_start_idx==-1) &&
-                (strstr(func_list[func_id], "H5") != NULL))
+                (NULL!=strstr(reader->func_list[func_id], "H5")))
+
                 hdf5_start_idx = func_id;
 
             func_id++;
@@ -140,7 +141,7 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
 
     FILE* f = fopen(cst_filename, "rb");
 
-    int key_len, terminal = 0;
+    int key_len;
     fread(&cst->entries, sizeof(int), 1, f);
 
     cst->cst_list = malloc(cst->entries * sizeof(CallSignature));
@@ -152,7 +153,7 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
         cst->cst_list[i].key = malloc(cst->cst_list[i].key_len);
         fread(cst->cst_list[i].key, 1, cst->cst_list[i].key_len, f);
 
-        assert(terminal < cst->entries);
+        assert(cst->cst_list[i].terminal < cst->entries);
     }
     fclose(f);
 
