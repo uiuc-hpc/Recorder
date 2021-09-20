@@ -30,9 +30,9 @@ void write_to_json(Record *record, void* arg) {
 
         if (user_func)
             func_name = record->args[0];
-        uint64_t ts = uint64_t(record->tstart * reader.metadata.time_resolution);
+        uint64_t ts = uint64_t(record->tstart / reader.metadata.time_resolution);
         int tid = record->tid;
-        uint64_t dur = uint64_t((record->tend - record->tstart) * reader.metadata.time_resolution);
+        uint64_t dur = uint64_t((record->tend - record->tstart) / reader.metadata.time_resolution);
         if (dur <= 0) dur = 0;
         std::stringstream ss;
         ss  << "{\"pid\":"      << writer->rank
