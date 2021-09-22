@@ -210,10 +210,14 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(access);
     MAP_OR_FAIL(mkdir);
     MAP_OR_FAIL(PMPI_Barrier);
+    MAP_OR_FAIL(PMPI_Bcast);
+
+    double global_tstart = recorder_wtime();
+    RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialize the global values
     logger.rank = rank;
-    logger.start_ts = recorder_wtime();
+    logger.start_ts = global_tstart;
     logger.prev_tstart = logger.start_ts;
     logger.cst = NULL;
     sequitur_init(&logger.cfg);

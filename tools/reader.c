@@ -223,10 +223,13 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
     }
 }
 
+// Decode all records for one rank
+// one record at a time
 void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
                              void (*user_op)(Record*, void*), void* user_arg) {
-
     assert(cst->rank == cfg->rank);
+
+    prev_tstart = 0;
 
     char ts_filename[1096] = {0};
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
