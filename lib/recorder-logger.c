@@ -7,7 +7,6 @@
 #include "recorder.h"
 #include "recorder-sequitur.h"
 
-#define TIME_RESOLUTION     0.000001
 #define VERSION_STR         "2.3.0"
 #define TS_BUFFER_ELEMENTS  1024
 
@@ -34,6 +33,7 @@ struct RecorderLogger {
     FILE*     ts_file;
     uint32_t* ts;          // memory buffer for timestamps (tstart, tend-tstart)
     int       ts_index;    // current position of ts buffer, spill to file once full.
+    double    ts_resolution;
 };
 struct RecorderLogger logger;
 
@@ -150,8 +150,8 @@ void write_record(Record *record) {
     append_terminal(&logger.cfg, entry->terminal_id, 1);
 
     // write timestamps
-    uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / TIME_RESOLUTION;
-    uint32_t delta_tend   = (record->tend-logger.prev_tstart)   / TIME_RESOLUTION;
+    uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
+    uint32_t delta_tend   = (record->tend-logger.prev_tstart)   / logger.ts_resolution;
     logger.prev_tstart = record->tstart;
     logger.ts[logger.ts_index++] = delta_tstart;
     logger.ts[logger.ts_index++] = delta_tend;
@@ -220,6 +220,11 @@ void logger_init(int rank, int nprocs) {
     logger.current_cfg_terminal = 0;
     logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
     logger.ts_index = 0;
+    logger.ts_resolution = 1e-7; // 100ns
+
+    const char* time_resolution_str = getenv("RECORDER_TIME_RESOLUTION");
+    if(time_resolution_str)
+        logger.ts_resolution = atof(time_resolution_str);
 
     const char* base_dir = getenv("RECORDER_TRACES_DIR");
     if(base_dir)
@@ -247,7 +252,7 @@ void logger_init(int rank, int nprocs) {
         sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
         FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
         RecorderMetadata metadata = {
-            .time_resolution = TIME_RESOLUTION,
+            .time_resolution = logger.ts_resolution,
             .total_ranks = nprocs,
             .start_ts  = logger.start_ts,
             .ts_buffer_elements = TS_BUFFER_ELEMENTS,

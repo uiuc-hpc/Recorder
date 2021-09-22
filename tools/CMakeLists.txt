@@ -35,6 +35,7 @@ add_library(reader reader.c)
 add_executable(recorder2text recorder2text.c)
 target_link_libraries(recorder2text
                         PUBLIC ${MPI_C_LIBRARIES}
+                        PUBLIC m
                         reader
                      )
 add_dependencies(recorder2text reader)

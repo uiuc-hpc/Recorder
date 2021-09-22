@@ -3,10 +3,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <math.h>
 #include <mpi.h>
 #include "reader.h"
 
+#define DECIMAL 6
+
 RecorderReader reader;
+static char formating_string[32];
 
 void write_to_textfile(Record *record, void* arg) {
     FILE* f = (FILE*) arg;
@@ -15,7 +19,7 @@ void write_to_textfile(Record *record, void* arg) {
 
     const char* func_name = recorder_get_func_name(&reader, record);
 
-    fprintf(f, "%.6f %.6f %s %d %d (", record->tstart, record->tend, // record->tid
+    fprintf(f, formating_string, record->tstart, record->tend, // record->tid
                              func_name, record->level, recorder_get_func_type(&reader, record));
 
     for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
@@ -25,6 +29,7 @@ void write_to_textfile(Record *record, void* arg) {
 
     fprintf(f, " )\n");
 }
+
 
 int min(int a, int b) { return a < b ? a : b; }
 int max(int a, int b) { return a > b ? a : b; }
@@ -45,6 +50,9 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     recorder_init_reader(argv[1], &reader);
+
+    int decimal =  log10(1 / reader.metadata.time_resolution);
+    sprintf(formating_string, "%%.%df %%.%df %%s %%d %%d (", decimal, decimal);
 
     // Each rank will process n files (n ranks traces)
     int n = max(reader.metadata.total_ranks/mpi_size, 1);
