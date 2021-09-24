@@ -2,6 +2,7 @@
 #include <sys/time.h>   // for gettimeofday()
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include <assert.h>
+#include <errno.h>
 #include "recorder.h"
 #include "recorder-utils.h"
 
@@ -281,6 +282,29 @@ inline char* realrealpath(const char *path) {
     if (res == NULL)                    // realpath() could return NULL on error
         return strdup(path);
     return res;
+}
+
+/**
+ * Like mkdir() but also create parent directory
+ * if not exists
+ */
+int mkpath(char* file_path, mode_t mode) {
+
+    MAP_OR_FAIL(mkdir);
+
+    assert(file_path && *file_path);
+
+    for (char* p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
+        *p = '\0';
+        if (RECORDER_REAL_CALL(mkdir)(file_path, mode) == -1) {
+            if (errno != EEXIST) {
+                *p = '/';
+                return -1;
+            }
+        }
+        *p = '/';
+    }
+    return 0;
 }
 
 int min_in_array(int* arr, size_t len) {

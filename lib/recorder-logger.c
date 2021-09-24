@@ -200,6 +200,29 @@ bool logger_initialized() {
     return initialized;
 }
 
+// Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS
+void set_traces_dir() {
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    char* traces_dir = alloca(800);
+    char* tmp = realrealpath("/proc/self/exe");
+    char* exec_name = basename(tmp);
+    char* user_name = getlogin();
+
+    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d/",
+            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, exec_name, user_name,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+    free(tmp);
+
+    const char* base_dir = getenv("RECORDER_TRACES_DIR");
+    if(base_dir)
+        sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
+    else
+        strcpy(logger.traces_dir, traces_dir); // current directory
+}
+
+
 void logger_init(int rank, int nprocs) {
     // Map the functions we will use later
     // We did not intercept fprintf
@@ -208,7 +231,6 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(fwrite);
     MAP_OR_FAIL(rmdir);
     MAP_OR_FAIL(access);
-    MAP_OR_FAIL(mkdir);
     MAP_OR_FAIL(PMPI_Barrier);
     MAP_OR_FAIL(PMPI_Bcast);
 
@@ -230,20 +252,15 @@ void logger_init(int rank, int nprocs) {
     if(time_resolution_str)
         logger.ts_resolution = atof(time_resolution_str);
 
-    const char* base_dir = getenv("RECORDER_TRACES_DIR");
-    if(base_dir)
-        sprintf(logger.traces_dir, "%s/recorder-logs", base_dir);
-    else
-        sprintf(logger.traces_dir, "recorder-logs"); // current directory
-
-
+    set_traces_dir();
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
 
+    // Create traces dir
     if(rank == 0) {
         if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
             RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
-        RECORDER_REAL_CALL(mkdir) (logger.traces_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
     }
     RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
@@ -363,5 +380,8 @@ void logger_finalize() {
     cleanup_cst(logger.cst);
     dump_cfg_local();
     sequitur_cleanup(&logger.cfg);
+
+    if(logger.rank == 0)
+        printf("[Recorder] trace files have been written to %s\n", logger.traces_dir);
 }
 
