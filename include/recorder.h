@@ -66,7 +66,7 @@
 
 
 /* logger.c */
-void logger_init(int rank, int nprocs);
+void logger_init(int rank, int nprocs, int non_mpi);
 void logger_finalize();
 bool logger_initialized();
 void logger_record_enter(Record *record);

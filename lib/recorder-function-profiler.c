@@ -45,7 +45,7 @@ void __cyg_profile_func_enter (void *func,  void *caller)
     if(!dladdr(func, &info)) return;
     if(!info.dli_sname && !info.dli_fname) return;
 
-    //printf("enter %s\n", info.dli_sname);
+    //printf("enter %s %s\n", info.dli_fname, info.dli_sname);
 
     func_hash_t *entry = NULL;
     int key_len;

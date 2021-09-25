@@ -12,7 +12,7 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi-init-finalize.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-init-finalize.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c

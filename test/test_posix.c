@@ -4,11 +4,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <mpi.h>
 
 
 int main() {
-    MPI_Init(NULL, NULL);
 
     struct stat buf;
     int res;
@@ -50,7 +48,6 @@ int main() {
     } while(dent);
     closedir(dir);
 
-    MPI_Finalize();
 
     return 0;
 }

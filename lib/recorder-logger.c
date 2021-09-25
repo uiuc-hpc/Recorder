@@ -223,7 +223,7 @@ void set_traces_dir() {
 }
 
 
-void logger_init(int rank, int nprocs) {
+void logger_init(int rank, int nprocs, int non_mpi) {
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen);
@@ -235,7 +235,8 @@ void logger_init(int rank, int nprocs) {
     MAP_OR_FAIL(PMPI_Bcast);
 
     double global_tstart = recorder_wtime();
-    RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if(!non_mpi)
+        RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialize the global values
     logger.rank = rank;
@@ -262,7 +263,8 @@ void logger_init(int rank, int nprocs) {
             RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
         mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
     }
-    RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
+    if(!non_mpi)
+        RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
     char ts_filename[1024];
     sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);

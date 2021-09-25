@@ -55,13 +55,19 @@
 static double local_tstart, local_tend;
 static int rank, nprocs;
 
-void recorder_init(int *argc, char ***argv) {
-    MAP_OR_FAIL(PMPI_Comm_size)
-    MAP_OR_FAIL(PMPI_Comm_rank)
-    RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
-    RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
+void recorder_init(int non_mpi) {
+    MAP_OR_FAIL(PMPI_Comm_size);
+    MAP_OR_FAIL(PMPI_Comm_rank);
 
-    logger_init(rank, nprocs);
+    if(!non_mpi) {
+        RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+        RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
+    } else {    // non-mpi program
+        rank = 0;
+        nprocs = 1;
+    }
+
+    logger_init(rank, nprocs, non_mpi);
     utils_init();
     local_tstart = recorder_wtime();
 }
@@ -79,21 +85,21 @@ void recorder_finalize() {
 int PMPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
-    recorder_init(argc, argv);
+    recorder_init(0);
     return ret;
 }
 
 int MPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
-    recorder_init(argc, argv);
+    recorder_init(0);
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
     MAP_OR_FAIL(PMPI_Init_thread)
     int ret = RECORDER_REAL_CALL(PMPI_Init_thread) (argc, argv, required, provided);
-    recorder_init(argc, argv);
+    recorder_init(0);
     return ret;
 }
 
@@ -106,6 +112,28 @@ int PMPI_Finalize(void) {
 int MPI_Finalize(void) {
     recorder_finalize();
     MAP_OR_FAIL(PMPI_Finalize);
-    int res = RECORDER_REAL_CALL(PMPI_Finalize) ();
-    return res;
+    return RECORDER_REAL_CALL(PMPI_Finalize) ();
 }
+
+
+
+#ifdef __GNUC__
+
+/**
+ * Handle non mpi programs
+ * Assume it is a single process program.
+ *
+ */
+void __attribute__((constructor)) non_mpi_init() {
+    char* non_mpi = getenv("RECORDER_NON_MPI");
+    if(non_mpi)
+        recorder_init(1);
+}
+
+void __attribute__((destructor))  non_mpi_finalize() {
+    char* non_mpi = getenv("RECORDER_NON_MPI");
+    if(non_mpi)
+        recorder_finalize();
+}
+
+#endif
