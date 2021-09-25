@@ -90,18 +90,18 @@ char** read_prefix_list(const char* path) {
 
 void utils_init() {
     log_pointer = false;
-    const char* s = getenv("RECORDER_LOG_POINTER");
+    const char* s = getenv(RECORDER_LOG_POINTER);
     if(s)
         log_pointer = atoi(s);
 
     exclusion_prefix = NULL;
     inclusion_prefix = NULL;
 
-    const char *exclusion_fname = getenv("RECORDER_EXCLUSION_FILE");
+    const char *exclusion_fname = getenv(RECORDER_EXCLUSION_FILE);
     if(exclusion_fname)
         exclusion_prefix = read_prefix_list(exclusion_fname);
 
-    const char *inclusion_fname = getenv("RECORDER_INCLUSION_FILE");
+    const char *inclusion_fname = getenv(RECORDER_INCLUSION_FILE);
     if(inclusion_fname)
         inclusion_prefix = read_prefix_list(inclusion_fname);
 }

@@ -215,7 +215,7 @@ void set_traces_dir() {
             tm.tm_hour, tm.tm_min, tm.tm_sec);
     free(tmp);
 
-    const char* base_dir = getenv("RECORDER_TRACES_DIR");
+    const char* base_dir = getenv(RECORDER_TRACES_DIR);
     if(base_dir)
         sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
     else
@@ -223,7 +223,7 @@ void set_traces_dir() {
 }
 
 
-void logger_init(int rank, int nprocs, int non_mpi) {
+void logger_init(int rank, int nprocs, int no_mpi) {
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen);
@@ -235,7 +235,7 @@ void logger_init(int rank, int nprocs, int non_mpi) {
     MAP_OR_FAIL(PMPI_Bcast);
 
     double global_tstart = recorder_wtime();
-    if(!non_mpi)
+    if(!no_mpi)
         RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialize the global values
@@ -249,7 +249,7 @@ void logger_init(int rank, int nprocs, int non_mpi) {
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
 
-    const char* time_resolution_str = getenv("RECORDER_TIME_RESOLUTION");
+    const char* time_resolution_str = getenv(RECORDER_TIME_RESOLUTION);
     if(time_resolution_str)
         logger.ts_resolution = atof(time_resolution_str);
 
@@ -263,7 +263,7 @@ void logger_init(int rank, int nprocs, int non_mpi) {
             RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
         mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
     }
-    if(!non_mpi)
+    if(!no_mpi)
         RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
 
     char ts_filename[1024];

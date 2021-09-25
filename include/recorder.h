@@ -64,6 +64,15 @@
 #define CONST
 #endif
 
+/* List of runtime environment variables */
+#define RECORDER_NO_MPI             "RECORDER_NO_MPI"
+#define RECORDER_TRACES_DIR         "RECORDER_TRACES_DIR"
+#define RECORDER_TIME_RESOLUTION    "RECORDER_TIME_RESOLUTION"
+#define RECORDER_LOG_POINTER        "RECORDER_LOG_POINTER"
+#define RECORDER_EXCLUSION_FILE     "RECORDER_EXCLUSION_FILE"
+#define RECORDER_INCLUSION_FILE     "RECORDER_INCLUSION_FILE"
+
+
 
 /* logger.c */
 void logger_init(int rank, int nprocs, int non_mpi);
@@ -73,9 +82,11 @@ void logger_record_enter(Record *record);
 void logger_record_exit(Record *record);
 void free_record(Record *record);
 
+
 // TODO only used by ftrace logger
-// Need to see how to replace it with process_one_record()
+// Need to see how to replace it
 void write_record(Record* record);
+
 
 #ifdef RECORDER_PRELOAD
     #include <dlfcn.h>

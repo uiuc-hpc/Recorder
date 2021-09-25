@@ -55,11 +55,11 @@
 static double local_tstart, local_tend;
 static int rank, nprocs;
 
-void recorder_init(int non_mpi) {
+void recorder_init(int no_mpi) {
     MAP_OR_FAIL(PMPI_Comm_size);
     MAP_OR_FAIL(PMPI_Comm_rank);
 
-    if(!non_mpi) {
+    if(!no_mpi) {
         RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
         RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     } else {    // non-mpi program
@@ -67,7 +67,7 @@ void recorder_init(int non_mpi) {
         nprocs = 1;
     }
 
-    logger_init(rank, nprocs, non_mpi);
+    logger_init(rank, nprocs, no_mpi);
     utils_init();
     local_tstart = recorder_wtime();
 }
@@ -124,15 +124,15 @@ int MPI_Finalize(void) {
  * Assume it is a single process program.
  *
  */
-void __attribute__((constructor)) non_mpi_init() {
-    char* non_mpi = getenv("RECORDER_NON_MPI");
-    if(non_mpi)
+void __attribute__((constructor)) no_mpi_init() {
+    char* no_mpi = getenv(RECORDER_NO_MPI);
+    if(no_mpi)
         recorder_init(1);
 }
 
-void __attribute__((destructor))  non_mpi_finalize() {
-    char* non_mpi = getenv("RECORDER_NON_MPI");
-    if(non_mpi)
+void __attribute__((destructor))  no_mpi_finalize() {
+    char* no_mpi = getenv(RECORDER_NO_MPI);
+    if(no_mpi)
         recorder_finalize();
 }
 
