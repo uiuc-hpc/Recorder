@@ -131,7 +131,11 @@ Assume `$RECORDER_ROOT` is the location where you installed Recorder.
 **1. Generate traces.**
 
 ```bash
-LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so mpirun -np N ./your_app
+# For MPI programs
+mpirun -np N -env LD_PRELOAD $RECORDER_ROOT/lib/librecorder.so ./your_app
+
+# For non-MPI programs
+RECORDER_NO_MPI=1 LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so ./your_app
 ```
 mpirun can be changed to your workload manager, e.g. srun.
 
