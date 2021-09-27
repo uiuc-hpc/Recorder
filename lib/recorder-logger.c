@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include <errno.h>
 #include "recorder.h"
 #include "recorder-sequitur.h"
@@ -200,7 +201,7 @@ bool logger_initialized() {
     return initialized;
 }
 
-// Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS
+// Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS.fff
 void set_traces_dir() {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -210,9 +211,12 @@ void set_traces_dir() {
     char* exec_name = basename(tmp);
     char* user_name = getlogin();
 
-    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d/",
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d.%03d/",
             tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, exec_name, user_name,
-            tm.tm_hour, tm.tm_min, tm.tm_sec);
+            tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
     free(tmp);
 
     const char* base_dir = getenv(RECORDER_TRACES_DIR);
