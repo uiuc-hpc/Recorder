@@ -128,6 +128,7 @@ void free_record(Record *record) {
 }
 
 void write_record(Record *record) {
+
     int key_len;
     char* key = compose_call_key(record, &key_len);
 
@@ -202,28 +203,35 @@ bool logger_initialized() {
 }
 
 // Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS.fff
-void set_traces_dir() {
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
+void set_traces_dir(int no_mpi) {
 
-    char* traces_dir = alloca(800);
-    char* tmp = realrealpath("/proc/self/exe");
-    char* exec_name = basename(tmp);
-    char* user_name = getlogin();
+    if( logger.rank == 0 ) {
 
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
 
-    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d.%03d/",
-            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, exec_name, user_name,
-            tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
-    free(tmp);
+        char* traces_dir = alloca(800);
+        char* tmp = realrealpath("/proc/self/exe");
+        char* exec_name = basename(tmp);
+        char* user_name = getlogin();
 
-    const char* base_dir = getenv(RECORDER_TRACES_DIR);
-    if(base_dir)
-        sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
-    else
-        strcpy(logger.traces_dir, traces_dir); // current directory
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d.%03d/",
+                tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, exec_name, user_name,
+                tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
+        free(tmp);
+
+        const char* base_dir = getenv(RECORDER_TRACES_DIR);
+        if(base_dir)
+            sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
+        else
+            strcpy(logger.traces_dir, traces_dir); // current directory
+    }
+
+    if(!no_mpi)
+        RECORDER_REAL_CALL(PMPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
 
@@ -249,7 +257,7 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
-    logger.ts = recorder_malloc(sizeof(int)*TS_BUFFER_ELEMENTS);
+    logger.ts = recorder_malloc(sizeof(uint32_t)*TS_BUFFER_ELEMENTS);
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
 
@@ -257,7 +265,7 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     if(time_resolution_str)
         logger.ts_resolution = atof(time_resolution_str);
 
-    set_traces_dir();
+    set_traces_dir(no_mpi);
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
 
