@@ -215,12 +215,16 @@ void set_traces_dir(int no_mpi) {
         char* exec_name = basename(tmp);
         char* user_name = getlogin();
 
+        long unsigned int pid = (long unsigned int)getpid();
+        char hostname[64] = {0};
+        gethostname(hostname, 64);
+
         struct timeval tv;
         gettimeofday(&tv, NULL);
 
-        sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%02d%02d%02d.%03d/",
-                tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, exec_name, user_name,
-                tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
+        sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%s-%lu-%02d%02d%02d.%03d/",
+                tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, hostname, user_name,
+                exec_name, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
         free(tmp);
 
         const char* base_dir = getenv(RECORDER_TRACES_DIR);

@@ -139,7 +139,7 @@ RECORDER_NO_MPI=1 LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so ./your_app
 ```
 mpirun can be changed to your workload manager, e.g. srun.
 
-The trace files will be written to the current directory.
+The trace files will be written to the current directory under a folder named `hostname-username-appname-pid-starttime`. 
 
 **2. Human-readable traces**
 
