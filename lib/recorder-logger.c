@@ -7,7 +7,9 @@
 #include <errno.h>
 #include "recorder.h"
 #include "recorder-sequitur.h"
+#ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
+#endif
 
 #define VERSION_STR         "2.3.0"
 #define TS_BUFFER_ELEMENTS  1024
@@ -257,7 +259,9 @@ void logger_init(int rank, int nprocs, int no_mpi) {
         RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialize CUDA profiler
+    #ifdef RECORDER_ENABLE_CUDA_TRACE
     cuda_profiler_init();
+    #endif
 
     // Initialize the global values
     logger.rank = rank;
@@ -393,7 +397,9 @@ void logger_finalize() {
 
     initialized = false;
 
+    #ifdef RECORDER_ENABLE_CUDA_TRACE
     cuda_profiler_exit();
+    #endif
 
     if(logger.ts_index > 0)
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);

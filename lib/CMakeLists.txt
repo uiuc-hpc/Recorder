@@ -16,7 +16,6 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cuda-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-symbol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-digram.c
@@ -65,6 +64,11 @@ if(RECORDER_ENABLE_CUDA_TRACE)
     find_package(CUDA REQUIRED)
     find_package(CUDAToolkit REQUIRED)
     if(CUDAToolkit_FOUND)
+        set(RECORDER_SRCS
+            ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cuda-profiler.c
+            ${RECORDER_SRCS}
+        )
+
         message("-- " "Found CUDA: TRUE")
         include_directories(${CUDA_INCLUDE_DIRS})
         set(RECORDER_EXT_INCLUDE_DEPENDENCIES
