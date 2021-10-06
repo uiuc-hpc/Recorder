@@ -618,7 +618,7 @@ int RECORDER_POSIX_DECL(__xmknodat)(int ver, int fd, const char *path, mode_t mo
 
 // Advanced File Operations
 // TODO: third argument
-#ifndef DISABLE_FCNTL_TRACE
+#ifdef RECORDER_ENABLE_FCNTL_TRACE
 int RECORDER_POSIX_DECL(fcntl)(int fd, int cmd, ...) {
     if(cmd==F_DUPFD || cmd==F_DUPFD_CLOEXEC || cmd==F_SETFD || cmd==F_SETFL || cmd==F_SETOWN) {            // arg: int
         va_list arg;
