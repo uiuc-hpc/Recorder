@@ -106,6 +106,7 @@ void __cyg_profile_func_exit (void *func,  void *caller)
             recorder_free(entry, sizeof(func_hash_t));
         }
 
+        free_record(record);
     } else {
         // Shouldn't be possible
         printf("Not possible!\n");

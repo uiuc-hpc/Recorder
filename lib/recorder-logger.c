@@ -113,16 +113,15 @@ char* compose_call_key(Record *record, int* key_len) {
     return key;
 }
 
-
 void free_record(Record *record) {
     if(record == NULL)
         return;
 
     if(record->args) {
         for(int i = 0; i < record->arg_count; i++)
-            free(record->args[i]);  // note here we don't use recorder_fere
+            free(record->args[i]);  // note here we don't use recorder_free
                                     // because the memory was potentially
-                                    // allocated by realpath() or other system calls.
+                                    // allocated by realpath(), strdup() other system calls.
         recorder_free(record->args, sizeof(char*)*record->arg_count);
     }
 

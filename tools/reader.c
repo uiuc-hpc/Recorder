@@ -65,7 +65,7 @@ void recorder_free_reader(RecorderReader *reader) {
 
 const char* recorder_get_func_name(RecorderReader* reader, Record* record) {
     if(record->func_id == RECORDER_USER_FUNCTION)
-        return record->args[0];
+        return record->args[1];
     return reader->func_list[record->func_id];
 }
 
