@@ -16,6 +16,7 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cuda-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-symbol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-digram.c
@@ -62,13 +63,16 @@ endif()
 
 if(RECORDER_ENABLE_CUDA_TRACE)
     find_package(CUDA REQUIRED)
-    if(CUDA_FOUND)
+    find_package(CUDAToolkit REQUIRED)
+    if(CUDAToolkit_FOUND)
         message("-- " "Found CUDA: TRUE")
-        include_directories(${CUDA_INCLUDE_DIR})
+        include_directories(${CUDA_INCLUDE_DIRS})
         set(RECORDER_EXT_INCLUDE_DEPENDENCIES
                 ${CUDA_INCLUDE_DIRS} ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
         set(RECORDER_EXT_LIB_DEPENDENCIES
                 ${CUDA_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+        set(RECORDER_EXT_LIB_DEPENDENCIES
+                ${CUDA_cupti_LIBRARY} ${RECORDER_EXT_LIB_DEPENDENCIES})
     else()
         message("-- " "Found CUDA: FALSE")
     endif()
@@ -92,6 +96,7 @@ target_include_directories(recorder
 target_link_libraries(recorder
         PUBLIC ${HDF5_LIBRARIES}
         PUBLIC ${MPI_C_LIBRARIES}
+        PUBLIC ${RECORDER_EXT_LIB_DEPENDENCIES}
         PUBLIC pthread
         )
 
@@ -114,7 +119,7 @@ set(RECORDER_HEADERS
         ${CMAKE_SOURCE_DIR}/include/recorder-log-format.h
         ${CMAKE_SOURCE_DIR}/include/recorder-utils.h
         ${CMAKE_SOURCE_DIR}/include/uthash.h
-    )
+)
 
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install

@@ -7,6 +7,7 @@
 #include <errno.h>
 #include "recorder.h"
 #include "recorder-sequitur.h"
+#include "recorder-cuda-profiler.h"
 
 #define VERSION_STR         "2.3.0"
 #define TS_BUFFER_ELEMENTS  1024
@@ -255,6 +256,9 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     if(!no_mpi)
         RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    // Initialize CUDA profiler
+    cuda_profiler_init();
+
     // Initialize the global values
     logger.rank = rank;
     logger.start_ts = global_tstart;
@@ -388,6 +392,8 @@ void cleanup_record_stack() {
 void logger_finalize() {
 
     initialized = false;
+
+    cuda_profiler_exit();
 
     if(logger.ts_index > 0)
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
