@@ -186,7 +186,8 @@ void logger_record_exit(Record* record) {
     struct RecordStack *rs = record->record_stack;
     rs->level--;
 
-    // In most cases, rs->records should only have one record
+    // In most cases, rs->level is 0 and
+    // rs->records have only one record
     if(rs->level == 0) {
         Record *current, *tmp;
         DL_FOREACH_SAFE(rs->records, current, tmp) {

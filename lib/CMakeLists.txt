@@ -22,6 +22,7 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-logger.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-utils.c)
 
+
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
@@ -29,8 +30,7 @@ find_package(HDF5 REQUIRED)
 if(HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIRS})
     set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${HDF5_INCLUDE_DIRS}
-            ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
-            )
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${HDF5_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
@@ -41,8 +41,7 @@ find_package(MPI REQUIRED)
 if(MPI_FOUND)
     include_directories(${MPI_CXX_INCLUDE_DIRS})
     set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${MPI_C_INCLUDE_DIRS}
-            ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
-            )
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${MPI_C_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
@@ -53,13 +52,28 @@ find_package(ZLIB REQUIRED)
 if(ZLIB_FOUND)
     include_directories(${ZLIB_INCLUDE_DIRS})
     set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${ZLIB_INCLUDE_DIRS}
-            ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
-            )
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${ZLIB_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
     message(STATUS, "ZLIB not found")
 endif()
+
+
+if(RECORDER_ENABLE_CUDA_TRACE)
+    find_package(CUDA REQUIRED)
+    if(CUDA_FOUND)
+        message("-- " "Found CUDA: TRUE")
+        include_directories(${CUDA_INCLUDE_DIR})
+        set(RECORDER_EXT_INCLUDE_DEPENDENCIES
+                ${CUDA_INCLUDE_DIRS} ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
+        set(RECORDER_EXT_LIB_DEPENDENCIES
+                ${CUDA_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+    else()
+        message("-- " "Found CUDA: FALSE")
+    endif()
+endif()
+
 
 
 #------------------------------------------------------------------------------
