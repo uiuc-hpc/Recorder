@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cuda.h>
 #include <cupti.h>
+#include "recorder.h"
 #include "recorder-cuda-profiler.h"
 
 #define CUPTI_CALL(call)                                                    \
@@ -20,8 +21,8 @@
 #define ALIGN_BUFFER(buffer, align)                                            \
     (((uintptr_t) (buffer) & ((align)-1)) ? ((buffer) + (align) - ((uintptr_t) (buffer) & ((align)-1))) : (buffer))
 
-// Timestamp at trace initialization time. Used to normalized other
-// timestamps
+// Timestamp at trace initialization time.
+// Used to normalized other timestamps
 static uint64_t startTimestamp;
 
 static uint8_t *g_fixed_buffer;
@@ -131,7 +132,25 @@ getComputeApiKindString(CUpti_ActivityComputeApiKind kind)
     return "<unknown>";
 }
 
-    static void
+Record* create_recorder_record(CUpti_ActivityKernel5 *kernel) {
+
+    const char* kindString = (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
+
+    Record *record = recorder_malloc(sizeof(Record));
+    record->func_id = RECORDER_USER_FUNCTION;
+    record->level = 0;
+    record->tid = pthread_self();
+    record->tstart = (kernel->start - startTimestamp)/10e9;
+    record->tstart = (kernel->end - startTimestamp)/10e9;
+    record->arg_count = 2;
+    record->args = recorder_malloc(record->arg_count*sizeof(char*));
+    record->args[0] = strdup(kindString);
+    record->args[1] = strdup(kernel->name);
+
+    return record;
+}
+
+static void
 printActivity(CUpti_Activity *record)
 {
     switch (record->kind)
@@ -191,6 +210,7 @@ printActivity(CUpti_Activity *record)
         case CUPTI_ACTIVITY_KIND_KERNEL:
         case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
             {
+                /*
                 const char* kindString = (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
                 CUpti_ActivityKernel5 *kernel = (CUpti_ActivityKernel5 *) record;
                 printf("%s \"%s\" [ %llu - %llu ] device %u, context %u, stream %u, correlation %u\n",
@@ -204,6 +224,10 @@ printActivity(CUpti_Activity *record)
                         kernel->gridX, kernel->gridY, kernel->gridZ,
                         kernel->blockX, kernel->blockY, kernel->blockZ,
                         kernel->staticSharedMemory, kernel->dynamicSharedMemory);
+                */
+                Record* record = create_recorder_record(kernel);
+                write_record(record);
+                free_record(record);
                 break;
             }
             /*
