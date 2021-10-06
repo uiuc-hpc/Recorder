@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <dirent.h>
 #include <utime.h>
 #include <fcntl.h>
