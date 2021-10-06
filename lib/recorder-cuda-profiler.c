@@ -1,4 +1,6 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
+#include <string.h>
 #include <cuda.h>
 #include <cupti.h>
 #include "recorder.h"
@@ -16,16 +18,11 @@
         }                                                                       \
     } while (0)
 
-#define BUF_SIZE (32 * 1024)
-#define ALIGN_SIZE (8)
-#define ALIGN_BUFFER(buffer, align)                                            \
-    (((uintptr_t) (buffer) & ((align)-1)) ? ((buffer) + (align) - ((uintptr_t) (buffer) & ((align)-1))) : (buffer))
+#define BUF_SIZE (1024)
 
 // Timestamp at trace initialization time.
 // Used to normalized other timestamps
 static uint64_t startTimestamp;
-
-static uint8_t *g_fixed_buffer;
 
 static const char *
 getMemcpyKindString(CUpti_ActivityMemcpyKind kind)
@@ -134,8 +131,6 @@ getComputeApiKindString(CUpti_ActivityComputeApiKind kind)
 
 Record* create_recorder_record(CUpti_ActivityKernel5 *kernel) {
 
-    const char* kindString = (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
-
     Record *record = recorder_malloc(sizeof(Record));
     record->func_id = RECORDER_USER_FUNCTION;
     record->level = 0;
@@ -144,7 +139,7 @@ Record* create_recorder_record(CUpti_ActivityKernel5 *kernel) {
     record->tstart = (kernel->end - startTimestamp)/10e9;
     record->arg_count = 2;
     record->args = recorder_malloc(record->arg_count*sizeof(char*));
-    record->args[0] = strdup(kindString);
+    record->args[0] = strdup("reserved");
     record->args[1] = strdup(kernel->name);
 
     return record;
@@ -210,9 +205,9 @@ printActivity(CUpti_Activity *record)
         case CUPTI_ACTIVITY_KIND_KERNEL:
         case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
             {
-                /*
                 const char* kindString = (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
                 CUpti_ActivityKernel5 *kernel = (CUpti_ActivityKernel5 *) record;
+                /*
                 printf("%s \"%s\" [ %llu - %llu ] device %u, context %u, stream %u, correlation %u\n",
                         kindString,
                         kernel->name,
@@ -320,9 +315,8 @@ printActivity(CUpti_Activity *record)
 
 void CUPTIAPI bufferRequested(uint8_t **buffer, size_t *size, size_t *maxNumRecords)
 {
-    // Re-use a staticly allocated buffer, only store one record at a time
     *size = BUF_SIZE;
-    *buffer = g_fixed_buffer;
+    *buffer = malloc(BUF_SIZE);
     *maxNumRecords = 1;
 }
 
@@ -356,9 +350,6 @@ void CUPTIAPI bufferCompleted(CUcontext ctx, uint32_t streamId, uint8_t *buffer,
 }
 
 void cuda_profiler_init() {
-
-    uint8_t *bfr = (uint8_t *) malloc(BUF_SIZE + ALIGN_SIZE);
-    *g_fixed_buffer = ALIGN_BUFFER(bfr, ALIGN_SIZE);
 
 
     size_t attrValue = 0, attrValueSize = sizeof(size_t);
