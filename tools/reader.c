@@ -191,7 +191,7 @@ void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
 #define TERMINAL_START_ID 0
 
 void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, CallSignature *cst_list, FILE* ts_file,
-                      void (*user_op)(Record*, void*), void* user_arg) {
+                      void (*user_op)(Record*, void*), void* user_arg, int free_record) {
 
     RuleHash *rule = NULL;
     HASH_FIND_INT(rules, &rule_id, rule);
@@ -214,14 +214,16 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
 
                 user_op(&record, user_arg);
 
-                recorder_free_record(&record);
+                if(free_record)
+                    recorder_free_record(&record);
             }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
-                rule_application(reader, rules, sym_val, cst_list, ts_file, user_op, user_arg);
+                rule_application(reader, rules, sym_val, cst_list, ts_file, user_op, user_arg, free_record);
         }
     }
 }
+
 
 // Decode all records for one rank
 // one record at a time
@@ -235,8 +237,96 @@ void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
     FILE* ts_file = fopen(ts_filename, "rb");
 
-    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg);
+    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg, true);
 
     fclose(ts_file);
 }
 
+
+/**
+ * Similar to rule application, but only calcuate
+ * the total number of calls if uncompressed.
+ */
+size_t get_uncompressed_count(RecorderReader* reader, RuleHash* rules, int rule_id) {
+    RuleHash *rule = NULL;
+    HASH_FIND_INT(rules, &rule_id, rule);
+    assert(rule != NULL);
+
+    size_t count = 0;
+
+    for(int i = 0; i < rule->symbols; i++) {
+        int sym_val = rule->rule_body[2*i+0];
+        int sym_exp = rule->rule_body[2*i+1];
+        if (sym_val >= TERMINAL_START_ID) { // terminal
+            count += sym_exp;
+        } else {                            // non-terminal (i.e., rule)
+            count += sym_exp * get_uncompressed_count(reader, rules, sym_val);
+        }
+    }
+
+    return count;
+}
+
+
+
+/**
+ * Code below is used for recorder-viz
+ */
+typedef struct records_with_idx {
+    PyRecord* records;
+    int idx;
+} records_with_idx_t;
+
+
+void insert_one_record(Record *record, void* arg) {
+    records_with_idx_t* ri = (records_with_idx_t*) arg;
+
+    PyRecord *r = &(ri->records[ri->idx]);
+    r->func_id = record->func_id;
+    r->level = record->level;
+    r->tstart = record->tstart;
+    r->tend = record->tend;
+    r->arg_count = record->arg_count;
+    r->args = record->args;
+
+    ri->idx++;
+}
+
+PyRecord** read_all_records(char* traces_dir, size_t* counts) {
+
+    RecorderReader reader;
+    recorder_init_reader(traces_dir, &reader);
+
+    PyRecord** records = malloc(sizeof(PyRecord*) * reader.metadata.total_ranks);
+
+    for(int rank = 0; rank < reader.metadata.total_ranks; rank++) {
+        CST cst;
+        CFG cfg;
+        recorder_read_cst(&reader, rank, &cst);
+        recorder_read_cfg(&reader, rank, &cfg);
+
+        counts[rank] = get_uncompressed_count(&reader, cfg.cfg_head, -1);
+        records[rank] = malloc(sizeof(PyRecord)* counts[rank]);
+
+        records_with_idx_t ri;
+        ri.records = records[rank];
+        ri.idx = 0;
+
+        // From recorder_decode_records() but does not free the record
+        // ------------
+        prev_tstart = 0;
+        char ts_filename[1096] = {0};
+        sprintf(ts_filename, "%s/%d.ts", reader.logs_dir, cst.rank);
+        FILE* ts_file = fopen(ts_filename, "rb");
+        rule_application(&reader, cfg.cfg_head, -1, cst.cst_list, ts_file, insert_one_record, &ri, false);
+        fclose(ts_file);
+        // ------------
+
+        recorder_free_cst(&cst);
+        recorder_free_cfg(&cfg);
+    }
+
+    recorder_free_reader(&reader);
+
+    return records;
+}

@@ -72,6 +72,20 @@ typedef struct CFG_t {
 } CFG;
 
 
+/**
+ * Similar but simplified structure
+ * for use by recorder-viz
+ */
+typedef struct PyRecord_t {
+    double tstart, tend;
+    unsigned char level;
+    unsigned char func_id;
+    int tid;
+    unsigned char arg_count;
+    char **args;
+} PyRecord;
+
+
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
 void recorder_free_reader(RecorderReader *reader);
 
