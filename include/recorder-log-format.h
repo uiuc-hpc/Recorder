@@ -81,12 +81,14 @@ typedef struct Record_t {
     unsigned char level;
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
-    pthread_t tid;
     char **args;                // Store all arguments in array
+    pthread_t tid;
 
     void* record_stack;         // per-thread record stack of cascading calls
     struct Record_t *prev, *next;
 } Record;
+
+
 
 typedef struct RecordHash_t {
     void *key;
