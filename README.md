@@ -119,6 +119,8 @@ Make sure that every process has the persmission to write to that directory.
 
 ### 2. Building Recorder with Spack
 
+*NOTE: please do not use Spack to install Recorder for now. The version there is outdated, we will update it soon.*
+
 For now, building Recorder with Spack provides less flexibility. We will add the CMake options for spack as well.
 
 ```bash
@@ -135,7 +137,7 @@ spack install recorder~hdf5~mpi
 
 Assume `$RECORDER_ROOT` is the location where you installed Recorder.
 
-**1. Generate traces.**
+**1. Generate traces**
 
 ```bash
 # For MPI programs
