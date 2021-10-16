@@ -166,7 +166,25 @@ We provide a Python library, [recorder-viz](https://pypi.org/project/recorder-vi
 It can be used to automatically generate detailed visuazation reports, or can be used to directly access the traces information. 
 -->
 
-## APIs for post-processing
+
+## Post-processing and Visualization
+
+**1. recorder-viz**
+
+We developed a Python library, [recorder-viz](https://github.com/wangvsa/recorder-viz), for post-processing and visualizations.
+Once installed, run the following command to generate the visualization report.
+```bash
+python $RECORDER_DIR/tools/reporter/reporter.py /path/to/your_trace_folder/
+```
+**2. Format Converters**
+
+We also provide two format converters `recorder2parquet` and `recorder2timeline`. They will be placed under $RECORDER_ROOT/bin directory after installation.
+
+- `recorder2parquet` will convert Recorder traces into a single [Parquet](https://parquet.apache.org) formata file. The Apache Parquet format is a well-known format that is supported by many analysis tools.
+
+- `recorder2timeline` will conver Recorder traces into [Chromium](https://www.chromium.org/developers/how-tos/trace-event-profiling-tool/trace-event-reading) trace format files. You can upload them to [https://ui.perfetto.dev](https://ui.perfetto.dev) for an interactive visualization.
+
+**3. C APIs**
 
 TODO: we have C APIs (tools/reader.h). Need to doc them.
 
@@ -174,6 +192,9 @@ TODO: we have C APIs (tools/reader.h). Need to doc them.
 ## Dataset
 
 [Traces from 17 HPC applications](https://doi.org/10.6075/J0Z899X4)
+
+The traces were collected using an old version of Recorder. The current version uses a different trace format.
+To read those traces please use Recorder 2.2.1 from the [release](https://github.com/uiuc-hpc/Recorder/releases/tag/v2.2.1) page.
 
 
 Publications
