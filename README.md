@@ -25,8 +25,8 @@ There are two ways to build and install Recorder. The first way is to build Reco
 
  - MPI
  - HDF5
- - Arrow (optional) > 5.0.0
- - CUDA (optional)
+ - Arrow (optional) > 5.0.0 - Needed for building Parquet convertor.
+ - CUDA (optional) - Needed for CUDA kernels interception.
 
 *Note that Recorder and the applications you intend to trace must be compiled with the same version of HDF5 and MPI.*
 
