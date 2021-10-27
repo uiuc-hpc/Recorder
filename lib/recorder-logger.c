@@ -417,7 +417,9 @@ void logger_finalize() {
     dump_cfg_local();
     sequitur_cleanup(&logger.cfg);
 
-    if(logger.rank == 0)
-        printf("[Recorder] trace files have been written to %s\n", logger.traces_dir);
+    if(logger.rank == 0) {
+        fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        RECORDER_REAL_CALL(fflush)(stderr);
+    }
 }
 
