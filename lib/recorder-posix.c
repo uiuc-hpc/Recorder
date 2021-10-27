@@ -464,6 +464,8 @@ int RECORDER_POSIX_DECL(fseek)(FILE *stream, long offset, int whence) {
     RECORDER_INTERCEPTOR(3, args);
 }
 
+// TODO intercept fflush
+
 long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
     GET_CHECK_FILENAME(ftell, (stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_NOIO(long, ftell, (stream));

@@ -246,6 +246,7 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen);
+    MAP_OR_FAIL(fflush);
     MAP_OR_FAIL(fclose);
     MAP_OR_FAIL(fwrite);
     MAP_OR_FAIL(rmdir);
@@ -315,12 +316,14 @@ void logger_init(int rank, int nprocs, int no_mpi) {
                 RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
             RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
         }
+        RECORDER_REAL_CALL(fflush)(metafh);
         RECORDER_REAL_CALL(fclose)(metafh);
 
         char version_filename[1024];
         sprintf(version_filename, "%s/VERSION", logger.traces_dir);
         FILE* version_file = RECORDER_REAL_CALL(fopen) (version_filename, "w");
         RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
+        RECORDER_REAL_CALL(fflush)(version_file);
         RECORDER_REAL_CALL(fclose)(version_file);
     }
 
@@ -362,6 +365,7 @@ void dump_cst_local() {
     size_t len;
     void* data = serialize_cst(logger.cst, &len);
     RECORDER_REAL_CALL(fwrite)(data, 1, len, f);
+    RECORDER_REAL_CALL(fflush)(f);
     RECORDER_REAL_CALL(fclose)(f);
 }
 
@@ -380,6 +384,7 @@ void dump_cfg_local() {
     int count;
     int* data = serialize_grammar(&logger.cfg, &count);
     RECORDER_REAL_CALL(fwrite)(data, sizeof(int), count, f);
+    RECORDER_REAL_CALL(fflush)(f);
     RECORDER_REAL_CALL(fclose)(f);
 }
 
@@ -402,6 +407,7 @@ void logger_finalize() {
 
     if(logger.ts_index > 0)
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+    RECORDER_REAL_CALL(fflush)(logger.ts_file);
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
 
