@@ -198,9 +198,6 @@ def match_mpi_calls(reader, mpi_sync_calls=False):
     context.generate_mpi_nodes(reader, translate)
 
     for rank in range(context.num_ranks):
-        print("Rank: %d, recv calls: %d, send calls: %d" %(rank, len(context.recv_calls[rank]), context.send_calls[rank]))
-
-    for rank in range(context.num_ranks):
         for node in context.all_calls[rank]:
 
             if context.is_coll_call(node.call):

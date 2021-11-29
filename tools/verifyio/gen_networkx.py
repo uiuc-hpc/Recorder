@@ -25,7 +25,6 @@ def remove_networkx_edge(G, h_node, t_node):
     G.remove_edge(h_key, t_key)
 
 def generate_graph(nodes, edges, include_vc=False):
-    print("Build graph...")
     G = nx.DiGraph()
 
     for rank in range(len(nodes)):
@@ -90,7 +89,6 @@ def generate_graph(nodes, edges, include_vc=False):
     # Transitive clousre is too slow for large graphs
     #print("Generate transitive closure")
     #tc = nx.transitive_closure(G)
-    print("Build graph finished")
     return G
 
 def plot_graph(G):

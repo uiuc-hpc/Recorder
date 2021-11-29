@@ -8,7 +8,10 @@
 #define COMMIT_SEMANTICS 1
 #define SESSION_SEMANTICS 2
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct RecorderReader_t {
 
@@ -40,11 +43,6 @@ typedef struct IntervalsMap_t {
     double **tcloses;
     double **tcommits;
 } IntervalsMap;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 typedef struct CallSignature_t {
     int terminal;
@@ -95,6 +93,8 @@ void recorder_free_cst(CST *cst);
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
+void recorder_free_record(Record* r);
+
 /**
  * This function reads all records of a rank
  *
@@ -105,7 +105,13 @@ void recorder_free_cfg(CFG *cfg);
  * void* user_arg can be used to pass in user argument.
  *
  */
+void recorder_decode_records_core(RecorderReader* reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record* r, void* user_arg), void* user_arg, bool free_record);
 void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record* r, void* user_arg), void* user_arg);
+
+
+void recorder_decode_records2(RecorderReader *reader, CST *cst, CFG *cfg,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
 
 
@@ -122,8 +128,10 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record);
 int recorder_get_func_type(RecorderReader* reader, Record* record);
 
 
-IntervalsMap* build_offset_intervals(RecorderReader reader, int *num_files, int semantics);
+IntervalsMap* build_offset_intervals(RecorderReader *reader, int semantics, int *num_files);
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif

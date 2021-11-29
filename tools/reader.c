@@ -134,6 +134,7 @@ void recorder_free_record(Record* r) {
     for(int i = 0; i < r->arg_count; i++)
         free(r->args[i]);
     free(r->args);
+    free(r);
 }
 
 void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
@@ -202,20 +203,20 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
         int sym_exp = rule->rule_body[2*i+1];
         if (sym_val >= TERMINAL_START_ID) { // terminal
             for(int j = 0; j < sym_exp; j++) {
-                Record record;
-                cs_to_record(&cst_list[sym_val], &record);
+                Record *record = malloc(sizeof(Record));
+                cs_to_record(&cst_list[sym_val], record);
 
                 // Fill in timestamps
                 uint32_t ts[2];
                 fread(ts, sizeof(uint32_t), 2, ts_file);
-                record.tstart = ts[0] * reader->metadata.time_resolution + prev_tstart;
-                record.tend   = ts[1] * reader->metadata.time_resolution + prev_tstart;
-                prev_tstart = record.tstart;
+                record->tstart = ts[0] * reader->metadata.time_resolution + prev_tstart;
+                record->tend   = ts[1] * reader->metadata.time_resolution + prev_tstart;
+                prev_tstart = record->tstart;
 
-                user_op(&record, user_arg);
+                user_op(record, user_arg);
 
                 if(free_record)
-                    recorder_free_record(&record);
+                    recorder_free_record(record);
             }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
@@ -227,8 +228,9 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
 
 // Decode all records for one rank
 // one record at a time
-void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
-                             void (*user_op)(Record*, void*), void* user_arg) {
+void recorder_decode_records_core(RecorderReader *reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record*, void*), void* user_arg, bool free_record) {
+
     assert(cst->rank == cfg->rank);
 
     prev_tstart = 0;
@@ -237,10 +239,16 @@ void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
     FILE* ts_file = fopen(ts_filename, "rb");
 
-    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg, true);
+    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg, free_record);
 
     fclose(ts_file);
 }
+
+void recorder_decode_records(RecorderReader *reader, CST *cst, CFG *cfg,
+                             void (*user_op)(Record*, void*), void* user_arg) {
+    recorder_decode_records_core(reader, cst, cfg, user_op, user_arg, true);
+}
+
 
 
 /**
@@ -290,6 +298,9 @@ void insert_one_record(Record *record, void* arg) {
     r->args = record->args;
 
     ri->idx++;
+
+    // free record but not record->args
+    free(record);
 }
 
 PyRecord** read_all_records(char* traces_dir, size_t* counts) {
@@ -312,15 +323,7 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts) {
         ri.records = records[rank];
         ri.idx = 0;
 
-        // From recorder_decode_records() but does not free the record
-        // ------------
-        prev_tstart = 0;
-        char ts_filename[1096] = {0};
-        sprintf(ts_filename, "%s/%d.ts", reader.logs_dir, cst.rank);
-        FILE* ts_file = fopen(ts_filename, "rb");
-        rule_application(&reader, cfg.cfg_head, -1, cst.cst_list, ts_file, insert_one_record, &ri, false);
-        fclose(ts_file);
-        // ------------
+        recorder_decode_records_core(&reader, &cst, &cfg, insert_one_record, &ri, false);
 
         recorder_free_cst(&cst);
         recorder_free_cfg(&cfg);

@@ -228,4 +228,4 @@ class VerifyIOContext:
                     if call.startswith("MPI_Wait") or call.startswith("MPI_Test"):
                         self.wait_test_calls[rank].append(idx)
 
-        print("Ignored Calls: %s" %ignored_calls)
+        #print("Ignored Calls: %s" %ignored_calls)

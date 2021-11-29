@@ -3,8 +3,10 @@
 #include <stdbool.h>
 #include "reader.h"
 
+
 static int semantics = COMMIT_SEMANTICS;
 
+/*
 void access_patterns(IntervalsMap *IM, int num_files) {
     int i, idx;
     int consecqutive = 0; int sequential = 0; int random = 0;
@@ -29,12 +31,14 @@ void access_patterns(IntervalsMap *IM, int num_files) {
 
     printf("consecutive: %d, sequential: %d, random: %d\n", consecqutive, sequential, random);
 }
+*/
 
 int compare_by_offset(const void *lhs, const void *rhs) {
     Interval *first = (Interval*)lhs;
     Interval *second = (Interval*)rhs;
     return first->offset - second->offset;
 }
+
 
 int sum_array(int *arr, int count) {
     int i, sum = 0;
@@ -44,6 +48,7 @@ int sum_array(int *arr, int count) {
     return sum;
 }
 
+/*
 void detect_overlaps(IntervalsMap *IM, int num_files) {
     int i, idx;
     for(idx = 0; idx < num_files; idx++) {
@@ -84,7 +89,7 @@ void detect_overlaps(IntervalsMap *IM, int num_files) {
                         overlaps[0][1], overlaps[1][1], overlaps[0][2], overlaps[1][2], overlaps[0][3], overlaps[1][3]);
     }
 }
-
+*/
 
 double get_neighbor_op_timestamp(double current, double *tops, int count, bool next) {
     int i;
@@ -158,7 +163,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
 
             if(!conflict) continue;
 
-            printf("%s, i1(%d-%d, %ld, %ld, %d), i2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
+            printf("%s, op1(%d-%d, %ld, %ld, %d), op2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
             fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n", i1->isRead?"read":"write", i1->rank, i1->seqId, i2->isRead?"read":"write", i2->rank, i2->seqId);
 
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
@@ -169,16 +174,18 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                 conflicts[same_rank][1] += 1;
 
         }
-        if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2))
-            printf("%s, Conflicts RAW: D-%d,S-%d, WAW: D-%d,S-%d\n", filename, conflicts[0][0], conflicts[1][0], conflicts[0][1], conflicts[1][1]);
+        if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2)) {
+            printf("%s, Read-after-write (RAW): D-%d,S-%d, Write-after-write (WAW): D-%d,S-%d\n", filename, conflicts[0][0], conflicts[1][0], conflicts[0][1], conflicts[1][1]);
+            printf("================================================================================\n\n");
+        }
     }
     fclose(conflict_file);
 }
 
-
 int main(int argc, char* argv[]) {
+
     RecorderReader reader;
-    recorder_read_traces(argv[1], &reader);
+    recorder_init_reader(argv[1], &reader);
 
     if(argc == 3 && strstr(argv[2], "--semantics="))  {
         if(strstr(argv[2], "posix")) {
@@ -190,15 +197,16 @@ int main(int argc, char* argv[]) {
     }
 
     if(semantics == POSIX_SEMANTICS)
-        printf("Use POSIX Semantics\n");
+        printf("Check potential conflicts under POSIX Semantics\n");
     if(semantics == COMMIT_SEMANTICS)
-        printf("Use Commit Semantics\n");
+        printf("Check potential conflicts under Commit Semantics\n");
     if(semantics == SESSION_SEMANTICS)
-        printf("Use Session Semantics\n");
+        printf("Check potential conflicts under Session Semantics\n");
 
+    printf("Format:\nFilename, io op1(rank-seqId, offset, bytes, isRead), io op2(rank-seqId, offset, bytes, isRead)\n");
 
     int i, rank, num_files;
-    IntervalsMap *IM = build_offset_intervals(reader, &num_files, semantics);
+    IntervalsMap *IM = build_offset_intervals(&reader, semantics, &num_files);
 
     //access_patterns(IM, num_files);
     //detect_overlaps(IM, num_files);
@@ -212,7 +220,7 @@ int main(int argc, char* argv[]) {
         free(IM[i].num_closes);
         free(IM[i].num_commits);
 
-        for(rank = 0; rank < reader.RGD.total_ranks; rank++) {
+        for(rank = 0; rank < reader.metadata.total_ranks; rank++) {
             free(IM[i].topens[rank]);
             free(IM[i].tcloses[rank]);
             free(IM[i].tcommits[rank]);
@@ -223,6 +231,8 @@ int main(int argc, char* argv[]) {
         free(IM[i].tcommits);
     }
     free(IM);
+
+    recorder_free_reader(&reader);
 
     return 0;
 }
