@@ -11,15 +11,22 @@ Dependencies: `recorder-viz` and `networkx`. Both can be installed using pip.
 Steps:
 1. Run program with Recorder to generate traces.
 2. Run the conflict detector to report **potential** conflicting I/O accesses.
-   Those acesses are only potentially conflicting as here we do not take MPI communication into consideration yet.
+   Those acesses are only potentially conflicting as here we do not take happens-before order into consideration yet.
 
    `$RECORDER_DIR/bin/conflict_detector /path/to/traces --semantics=posix`
    
-   This command will write all conflicts found to the file `/path/to/traces/conflicts.txt`
+   The `semantics` option needs to match the one provided by the underlying file system. For example, if the traces were collected on UnifyFS, set it to "commit".
    
-3. Finally run the verification code, which checks if those conflicting operations are properly synchronzied.
+   This command will write all potential conflicts found to the file `/path/to/traces/conflicts.txt`
    
-   `python ./verifyio.py /path/to/traces /path/to/traces/conflicts.txt`
+3. Finally run the verification code, which checks if those potential conflicting operations are properly synchronzied.
+   
+   ```python
+   python ./verifyio.py -h  # print out usage
+   
+   #Example:
+   python ./verifyio.py /path/to/traces /path/to/traces/conflicts.txt --semantics=mpi
+   ```
    
    
    
