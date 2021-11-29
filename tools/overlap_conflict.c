@@ -4,7 +4,7 @@
 #include "reader.h"
 
 
-static int semantics = COMMIT_SEMANTICS;
+static int semantics = POSIX_SEMANTICS;
 
 /*
 void access_patterns(IntervalsMap *IM, int num_files) {
@@ -174,10 +174,11 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                 conflicts[same_rank][1] += 1;
 
         }
-        if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2)) {
+        if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2))
             printf("%s, Read-after-write (RAW): D-%d,S-%d, Write-after-write (WAW): D-%d,S-%d\n", filename, conflicts[0][0], conflicts[1][0], conflicts[0][1], conflicts[1][1]);
-            printf("================================================================================\n\n");
-        }
+        else
+            printf("No potential conflict found for file %s.\n", filename);
+        printf("================================================================================\n\n");
     }
     fclose(conflict_file);
 }
@@ -203,7 +204,7 @@ int main(int argc, char* argv[]) {
     if(semantics == SESSION_SEMANTICS)
         printf("Check potential conflicts under Session Semantics\n");
 
-    printf("Format:\nFilename, io op1(rank-seqId, offset, bytes, isRead), io op2(rank-seqId, offset, bytes, isRead)\n");
+    printf("Format:\nFilename, io op1(rank-seqId, offset, bytes, isRead), io op2(rank-seqId, offset, bytes, isRead)\n\n");
 
     int i, rank, num_files;
     IntervalsMap *IM = build_offset_intervals(&reader, semantics, &num_files);
