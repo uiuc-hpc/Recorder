@@ -213,6 +213,10 @@ Publications
 Change Log
 ----------
 
+**Recorder 2.3.1** Nov 30, 2021
+1. Separate MPI and MPI-IO
+2. Updated conflict detector to use the latest reader code
+
 **Recorder 2.3.0** Sep 15, 2021
 1. Adopt pilgrim copmerssion algorithm.
 2. Implemented a new reader and decorder interface.
