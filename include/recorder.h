@@ -122,16 +122,22 @@ void write_record(Record* record);
  * Decide wether to intercept (override) funciton calls
  */
 #ifdef RECORDER_PRELOAD
-    #ifdef RECORDER_ENABLE_MPIO_TRACE
+    #ifdef RECORDER_ENABLE_POSIX_TRACE
+        #define RECORDER_POSIX_DECL(func) func
+    #else
+        #define RECORDER_POSIX_DECL(func) __warp_##func
+    #endif
+
+    #ifdef RECORDER_ENABLE_MPI_TRACE
         #define RECORDER_MPI_DECL(func) func
     #else
         #define RECORDER_MPI_DECL(func) __warp_##func
     #endif
 
-    #ifdef RECORDER_ENABLE_POSIX_TRACE
-        #define RECORDER_POSIX_DECL(func) func
+    #ifdef RECORDER_ENABLE_MPIIO_TRACE
+        #define RECORDER_MPIIO_DECL(func) func
     #else
-        #define RECORDER_POSIX_DECL(func) __warp_##func
+        #define RECORDER_MPIIO_DECL(func) __warp_##func
     #endif
 
     #ifdef RECORDER_ENABLE_HDF5_TRACE
@@ -140,8 +146,9 @@ void write_record(Record* record);
         #define RECORDER_HDF5_DECL(func) __warp_##func
     #endif
 #else
-    #define RECORDER_MPI_DECL(func) func
     #define RECORDER_POSIX_DECL(func) func
+    #define RECORDER_MPI_DECL(func) func
+    #define RECORDER_MPIIO_DECL(func) func
     #define RECORDER_HDF5_DECL(func) func
 #endif
 

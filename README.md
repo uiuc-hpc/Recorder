@@ -54,9 +54,10 @@ cmake ..                                                          \
 
 (2) Enable/disable tracing levels
 
-By default, Recorde traces function calls from all levels: HDF5, MPI and POSIX. The following options can be used to enable/disable specific levels.
+By default, Recorde traces function calls from all levels: HDF5, MPI, MPI-IO and POSIX. The following options can be used to enable/disable specific levels.
  * -DRECORDER_ENABLE_POSIX_TRACE=[ON|FF]
- * -DRECORDER_ENABLE_MPIO_TRACE=[ON|FF]
+ * -DRECORDER_ENABLE_MPI_TRACE=[ON|FF]
+ * -DRECORDER_ENABLE_MPIIO_TRACE=[ON|FF]
  * -DRECORDER_ENABLE_HDF5_TRACE=[ON|FF]
 
 (3) Intercepting `fcntl()` call: 
