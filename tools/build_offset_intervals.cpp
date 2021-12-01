@@ -61,6 +61,7 @@ void setup_open_close_commit(int nprocs, IntervalsMap *IM, int num_files) {
         }
 
         if(filename == "") continue;
+
         if(strstr(func, "open")) {
             topens[rr.rank][filename].push_back(R->tstart);
         } else if(strstr(func, "close")) {
@@ -167,13 +168,12 @@ void handle_metadata_operation(RRecord &rr,
                                 unordered_map<string, size_t> &offset_book,          // <filename, current offset>
                                 unordered_map<string, size_t> &local_eof,            // <filename, eof> (locally)
                                 unordered_map<string, size_t> &global_eof            // <filename, eof> (globally)
-                                )
+                              )
 {
-
     Record *R = rr.record;
     const char* func = recorder_get_func_name(reader, R);
 
-    string filename;
+    string filename = "";
 
     if(strstr(func, "fopen") || strstr(func, "fdopen")) {
         filename = R->args[0];
@@ -193,7 +193,7 @@ void handle_metadata_operation(RRecord &rr,
             offset_book[filename] = get_eof(filename, local_eof, global_eof);
 
     } else if(strstr(func, "seek") || strstr(func, "seeko")) {
-        string filename = R->args[0];
+        filename = R->args[0];
         int offset = atoi(R->args[1]);
         int whence = atoi(R->args[2]);
 
@@ -205,7 +205,7 @@ void handle_metadata_operation(RRecord &rr,
             offset_book[filename] = get_eof(filename, local_eof, global_eof);
 
     } else if(strstr(func, "close") || strstr(func, "sync")) {
-        string filename = R->args[0];
+        filename = R->args[0];
 
         // if close, remove from table
         if(strstr(func, "close"))
@@ -213,6 +213,8 @@ void handle_metadata_operation(RRecord &rr,
 
         // For all three semantics update the global eof
         global_eof[filename] = get_eof(filename, local_eof, global_eof);
+    } else {
+        return;
     }
 }
 
@@ -251,7 +253,7 @@ void flatten_and_sort_records(RecorderReader *reader) {
         recorder_read_cfg(reader, rank, &cfg);
 
         current_seq_id = 0;
-        recorder_decode_records_core(reader, &cst, &cfg, insert_one_record, &rank, 0);
+        recorder_decode_records_core(reader, &cst, &cfg, insert_one_record, &rank, false);
 
         recorder_free_cst(&cst);
         recorder_free_cfg(&cfg);
@@ -278,7 +280,6 @@ IntervalsMap* build_offset_intervals(RecorderReader *_reader, int semantics, int
         RRecord rr = records[i];
         handle_metadata_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof);
         handle_data_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof, intervals);
-        recorder_free_record(rr.record);
     }
 
     // Now we have the list of intervals for all files
@@ -302,5 +303,8 @@ IntervalsMap* build_offset_intervals(RecorderReader *_reader, int semantics, int
     // Fill in topens, tcloses and tcommits
     setup_open_close_commit(reader->metadata.total_ranks, IM, *num_files);
 
+    for(i = 0; i < records.size(); i++) {
+        recorder_free_record(records[i].record);
+    }
     return IM;
 }
