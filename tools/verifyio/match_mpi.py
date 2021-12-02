@@ -43,7 +43,7 @@ def get_translation_table(reader):
 
             if comm_id:
                 if comm_id not in translate:
-                    translate[comm_id] = range(reader.GM.total_ranks)
+                    translate[comm_id] = list(range(reader.GM.total_ranks))
                 translate[comm_id][local_rank] = world_rank
     return translate
 
