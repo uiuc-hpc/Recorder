@@ -6,7 +6,7 @@ include_directories(${PROJECT_BINARY_DIR})
 #------------------------------------------------------------------------------
 set(RECORDER_VERSION_MAJOR "2")
 set(RECORDER_VERSION_MINOR "3")
-set(RECORDER_VERSION_PATCH "1")
+set(RECORDER_VERSION_PATCH "2")
 set(RECORDER_PACKAGE "recorder")
 set(RECORDER_PACKAGE_NAME "RECORDER")
 set(RECORDER_PACKAGE_VERSION "${RECORDER_VERSION_MAJOR}.${RECORDER_VERSION_MINOR}.${RECORDER_VERSION_PATCH}")
