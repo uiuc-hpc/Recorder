@@ -143,7 +143,7 @@ else()
 endif()
 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -std=c99 -fcommon")
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 endif()
