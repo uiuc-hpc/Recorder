@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "reader.h"
@@ -21,7 +20,7 @@ struct Writer{
 };
 
 void write_to_json(Record *record, void* arg) {
-    
+
    int cat = recorder_get_func_type(&reader, record);
    if (record->level == 0 || (cat == 0 || cat == 1 || cat == 3)) {
         Writer *writer = (Writer *) arg;
