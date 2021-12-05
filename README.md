@@ -151,6 +151,8 @@ mpirun can be changed to your workload manager, e.g. srun.
 
 The trace files will be written to the current directory under a folder named `hostname-username-appname-pid-starttime`. 
 
+*Note: In some systems (e.g., Quartz at LLNL), Darshan is deployed system-widely. Recorder does not work with Darshan. Please make sure darhsn is disabled and your application is not linked with the darshan library (use ldd to check).*
+
 **2. Human-readable traces**
 
 Recorder uses its own binary tracing format to compress and store traces.
