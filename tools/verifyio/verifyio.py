@@ -13,8 +13,7 @@ def check_posix_semantics(G, pairs):
         n2 = graph_node_key(pair[1])
         reachable = has_path(G, n1, n2) or has_path(G, n1, n2)
         if not reachable: properly_synchronized = False
-        if not properly_synchronized:
-            print("Conflicting I/O operations: %s <--> %s, properly synchronized: %s %s %s" %(n1, n2, properly_synchronized))
+        print("Conflicting I/O operations: %s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
 
     return properly_synchronized
 
@@ -85,6 +84,7 @@ def check_mpi_semantics(G, nodes, pairs):
         src = None if not next_sync else graph_node_key(next_sync)
         dst = None if not prev_sync else graph_node_key(prev_sync)
         reachable = (bool) ( (next_sync and prev_sync) and has_path(G, src, dst) )
+        if not reachable: properly_synchronized = False
         print("%s --> %s, properly synchronized: %s" %(graph_node_key(pair[0]), graph_node_key(pair[1]), reachable))
 
         if reachable:
@@ -144,4 +144,4 @@ if __name__ == "__main__":
         if p:
             print("\nProperly synchronized under %s semantics" %args.semantics)
         else:
-            print("\nNot Properly synchronized under %s semantics" %args.semantics)
+            print("\nNot properly synchronized under %s semantics" %args.semantics)
