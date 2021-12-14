@@ -49,8 +49,9 @@ def get_translation_table(reader):
 
 # Local rank to global rank
 def local2global(translate_table, comm_id, local_rank):
+    comm = comm_id.decode() if isinstance(comm_id, bytes) else comm_id
     if local_rank >= 0:
-        return translate_table[comm_id][local_rank]
+        return translate_table[comm][local_rank]
     # ANY_SOURCE
     return local_rank
 
