@@ -23,6 +23,10 @@ static bool initialized = false;
  */
 struct RecorderLogger {
     int rank;
+    int nprocs;
+
+    bool directory_created;
+
     int current_cfg_terminal;
 
     Grammar     cfg;
@@ -160,6 +164,8 @@ void write_record(Record *record) {
     logger.ts[logger.ts_index++] = delta_tstart;
     logger.ts[logger.ts_index++] = delta_tend;
     if(logger.ts_index == TS_BUFFER_ELEMENTS) {
+        if(!logger.directory_created)
+            logger_set_mpi_info(0, 1);
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), TS_BUFFER_ELEMENTS, logger.ts_file);
         logger.ts_index = 0;
     }
@@ -206,43 +212,73 @@ bool logger_initialized() {
 }
 
 // Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS.fff
-void set_traces_dir(int no_mpi) {
+void create_traces_dir() {
+    if(logger.rank != 0) return;
 
-    if( logger.rank == 0 ) {
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
 
-        time_t t = time(NULL);
-        struct tm tm = *localtime(&t);
+    char* traces_dir = alloca(800);
+    char* tmp = realrealpath("/proc/self/exe");
+    char* exec_name = basename(tmp);
+    char* user_name = getlogin();
 
-        char* traces_dir = alloca(800);
-        char* tmp = realrealpath("/proc/self/exe");
-        char* exec_name = basename(tmp);
-        char* user_name = getlogin();
+    long unsigned int pid = (long unsigned int)getpid();
+    char hostname[64] = {0};
+    gethostname(hostname, 64);
 
-        long unsigned int pid = (long unsigned int)getpid();
-        char hostname[64] = {0};
-        gethostname(hostname, 64);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
 
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
+    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%s-%lu-%02d%02d%02d.%03d/",
+            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, hostname, user_name,
+            exec_name, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
+    free(tmp);
 
-        sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%s-%lu-%02d%02d%02d.%03d/",
-                tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, hostname, user_name,
-                exec_name, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
-        free(tmp);
+    const char* base_dir = getenv(RECORDER_TRACES_DIR);
+    if(base_dir)
+        sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
+    else
+        strcpy(logger.traces_dir, traces_dir); // current directory
 
-        const char* base_dir = getenv(RECORDER_TRACES_DIR);
-        if(base_dir)
-            sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
-        else
-            strcpy(logger.traces_dir, traces_dir); // current directory
-    }
-
-    if(!no_mpi)
-        RECORDER_REAL_CALL(PMPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
+    if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
+        RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
+    mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
 }
 
 
-void logger_init(int rank, int nprocs, int no_mpi) {
+void logger_set_mpi_info(int mpi_rank, int mpi_size) {
+
+    logger.rank   = mpi_rank;
+    logger.nprocs = mpi_size;
+
+    int mpi_initialized;
+    PMPI_Initialized(&mpi_initialized);      // MPI_Initialized() is not intercepted
+    if(mpi_initialized)
+        RECORDER_REAL_CALL(PMPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Create traces directory
+    create_traces_dir();
+
+    // Rank 0 broadcasts the trace direcotry path
+    if(mpi_initialized)
+        RECORDER_REAL_CALL(PMPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, mpi_rank);
+    sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, mpi_rank);
+
+    if(mpi_initialized)
+        RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
+
+    char ts_filename[1024];
+    sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, mpi_rank);
+    logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
+
+    logger.directory_created = true;
+}
+
+
+void logger_init() {
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen);
@@ -255,8 +291,6 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     MAP_OR_FAIL(PMPI_Bcast);
 
     double global_tstart = recorder_wtime();
-    if(!no_mpi)
-        RECORDER_REAL_CALL(PMPI_Bcast) (&global_tstart, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialize CUDA profiler
     #ifdef RECORDER_ENABLE_CUDA_TRACE
@@ -264,7 +298,8 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     #endif
 
     // Initialize the global values
-    logger.rank = rank;
+    logger.rank   = 0;
+    logger.nprocs = 1;
     logger.start_ts = global_tstart;
     logger.prev_tstart = logger.start_ts;
     logger.cst = NULL;
@@ -273,59 +308,11 @@ void logger_init(int rank, int nprocs, int no_mpi) {
     logger.ts = recorder_malloc(sizeof(uint32_t)*TS_BUFFER_ELEMENTS);
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
+    logger.directory_created = false;
 
     const char* time_resolution_str = getenv(RECORDER_TIME_RESOLUTION);
     if(time_resolution_str)
         logger.ts_resolution = atof(time_resolution_str);
-
-    set_traces_dir(no_mpi);
-    sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, rank);
-    sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, rank);
-
-    // Create traces dir
-    if(rank == 0) {
-        if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
-            RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
-        mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
-    }
-    if(!no_mpi)
-        RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
-
-    char ts_filename[1024];
-    sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, rank);
-    logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
-
-    if (rank == 0) {
-        char metadata_filename[1024] = {0};
-        sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
-        FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
-        RecorderMetadata metadata = {
-            .time_resolution = logger.ts_resolution,
-            .total_ranks = nprocs,
-            .start_ts  = logger.start_ts,
-            .ts_buffer_elements = TS_BUFFER_ELEMENTS,
-            .ts_compression_algo = TS_COMPRESSION_NO,
-        };
-        RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
-
-        for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
-            const char *funcname = get_function_name_by_id(i);
-            if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
-                RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, metafh);
-            else
-                RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
-            RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
-        }
-        RECORDER_REAL_CALL(fflush)(metafh);
-        RECORDER_REAL_CALL(fclose)(metafh);
-
-        char version_filename[1024];
-        sprintf(version_filename, "%s/VERSION", logger.traces_dir);
-        FILE* version_file = RECORDER_REAL_CALL(fopen) (version_filename, "w");
-        RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
-        RECORDER_REAL_CALL(fflush)(version_file);
-        RECORDER_REAL_CALL(fclose)(version_file);
-    }
 
     initialized = true;
 }
@@ -397,7 +384,44 @@ void cleanup_record_stack() {
     }
 }
 
+void dump_global_metadata() {
+    if (logger.rank != 0) return;
+
+    char metadata_filename[1024] = {0};
+    sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
+    FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
+    RecorderMetadata metadata = {
+        .time_resolution     = logger.ts_resolution,
+        .total_ranks         = logger.nprocs,
+        .start_ts            = logger.start_ts,
+        .ts_buffer_elements  = TS_BUFFER_ELEMENTS,
+        .ts_compression_algo = TS_COMPRESSION_NO,
+    };
+    RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
+
+    for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
+        const char *funcname = get_function_name_by_id(i);
+        if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
+            RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, metafh);
+        else
+            RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
+        RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
+    }
+    RECORDER_REAL_CALL(fflush)(metafh);
+    RECORDER_REAL_CALL(fclose)(metafh);
+
+    char version_filename[1024];
+    sprintf(version_filename, "%s/VERSION", logger.traces_dir);
+    FILE* version_file = RECORDER_REAL_CALL(fopen) (version_filename, "w");
+    RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
+    RECORDER_REAL_CALL(fflush)(version_file);
+    RECORDER_REAL_CALL(fclose)(version_file);
+}
+
 void logger_finalize() {
+
+    if(!logger.directory_created)
+        logger_set_mpi_info(0, 1);
 
     initialized = false;
 
@@ -418,6 +442,9 @@ void logger_finalize() {
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
+        // write out global metadata
+        dump_global_metadata();
+
         fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
         RECORDER_REAL_CALL(fflush)(stderr);
     }

@@ -67,6 +67,7 @@
 
 /* List of runtime environment variables */
 #define RECORDER_NO_MPI             "RECORDER_NO_MPI"
+#define RECORDER_HYBRID             "RECORDER_HYBRID"
 #define RECORDER_TRACES_DIR         "RECORDER_TRACES_DIR"
 #define RECORDER_TIME_RESOLUTION    "RECORDER_TIME_RESOLUTION"
 #define RECORDER_LOG_POINTER        "RECORDER_LOG_POINTER"
@@ -76,7 +77,8 @@
 
 
 /* logger.c */
-void logger_init(int rank, int nprocs, int non_mpi);
+void logger_init();
+void logger_set_mpi_info();
 void logger_finalize();
 bool logger_initialized();
 void logger_record_enter(Record *record);

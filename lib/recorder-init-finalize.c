@@ -55,24 +55,52 @@
 static double local_tstart, local_tend;
 static int rank, nprocs;
 
-void recorder_init(int no_mpi) {
-    MAP_OR_FAIL(PMPI_Comm_size);
-    MAP_OR_FAIL(PMPI_Comm_rank);
+/**
+ * First we will intercept the GNU constructor,
+ * where we perform recorder_init().
+ *
+ * If this is an MPI program, then later we will intercept
+ * one of MPI_Init* call, where we update the mpi info
+ * using update_mpi_inf(). Only in that function, we actually
+ * create the log directory.
+ *
+ * If this is not an MPI program, then we create the log
+ * directory at the first flush time in recorder-logger.c
+ */
 
-    if(!no_mpi) {
-        RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
-        RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
-    } else {    // non-mpi program
-        rank = 0;
-        nprocs = 1;
-    }
+void recorder_init() {
 
-    logger_init(rank, nprocs, no_mpi);
+    // avoid double init;
+    if (logger_initialized()) return;
+
+    logger_init(rank, nprocs);
+
     utils_init();
     local_tstart = recorder_wtime();
 }
 
+void update_mpi_info() {
+    recorder_init();
+
+    MAP_OR_FAIL(PMPI_Comm_size);
+    MAP_OR_FAIL(PMPI_Comm_rank);
+
+    int mpi_initialized = 0;
+    PMPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
+
+    if(mpi_initialized) {
+        RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+        RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
+    }
+
+    logger_set_mpi_info(rank, nprocs);
+}
+
 void recorder_finalize() {
+
+    // check if already finialized
+    if (!logger_initialized()) return;
+
     logger_finalize();
     utils_finalize();
 
@@ -86,21 +114,21 @@ void recorder_finalize() {
 int PMPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
-    recorder_init(0);
+    update_mpi_info();
     return ret;
 }
 
 int MPI_Init(int *argc, char ***argv) {
     MAP_OR_FAIL(PMPI_Init);
     int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
-    recorder_init(0);
+    update_mpi_info();
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
     MAP_OR_FAIL(PMPI_Init_thread)
     int ret = RECORDER_REAL_CALL(PMPI_Init_thread) (argc, argv, required, provided);
-    recorder_init(0);
+    update_mpi_info();
     return ret;
 }
 
@@ -122,19 +150,13 @@ int MPI_Finalize(void) {
 
 /**
  * Handle non mpi programs
- * Assume it is a single process program.
- *
  */
 void __attribute__((constructor)) no_mpi_init() {
-    char* no_mpi = getenv(RECORDER_NO_MPI);
-    if(no_mpi)
-        recorder_init(1);
+    recorder_init();
 }
 
 void __attribute__((destructor))  no_mpi_finalize() {
-    char* no_mpi = getenv(RECORDER_NO_MPI);
-    if(no_mpi)
-        recorder_finalize();
+    recorder_finalize();
 }
 
 #endif
