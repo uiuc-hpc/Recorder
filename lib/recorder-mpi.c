@@ -623,7 +623,7 @@ int RECORDER_MPI_DECL(MPI_Sendrecv) (CONST void *sendbuf, int sendcount, MPI_Dat
                                         itoa(source), itoa(recvtag), comm2name(&comm), status2str(status));
     RECORDER_INTERCEPTOR(12, args);
 }
-/*
+
 int RECORDER_MPI_DECL(MPI_Isend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Isend, (buf, count, datatype, dest, tag, comm, request));
     size_t r = *request;
@@ -675,7 +675,6 @@ int RECORDER_MPI_DECL(MPI_Waitany) (int count, MPI_Request requests[], int *indx
     char **args = assemble_args_list(4, itoa(count), requests_str, itoa(*indx), status2str(status));
     RECORDER_INTERCEPTOR(4, args);
 }
-*/
 
 int RECORDER_MPI_DECL(MPI_Ssend) (CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_Ssend, (buf, count, datatype, dest, tag, comm));
