@@ -215,6 +215,10 @@ Publications
 Change Log
 ----------
 
+**Recorder 2.3.2** Jan 18, 2022
+1. Can handle both MPI and non-MPI programs without user hint
+2. Can handle fork() + exec() workflows.
+
 **Recorder 2.3.1** Nov 30, 2021
 1. Separate MPI and MPI-IO
 2. Updated conflict detector to use the latest reader code
