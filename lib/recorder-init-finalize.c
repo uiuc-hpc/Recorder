@@ -152,7 +152,9 @@ int MPI_Finalize(void) {
  * Handle non mpi programs
  */
 void __attribute__((constructor)) no_mpi_init() {
-    recorder_init();
+    char* with_non_mpi = getenv(RECORDER_WITH_NON_MPI);
+    if(with_non_mpi)
+        recorder_init();
 }
 
 void __attribute__((destructor))  no_mpi_finalize() {
