@@ -163,7 +163,7 @@ static const char* func_list[] = {
     "PMPI_Scan",                    "PMPI_Type_commit",         "PMPI_Type_contiguous",
     "PMPI_Type_extent",             "PMPI_Type_free",           "PMPI_Type_hindexed",
     "PMPI_Op_create",               "PMPI_Op_free",             "PMPI_Type_get_envelope",
-    "PMPI_Type_size",
+    "PMPI_Type_size",               "PMPI_Type_create_darray",
     // Added 2019/01/07
     "PMPI_Cart_rank",               "PMPI_Cart_create",         "PMPI_Cart_get",
     "PMPI_Cart_shift",              "PMPI_Wait",                "PMPI_Send",
