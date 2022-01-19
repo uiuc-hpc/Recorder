@@ -85,7 +85,7 @@ class VerifyIOContext:
 
     def generate_mpi_nodes(self, reader, translate):
         def mpi_status_to_src_tag(status_str):
-            if status_str.startswith("["):
+            if str(status_str).startswith("["):
                 return status_str[1:-1].split("_")[0], status_str[1:-1].split("_")[1]
             else:   # MPI_STATUS_IGNORE
                 return 0, 0
