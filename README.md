@@ -117,6 +117,11 @@ By default Recorder will output the traces to the current working directory.
 You can use the enviroment variable `RECORDER_TRACES_DIR` to specifiy the path where you want the traces stored.
 Make sure that every process has the persmission to write to that directory. 
 
+(4) Buffer size
+
+Timestamps are buffered internally to avoid frequent disk I/O. Use `RECORDER_BUFFER_SIZE` (in MB) to set 
+the size of this buffer. The default value is 1MB.
+
 
 ### 2. Building Recorder with Spack
 
@@ -218,6 +223,7 @@ Change Log
 **Recorder 2.3.3** Jan 21, 2022
 1. Still require a RECORDER\_WITH\_NON\_MPI hint for non-mpi programs.
 2. Add a singal handler to intercept SIGTERM and SIGINT.
+3. Allow setting buffer size
 
 **Recorder 2.3.2** Jan 18, 2022
 1. Can handle both MPI and non-MPI programs without user hint.
