@@ -144,8 +144,8 @@ Assume `$RECORDER_ROOT` is the location where you installed Recorder.
 # For MPI programs
 mpirun -np N -env LD_PRELOAD $RECORDER_ROOT/lib/librecorder.so ./your_app
 
-# For non-MPI programs
-RECORDER_NO_MPI=1 LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so ./your_app
+# For non-MPI programs or programs that may spwan non-mpi children programs
+RECORDER_WITH_NON_MPI=1 LD_PRELOAD=$RECORDER_ROOT/lib/librecorder.so ./your_app
 ```
 mpirun can be changed to your workload manager, e.g. srun.
 
@@ -215,13 +215,17 @@ Publications
 Change Log
 ----------
 
+**Recorder 2.3.3** Jan 21, 2022
+1. Still require a RECORDER\_WITH\_NON\_MPI hint for non-mpi programs.
+2. Add a singal handler to intercept SIGTERM and SIGINT.
+
 **Recorder 2.3.2** Jan 18, 2022
-1. Can handle both MPI and non-MPI programs without user hint
+1. Can handle both MPI and non-MPI programs without user hint.
 2. Can handle fork() + exec() workflows.
 
 **Recorder 2.3.1** Nov 30, 2021
-1. Separate MPI and MPI-IO
-2. Updated conflict detector to use the latest reader code
+1. Separate MPI and MPI-IO.
+2. Updated conflict detector to use the latest reader code.
 
 **Recorder 2.3.0** Sep 15, 2021
 1. Adopt pilgrim copmerssion algorithm.

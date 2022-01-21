@@ -11,7 +11,7 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR         "2.3.2"
+#define VERSION_STR         "2.3.3"
 #define TS_BUFFER_ELEMENTS  1024
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
