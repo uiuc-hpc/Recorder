@@ -11,12 +11,12 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR         "2.3.3"
-#define TS_BUFFER_ELEMENTS  1024
+#define VERSION_STR             "2.3.3"
+#define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
+
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
-
 
 /**
  * Per-process CST and CFG
@@ -37,10 +37,11 @@ struct RecorderLogger {
     char cfg_path[1024];
 
     double    start_ts;
-    double    prev_tstart; // delta compression for timestamps
+    double    prev_tstart;      // delta compression for timestamps
     FILE*     ts_file;
-    uint32_t* ts;          // memory buffer for timestamps (tstart, tend-tstart)
-    int       ts_index;    // current position of ts buffer, spill to file once full.
+    uint32_t* ts;               // memory buffer for timestamps (tstart, tend-tstart)
+    int       ts_index;         // current position of ts buffer, spill to file once full.
+    int       ts_max_elements;  // max elements can be stored in the buffer
     double    ts_resolution;
 };
 struct RecorderLogger logger;
@@ -163,10 +164,10 @@ void write_record(Record *record) {
     logger.prev_tstart = record->tstart;
     logger.ts[logger.ts_index++] = delta_tstart;
     logger.ts[logger.ts_index++] = delta_tend;
-    if(logger.ts_index == TS_BUFFER_ELEMENTS) {
+    if(logger.ts_index == (logger.ts_max_elements-1)) {
         if(!logger.directory_created)
             logger_set_mpi_info(0, 1);
-        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), TS_BUFFER_ELEMENTS, logger.ts_file);
+        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), logger.ts_max_elements, logger.ts_file);
         logger.ts_index = 0;
     }
 
@@ -305,10 +306,18 @@ void logger_init() {
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
-    logger.ts = recorder_malloc(sizeof(uint32_t)*TS_BUFFER_ELEMENTS);
+    logger.directory_created = false;
+
+    // ts buffer size in MB
+    const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
+    size_t buffer_size = DEFAULT_TS_BUFFER_SIZE;
+    if(buffer_size_str)
+        buffer_size = atoi(buffer_size_str) * 1024 * 1024;
+
+    logger.ts = recorder_malloc(buffer_size);
+    logger.ts_max_elements = buffer_size / sizeof(uint32_t);
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
-    logger.directory_created = false;
 
     const char* time_resolution_str = getenv(RECORDER_TIME_RESOLUTION);
     if(time_resolution_str)
@@ -394,7 +403,7 @@ void dump_global_metadata() {
         .time_resolution     = logger.ts_resolution,
         .total_ranks         = logger.nprocs,
         .start_ts            = logger.start_ts,
-        .ts_buffer_elements  = TS_BUFFER_ELEMENTS,
+        .ts_buffer_elements  = logger.ts_max_elements,
         .ts_compression_algo = TS_COMPRESSION_NO,
     };
     RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
@@ -433,7 +442,7 @@ void logger_finalize() {
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
     RECORDER_REAL_CALL(fflush)(logger.ts_file);
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
-    recorder_free(logger.ts, sizeof(int)*TS_BUFFER_ELEMENTS);
+    recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
     cleanup_record_stack();
     dump_cst_local();
