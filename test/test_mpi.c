@@ -101,7 +101,5 @@ int main(int argc, char *argv[]) {
     testfunc3();
 
     MPI_Finalize();
-    printf("end\n");
-
     return 0;
 }

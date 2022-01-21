@@ -47,6 +47,7 @@
 #include <limits.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <signal.h>
 
 #include "mpi.h"
 #include "recorder.h"
@@ -54,6 +55,9 @@
 
 static double local_tstart, local_tend;
 static int rank, nprocs;
+
+
+void signal_handler(int sig);
 
 /**
  * First we will intercept the GNU constructor,
@@ -73,9 +77,13 @@ void recorder_init() {
     // avoid double init;
     if (logger_initialized()) return;
 
-    logger_init(rank, nprocs);
+    signal(SIGSEGV, signal_handler);
+    signal(SIGINT,  signal_handler);
+    signal(SIGTERM, signal_handler);
 
+    logger_init(rank, nprocs);
     utils_init();
+
     local_tstart = recorder_wtime();
 }
 
@@ -162,3 +170,10 @@ void __attribute__((destructor))  no_mpi_finalize() {
 }
 
 #endif
+
+
+void signal_handler(int sig) {
+    if(rank == 0)
+        printf("[Recorder] signal [%s] captured, finalize now.\n", strsignal(sig));
+    recorder_finalize();
+}

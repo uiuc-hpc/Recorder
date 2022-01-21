@@ -66,7 +66,6 @@
 #endif
 
 /* List of runtime environment variables */
-#define RECORDER_NO_MPI             "RECORDER_NO_MPI"
 #define RECORDER_WITH_NON_MPI       "RECORDER_WITH_NON_MPI"
 #define RECORDER_TRACES_DIR         "RECORDER_TRACES_DIR"
 #define RECORDER_TIME_RESOLUTION    "RECORDER_TIME_RESOLUTION"
