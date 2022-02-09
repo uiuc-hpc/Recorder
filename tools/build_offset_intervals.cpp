@@ -228,6 +228,8 @@ static int current_seq_id = 0;
 
 void insert_one_record(Record* r, void* arg) {
 
+    current_seq_id++;
+
     bool user_func = (r->func_id == RECORDER_USER_FUNCTION);
     if(user_func) return;
 
@@ -238,7 +240,7 @@ void insert_one_record(Record* r, void* arg) {
     RRecord rr;
     rr.record = r;
     rr.rank = *((int*) arg);
-    rr.seq_id = current_seq_id++;
+    rr.seq_id = current_seq_id - 1;
 
     records.push_back(rr);
 }
