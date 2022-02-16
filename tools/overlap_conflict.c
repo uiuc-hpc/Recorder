@@ -132,8 +132,8 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
             if(i1->offset+i1->count <= i2->offset)
                 continue;
 
-            Interval *starts_first = (i1->tstart < i2->tstart) ? i1 : i2;
-            Interval *starts_later = (i1->tstart > i2->tstart) ? i1 : i2;
+            Interval *starts_first = (i1->tstart <= i2->tstart) ? i1 : i2;
+            Interval *starts_later = (i1->tstart >  i2->tstart) ? i1 : i2;
             bool conflict = true;
 
             // Read starts first will never cause a conflict
@@ -157,8 +157,12 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                                                             IM[idx].num_opens[starts_later->rank], false);
                 if(next_close != -1 && prev_open != -1 && next_close < prev_open)
                     conflict = false;
-            } else {                    // POSIX semantics
-                conflict = false;
+            } else {
+                // POSIX semantics
+                // Conflict only when the two ops start exactly the same time
+                // otherwise, we assume they are not conflicting
+                if(i1->tstart != i2->tstart)
+                    conflict = false;
             }
 
             if(!conflict) continue;
