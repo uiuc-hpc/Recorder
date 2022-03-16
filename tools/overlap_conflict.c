@@ -3,8 +3,12 @@
 #include <stdbool.h>
 #include "reader.h"
 
+#define CONFLICT_TYPE_NONE 0
+#define CONFLICT_TYPE_RAW  1
+#define CONFLICT_TYPE_WAW  2
 
 static int semantics = POSIX_SEMANTICS;
+
 
 /*
 void access_patterns(IntervalsMap *IM, int num_files) {
@@ -107,13 +111,64 @@ double get_neighbor_op_timestamp(double current, double *tops, int count, bool n
     return -1;
 }
 
-void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
+int check_potential_conflict(Interval* i1, Interval* i2, IntervalsMap *IM, int idx) {
+
+    // non-overlapping so no conflict
+    if(i1->offset+i1->count <= i2->offset)
+        return CONFLICT_TYPE_NONE;
+
+    bool conflict = true;
+    Interval *starts_first = (i1->tstart <= i2->tstart) ? i1 : i2;
+    Interval *starts_later = (i1->tstart >  i2->tstart) ? i1 : i2;
+
+    // Read starts first will never cause a conflict
+    // The only conflicts are WAW or RAW
+    if(starts_first->isRead)
+        conflict = false;
+
+    if (semantics == COMMIT_SEMANTICS) {
+        double next_commit = get_neighbor_op_timestamp(starts_first->tstart,
+                                                    IM[idx].tcommits[starts_first->rank],
+                                                    IM[idx].num_commits[starts_first->rank], true);
+        if(next_commit != -1 && next_commit < starts_later->tstart)
+            conflict = false;
+    } else if(semantics == SESSION_SEMANTICS) {
+
+        double next_close = get_neighbor_op_timestamp(starts_first->tstart,
+                                                    IM[idx].tcloses[starts_first->rank],
+                                                    IM[idx].num_closes[starts_first->rank], true);
+        double prev_open = get_neighbor_op_timestamp(starts_later->tstart,
+                                                    IM[idx].topens[starts_later->rank],
+                                                    IM[idx].num_opens[starts_later->rank], false);
+        if(next_close != -1 && prev_open != -1 && next_close < prev_open)
+            conflict = false;
+    } else {
+        // POSIX semantics
+        // Conflict only when the two ops start exactly the same time
+        // otherwise, we assume they are not conflicting
+        if(i1->tstart != i2->tstart)
+            conflict = false;
+    }
+
+    //printf("potential: %s, op1(%d-%d, %ld, %ld, %s), op2(%d-%d, %ld, %ld, %s) \n", IM[idx].filename,
+    //        i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead?"read":"write",
+    //        i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead?"read":"write");
+
+    if(!conflict)
+        return CONFLICT_TYPE_NONE;
+    if(starts_later->isRead)     // RAW
+        return CONFLICT_TYPE_RAW;
+    else
+        return CONFLICT_TYPE_WAW;
+}
+
+void detect_potential_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
     FILE* conflict_file;
     char path[512];
     sprintf(path, "%s/conflicts.txt", base_dir);
     conflict_file = fopen(path, "w");
 
-    int idx, i;
+    int idx, i, j;
     for(idx = 0; idx < num_files; idx++) {
 
         char *filename = IM[idx].filename;
@@ -124,60 +179,45 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
 
         int conflicts[2][2] = {0} ; // [different rank, same rank][RAW, WAW]
 
-        for(i = 0; i < IM[idx].num_intervals-1; i++) {
-            Interval *i1 = & intervals[i];
-            Interval *i2 = & intervals[i+1];
 
-            // non-overlapping so no conflict
-            if(i1->offset+i1->count <= i2->offset)
-                continue;
+        int i = 0, j = 0;
+        Interval *i1, *i2;
+        while(i < IM[idx].num_intervals-1) {
+            i1 = &intervals[i];
 
-            Interval *starts_first = (i1->tstart <= i2->tstart) ? i1 : i2;
-            Interval *starts_later = (i1->tstart >  i2->tstart) ? i1 : i2;
-            bool conflict = true;
+            j = i + 1;
+            while(j < IM[idx].num_intervals) {
+                i2 = &intervals[j];
 
-            // Read starts first will never cause a conflict
-            // The only conflicts are WAW or RAW
-            if(starts_first->isRead)
-                conflict = false;
+                int conflict = check_potential_conflict(i1, i2, IM, idx);
 
-            if (semantics == COMMIT_SEMANTICS) {
-                double next_commit = get_neighbor_op_timestamp(starts_first->tstart,
-                                                            IM[idx].tcommits[starts_first->rank],
-                                                            IM[idx].num_commits[starts_first->rank], true);
-                if(next_commit != -1 && next_commit < starts_later->tstart)
-                    conflict = false;
-            } else if(semantics == SESSION_SEMANTICS) {
+                if(conflict == CONFLICT_TYPE_NONE) {
 
-                double next_close = get_neighbor_op_timestamp(starts_first->tstart,
-                                                            IM[idx].tcloses[starts_first->rank],
-                                                            IM[idx].num_closes[starts_first->rank], true);
-                double prev_open = get_neighbor_op_timestamp(starts_later->tstart,
-                                                            IM[idx].topens[starts_later->rank],
-                                                            IM[idx].num_opens[starts_later->rank], false);
-                if(next_close != -1 && prev_open != -1 && next_close < prev_open)
-                    conflict = false;
-            } else {
-                // POSIX semantics
-                // Conflict only when the two ops start exactly the same time
-                // otherwise, we assume they are not conflicting
-                if(i1->tstart != i2->tstart)
-                    conflict = false;
+                } else {
+                    printf("%s, op1(%d-%d, %ld, %ld, %s), op2(%d-%d, %ld, %ld, %s) \n", filename,
+                            i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead?"read":"write",
+                            i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead?"read":"write");
+                    fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n",
+                            i1->isRead?"read":"write", i1->rank, i1->seqId,
+                            i2->isRead?"read":"write", i2->rank, i2->seqId);
+
+                    int same_rank = (i1->rank == i2->rank)? 1 : 0;
+
+                    if(conflict == CONFLICT_TYPE_RAW)
+                        conflicts[same_rank][0] += 1;
+                    else if(conflict == CONFLICT_TYPE_WAW)
+                        conflicts[same_rank][1] += 1;
+                }
+
+                if(i1->offset <= i2->offset && i1->offset+i1->count <= i2->offset+i2->count)
+                    j++;
+                else
+                    break;
             }
 
-            if(!conflict) continue;
-
-            printf("%s, op1(%d-%d, %ld, %ld, %d), op2(%d-%d, %ld, %ld, %d) \n", filename, i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead, i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead);
-            fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n", i1->isRead?"read":"write", i1->rank, i1->seqId, i2->isRead?"read":"write", i2->rank, i2->seqId);
-
-            int same_rank = (i1->rank == i2->rank)? 1 : 0;
-
-            if(starts_later->isRead)     // RAW
-                conflicts[same_rank][0] += 1;
-            else                        // WAW
-                conflicts[same_rank][1] += 1;
-
+            i++;
         }
+
         if(sum_array(conflicts[0], 2)+sum_array(conflicts[1], 2))
             printf("%s, Read-after-write (RAW): D-%d,S-%d, Write-after-write (WAW): D-%d,S-%d\n", filename, conflicts[0][0], conflicts[1][0], conflicts[0][1], conflicts[1][1]);
         else
@@ -215,7 +255,7 @@ int main(int argc, char* argv[]) {
 
     //access_patterns(IM, num_files);
     //detect_overlaps(IM, num_files);
-    detect_conflicts(IM, num_files, argv[1]);
+    detect_potential_conflicts(IM, num_files, argv[1]);
 
     for(i = 0; i < num_files; i++) {
         free(IM[i].filename);
