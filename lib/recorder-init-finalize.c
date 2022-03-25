@@ -49,6 +49,8 @@
 #include <dlfcn.h>
 #include <signal.h>
 
+#include <execinfo.h>
+
 #include "mpi.h"
 #include "recorder.h"
 
@@ -173,7 +175,20 @@ void __attribute__((destructor))  no_mpi_finalize() {
 
 
 void signal_handler(int sig) {
+    /*
+     * print backtrace for debug
+    void *array[20];
+    size_t size;
+    size = backtrace(array, 20);
+    fprintf(stdout, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+    exit(1);
+    */
+
     if(rank == 0)
         printf("[Recorder] signal [%s] captured, finalize now.\n", strsignal(sig));
     recorder_finalize();
+
+
+
 }
