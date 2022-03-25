@@ -164,7 +164,7 @@ void write_record(Record *record) {
     logger.prev_tstart = record->tstart;
     logger.ts[logger.ts_index++] = delta_tstart;
     logger.ts[logger.ts_index++] = delta_tend;
-    if(logger.ts_index == (logger.ts_max_elements-1)) {
+    if(logger.ts_index == logger.ts_max_elements) {
         if(!logger.directory_created)
             logger_set_mpi_info(0, 1);
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), logger.ts_max_elements, logger.ts_file);
@@ -315,7 +315,8 @@ void logger_init() {
         buffer_size = atoi(buffer_size_str) * 1024 * 1024;
 
     logger.ts = recorder_malloc(buffer_size);
-    logger.ts_max_elements = buffer_size / sizeof(uint32_t);
+    logger.ts_max_elements = buffer_size / sizeof(uint32_t);    // make sure its can be divided by 2
+    if(logger.ts_max_elements % 2 != 0) logger.ts_max_elements += 1;
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
 
