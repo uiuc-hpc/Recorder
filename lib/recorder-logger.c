@@ -306,9 +306,11 @@ void logger_finalize() {
 
     cleanup_record_stack();
     save_cst_local(&logger);
+    //save_cst_merged(&logger);
     cleanup_cst(logger.cst);
 
     save_cfg_local(&logger);
+    //save_cfg_merged(&logger);
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {

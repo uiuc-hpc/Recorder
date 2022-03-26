@@ -180,6 +180,7 @@ void cleanup_cst(RecordHash* cst);
 void save_cst_local(RecorderLogger* logger);
 void save_cst_merged(RecorderLogger* logger);
 void save_cfg_local(RecorderLogger* logger);
+void save_cfg_merged(RecorderLogger* logger);
 
 
 

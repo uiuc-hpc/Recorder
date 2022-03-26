@@ -356,3 +356,7 @@ void save_cfg_local(RecorderLogger* logger) {
     RECORDER_REAL_CALL(fclose)(f);
 }
 
+void save_cfg_merged(RecorderLogger* logger) {
+    sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
+}
+
