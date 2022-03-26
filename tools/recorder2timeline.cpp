@@ -73,6 +73,7 @@ static void * execute(void * global_writer) {
         recorder_free_cfg(&cfg);
     }
     local.outFile.close();
+    return NULL;
 }
 
 int main(int argc, char **argv) {
