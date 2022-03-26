@@ -6,7 +6,6 @@
 #include <sys/time.h>
 #include <errno.h>
 #include "recorder.h"
-#include "recorder-sequitur.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
 #endif
@@ -18,34 +17,7 @@
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
 
-/**
- * Per-process CST and CFG
- */
-struct RecorderLogger {
-    int rank;
-    int nprocs;
-
-    bool directory_created;
-
-    int current_cfg_terminal;
-
-    Grammar     cfg;
-    RecordHash* cst;
-
-    char traces_dir[512];
-    char cst_path[1024];
-    char cfg_path[1024];
-
-    double    start_ts;
-    double    prev_tstart;      // delta compression for timestamps
-    FILE*     ts_file;
-    uint32_t* ts;               // memory buffer for timestamps (tstart, tend-tstart)
-    int       ts_index;         // current position of ts buffer, spill to file once full.
-    int       ts_max_elements;  // max elements can be stored in the buffer
-    double    ts_resolution;
-};
-struct RecorderLogger logger;
-
+static RecorderLogger logger;
 
 /**
  * Per-thread FIFO record stack
@@ -62,61 +34,6 @@ struct RecordStack {
 };
 static struct RecordStack *g_record_stack = NULL;
 
-
-/**
- * Key: func_id + res + all arguments in string
- *
- * arguments seperated by space ' '
- */
-char* compose_call_key(Record *record, int* key_len) {
-    int arg_count = record->arg_count;
-    char **args = record->args;
-
-    char invalid_str[] = "???";
-    int invalid_str_len = strlen(invalid_str);
-
-    int arg_strlen = arg_count;
-    for(int i = 0; i < arg_count; i++) {
-        if(args[i]) {
-            for(int j = 0; j < strlen(args[i]); j++)
-                if(args[i][j] == ' ') args[i][j] = '_';
-            arg_strlen += strlen(args[i]);
-        } else {
-            arg_strlen += strlen(invalid_str);
-        }
-    }
-
-    // thread id, func id, level, arg count, arg strlen, arg str
-    *key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
-               sizeof(record->arg_count) + sizeof(int) + arg_strlen;
-
-    char* key = recorder_malloc(*key_len);
-    int pos = 0;
-    memcpy(key+pos, &record->tid, sizeof(pthread_t));
-    pos += sizeof(pthread_t);
-    memcpy(key+pos, &record->func_id, sizeof(record->func_id));
-    pos += sizeof(record->func_id);
-    memcpy(key+pos, &record->level, sizeof(record->level));
-    pos += sizeof(record->level);
-    memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
-    pos += sizeof(record->arg_count);
-    memcpy(key+pos, &arg_strlen, sizeof(int));
-    pos += sizeof(int);
-
-    for(int i = 0; i < arg_count; i++) {
-        if(args[i]) {
-            memcpy(key+pos, args[i], strlen(args[i]));
-            pos += strlen(args[i]);
-        } else {
-            memcpy(key+pos, invalid_str, strlen(invalid_str));
-            pos += invalid_str_len;
-        }
-        key[pos] = ' ';
-        pos += 1;
-    }
-
-    return key;
-}
 
 void free_record(Record *record) {
     if(record == NULL)
@@ -327,64 +244,6 @@ void logger_init() {
     initialized = true;
 }
 
-void* serialize_cst(RecordHash *table, size_t *len) {
-    *len = sizeof(int);
-
-    RecordHash *entry, *tmp;
-    HASH_ITER(hh, table, entry, tmp) {
-        *len = *len + entry->key_len + sizeof(int)*2;
-    }
-
-    int count = HASH_COUNT(table);
-    void *res = recorder_malloc(*len);
-    void *ptr = res;
-
-    memcpy(ptr, &count, sizeof(int));
-    ptr += sizeof(int);
-
-    HASH_ITER(hh, table, entry, tmp) {
-
-        memcpy(ptr, &entry->terminal_id, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, &entry->key_len, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, entry->key, entry->key_len);
-        ptr = ptr + entry->key_len;
-    }
-
-    return res;
-}
-
-void dump_cst_local() {
-    FILE* f = RECORDER_REAL_CALL(fopen) (logger.cst_path, "wb");
-    size_t len;
-    void* data = serialize_cst(logger.cst, &len);
-    RECORDER_REAL_CALL(fwrite)(data, 1, len, f);
-    RECORDER_REAL_CALL(fflush)(f);
-    RECORDER_REAL_CALL(fclose)(f);
-}
-
-void cleanup_cst(RecordHash* cst) {
-    RecordHash *entry, *tmp;
-    HASH_ITER(hh, cst, entry, tmp) {
-        HASH_DEL(cst, entry);
-        recorder_free(entry->key, entry->key_len);
-        recorder_free(entry, sizeof(RecordHash));
-    }
-    cst = NULL;
-}
-
-void dump_cfg_local() {
-    FILE* f = RECORDER_REAL_CALL(fopen) (logger.cfg_path, "wb");
-    int count;
-    int* data = serialize_grammar(&logger.cfg, &count);
-    RECORDER_REAL_CALL(fwrite)(data, sizeof(int), count, f);
-    RECORDER_REAL_CALL(fflush)(f);
-    RECORDER_REAL_CALL(fclose)(f);
-}
-
 void cleanup_record_stack() {
     struct RecordStack *rs, *tmp;
     HASH_ITER(hh, g_record_stack, rs, tmp) {
@@ -394,7 +253,7 @@ void cleanup_record_stack() {
     }
 }
 
-void dump_global_metadata() {
+void save_global_metadata() {
     if (logger.rank != 0) return;
 
     char metadata_filename[1024] = {0};
@@ -446,14 +305,15 @@ void logger_finalize() {
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
     cleanup_record_stack();
-    dump_cst_local();
+    save_cst_local(&logger);
     cleanup_cst(logger.cst);
-    dump_cfg_local();
+
+    save_cfg_local(&logger);
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
         // write out global metadata
-        dump_global_metadata();
+        save_global_metadata();
 
         fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
         RECORDER_REAL_CALL(fflush)(stderr);

@@ -21,6 +21,8 @@ char* realrealpath(const char* path);           // return the absolute path (map
 int mkpath(char* file_path, mode_t mode);       // recursive mkdir()
 
 int min_in_array(int* arr, size_t len);
+double recorder_log2(int val);
+int recorder_ceil(double val);
 
 
 #endif

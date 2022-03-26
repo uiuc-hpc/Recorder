@@ -38,8 +38,8 @@
  * Prime Contract No. DE-AC02-05CH11231.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef __RECORDER_LOG_FORMAT_H
-#define __RECORDER_LOG_FORMAT_H
+#ifndef __RECORDER_LOGGER_H
+#define __RECORDER_LOGGER_H
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -50,6 +50,7 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+#include "recorder-sequitur.h"
 
 #if !defined PRId64 || defined(PRI_MACROS_BROKEN)
 #ifndef __WORDSIZE
@@ -74,6 +75,20 @@
 #endif
 #endif
 
+#define TS_COMPRESSION_NO   0
+#define TS_COMPRESSION_ZLIB 1
+#define TS_COMPRESSION_ZFP  2
+
+#define RECORDER_USER_FUNCTION 255
+
+
+#define RECORDER_POSIX      0
+#define RECORDER_MPIIO      1
+#define RECORDER_MPI        2
+#define RECORDER_HDF5       3
+#define RECORDER_FTRACE     4
+
+
 
 /* For each function call in the trace file */
 typedef struct Record_t {
@@ -89,7 +104,9 @@ typedef struct Record_t {
 } Record;
 
 
-
+/*
+ * CST
+ */
 typedef struct RecordHash_t {
     void *key;
     int key_len;
@@ -100,20 +117,6 @@ typedef struct RecordHash_t {
 } RecordHash;
 
 
-#define TS_COMPRESSION_NO   0
-#define TS_COMPRESSION_ZLIB 1
-#define TS_COMPRESSION_ZFP  2
-
-#define RECORDER_USER_FUNCTION 255
-
-
-#define RECORDER_POSIX      0
-#define RECORDER_MPIIO      1
-#define RECORDER_MPI        2
-#define RECORDER_HDF5       3
-#define RECORDER_FTRACE     4
-
-
 typedef struct RecorderMetadata_t {
     int    total_ranks;
     double start_ts;
@@ -121,6 +124,67 @@ typedef struct RecorderMetadata_t {
     int    ts_buffer_elements;
     int    ts_compression_algo; // timestamp compression algorithm
 } RecorderMetadata;
+
+
+/**
+ * Per-process CST and CFG
+ */
+typedef struct RecorderLogger_t {
+    int rank;
+    int nprocs;
+
+    bool directory_created;
+
+    int current_cfg_terminal;
+
+    Grammar     cfg;
+    RecordHash* cst;
+
+    char traces_dir[512];
+    char cst_path[1024];
+    char cfg_path[1024];
+
+    double    start_ts;
+    double    prev_tstart;      // delta compression for timestamps
+    FILE*     ts_file;
+    uint32_t* ts;               // memory buffer for timestamps (tstart, tend-tstart)
+    int       ts_index;         // current position of ts buffer, spill to file once full.
+    int       ts_max_elements;  // max elements can be stored in the buffer
+    double    ts_resolution;
+} RecorderLogger;
+
+
+
+
+
+
+
+
+
+/* recorder-logger.c */
+void logger_init();
+void logger_set_mpi_info();
+void logger_finalize();
+bool logger_initialized();
+void logger_record_enter(Record *record);
+void logger_record_exit(Record *record);
+void free_record(Record *record);
+// TODO only used by ftrace logger
+// Need to see how to replace it
+void write_record(Record* record);
+
+
+/* recorder-cst-cfg.c */
+char* compose_call_key(Record *record, int* key_len);
+void cleanup_cst(RecordHash* cst);
+void save_cst_local(RecorderLogger* logger);
+void save_cst_merged(RecorderLogger* logger);
+void save_cfg_local(RecorderLogger* logger);
+
+
+
+
+
 
 
 static const char* func_list[] = {
@@ -216,4 +280,4 @@ static const char* func_list[] = {
     "H5Pset_all_coll_metadata_ops",                 "H5Pget_all_coll_metadata_ops"
 };
 
-#endif /* __RECORDER_LOG_FORMAT_H */
+#endif /* __RECORDER_LOGGER_H */

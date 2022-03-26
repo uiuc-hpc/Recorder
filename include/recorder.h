@@ -56,7 +56,7 @@
 #include "hdf5.h"
 #include "uthash.h"
 #include "recorder-utils.h"
-#include "recorder-log-format.h"
+#include "recorder-logger.h"
 
 #define __D_MPI_REQUEST MPIO_Request
 #if MPI_VERSION >= 3
@@ -74,21 +74,6 @@
 #define RECORDER_EXCLUSION_FILE     "RECORDER_EXCLUSION_FILE"
 #define RECORDER_INCLUSION_FILE     "RECORDER_INCLUSION_FILE"
 
-
-
-/* logger.c */
-void logger_init();
-void logger_set_mpi_info();
-void logger_finalize();
-bool logger_initialized();
-void logger_record_enter(Record *record);
-void logger_record_exit(Record *record);
-void free_record(Record *record);
-
-
-// TODO only used by ftrace logger
-// Need to see how to replace it
-void write_record(Record* record);
 
 
 #ifdef RECORDER_PRELOAD

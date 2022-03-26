@@ -11,6 +11,7 @@ set(RECORDER_SRCS
         ${CMAKE_SOURCE_DIR}/include/recorder-sequitur.h
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cst-cfg.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-init-finalize.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
@@ -122,7 +123,7 @@ recorder_set_lib_options(recorder "recorder" ${RECORDER_LIBTYPE})
 #-----------------------------------------------------------------------------
 set(RECORDER_HEADERS
         ${CMAKE_SOURCE_DIR}/include/recorder.h
-        ${CMAKE_SOURCE_DIR}/include/recorder-log-format.h
+        ${CMAKE_SOURCE_DIR}/include/recorder-logger.h
         ${CMAKE_SOURCE_DIR}/include/recorder-utils.h
         ${CMAKE_SOURCE_DIR}/include/uthash.h
 )

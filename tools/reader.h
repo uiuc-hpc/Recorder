@@ -1,7 +1,7 @@
 #ifndef _RECORDER_READER_H_
 #define _RECORDER_READER_H_
 #include <stdbool.h>
-#include "recorder-log-format.h"
+#include "recorder-logger.h"
 
 
 #define POSIX_SEMANTICS 0

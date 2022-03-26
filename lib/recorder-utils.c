@@ -3,6 +3,7 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 #include "recorder.h"
 #include "recorder-utils.h"
 
@@ -314,5 +315,17 @@ int min_in_array(int* arr, size_t len) {
             min_val = arr[i];
     }
     return min_val;
+}
+
+
+double recorder_log2(int val) {
+    return log(val)/log(2);
+}
+
+
+int recorder_ceil(double val) {
+    int tmp = (int) val;
+    if(val > tmp)
+        return tmp + 1;
 }
 
