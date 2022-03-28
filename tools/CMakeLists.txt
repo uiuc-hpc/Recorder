@@ -40,10 +40,12 @@ target_link_libraries(recorder2text
                      )
 add_dependencies(recorder2text reader)
 
+
 add_executable(recorder2timeline recorder2timeline.cpp)
 target_link_libraries(recorder2timeline
         PUBLIC ${MPI_CXX_LIBRARIES} reader)
 add_dependencies(recorder2timeline reader)
+
 
 #add_executable(metaops_checker meta_ops_checker.c)
 #target_link_libraries(metaops_checker reader)
@@ -52,6 +54,10 @@ add_dependencies(recorder2timeline reader)
 add_executable(conflict_detector overlap_conflict.c build_offset_intervals.cpp)
 target_link_libraries(conflict_detector reader)
 add_dependencies(conflict_detector reader)
+
+add_executable(recorder_query recorder_query.c)
+target_link_libraries(recorder_query reader)
+add_dependencies(recorder_query reader)
 
 
 if(RECORDER_ENABLE_PARQUET)
@@ -96,7 +102,7 @@ endif()
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
 #set(targets reader recorder2text metaops_checker conflict_detector)
-set(targets reader recorder2text recorder2timeline conflict_detector)
+set(targets reader recorder2text recorder2timeline conflict_detector recorder_query)
 foreach(target ${targets})
     install(
         TARGETS
