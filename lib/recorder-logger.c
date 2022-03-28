@@ -53,6 +53,15 @@ void free_record(Record *record) {
 
 void write_record(Record *record) {
 
+    // Before pass the record to compose_call_key()
+    // set them to 0 if not needed.
+    // TODO: this is a ugly fix for ignoring them, but
+    // they still occupy the space in the key.
+    if(!logger.log_tid)
+        record->tid   = 0;
+    if(!logger.log_level)
+        record->level = 0;
+
     int key_len;
     char* key = compose_call_key(record, &key_len);
 
@@ -226,6 +235,8 @@ void logger_init() {
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
     logger.directory_created = false;
+    logger.log_tid   = 1;
+    logger.log_level = 1;
 
     // ts buffer size in MB
     const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
@@ -242,6 +253,14 @@ void logger_init() {
     const char* time_resolution_str = getenv(RECORDER_TIME_RESOLUTION);
     if(time_resolution_str)
         logger.ts_resolution = atof(time_resolution_str);
+
+
+    const char* log_tid_str = getenv(RECORDER_LOG_TID);
+    if(log_tid_str)
+        logger.log_tid = atoi(log_tid_str);
+    const char* log_level_str = getenv(RECORDER_LOG_LEVEL);
+    if(log_level_str)
+        logger.log_level = atoi(log_level_str);
 
     initialized = true;
 }

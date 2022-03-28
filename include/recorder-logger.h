@@ -151,6 +151,9 @@ typedef struct RecorderLogger_t {
     int       ts_index;         // current position of ts buffer, spill to file once full.
     int       ts_max_elements;  // max elements can be stored in the buffer
     double    ts_resolution;
+
+    int       log_tid;          // Wether to store thread id
+    int       log_level;        // Wether to store the level of the call
 } RecorderLogger;
 
 
