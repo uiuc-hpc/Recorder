@@ -83,7 +83,7 @@ int recorder_get_func_type(RecorderReader* reader, Record* record) {
     return RECORDER_HDF5;
 }
 
-void cs_to_record(CallSignature *cs, Record *record) {
+void recorder_cs_to_record(CallSignature *cs, Record *record) {
     char* key = cs->key;
 
     int pos = 0;
@@ -117,8 +117,8 @@ void cs_to_record(CallSignature *cs, Record *record) {
 
 void recorder_free_cst(CST* cst) {
     for(int i = 0; i < cst->entries; i++)
-        free(cst->cst_list[i].key);
-    free(cst->cst_list);
+        free(cst->cs_list[i].key);
+    free(cst->cs_list);
 }
 
 void recorder_free_cfg(CFG* cfg) {
@@ -147,21 +147,48 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
     int key_len;
     fread(&cst->entries, sizeof(int), 1, f);
 
-    cst->cst_list = malloc(cst->entries * sizeof(CallSignature));
+    cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
-        fread(&cst->cst_list[i].terminal, sizeof(int), 1, f);
-        fread(&cst->cst_list[i].key_len, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].terminal, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
 
-        cst->cst_list[i].key = malloc(cst->cst_list[i].key_len);
-        fread(cst->cst_list[i].key, 1, cst->cst_list[i].key_len, f);
+        cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
+        fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
 
-        assert(cst->cst_list[i].terminal < cst->entries);
+        assert(cst->cs_list[i].terminal < cst->entries);
     }
     fclose(f);
 
     //for(int i = 0; i < cst->entries; i++)
-    //    printf("%d, terminal %d, key len: %d\n", i, cst->cst_list[i].terminal, cst->cst_list[i].key_len);
+    //    printf("%d, terminal %d, key len: %d\n", i, cst->cs_list[i].terminal, cst->cs_list[i].key_len);
+}
+
+void recorder_read_cst_merged(RecorderReader *reader, CST *cst) {
+
+    char cst_filename[1096] = {0};
+    sprintf(cst_filename, "%s/%d.cst", reader->logs_dir, 0);
+
+    FILE* f = fopen(cst_filename, "rb");
+
+    int key_len;
+    fread(&cst->entries, sizeof(int), 1, f);
+
+    cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
+
+    for(int i = 0; i < cst->entries; i++) {
+        fread(&cst->cs_list[i].terminal, sizeof(int), 1, f);
+        int cs_rank;
+        unsigned cs_count;
+        fread(&cs_rank, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
+        fread(&cs_count, sizeof(unsigned), 1, f);
+
+        cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
+        fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
+
+        assert(cst->cs_list[i].terminal < cst->entries);
+    }
 }
 
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
@@ -191,7 +218,7 @@ void recorder_read_cfg(RecorderReader *reader, int rank, CFG* cfg) {
 
 #define TERMINAL_START_ID 0
 
-void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, CallSignature *cst_list, FILE* ts_file,
+void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, CallSignature *cs_list, FILE* ts_file,
                       void (*user_op)(Record*, void*), void* user_arg, int free_record) {
 
     RuleHash *rule = NULL;
@@ -204,7 +231,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
         if (sym_val >= TERMINAL_START_ID) { // terminal
             for(int j = 0; j < sym_exp; j++) {
                 Record *record = malloc(sizeof(Record));
-                cs_to_record(&cst_list[sym_val], record);
+                recorder_cs_to_record(&cs_list[sym_val], record);
 
                 // Fill in timestamps
                 uint32_t ts[2];
@@ -220,7 +247,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
             }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
-                rule_application(reader, rules, sym_val, cst_list, ts_file, user_op, user_arg, free_record);
+                rule_application(reader, rules, sym_val, cs_list, ts_file, user_op, user_arg, free_record);
         }
     }
 }
@@ -239,7 +266,7 @@ void recorder_decode_records_core(RecorderReader *reader, CST *cst, CFG *cfg,
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
     FILE* ts_file = fopen(ts_filename, "rb");
 
-    rule_application(reader, cfg->cfg_head, -1, cst->cst_list, ts_file, user_op, user_arg, free_record);
+    rule_application(reader, cfg->cfg_head, -1, cst->cs_list, ts_file, user_op, user_arg, free_record);
 
     fclose(ts_file);
 }

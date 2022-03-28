@@ -53,7 +53,7 @@ typedef struct CallSignature_t {
 typedef struct CST_t {
     int rank;
     int entries;
-    CallSignature *cst_list;
+    CallSignature *cs_list;
 } CST;
 
 typedef struct RuleHash_t {
@@ -87,13 +87,26 @@ typedef struct PyRecord_t {
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
 void recorder_free_reader(RecorderReader *reader);
 
+/**
+ * Read rank-local CST and CFG
+ * We have one CST and one CFG file per process
+ */
 void recorder_read_cst(RecorderReader *reader, int rank, CST *cst);
 void recorder_free_cst(CST *cst);
-
 void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
+/**
+ * Read merged CST and CFG
+ * We have one CST and one CFG for all processes
+ */
+void recorder_read_cst_merged(RecorderReader* reader, CST *cst);
+void recorder_read_cfg_merged(RecorderReader* reader, CFG *cfg);
+
+
+void recorder_cs_to_record(CallSignature *cs, Record *record);
 void recorder_free_record(Record* r);
+
 
 /**
  * This function reads all records of a rank
