@@ -207,6 +207,8 @@ void logger_init() {
     MAP_OR_FAIL(access);
     MAP_OR_FAIL(PMPI_Barrier);
     MAP_OR_FAIL(PMPI_Bcast);
+    MAP_OR_FAIL(PMPI_Recv);
+    MAP_OR_FAIL(PMPI_Send);
 
     double global_tstart = recorder_wtime();
 
@@ -300,6 +302,7 @@ void logger_finalize() {
 
     if(logger.ts_index > 0)
         RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+
     RECORDER_REAL_CALL(fflush)(logger.ts_file);
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
