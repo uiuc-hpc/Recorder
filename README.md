@@ -111,13 +111,19 @@ Recorder by default does not log the pointers (memory addresses) as they provide
 cost a lot of space to store.
 However, you can change this behaviour by setting the enviroment variable `RECORDER_LOG_POINTER` to 1.
 
-(3) Location to write traces:
+(3) Storing thread ids
+Use `RECORDER_LOG_TID`(0 or 1) to control whether to store thread id. Default is 1.
+
+(4) Storing call levels
+Use `RECORDER_LOG_LEVEL` (0 or 1) to control whether to store call levels. Default is 1.
+
+(5) Location to write traces:
 
 By default Recorder will output the traces to the current working directory.
 You can use the enviroment variable `RECORDER_TRACES_DIR` to specifiy the path where you want the traces stored.
 Make sure that every process has the persmission to write to that directory. 
 
-(4) Buffer size
+(6) Buffer size
 
 Timestamps are buffered internally to avoid frequent disk I/O. Use `RECORDER_BUFFER_SIZE` (in MB) to set 
 the size of this buffer. The default value is 1MB.
