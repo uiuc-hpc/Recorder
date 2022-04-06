@@ -44,16 +44,10 @@ typedef struct IntervalsMap_t {
     double **tcommits;
 } IntervalsMap;
 
-typedef struct CallSignature_t {
-    int terminal;
-    int key_len;
-    char* key;
-} CallSignature;
-
 typedef struct CST_t {
     int rank;
     int entries;
-    CallSignature *cs_list;
+    CallSignature *cs_list; // CallSignature is defined in recorder-logger.h
 } CST;
 
 typedef struct RuleHash_t {
@@ -104,7 +98,7 @@ void recorder_read_cst_merged(RecorderReader* reader, CST *cst);
 void recorder_read_cfg_merged(RecorderReader* reader, CFG *cfg);
 
 
-void recorder_cs_to_record(CallSignature *cs, Record *record);
+Record* recorder_cs_to_record(CallSignature *cs);
 void recorder_free_record(Record* r);
 
 

@@ -83,7 +83,12 @@ int recorder_get_func_type(RecorderReader* reader, Record* record) {
     return RECORDER_HDF5;
 }
 
-void recorder_cs_to_record(CallSignature *cs, Record *record) {
+// Caller needs to free the record after use
+// with the recorder_free_record() call.
+Record* recorder_cs_to_record(CallSignature *cs) {
+
+    Record *record = malloc(sizeof(Record));
+
     char* key = cs->key;
 
     int pos = 0;
@@ -113,6 +118,7 @@ void recorder_cs_to_record(CallSignature *cs, Record *record) {
     }
 
     assert(ai == record->arg_count);
+    return record;
 }
 
 void recorder_free_cst(CST* cst) {
@@ -150,18 +156,18 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
     cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
-        fread(&cst->cs_list[i].terminal, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
         fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
 
         cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
         fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
 
-        assert(cst->cs_list[i].terminal < cst->entries);
+        assert(cst->cs_list[i].terminal_id < cst->entries);
     }
     fclose(f);
 
     //for(int i = 0; i < cst->entries; i++)
-    //    printf("%d, terminal %d, key len: %d\n", i, cst->cs_list[i].terminal, cst->cs_list[i].key_len);
+    //    printf("%d, terminal %d, key len: %d\n", i, cst->cs_list[i].terminal_id, cst->cs_list[i].key_len);
 }
 
 void recorder_read_cst_merged(RecorderReader *reader, CST *cst) {
@@ -177,17 +183,17 @@ void recorder_read_cst_merged(RecorderReader *reader, CST *cst) {
     cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
-        fread(&cst->cs_list[i].terminal, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
         int cs_rank;
         unsigned cs_count;
         fread(&cs_rank, sizeof(int), 1, f);
         fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
-        fread(&cs_count, sizeof(unsigned), 1, f);
+        fread(&cst->cs_list[i].count, sizeof(unsigned), 1, f);
 
         cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
         fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
 
-        assert(cst->cs_list[i].terminal < cst->entries);
+        assert(cst->cs_list[i].terminal_id < cst->entries);
     }
 }
 
@@ -230,8 +236,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
         int sym_exp = rule->rule_body[2*i+1];
         if (sym_val >= TERMINAL_START_ID) { // terminal
             for(int j = 0; j < sym_exp; j++) {
-                Record *record = malloc(sizeof(Record));
-                recorder_cs_to_record(&cs_list[sym_val], record);
+                Record* record = recorder_cs_to_record(&cs_list[sym_val]);
 
                 // Fill in timestamps
                 uint32_t ts[2];

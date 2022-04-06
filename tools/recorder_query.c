@@ -7,24 +7,42 @@
 #include "reader.h"
 
 
-void print_cst(RecorderReader* reader, CST *cst) {
+void print_cst(RecorderReader* reader, CST* cst) {
 
     for(int i = 0; i < cst->entries; i++) {
-        Record record;
-        recorder_cs_to_record(&cst->cs_list[i], &record);
+        Record* record = recorder_cs_to_record(&cst->cs_list[i]);
 
-
-        const char* func_name = recorder_get_func_name(reader, &record);
+        const char* func_name = recorder_get_func_name(reader, record);
         printf("%s(", func_name);
 
-        bool user_func = (record.func_id == RECORDER_USER_FUNCTION);
-        for(int arg_id = 0; !user_func && arg_id < record.arg_count; arg_id++) {
-            char *arg = record.args[arg_id];
+        bool user_func = (recorder_get_func_type(reader, record) == RECORDER_USER_FUNCTION);
+        for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
+            char *arg = record->args[arg_id];
             printf(" %s", arg);
         }
 
         printf(" )\n");
-        free(record.args);
+        recorder_free_record(record);
+    }
+}
+
+void show_statistics(RecorderReader* reader, CST* cst) {
+    int mpi_count = 0, hdf5_count = 0, posix_count = 0;
+    for(int i = 0; i < cst->entries; i++) {
+        Record* record = recorder_cs_to_record(&cst->cs_list[i]);
+
+        const char* func_name = recorder_get_func_name(reader, record);
+        printf("%s(", func_name);
+
+        int type = recorder_get_func_type(reader, record);
+        if(type == RECORDER_MPIIO)
+            mpi_count++;
+        if(type == RECORDER_HDF5)
+            hdf5_count++;
+        if(type == RECORDER_POSIX)
+            posix_count++;
+
+        recorder_free_record(record);
     }
 }
 

@@ -105,7 +105,7 @@ typedef struct Record_t {
 
 
 /*
- * CST
+ * Call Signature
  */
 typedef struct RecordHash_t {
     void *key;
@@ -115,6 +115,7 @@ typedef struct RecordHash_t {
     int count;
     UT_hash_handle hh;
 } RecordHash;
+typedef struct RecordHash_t CallSignature;
 
 
 typedef struct RecorderMetadata_t {
