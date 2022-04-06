@@ -27,23 +27,22 @@ void print_cst(RecorderReader* reader, CST* cst) {
 }
 
 void show_statistics(RecorderReader* reader, CST* cst) {
-    int mpi_count = 0, hdf5_count = 0, posix_count = 0;
+    int mpiio_count = 0, hdf5_count = 0, posix_count = 0;
     for(int i = 0; i < cst->entries; i++) {
         Record* record = recorder_cs_to_record(&cst->cs_list[i]);
-
         const char* func_name = recorder_get_func_name(reader, record);
-        printf("%s(", func_name);
 
         int type = recorder_get_func_type(reader, record);
         if(type == RECORDER_MPIIO)
-            mpi_count++;
+            mpiio_count += cst->cs_list[i].count;
         if(type == RECORDER_HDF5)
-            hdf5_count++;
+            hdf5_count += cst->cs_list[i].count;
         if(type == RECORDER_POSIX)
-            posix_count++;
+            posix_count += cst->cs_list[i].count;
 
         recorder_free_record(record);
     }
+    printf("HDF5: %d, MPI-IO Count: %d, POSIX: %d\n", hdf5_count, mpiio_count, posix_count);
 }
 
 
@@ -56,6 +55,7 @@ int main(int argc, char **argv) {
     recorder_read_cst_merged(&reader, &cst);
 
     print_cst(&reader, &cst);
+    show_statistics(&reader, &cst);
 
     recorder_free_cst(&cst);
 
