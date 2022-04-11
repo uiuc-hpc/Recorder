@@ -21,7 +21,7 @@ void print_cst(RecorderReader* reader, CST* cst) {
             printf(" %s", arg);
         }
 
-        printf(" )\n");
+        printf(" ), count: %d\n", cst->cs_list[i].count);
         recorder_free_record(record);
     }
 }
