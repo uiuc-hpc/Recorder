@@ -184,9 +184,7 @@ void recorder_read_cst_merged(RecorderReader *reader, CST *cst) {
 
     for(int i = 0; i < cst->entries; i++) {
         fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
-        int cs_rank;
-        unsigned cs_count;
-        fread(&cs_rank, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].rank, sizeof(int), 1, f);
         fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
         fread(&cst->cs_list[i].count, sizeof(unsigned), 1, f);
 
