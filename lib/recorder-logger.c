@@ -333,31 +333,25 @@ void offset_pattern_check() {
         unsigned char func_id;
         memcpy(&func_id, ptr, sizeof(r.func_id));
 
-        int arg_strlen;
-        ptr = entry->key+arg_offset-sizeof(int);
-        memcpy(&arg_strlen, ptr, sizeof(int));
-
         if(func_id == lseek_id) {
-            lseek_count++;
-            char* arg_str = calloc(1, arg_strlen+1);
-
-            memcpy(arg_str, entry->key+arg_offset, arg_strlen);
+            char* key = (char*) entry->key;
 
             int start = 0, end = 0;
-            for(int i = 0; i < arg_strlen; i++) {
-                if(arg_str[i] == ' ') {
+            for(int i = arg_offset; i < entry->key_len; i++) {
+                if(key[i] == ' ') {
                     start = i;
                     break;
                 }
             }
-            for(int i = arg_strlen; i >= 0; i--) {
-                if(arg_str[i] == ' ') {
+            for(int i = start+1; i < entry->key_len; i++) {
+                if(key[i] == ' ') {
                     end = i;
                     break;
                 }
             }
+            assert(end > start);
             char offset_str[64] = {0};
-            memcpy(offset_str, arg_str+start+1, end-start);
+            memcpy(offset_str, key+start+1, end-start-1);
             long int offset = atol(offset_str);
 
             lseek_offsets[lseek_count] = offset;
@@ -366,9 +360,8 @@ void offset_pattern_check() {
             lseek_entries[lseek_count].cs = entry;
             assert(end > start);
 
+            //printf("%s, %ld\n", arg_str, lseek_offset[lseek_count]);
             lseek_count++;
-            //printf("%s, %ld\n", arg_str, offset);
-            free(arg_str);
         }
     }
 
@@ -376,7 +369,7 @@ void offset_pattern_check() {
     MAP_OR_FAIL(PMPI_Comm_size);
     MAP_OR_FAIL(PMPI_Comm_rank);
     MAP_OR_FAIL(PMPI_Comm_free);
-    MAP_OR_FAIL(PMPI_Allgatherv);
+    MAP_OR_FAIL(PMPI_Allgather);
 
     MPI_Comm comm;
     int comm_size, comm_rank;
@@ -388,22 +381,13 @@ void offset_pattern_check() {
         printf("lseek count: %d, comm size: %d\n", lseek_count, comm_size);
 
     if(comm_size > 2) {
-        long int *all_offsets = malloc(sizeof(long int)*comm_size*(lseek_count));
-        int* displs = malloc(sizeof(int) * comm_size);
-        int* recvcounts = malloc(sizeof(int) * comm_size);
-        for(int i = 0; i < comm_size; i++) {
-            displs[i] = lseek_count * i;
-            recvcounts[i] = lseek_count;
-        }
-        RECORDER_REAL_CALL(PMPI_Allgatherv)(lseek_offsets, lseek_count, MPI_LONG,
-                                            all_offsets, recvcounts, displs, MPI_LONG, comm);
+        long int *all_offsets = calloc(comm_size*(lseek_count), sizeof(long int));
+        RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, lseek_count, MPI_LONG,
+                                            all_offsets, lseek_count, MPI_LONG, comm);
 
         // Fory every lseek(), i.e, i-th lseek()
         // check if it is the form of offset = a * rank + b;
         for(int i = 0; i < lseek_count; i++) {
-            for(int r = 0; r < comm_size; r++)
-                printf("%ld, ", all_offsets[i+lseek_count*r]);
-            printf("\n");
 
             long int o1 = all_offsets[i];
             long int o2 = all_offsets[i+lseek_count];
@@ -424,17 +408,37 @@ void offset_pattern_check() {
             // TODO we should store a and b, but now we
             // store a only
             if(same_pattern) {
+
+                HASH_DEL(logger.cst, lseek_entries[i].cs);
+
                 int start = lseek_entries[i].offset_key_start;
                 int end   = lseek_entries[i].offset_key_end;
 
-                char* tmp = calloc(1, 64);
-                sprintf(tmp, "%ld", a);
+                char* tmp = calloc(64, 1);
+                sprintf(tmp, "%ld*r+b", a);
 
-                if(comm_rank == 0)
-                    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %s, [%d-%d]\n", a, b, tmp, start, end);
+                //if(comm_rank == 0)
+                //    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %s, [%d-%d]\n", a, b, tmp, start, end);
 
-                memset(lseek_entries[i].cs->key+arg_offset+start+1, (int)'_', end-start-1);
-                memcpy(lseek_entries[i].cs->key+arg_offset+start+1, tmp, end-start-1);
+                int old_keylen = lseek_entries[i].cs->key_len;
+                int new_keylen = old_keylen - (end-start-1) + strlen(tmp);
+                int new_arg_strlen = new_keylen - arg_offset;
+
+                void* newkey = malloc(new_keylen);
+                void* oldkey = lseek_entries[i].cs->key;
+
+                memcpy(newkey, oldkey, start+1);
+                memcpy(newkey+arg_offset-sizeof(int), &new_arg_strlen, sizeof(int));
+                memcpy(newkey+start+1, tmp, strlen(tmp));
+                //memcpy(newkey+arg_offset+start+1+strlen(tmp)+1, oldkey+arg_offset+end, old_keylen-arg_offset-end);
+                memcpy(newkey+start+1+strlen(tmp), oldkey+end, 3);
+
+                lseek_entries[i].cs->key = newkey;
+                lseek_entries[i].cs->key_len = new_keylen;
+                HASH_ADD_KEYPTR(hh, logger.cst, lseek_entries[i].cs->key, lseek_entries[i].cs->key_len, lseek_entries[i].cs);
+
+
+                free(oldkey);
                 free(tmp);
             }
         }
