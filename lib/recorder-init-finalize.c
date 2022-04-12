@@ -79,9 +79,11 @@ void recorder_init() {
     // avoid double init;
     if (logger_initialized()) return;
 
+    /*
     signal(SIGSEGV, signal_handler);
     signal(SIGINT,  signal_handler);
     signal(SIGTERM, signal_handler);
+    */
 
     logger_init(rank, nprocs);
     utils_init();

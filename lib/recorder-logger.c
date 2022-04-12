@@ -78,7 +78,7 @@ void write_record(Record *record) {
         entry->key_len = key_len;
         entry->rank = logger.rank;
         entry->terminal_id = logger.current_cfg_terminal++;
-        entry->count = 0;
+        entry->count = 1;
         HASH_ADD_KEYPTR(hh, logger.cst, entry->key, entry->key_len, entry);
     }
 
@@ -308,6 +308,106 @@ void save_global_metadata() {
     RECORDER_REAL_CALL(fclose)(version_file);
 }
 
+void offset_pattern_check() {
+
+    long int lseek_offsets[30];
+    int lseek_count = 0;
+
+    Record r;
+
+    unsigned char lseek64_id = get_function_id_by_name("lseek64");
+    size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+
+    RecordHash *entry, *tmp;
+
+
+    HASH_ITER(hh, logger.cst, entry, tmp) {
+        void* ptr = entry->key+sizeof(pthread_t);
+
+        unsigned char func_id;
+        memcpy(&func_id, ptr, sizeof(r.func_id));
+
+        int arg_strlen;
+        ptr = entry->key+arg_offset-sizeof(int);
+        memcpy(&arg_strlen, ptr, sizeof(int));
+
+        if(func_id == lseek64_id) {
+            lseek_count++;
+            char* arg_str = calloc(1, arg_strlen+1);
+
+            memcpy(arg_str, entry->key+arg_offset, arg_strlen);
+
+            int start, end;
+            for(int i = 0; i < arg_strlen; i++) {
+                if(arg_str[i] == ' ') {
+                    start = i;
+                    break;
+                }
+            }
+            for(int i = arg_strlen; i >= 0; i--) {
+                if(arg_str[i] == ' ') {
+                    end = i;
+                    break;
+                }
+            }
+            char offset_str[64] = {0};
+            memcpy(offset_str, arg_str+start+1, end-start);
+            long int offset = atol(offset_str);
+
+            lseek_offsets[lseek_count++] = offset;
+            //printf("%s, %ld\n", arg_str, offset);
+            free(arg_str);
+        }
+    }
+
+    MAP_OR_FAIL(PMPI_Comm_split);
+    MAP_OR_FAIL(PMPI_Comm_size);
+    MAP_OR_FAIL(PMPI_Comm_rank);
+    MAP_OR_FAIL(PMPI_Allgather);
+
+    printf("rank: %d, lseek count: %d\n", logger.rank, lseek_count);
+
+    MPI_Comm comm;
+    int comm_size, comm_rank;
+    RECORDER_REAL_CALL(PMPI_Comm_split)(MPI_COMM_WORLD, lseek_count, logger.rank, &comm);
+    RECORDER_REAL_CALL(PMPI_Comm_size)(comm, &comm_size);
+    RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
+
+    if(comm_rank == 0)
+        printf("lseek count: %d, comm size: %d\n", logger.rank, lseek_count, comm_size);
+
+    //long int *all_offsets = malloc(sizeof(long int)*comm_size*lseek_count);
+    //RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, lseek_count, MPI_LONG_INT, all_offsets, lseek_count, MPI_LONG_INT, comm);
+    //free(all_offsets);
+
+    // Fory every lseek(), i.e, i-th lseek()
+    // check if it is the form of offset = a * rank + b;
+    for(int i = 0; i < lseek_count; i++) {
+        long int o1 = all_offsets[j*comm_size];
+        long int o2 = all_offsets[j*comm_size+1];
+        long int a = o2 - o1;
+        long int b = o1;
+        int same_pattern = 1;
+        for(int r = 0; r < comm_size; r++) {
+            long int o = all_offsets[j*comm_size+r];
+            if(o != a*r+b)
+                same_pattern = 0;
+        }
+
+        // Everyone has the same pattern of offset
+        // Then modify the call signature to store
+        // the pattern instead of the actuall offset
+        // TODO we should store a and b, but now we
+        // store a only
+        if(same_pattern) {
+            if(comm_rank == 0) {
+                printf("pattern recognized: offset = %ld*rank+%ld\n", a, b);
+            }
+        }
+    }
+
+}
+
 void logger_finalize() {
 
     if(!logger.directory_created)
@@ -326,13 +426,16 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
+    offset_pattern_check();
+
     cleanup_record_stack();
-    save_cst_local(&logger);
-    //save_cst_merged(&logger);
+    //save_cst_local(&logger);
+    save_cst_merged(&logger);
     cleanup_cst(logger.cst);
 
-    save_cfg_local(&logger);
-    //save_cfg_merged(&logger);
+
+    //save_cfg_local(&logger);
+    save_cfg_merged(&logger);
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
