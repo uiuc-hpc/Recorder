@@ -149,7 +149,6 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
 
     // Clean up the hash table, and gathered grammars
     *num_unique_grammars = HASH_COUNT(unique_grammars);
-    printf("[recorder] unique grammars: %d\n", *num_unique_grammars);
 
     UniqueGrammar *ug, *tmp;
     HASH_ITER(hh, unique_grammars, ug, tmp) {
@@ -193,6 +192,8 @@ double sequitur_dump(const char* path, Grammar *local_grammar, int mpi_rank, int
         sequitur_cleanup(grammar);
         recorder_free(grammar, sizeof(Grammar));
         recorder_free(compressed_grammar, compressed_integers*sizeof(int));
+
+        printf("[recorder] unique grammars: %d, uncompressed integers: %ld, compressed integers: %d\n", num_unique_grammars, uncompressed_integers, compressed_integers);
     }
 
     return (compressed_integers/1024.0*sizeof(int));

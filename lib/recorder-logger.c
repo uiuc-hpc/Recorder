@@ -418,7 +418,7 @@ void offset_pattern_check() {
                 sprintf(tmp, "%ld*r+b", a);
 
                 //if(comm_rank == 0)
-                //    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %s, [%d-%d]\n", a, b, tmp, start, end);
+                //    printf("pattern recognized: offset = %ld*rank+%ld\n", a, b);
 
                 int old_keylen = lseek_entries[i].cs->key_len;
                 int new_keylen = old_keylen - (end-start-1) + strlen(tmp);
