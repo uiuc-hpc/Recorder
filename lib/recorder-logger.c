@@ -308,18 +308,24 @@ void save_global_metadata() {
     RECORDER_REAL_CALL(fclose)(version_file);
 }
 
+struct lseek_entry {
+    int offset_key_start;
+    int offset_key_end;
+    RecordHash* cs;
+};
+
 void offset_pattern_check() {
 
-    long int lseek_offsets[30];
+    struct lseek_entry *lseek_entries = malloc(sizeof(struct lseek_entry) * 200);
+    long int *lseek_offsets = malloc(sizeof(long int) * 200);
     int lseek_count = 0;
 
     Record r;
 
-    unsigned char lseek64_id = get_function_id_by_name("lseek64");
+    unsigned char lseek_id = get_function_id_by_name("lseek");
     size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
 
     RecordHash *entry, *tmp;
-
 
     HASH_ITER(hh, logger.cst, entry, tmp) {
         void* ptr = entry->key+sizeof(pthread_t);
@@ -331,13 +337,13 @@ void offset_pattern_check() {
         ptr = entry->key+arg_offset-sizeof(int);
         memcpy(&arg_strlen, ptr, sizeof(int));
 
-        if(func_id == lseek64_id) {
+        if(func_id == lseek_id) {
             lseek_count++;
             char* arg_str = calloc(1, arg_strlen+1);
 
             memcpy(arg_str, entry->key+arg_offset, arg_strlen);
 
-            int start, end;
+            int start = 0, end = 0;
             for(int i = 0; i < arg_strlen; i++) {
                 if(arg_str[i] == ' ') {
                     start = i;
@@ -354,7 +360,13 @@ void offset_pattern_check() {
             memcpy(offset_str, arg_str+start+1, end-start);
             long int offset = atol(offset_str);
 
-            lseek_offsets[lseek_count++] = offset;
+            lseek_offsets[lseek_count] = offset;
+            lseek_entries[lseek_count].offset_key_start = start;
+            lseek_entries[lseek_count].offset_key_end   = end;
+            lseek_entries[lseek_count].cs = entry;
+            assert(end > start);
+
+            lseek_count++;
             //printf("%s, %ld\n", arg_str, offset);
             free(arg_str);
         }
@@ -363,9 +375,8 @@ void offset_pattern_check() {
     MAP_OR_FAIL(PMPI_Comm_split);
     MAP_OR_FAIL(PMPI_Comm_size);
     MAP_OR_FAIL(PMPI_Comm_rank);
-    MAP_OR_FAIL(PMPI_Allgather);
-
-    printf("rank: %d, lseek count: %d\n", logger.rank, lseek_count);
+    MAP_OR_FAIL(PMPI_Comm_free);
+    MAP_OR_FAIL(PMPI_Allgatherv);
 
     MPI_Comm comm;
     int comm_size, comm_rank;
@@ -374,38 +385,61 @@ void offset_pattern_check() {
     RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
 
     if(comm_rank == 0)
-        printf("lseek count: %d, comm size: %d\n", logger.rank, lseek_count, comm_size);
+        printf("lseek count: %d, comm size: %d\n", lseek_count, comm_size);
 
-    //long int *all_offsets = malloc(sizeof(long int)*comm_size*lseek_count);
-    //RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, lseek_count, MPI_LONG_INT, all_offsets, lseek_count, MPI_LONG_INT, comm);
-    //free(all_offsets);
-
-    // Fory every lseek(), i.e, i-th lseek()
-    // check if it is the form of offset = a * rank + b;
-    for(int i = 0; i < lseek_count; i++) {
-        long int o1 = all_offsets[j*comm_size];
-        long int o2 = all_offsets[j*comm_size+1];
-        long int a = o2 - o1;
-        long int b = o1;
-        int same_pattern = 1;
-        for(int r = 0; r < comm_size; r++) {
-            long int o = all_offsets[j*comm_size+r];
-            if(o != a*r+b)
-                same_pattern = 0;
+    if(comm_size > 2) {
+        long int *all_offsets = malloc(sizeof(long int)*comm_size*(lseek_count));
+        int* displs = malloc(sizeof(int) * comm_size);
+        int* recvcounts = malloc(sizeof(int) * comm_size);
+        for(int i = 0; i < comm_size; i++) {
+            displs[i] = lseek_count * i;
+            recvcounts[i] = lseek_count;
         }
+        RECORDER_REAL_CALL(PMPI_Allgatherv)(lseek_offsets, lseek_count, MPI_LONG,
+                                            all_offsets, recvcounts, displs, MPI_LONG, comm);
 
-        // Everyone has the same pattern of offset
-        // Then modify the call signature to store
-        // the pattern instead of the actuall offset
-        // TODO we should store a and b, but now we
-        // store a only
-        if(same_pattern) {
-            if(comm_rank == 0) {
-                printf("pattern recognized: offset = %ld*rank+%ld\n", a, b);
+        // Fory every lseek(), i.e, i-th lseek()
+        // check if it is the form of offset = a * rank + b;
+        for(int i = 0; i < lseek_count; i++) {
+            long int o1 = all_offsets[i];
+            long int o2 = all_offsets[i+lseek_count];
+            long int a = o2 - o1;
+            long int b = o1;
+            int same_pattern = 1;
+            for(int r = 0; r < comm_size; r++) {
+                long int o = all_offsets[i+lseek_count*r];
+                if(o != a*r+b) {
+                    same_pattern = 0;
+                    break;
+                }
+            }
+
+            // Everyone has the same pattern of offset
+            // Then modify the call signature to store
+            // the pattern instead of the actuall offset
+            // TODO we should store a and b, but now we
+            // store a only
+            if(same_pattern) {
+                int start = lseek_entries[i].offset_key_start;
+                int end   = lseek_entries[i].offset_key_end;
+
+                char* tmp = calloc(1, 64);
+                sprintf(tmp, "%ld", a);
+
+                if(comm_rank == 0)
+                    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %c, [%d-%d]\n", a, b, tmp[0],start,end);
+
+                memset(lseek_entries[i].cs->key+arg_offset+start+1, (int)'_', end-start-1);
+                memcpy(lseek_entries[i].cs->key+arg_offset+start+1, tmp, end-start-1);
+                free(tmp);
             }
         }
+        free(all_offsets);
     }
 
+    RECORDER_REAL_CALL(PMPI_Comm_free)(&comm);
+    free(lseek_offsets);
+    free(lseek_entries);
 }
 
 void logger_finalize() {
@@ -432,7 +466,6 @@ void logger_finalize() {
     //save_cst_local(&logger);
     save_cst_merged(&logger);
     cleanup_cst(logger.cst);
-
 
     //save_cfg_local(&logger);
     save_cfg_merged(&logger);
