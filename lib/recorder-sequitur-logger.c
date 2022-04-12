@@ -95,8 +95,6 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
 
     if(mpi_rank !=0) return NULL;
 
-    printf("CHEN run a final sequitur\n");
-
     // Run a final Sequitur pass to compress the gathered grammars
     Grammar *grammar = recorder_malloc(sizeof(Grammar));
     grammar->start_rule_id = min_in_array(gathered_grammars, gathered_integers)  -1;
@@ -121,7 +119,6 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
             entry->count++;
             grammar_ids[i] = entry->ugi;
         } else {
-            printf("Handle an unseen grammar\n");
             // An unseen grammar, fully store it.
             entry = recorder_malloc(sizeof(UniqueGrammar));
             entry->ugi = current_ugi++;
@@ -190,7 +187,7 @@ double sequitur_dump(const char* path, Grammar *local_grammar, int mpi_rank, int
             fwrite(compressed_grammar, sizeof(int), compressed_integers, f);
             fclose(f);
         } else {
-            printf("Open file: %s failed, errno: %d!\n", path, errno);
+            printf("[recorder] Open file: %s failed, errno: %d!\n", path, errno);
         }
 
         sequitur_cleanup(grammar);

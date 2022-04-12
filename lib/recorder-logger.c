@@ -401,6 +401,10 @@ void offset_pattern_check() {
         // Fory every lseek(), i.e, i-th lseek()
         // check if it is the form of offset = a * rank + b;
         for(int i = 0; i < lseek_count; i++) {
+            for(int r = 0; r < comm_size; r++)
+                printf("%ld, ", all_offsets[i+lseek_count*r]);
+            printf("\n");
+
             long int o1 = all_offsets[i];
             long int o2 = all_offsets[i+lseek_count];
             long int a = o2 - o1;
@@ -427,7 +431,7 @@ void offset_pattern_check() {
                 sprintf(tmp, "%ld", a);
 
                 if(comm_rank == 0)
-                    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %c, [%d-%d]\n", a, b, tmp[0],start,end);
+                    printf("pattern recognized: offset = %ld*rank+%ld, tmp[0]: %s, [%d-%d]\n", a, b, tmp, start, end);
 
                 memset(lseek_entries[i].cs->key+arg_offset+start+1, (int)'_', end-start-1);
                 memcpy(lseek_entries[i].cs->key+arg_offset+start+1, tmp, end-start-1);
