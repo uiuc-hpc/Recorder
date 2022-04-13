@@ -314,7 +314,7 @@ struct lseek_entry {
     RecordHash* cs;
 };
 
-void offset_pattern_check() {
+void offset_pattern_check(char* func_name) {
 
     struct lseek_entry *lseek_entries = malloc(sizeof(struct lseek_entry) * 200);
     long int *lseek_offsets = malloc(sizeof(long int) * 200);
@@ -322,7 +322,7 @@ void offset_pattern_check() {
 
     Record r;
 
-    unsigned char lseek_id = get_function_id_by_name("lseek");
+    unsigned char lseek_id = get_function_id_by_name(func_name);
     size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
 
     RecordHash *entry, *tmp;
@@ -430,8 +430,7 @@ void offset_pattern_check() {
                 memcpy(newkey, oldkey, start+1);
                 memcpy(newkey+arg_offset-sizeof(int), &new_arg_strlen, sizeof(int));
                 memcpy(newkey+start+1, tmp, strlen(tmp));
-                //memcpy(newkey+arg_offset+start+1+strlen(tmp)+1, oldkey+arg_offset+end, old_keylen-arg_offset-end);
-                memcpy(newkey+start+1+strlen(tmp), oldkey+end, 3);
+                memcpy(newkey+start+1+strlen(tmp), oldkey+end, old_keylen-end);
 
                 lseek_entries[i].cs->key = newkey;
                 lseek_entries[i].cs->key_len = new_keylen;
@@ -468,7 +467,8 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
-    offset_pattern_check();
+    offset_pattern_check("lseek");
+    offset_pattern_check("PMPI_File_write_at");
 
     cleanup_record_stack();
     //save_cst_local(&logger);
