@@ -415,7 +415,7 @@ void offset_pattern_check() {
                 int end   = lseek_entries[i].offset_key_end;
 
                 char* tmp = calloc(64, 1);
-                sprintf(tmp, "%ld*r+b", a);
+                sprintf(tmp, "%ld*r+%ld", a, b);
 
                 //if(comm_rank == 0)
                 //    printf("pattern recognized: offset = %ld*rank+%ld\n", a, b);
