@@ -316,24 +316,33 @@ struct lseek_entry {
 
 void offset_pattern_check(char* func_name) {
 
-    struct lseek_entry *lseek_entries = malloc(sizeof(struct lseek_entry) * 200);
-    long int *lseek_offsets = malloc(sizeof(long int) * 200);
-    int lseek_count = 0;
-
-    Record r;
-
-    unsigned char lseek_id = get_function_id_by_name(func_name);
-    size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+    int func_count = 0;
+    unsigned char filter_func_id = get_function_id_by_name(func_name);
 
     RecordHash *entry, *tmp;
+    HASH_ITER(hh, logger.cst, entry, tmp) {
+        void* ptr = entry->key+sizeof(pthread_t);
+        unsigned char func_id;
+        memcpy(&func_id, ptr, sizeof(func_id));
+        if(func_id == filter_func_id)
+            func_count++;
+    }
 
+
+    struct lseek_entry *lseek_entries = malloc(sizeof(struct lseek_entry) * func_count);
+    long int *lseek_offsets = malloc(sizeof(long int) * func_count);
+
+    Record r;
+    size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+
+    int idx = 0;
     HASH_ITER(hh, logger.cst, entry, tmp) {
         void* ptr = entry->key+sizeof(pthread_t);
 
         unsigned char func_id;
         memcpy(&func_id, ptr, sizeof(r.func_id));
 
-        if(func_id == lseek_id) {
+        if(func_id == filter_func_id) {
             char* key = (char*) entry->key;
 
             int start = 0, end = 0;
@@ -354,14 +363,14 @@ void offset_pattern_check(char* func_name) {
             memcpy(offset_str, key+start+1, end-start-1);
             long int offset = atol(offset_str);
 
-            lseek_offsets[lseek_count] = offset;
-            lseek_entries[lseek_count].offset_key_start = start;
-            lseek_entries[lseek_count].offset_key_end   = end;
-            lseek_entries[lseek_count].cs = entry;
+            lseek_offsets[idx] = offset;
+            lseek_entries[idx].offset_key_start = start;
+            lseek_entries[idx].offset_key_end   = end;
+            lseek_entries[idx].cs = entry;
             assert(end > start);
 
-            //printf("%s, %ld\n", arg_str, lseek_offset[lseek_count]);
-            lseek_count++;
+            //printf("%s, %ld\n", arg_str, lseek_offset[func_count]);
+            idx++;
         }
     }
 
@@ -373,29 +382,29 @@ void offset_pattern_check(char* func_name) {
 
     MPI_Comm comm;
     int comm_size, comm_rank;
-    RECORDER_REAL_CALL(PMPI_Comm_split)(MPI_COMM_WORLD, lseek_count, logger.rank, &comm);
+    RECORDER_REAL_CALL(PMPI_Comm_split)(MPI_COMM_WORLD, func_count, logger.rank, &comm);
     RECORDER_REAL_CALL(PMPI_Comm_size)(comm, &comm_size);
     RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
 
     if(comm_rank == 0)
-        printf("lseek count: %d, comm size: %d\n", lseek_count, comm_size);
+        printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
 
     if(comm_size > 2) {
-        long int *all_offsets = calloc(comm_size*(lseek_count), sizeof(long int));
-        RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, lseek_count, MPI_LONG,
-                                            all_offsets, lseek_count, MPI_LONG, comm);
+        long int *all_offsets = calloc(comm_size*(func_count), sizeof(long int));
+        RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, func_count, MPI_LONG,
+                                            all_offsets, func_count, MPI_LONG, comm);
 
         // Fory every lseek(), i.e, i-th lseek()
         // check if it is the form of offset = a * rank + b;
-        for(int i = 0; i < lseek_count; i++) {
+        for(int i = 0; i < func_count; i++) {
 
             long int o1 = all_offsets[i];
-            long int o2 = all_offsets[i+lseek_count];
+            long int o2 = all_offsets[i+func_count];
             long int a = o2 - o1;
             long int b = o1;
             int same_pattern = 1;
             for(int r = 0; r < comm_size; r++) {
-                long int o = all_offsets[i+lseek_count*r];
+                long int o = all_offsets[i+func_count*r];
                 if(o != a*r+b) {
                     same_pattern = 0;
                     break;
@@ -467,8 +476,8 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
-    offset_pattern_check("lseek");
-    offset_pattern_check("PMPI_File_write_at");
+    //offset_pattern_check("lseek64");
+    //offset_pattern_check("PMPI_File_write_at");
 
     cleanup_record_stack();
     //save_cst_local(&logger);
