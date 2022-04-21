@@ -485,16 +485,11 @@ off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
 
     // CHEN here
     off64_t stored_offset = offset;
-    /*
-    if(g_first_seek) {
-        g_first_offset = offset;
-        stored_offset  = 0;
-        g_first_seek   = 0;
-    } else {
-        stored_offset  = (offset - g_first_offset) - g_prev_offset;
-        g_prev_offset  = stored_offset;
-    }
-    */
+    if(offset > g_prev_offset)
+        stored_offset = -(offset-g_prev_offset);
+    else
+        stored_offset = offset;
+    g_prev_offset = offset;
 
     char** args = assemble_args_list(3, _fname, itoa(stored_offset), itoa(whence));
 
