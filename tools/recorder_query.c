@@ -7,6 +7,7 @@
 #include "reader.h"
 
 
+
 void print_cst(RecorderReader* reader, CST* cst) {
 
     for(int i = 0; i < cst->entries; i++) {
@@ -27,7 +28,11 @@ void print_cst(RecorderReader* reader, CST* cst) {
 }
 
 void show_statistics(RecorderReader* reader, CST* cst) {
+
+    int unique_signature[256] = {0};
+    int call_count[256] = {0};
     int mpiio_count = 0, hdf5_count = 0, posix_count = 0;
+
     for(int i = 0; i < cst->entries; i++) {
         Record* record = recorder_cs_to_record(&cst->cs_list[i]);
         const char* func_name = recorder_get_func_name(reader, record);
@@ -40,9 +45,21 @@ void show_statistics(RecorderReader* reader, CST* cst) {
         if(type == RECORDER_POSIX)
             posix_count += cst->cs_list[i].count;
 
+        unique_signature[record->func_id]++;
+        call_count[record->func_id] += cst->cs_list[i].count;
+
         recorder_free_record(record);
     }
-    printf("HDF5: %d, MPI-IO Count: %d, POSIX: %d\n", hdf5_count, mpiio_count, posix_count);
+    long int total = hdf5_count + mpiio_count + posix_count;
+    printf("Total: %ld\nHDF5: %d\nMPI-IO Count: %d\nPOSIX: %d\n", total, hdf5_count, mpiio_count, posix_count);
+
+    printf("%-25s %18s %18s\n", "Func", "Unique Signature", "Total Call Count");
+    for(int i = 0; i < 256; i++) {
+        if(unique_signature[i] > 0) {
+            printf("%-25s %18d %18d\n", func_list[i], unique_signature[i], call_count[i]);
+        }
+    }
+
 }
 
 
