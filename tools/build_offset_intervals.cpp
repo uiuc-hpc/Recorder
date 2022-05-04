@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <vector>
-#include <string.h>
+#include <string>
 #include <unordered_map>
 #include <algorithm>
 extern "C" {                            // Needed to mix linking C and C++ sources
