@@ -10,7 +10,7 @@ void recorder_free(void* ptr, size_t size);
 long get_file_size(const char *filename);       // return the size of a file
 int accept_filename(const char *filename);      // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
-char* itoa(size_t val);                         // convert an integer to string
+char* itoa(off64_t val);                        // convert an integer to string
 char* ftoa(double val);                         // convert a float to string
 char* ptoa(const void* ptr);                    // convert a pointer to string
 char* arrtoa(size_t arr[], int count);          // convert an array of size_t to a string
