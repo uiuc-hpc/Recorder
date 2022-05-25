@@ -127,25 +127,25 @@ void handle_data_operation(RRecord &rr,
     if(strstr(func, "writev") || strstr(func, "readv")) {
         filename = R->args[0];
         I.offset = offset_book[filename];
-        I.count = atoi(R->args[1]);
+        I.count = atol(R->args[1]);
         offset_book[filename] += I.count;
     } else if(strstr(func, "fwrite") || strstr(func, "fread")) {
         filename = R->args[3];
         I.offset = offset_book[filename];
-        I.count = atoi(R->args[1]) * atoi(R->args[2]);
+        I.count = atol(R->args[1]) * atol(R->args[2]);
         offset_book[filename] += I.count;
     } else if(strstr(func, "pwrite") || strstr(func, "pread")) {
         filename = R->args[0];
-        I.count = atoi(R->args[2]);
-        I.offset = atoi(R->args[3]);
+        I.count = atol(R->args[2]);
+        I.offset = atol(R->args[3]);
     } else if(strstr(func, "write") || strstr(func, "read")) {
         filename = R->args[0];
-        I.count = atoi(R->args[2]);
+        I.count = atol(R->args[2]);
         I.offset = offset_book[filename];
         offset_book[filename] += I.count;
     } else if(strstr(func, "fprintf")) {
         filename = R->args[0];
-        I.count = atoi(R->args[1]);
+        I.count = atol(R->args[1]);
         offset_book[filename] += I.count;
     }
 
@@ -195,7 +195,7 @@ void handle_metadata_operation(RRecord &rr,
 
     } else if(strstr(func, "seek") || strstr(func, "seeko")) {
         filename = R->args[0];
-        int offset = atoi(R->args[1]);
+        int offset = atol(R->args[1]);
         int whence = atoi(R->args[2]);
 
         if(whence == SEEK_SET)
