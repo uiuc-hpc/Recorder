@@ -9,6 +9,7 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 RecorderReader reader;
 
@@ -54,6 +55,11 @@ int min(int a, int b) { return a < b ? a : b; }
 int max(int a, int b) { return a > b ? a : b; }
 
 int main(int argc, char **argv) {
+
+    if(argc!=2) {
+        std::cerr << "Usage: " << argv[0] << " <directory-of-recorder.mt>\n";
+        std::exit(1);
+    }
 
     int mpi_size, mpi_rank;
     MPI_Init(&argc, &argv);
