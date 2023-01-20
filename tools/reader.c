@@ -52,15 +52,21 @@ void read_func_list(char* path, RecorderReader *reader) {
 }
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
-    char metadata_file[1024];
+    assert(logs_dir);
+    assert(reader);
+
+    memset(reader, 0, sizeof(*reader));
     strcpy(reader->logs_dir, logs_dir);
 
+    char metadata_file[1024];
     sprintf(metadata_file, "%s/recorder.mt", logs_dir);
     read_metadata(metadata_file, &reader->metadata);
     read_func_list(metadata_file, reader);
 }
 
 void recorder_free_reader(RecorderReader *reader) {
+    assert(reader);
+    memset(reader, 0, sizeof(*reader));
 }
 
 const char* recorder_get_func_name(RecorderReader* reader, Record* record) {
