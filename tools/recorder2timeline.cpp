@@ -9,8 +9,7 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
-static int do_mutex;
-static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+
 RecorderReader reader;
 
 struct Writer{
@@ -53,28 +52,6 @@ void write_to_json(Record *record, void* arg) {
 
 int min(int a, int b) { return a < b ? a : b; }
 int max(int a, int b) { return a > b ? a : b; }
-
-static void * execute(void * global_writer) {
-    Writer* writer = (Writer*)global_writer;
-    int n = max(reader.metadata.total_ranks/writer->total_ranks, 1);
-    int start_rank = n * writer->my_rank;
-    int end_rank   = min(reader.metadata.total_ranks, n*(writer->my_rank+1));
-    Writer local;
-    local.outFile.open(writer->filename,std::ofstream::out| std::ofstream::app);
-    for(int rank = start_rank; rank < end_rank; rank++) {
-        CST cst;
-        CFG cfg;
-        local.rank = rank;
-        recorder_read_cst(&reader, rank, &cst);
-        recorder_read_cfg(&reader, rank, &cfg);
-        recorder_decode_records(&reader, &cst, &cfg, write_to_json, &local);
-        printf("\r[Recorder] rank %d finished, unique call signatures: %d\n", rank, cst.entries);
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
-    }
-    local.outFile.close();
-    return NULL;
-}
 
 int main(int argc, char **argv) {
 
