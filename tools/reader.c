@@ -5,6 +5,22 @@
 #include <assert.h>
 #include "./reader.h"
 
+void check_version(RecorderReader* reader) {
+    char version_file[1024];
+    snprintf(version_file, sizeof(version_file), "%s/VERSION", reader->logs_dir);
+
+    FILE* fp = fopen(version_file, "r");
+    assert(fp != NULL);
+    int major, minor, patch;
+    fscanf(fp, "%d.%d.%d", &major, &minor, &patch);
+    if(major != VERSION_MAJOR || minor != VERSION_MINOR) {
+        fprintf(stderr, "incompatible version: file=%d.%d.%d != reader=%d.%d.%d\n",
+                major, minor, patch, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+        exit(1);
+    }
+    fclose(fp);
+}
+
 void read_metadata(RecorderReader* reader) {
     char metadata_file[1024];
     snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
@@ -54,6 +70,8 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     reader->mpi_start_idx = -1;
     reader->hdf5_start_idx = -1;
     reader->prev_tstart = 0.0;
+
+    check_version(reader);
 
     read_metadata(reader);
 }

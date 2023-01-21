@@ -3,6 +3,11 @@
 #include <stdbool.h>
 #include "recorder-logger.h"
 
+// keep in sync with VERSION_STR in lib/recorder-logger.c
+// equal (major, minor) is needed for compatibility
+#define VERSION_MAJOR 2
+#define VERSION_MINOR 3
+#define VERSION_PATCH 3
 
 #define POSIX_SEMANTICS 0
 #define COMMIT_SEMANTICS 1
