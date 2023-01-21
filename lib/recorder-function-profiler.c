@@ -25,7 +25,7 @@ func_hash_t* func_table;
 
 
 void* compose_func_hash_key(void* func, int *key_len) {
-    pthread_t tid = pthread_self();
+    pthread_t tid = recorder_gettid();
     *key_len = sizeof(pthread_t) + sizeof(void*);
     void* key = recorder_malloc(*key_len);
     memcpy(key, &tid, sizeof(pthread_t));
@@ -89,7 +89,7 @@ void __cyg_profile_func_exit (void *func,  void *caller)
         Record *record = recorder_malloc(sizeof(Record));
         record->func_id = RECORDER_USER_FUNCTION;
         record->level = 0;
-        record->tid = pthread_self();
+        record->tid = recorder_gettid();
         record->tstart = entry->tstart_head->tstart;
         record->tend = recorder_wtime();
         record->arg_count = 2;

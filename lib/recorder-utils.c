@@ -1,12 +1,13 @@
 #define _GNU_SOURCE
+#include <unistd.h>
 #include <sys/time.h>   // for gettimeofday()
 #include <stdarg.h>     // for va_list, va_start and va_end
+#include <sys/syscall.h> // for SYS_gettid
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
 #include "recorder.h"
 #include "recorder-utils.h"
-
 
 // Log pointer addresses in the trace file?
 static bool   log_pointer = false;
@@ -167,6 +168,15 @@ inline int accept_filename(const char *filename) {
     }
 
     return 1;
+}
+
+inline pthread_t recorder_gettid(void)
+{
+#ifdef SYS_gettid
+    return syscall(SYS_gettid);
+#else
+    return pthread_self();
+#endif
 }
 
 inline long get_file_size(const char *filename) {

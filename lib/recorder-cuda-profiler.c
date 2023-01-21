@@ -134,7 +134,7 @@ Record* create_recorder_record(CUpti_ActivityKernel5 *kernel) {
     Record *record = recorder_malloc(sizeof(Record));
     record->func_id = RECORDER_USER_FUNCTION;
     record->level = 0;
-    record->tid = pthread_self();
+    record->tid = recorder_gettid();
     record->tstart = (kernel->start - startTimestamp)/10e9;
     record->tstart = (kernel->end - startTimestamp)/10e9;
     record->arg_count = 2;
