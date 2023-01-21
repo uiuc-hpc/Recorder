@@ -10,21 +10,28 @@ static int hdf5_start_idx = -1;
 
 static double prev_tstart = 0;
 
-void read_metadata(char* path, RecorderMetadata *metadata) {
-    FILE* fp = fopen(path, "rb");
+void read_metadata(RecorderReader* reader) {
+    char metadata_file[1024];
+    snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
+
+    FILE* fp = fopen(metadata_file, "rb");
     assert(fp != NULL);
-    fread(metadata, sizeof(RecorderMetadata), 1, fp);
+    fread(&reader->metadata, sizeof(reader->metadata), 1, fp);
     fclose(fp);
 }
 
-void read_func_list(char* path, RecorderReader *reader) {
-    FILE* fp = fopen(path, "rb");
+void read_func_list(RecorderReader *reader) {
+    char metadata_file[1024];
+    snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
+
+    FILE* fp = fopen(metadata_file, "rb");
+    assert(fp != NULL);
 
     fseek(fp, 0, SEEK_END);
-    long fsize = ftell(fp) - sizeof(RecorderMetadata);
+    long fsize = ftell(fp) - sizeof(reader->metadata);
     char buf[fsize];
 
-    fseek(fp, sizeof(RecorderMetadata), SEEK_SET); // skip RecorderMetadata object
+    fseek(fp, sizeof(reader->metadata), SEEK_SET); // skip RecorderMetadata object
     fread(buf, 1, fsize, fp);
 
     int start_pos = 0, end_pos = 0;
@@ -58,10 +65,8 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     memset(reader, 0, sizeof(*reader));
     strcpy(reader->logs_dir, logs_dir);
 
-    char metadata_file[1024];
-    sprintf(metadata_file, "%s/recorder.mt", logs_dir);
-    read_metadata(metadata_file, &reader->metadata);
-    read_func_list(metadata_file, reader);
+    read_metadata(reader);
+    read_func_list(reader);
 }
 
 void recorder_free_reader(RecorderReader *reader) {
