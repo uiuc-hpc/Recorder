@@ -57,12 +57,18 @@ void write_to_json(Record *record, void* arg) {
             << "\",\"cat\":\""  << type_name(cat)
             << "\",\"ph\":\"X\""
             << ",\"dur\":"      << dur
-            << ",\"args\":\"";
-        for (int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
-            char *arg = record->args[arg_id];
-            ss  << " " << arg;
+            << ",\"args\":{";
+        if (!user_func) {
+            ss  << "\"args\":[";
+            const char* sep = "";
+            for (int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+                char *arg = record->args[arg_id];
+                ss << sep << "\"" << arg << "\"";
+                sep = ",";
+            }
+            ss  << "],";
         }
-        ss << " tend: " << record->tend << "\"}";
+        ss << "\"tend\": \"" << record->tend << "\"}}";
         writer->outFile << ss.rdbuf();
         writer->sep = ",\n";
     }
