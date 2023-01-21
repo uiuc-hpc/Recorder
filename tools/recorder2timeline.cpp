@@ -15,7 +15,7 @@ RecorderReader reader;
 
 struct Writer{
     std::ofstream outFile;
-    char* filename;
+    const char* sep;
     int rank, my_rank, total_ranks;
 };
 
@@ -49,7 +49,8 @@ void write_to_json(Record *record, void* arg) {
         uint64_t dur = uint64_t((record->tend - record->tstart) / reader.metadata.time_resolution);
         if (dur <= 0) dur = 0;
         std::stringstream ss;
-        ss  << "{\"pid\":"      << writer->rank
+        ss  << writer->sep
+            << "{\"pid\":"      << writer->rank
             << ",\"tid\":"      << tid
             << ",\"ts\":"       << ts
             << ",\"name\":\""   << func_name
@@ -61,8 +62,9 @@ void write_to_json(Record *record, void* arg) {
             char *arg = record->args[arg_id];
             ss  << " " << arg;
         }
-        ss << " tend: " << record->tend << "\"},\n";
+        ss << " tend: " << record->tend << "\"}";
         writer->outFile << ss.rdbuf();
+        writer->sep = ",\n";
     }
 }
 
@@ -98,7 +100,8 @@ int main(int argc, char **argv) {
     sprintf(textfile_path, "%s/timeline_%d.json", textfile_dir, mpi_rank);
     Writer local;
     local.outFile.open(textfile_path, std::ofstream::trunc|std::ofstream::out);
-    local.outFile << "{\"traceEvents\": [";
+    local.outFile << "{\"traceEvents\": [\n";
+    local.sep = "";
     for(int rank = start_rank; rank < end_rank; rank++) {
         CST cst;
         CFG cfg;
@@ -110,7 +113,7 @@ int main(int argc, char **argv) {
         recorder_free_cst(&cst);
         recorder_free_cfg(&cfg);
     }
-    local.outFile << "],\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}";
+    local.outFile << "],\n\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}\n";
     local.outFile.close();
     recorder_free_reader(&reader);
 
