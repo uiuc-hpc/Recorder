@@ -19,6 +19,21 @@ struct Writer{
     int rank, my_rank, total_ranks;
 };
 
+static const char* type_name(int type) {
+    switch (type) {
+        case RECORDER_POSIX:
+            return "POSIX";
+        case RECORDER_MPIIO:
+            return "MPI I/O";
+        case RECORDER_MPI:
+            return "MPI";
+        case RECORDER_HDF5:
+            return "HDF5";
+        case RECORDER_FTRACE:
+            return "USER";
+    }
+}
+
 void write_to_json(Record *record, void* arg) {
 
    int cat = recorder_get_func_type(&reader, record);
@@ -38,7 +53,7 @@ void write_to_json(Record *record, void* arg) {
             << ",\"tid\":"      << tid
             << ",\"ts\":"       << ts
             << ",\"name\":\""   << func_name
-            << "\",\"cat\":\""  << cat
+            << "\",\"cat\":\""  << type_name(cat)
             << "\",\"ph\":\"X\""
             << ",\"dur\":"      << dur
             << ",\"args\":\"";
