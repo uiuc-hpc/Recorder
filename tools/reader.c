@@ -17,21 +17,13 @@ void read_metadata(RecorderReader* reader) {
     FILE* fp = fopen(metadata_file, "rb");
     assert(fp != NULL);
     fread(&reader->metadata, sizeof(reader->metadata), 1, fp);
-    fclose(fp);
-}
 
-void read_func_list(RecorderReader *reader) {
-    char metadata_file[1024];
-    snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
-
-    FILE* fp = fopen(metadata_file, "rb");
-    assert(fp != NULL);
-
+    long pos = ftell(fp);
     fseek(fp, 0, SEEK_END);
-    long fsize = ftell(fp) - sizeof(reader->metadata);
+    long fsize = ftell(fp) - pos;
     char buf[fsize];
 
-    fseek(fp, sizeof(reader->metadata), SEEK_SET); // skip RecorderMetadata object
+    fseek(fp, pos, SEEK_SET);
     fread(buf, 1, fsize, fp);
 
     int start_pos = 0, end_pos = 0;
@@ -66,7 +58,6 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     strcpy(reader->logs_dir, logs_dir);
 
     read_metadata(reader);
-    read_func_list(reader);
 }
 
 void recorder_free_reader(RecorderReader *reader) {
