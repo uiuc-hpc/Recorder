@@ -19,6 +19,11 @@ typedef struct RecorderReader_t {
 
     char func_list[256][64];
     char logs_dir[1024];
+
+    int mpi_start_idx;
+    int hdf5_start_idx;
+
+    double prev_tstart;
 } RecorderReader;
 
 typedef struct Interval_t {

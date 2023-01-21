@@ -5,11 +5,6 @@
 #include <assert.h>
 #include "./reader.h"
 
-static int mpi_start_idx = -1;
-static int hdf5_start_idx = -1;
-
-static double prev_tstart = 0;
-
 void read_metadata(RecorderReader* reader) {
     char metadata_file[1024];
     snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
@@ -34,14 +29,14 @@ void read_metadata(RecorderReader* reader) {
             memset(reader->func_list[func_id], 0, sizeof(reader->func_list[func_id]));
             memcpy(reader->func_list[func_id], buf+start_pos, end_pos-start_pos);
             start_pos = end_pos+1;
-            if((mpi_start_idx==-1) &&
+            if((reader->mpi_start_idx==-1) &&
                 (NULL!=strstr(reader->func_list[func_id], "MPI")))
-                mpi_start_idx = func_id;
+                reader->mpi_start_idx = func_id;
 
-            if((hdf5_start_idx==-1) &&
+            if((reader->hdf5_start_idx==-1) &&
                 (NULL!=strstr(reader->func_list[func_id], "H5")))
 
-                hdf5_start_idx = func_id;
+                reader->hdf5_start_idx = func_id;
 
             func_id++;
         }
@@ -56,6 +51,9 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 
     memset(reader, 0, sizeof(*reader));
     strcpy(reader->logs_dir, logs_dir);
+    reader->mpi_start_idx = -1;
+    reader->hdf5_start_idx = -1;
+    reader->prev_tstart = 0.0;
 
     read_metadata(reader);
 }
@@ -72,9 +70,9 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record) {
 }
 
 int recorder_get_func_type(RecorderReader* reader, Record* record) {
-    if(record->func_id < mpi_start_idx)
+    if(record->func_id < reader->mpi_start_idx)
         return RECORDER_POSIX;
-    if(record->func_id < hdf5_start_idx) {
+    if(record->func_id < reader->hdf5_start_idx) {
         const char* func_name = recorder_get_func_name(reader, record);
         if(strncmp(func_name, "MPI_File", 8) == 0)
             return RECORDER_MPIIO;
@@ -241,9 +239,9 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
                 // Fill in timestamps
                 uint32_t ts[2];
                 fread(ts, sizeof(uint32_t), 2, ts_file);
-                record->tstart = ts[0] * reader->metadata.time_resolution + prev_tstart;
-                record->tend   = ts[1] * reader->metadata.time_resolution + prev_tstart;
-                prev_tstart = record->tstart;
+                record->tstart = ts[0] * reader->metadata.time_resolution + reader->prev_tstart;
+                record->tend   = ts[1] * reader->metadata.time_resolution + reader->prev_tstart;
+                reader->prev_tstart = record->tstart;
 
                 user_op(record, user_arg);
 
@@ -265,7 +263,7 @@ void recorder_decode_records_core(RecorderReader *reader, CST *cst, CFG *cfg,
 
     assert(cst->rank == cfg->rank);
 
-    prev_tstart = 0;
+    reader->prev_tstart = 0.0;
 
     char ts_filename[1096] = {0};
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
