@@ -35,7 +35,7 @@ void write_to_json(Record *record, void* arg) {
         if (dur <= 0) dur = 0;
         std::stringstream ss;
         ss  << "{\"pid\":"      << writer->rank
-            << ",\"tid\":"      << cat
+            << ",\"tid\":"      << tid
             << ",\"ts\":"       << ts
             << ",\"name\":\""   << func_name
             << "\",\"cat\":\""  << cat
