@@ -55,24 +55,25 @@ int max(int a, int b) { return a > b ? a : b; }
 
 int main(int argc, char **argv) {
 
-    char textfile_dir[256];
-    char textfile_path[256];
-    sprintf(textfile_dir, "%s/_chrome", argv[1]);
-    recorder_init_reader(argv[1], &reader);
     int mpi_size, mpi_rank;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+    char textfile_dir[256];
+    sprintf(textfile_dir, "%s/_chrome", argv[1]);
+
     if(mpi_rank == 0)
         mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     MPI_Barrier(MPI_COMM_WORLD);
+
     recorder_init_reader(argv[1], &reader);
 
     // Each rank will process n files (n ranks traces)
     int n = max(reader.metadata.total_ranks/mpi_size, 1);
     int start_rank = n * mpi_rank;
     int end_rank   = min(reader.metadata.total_ranks, n*(mpi_rank+1));
+    char textfile_path[256];
     sprintf(textfile_path, "%s/timeline_%d.json", textfile_dir, mpi_rank);
     Writer local;
     local.outFile.open(textfile_path, std::ofstream::trunc|std::ofstream::out);
