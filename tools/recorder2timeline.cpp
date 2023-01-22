@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 
 RecorderReader reader;
 
@@ -34,6 +35,25 @@ static const char* type_name(int type) {
     }
 }
 
+struct timeline_ts{
+    double value;
+};
+std::ostream&
+operator<<( std::ostream&      out,
+            const timeline_ts& ts )
+{
+    std::ios oldState(nullptr);
+    oldState.copyfmt(out);
+
+    // Chrome traces are always in micro seconds and Recorder timestamps in
+    // seconds. No need to use the timer resolution from the trace to convert
+    // to microseconds.
+    out << std::fixed << std::setw(5) << std::setprecision(3) << (ts.value * 1e6);
+    out.copyfmt(oldState);
+
+    return out;
+}
+
 void write_to_json(Record *record, void* arg) {
 
    int cat = recorder_get_func_type(&reader, record);
@@ -44,19 +64,15 @@ void write_to_json(Record *record, void* arg) {
 
         if (user_func)
             func_name = record->args[0];
-        uint64_t ts = uint64_t(record->tstart / reader.metadata.time_resolution);
-        int tid = record->tid;
-        uint64_t dur = uint64_t((record->tend - record->tstart) / reader.metadata.time_resolution);
-        if (dur <= 0) dur = 0;
         std::stringstream ss;
         ss  << writer->sep
             << "{\"pid\":"      << writer->rank
-            << ",\"tid\":"      << tid
-            << ",\"ts\":"       << ts
+            << ",\"tid\":"      << record->tid
+            << ",\"ts\":"       << timeline_ts{record->tstart}
             << ",\"name\":\""   << func_name
             << "\",\"cat\":\""  << type_name(cat)
             << "\",\"ph\":\"X\""
-            << ",\"dur\":"      << dur
+            << ",\"dur\":"      << timeline_ts{record->tend - record->tstart}
             << ",\"args\":{";
         if (!user_func) {
             ss  << "\"args\":[";
