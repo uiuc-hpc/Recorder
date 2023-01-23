@@ -2,11 +2,13 @@
 #define _RECORDER_UTILS_H_
 
 #include <fcntl.h>
+#include <pthread.h>
 
 void utils_init();
 void utils_finalize();
 void* recorder_malloc(size_t size);
 void recorder_free(void* ptr, size_t size);
+pthread_t recorder_gettid(void);
 long get_file_size(const char *filename);       // return the size of a file
 int accept_filename(const char *filename);      // if include the file in trace
 double recorder_wtime(void);                    // return the timestamp
