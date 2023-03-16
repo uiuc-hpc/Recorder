@@ -73,7 +73,7 @@ void detect_overlaps(IntervalsMap *IM, int num_files) {
             if(i1->offset+i1->count <= i2->offset)
                 continue;
 
-            printf("%s, i1(%d, %ld, %ld, %d), i2(%d, %ld, %ld, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
+            printf("%s, i1(%d, %lu, %lu, %d), i2(%d, %lu, %lu, %d) \n", filename, i1->rank, i1->offset, i1->count, i1->isRead, i2->rank, i2->offset, i2->count, i2->isRead);
             int same_rank = (i1->rank == i2->rank)? 1 : 0;
             if(i1->isRead && i2->isRead)                // RAR
                 overlaps[same_rank][0] += 1;
@@ -150,7 +150,7 @@ int check_potential_conflict(Interval* i1, Interval* i2, IntervalsMap *IM, int i
             conflict = false;
     }
 
-    //printf("potential: %s, op1(%d-%d, %ld, %ld, %s), op2(%d-%d, %ld, %ld, %s) \n", IM[idx].filename,
+    //printf("potential: %s, op1(%d-%d, %lu, %lu, %s), op2(%d-%d, %lu, %lu, %s) \n", IM[idx].filename,
     //        i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead?"read":"write",
     //        i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead?"read":"write");
 
@@ -194,7 +194,7 @@ void detect_potential_conflicts(IntervalsMap *IM, int num_files, const char* bas
                 if(conflict == CONFLICT_TYPE_NONE) {
 
                 } else {
-                    printf("%s, op1(%d-%d, %ld, %ld, %s), op2(%d-%d, %ld, %ld, %s) \n", filename,
+                    printf("%s, op1(%d-%d, %lu, %lu, %s), op2(%d-%d, %lu, %lu, %s) \n", filename,
                             i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead?"read":"write",
                             i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead?"read":"write");
                     fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n",

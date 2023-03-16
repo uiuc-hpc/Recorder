@@ -232,6 +232,7 @@ Change Log
 1. Still require a RECORDER\_WITH\_NON\_MPI hint for non-mpi programs.
 2. Add a singal handler to intercept SIGTERM and SIGINT.
 3. Allow setting buffer size
+4. Fix timestamps in Chrome trace conversion
 
 **Recorder 2.3.2** Jan 18, 2022
 1. Can handle both MPI and non-MPI programs without user hint.

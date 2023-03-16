@@ -3,6 +3,11 @@
 #include <stdbool.h>
 #include "recorder-logger.h"
 
+// keep in sync with VERSION_STR in lib/recorder-logger.c
+// equal (major, minor) is needed for compatibility
+#define VERSION_MAJOR 2
+#define VERSION_MINOR 3
+#define VERSION_PATCH 3
 
 #define POSIX_SEMANTICS 0
 #define COMMIT_SEMANTICS 1
@@ -19,6 +24,11 @@ typedef struct RecorderReader_t {
 
     char func_list[256][64];
     char logs_dir[1024];
+
+    int mpi_start_idx;
+    int hdf5_start_idx;
+
+    double prev_tstart;
 } RecorderReader;
 
 typedef struct Interval_t {

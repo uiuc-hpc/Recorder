@@ -163,7 +163,7 @@
                                                                                     \
     Record *record = recorder_malloc(sizeof(Record));                               \
     record->func_id = get_function_id_by_name(#func);                               \
-    record->tid = pthread_self();                                                   \
+    record->tid = recorder_gettid();                                                \
     logger_record_enter(record);                                                    \
     record->tstart = recorder_wtime();                                              \
     ret res = RECORDER_REAL_CALL(func) real_args ;                                  \

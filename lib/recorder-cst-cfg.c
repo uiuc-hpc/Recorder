@@ -335,7 +335,7 @@ void save_cst_merged(RecorderLogger* logger) {
         if(res)
             update_terminal_id[entry->terminal_id] = res->terminal_id;
         else
-            printf("[pilgrim] %d Not possible! Not exist in merged table?\n", logger->rank);
+            printf("[Recorder] %d Not possible! Not exist in merged table?\n", logger->rank);
     }
 
 

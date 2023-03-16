@@ -9,15 +9,50 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
-static int do_mutex;
-static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+#include <iostream>
+#include <iomanip>
+
 RecorderReader reader;
 
 struct Writer{
     std::ofstream outFile;
-    char* filename;
+    const char* sep;
     int rank, my_rank, total_ranks;
 };
+
+static const char* type_name(int type) {
+    switch (type) {
+        case RECORDER_POSIX:
+            return "POSIX";
+        case RECORDER_MPIIO:
+            return "MPI I/O";
+        case RECORDER_MPI:
+            return "MPI";
+        case RECORDER_HDF5:
+            return "HDF5";
+        case RECORDER_FTRACE:
+            return "USER";
+    }
+}
+
+struct timeline_ts{
+    double value;
+};
+std::ostream&
+operator<<( std::ostream&      out,
+            const timeline_ts& ts )
+{
+    std::ios oldState(nullptr);
+    oldState.copyfmt(out);
+
+    // Chrome traces are always in micro seconds and Recorder timestamps in
+    // seconds. No need to use the timer resolution from the trace to convert
+    // to microseconds.
+    out << std::fixed << std::setw(5) << std::setprecision(3) << (ts.value * 1e6);
+    out.copyfmt(oldState);
+
+    return out;
+}
 
 void write_to_json(Record *record, void* arg) {
 
@@ -29,77 +64,66 @@ void write_to_json(Record *record, void* arg) {
 
         if (user_func)
             func_name = record->args[0];
-        uint64_t ts = uint64_t(record->tstart / reader.metadata.time_resolution);
-        int tid = record->tid;
-        uint64_t dur = uint64_t((record->tend - record->tstart) / reader.metadata.time_resolution);
-        if (dur <= 0) dur = 0;
         std::stringstream ss;
-        ss  << "{\"pid\":"      << writer->rank
-            << ",\"tid\":"      << cat
-            << ",\"ts\":"       << ts
+        ss  << writer->sep
+            << "{\"pid\":"      << writer->rank
+            << ",\"tid\":"      << record->tid
+            << ",\"ts\":"       << timeline_ts{record->tstart}
             << ",\"name\":\""   << func_name
-            << "\",\"cat\":\""  << cat;
-            ss  << "\",\"ph\":\"X\""<< ""
-                << ",\"dur\":"      << dur;
-        ss  <<",\"args\":\"";
-        for (int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
-            char *arg = record->args[arg_id];
-            ss  << " " << arg;
+            << "\",\"cat\":\""  << type_name(cat)
+            << "\",\"ph\":\"X\""
+            << ",\"dur\":"      << timeline_ts{record->tend - record->tstart}
+            << ",\"args\":{";
+        if (!user_func) {
+            ss  << "\"args\":[";
+            const char* sep = "";
+            for (int arg_id = 0; arg_id < record->arg_count; arg_id++) {
+                char *arg = record->args[arg_id];
+                ss << sep << "\"" << arg << "\"";
+                sep = ",";
+            }
+            ss  << "],";
         }
-        ss  << " tend: "<< record->tend  <<"\"},\n";
+        ss << "\"tend\": \"" << record->tend << "\"}}";
         writer->outFile << ss.rdbuf();
+        writer->sep = ",\n";
     }
 }
 
 int min(int a, int b) { return a < b ? a : b; }
 int max(int a, int b) { return a > b ? a : b; }
 
-static void * execute(void * global_writer) {
-    Writer* writer = (Writer*)global_writer;
-    int n = max(reader.metadata.total_ranks/writer->total_ranks, 1);
-    int start_rank = n * writer->my_rank;
-    int end_rank   = min(reader.metadata.total_ranks, n*(writer->my_rank+1));
-    Writer local;
-    local.outFile.open(writer->filename,std::ofstream::out| std::ofstream::app);
-    for(int rank = start_rank; rank < end_rank; rank++) {
-        CST cst;
-        CFG cfg;
-        local.rank = rank;
-        recorder_read_cst(&reader, rank, &cst);
-        recorder_read_cfg(&reader, rank, &cfg);
-        recorder_decode_records(&reader, &cst, &cfg, write_to_json, &local);
-        printf("\r[Recorder] rank %d finished, unique call signatures: %d\n", rank, cst.entries);
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
-    }
-    local.outFile.close();
-    return NULL;
-}
-
 int main(int argc, char **argv) {
 
-    char textfile_dir[256];
-    char textfile_path[256];
-    sprintf(textfile_dir, "%s/_chrome", argv[1]);
-    recorder_init_reader(argv[1], &reader);
+    if(argc!=2) {
+        std::cerr << "Usage: " << argv[0] << " <directory-of-recorder.mt>\n";
+        std::exit(1);
+    }
+
     int mpi_size, mpi_rank;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+    char textfile_dir[256];
+    sprintf(textfile_dir, "%s/_chrome", argv[1]);
+
     if(mpi_rank == 0)
         mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     MPI_Barrier(MPI_COMM_WORLD);
+
     recorder_init_reader(argv[1], &reader);
 
     // Each rank will process n files (n ranks traces)
     int n = max(reader.metadata.total_ranks/mpi_size, 1);
     int start_rank = n * mpi_rank;
     int end_rank   = min(reader.metadata.total_ranks, n*(mpi_rank+1));
+    char textfile_path[256];
     sprintf(textfile_path, "%s/timeline_%d.json", textfile_dir, mpi_rank);
     Writer local;
     local.outFile.open(textfile_path, std::ofstream::trunc|std::ofstream::out);
-    local.outFile << "{\"traceEvents\": [";
+    local.outFile << "{\"traceEvents\": [\n";
+    local.sep = "";
     for(int rank = start_rank; rank < end_rank; rank++) {
         CST cst;
         CFG cfg;
@@ -111,7 +135,7 @@ int main(int argc, char **argv) {
         recorder_free_cst(&cst);
         recorder_free_cfg(&cfg);
     }
-    local.outFile << "],\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}";
+    local.outFile << "],\n\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}\n";
     local.outFile.close();
     recorder_free_reader(&reader);
 
