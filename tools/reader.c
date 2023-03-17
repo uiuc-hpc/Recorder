@@ -171,16 +171,19 @@ void recorder_read_cst(RecorderReader *reader, int rank, CST *cst) {
     int key_len;
     fread(&cst->entries, sizeof(int), 1, f);
 
+	// cst->cs_list will be stored in the terminal_id order.
     cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
-        fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
-        fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
+		int terminal_id;
+        fread(&terminal_id, sizeof(int), 1, f);
+		cst->cs_list[terminal_id].terminal_id = terminal_id;
+        fread(&cst->cs_list[terminal_id].key_len, sizeof(int), 1, f);
 
-        cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
-        fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
+        cst->cs_list[terminal_id].key = malloc(cst->cs_list[terminal_id].key_len);
+        fread(cst->cs_list[terminal_id].key, 1, cst->cs_list[terminal_id].key_len, f);
 
-        assert(cst->cs_list[i].terminal_id < cst->entries);
+        assert(cst->cs_list[terminal_id].terminal_id < cst->entries);
     }
     fclose(f);
 
