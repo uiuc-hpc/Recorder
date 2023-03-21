@@ -193,10 +193,15 @@ static inline char *type2name(MPI_Datatype type) {
 
 static inline char* status2str(MPI_Status *status) {
     char *tmp = calloc(128, sizeof(char));
+	/*
     if(status == MPI_STATUS_IGNORE)
         strcpy(tmp, "MPI_STATUS_IGNORE");
     else
         sprintf(tmp, "[%d %d]", status->MPI_SOURCE, status->MPI_TAG);
+	*/
+	// CHEN MPI-IO calls return status that may have wierd status->MPI_SOURCE,
+	// affecting compressing grammars across ranks
+	memset(tmp, 0, 128);
     return tmp;
 }
 

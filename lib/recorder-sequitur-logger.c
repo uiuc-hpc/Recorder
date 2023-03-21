@@ -119,6 +119,7 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
             entry->count++;
             grammar_ids[i] = entry->ugi;
         } else {
+			printf("[Recorder] uniqune grammar, rank: %d\n", i);
             // An unseen grammar, fully store it.
             entry = recorder_malloc(sizeof(UniqueGrammar));
             entry->ugi = current_ugi++;
@@ -137,12 +138,15 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
                 append_terminal(grammar, rule_val, 1);
                 append_terminal(grammar, symbols, 1);
                 *uncompressed_integers += 4;
+				printf("%d(%d)->", rule_val, symbols);
                 for(int sym_id = 0; sym_id < symbols; sym_id++) {
                     symbol_val = g[k++];
                     symbol_exp = g[k++];
                     append_terminal(grammar, symbol_val, symbol_exp);
                     *uncompressed_integers += 2;
+					printf("%d^%d ", symbol_val, symbol_exp);
                 }
+				printf("\n");
             }
         }
     } // end of for loop

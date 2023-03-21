@@ -155,6 +155,7 @@ typedef struct RecorderLogger_t {
 
     int       log_tid;          // Wether to store thread id
     int       log_level;        // Wether to store the level of the call
+	int		  interprocess_compression;	// Wether to perform interprocess compression
 } RecorderLogger;
 
 

@@ -237,6 +237,7 @@ void logger_init() {
     logger.directory_created = false;
     logger.log_tid   = 1;
     logger.log_level = 1;
+    logger.interprocess_compression = 0;
 
     // ts buffer size in MB
     const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
@@ -261,6 +262,11 @@ void logger_init() {
     const char* log_level_str = getenv(RECORDER_LOG_LEVEL);
     if(log_level_str)
         logger.log_level = atoi(log_level_str);
+
+    const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
+    if(interprocess_compression)
+        logger.interprocess_compression = atoi(interprocess_compression);
+
 
     initialized = true;
 }
@@ -369,7 +375,6 @@ void offset_pattern_check(char* func_name) {
             lseek_entries[idx].cs = entry;
             assert(end > start);
 
-            //printf("%s, %ld\n", arg_str, lseek_offset[func_count]);
             idx++;
         }
     }
@@ -417,7 +422,6 @@ void offset_pattern_check(char* func_name) {
             // TODO we should store a and b, but now we
             // store a only
             if(same_pattern) {
-
                 HASH_DEL(logger.cst, lseek_entries[i].cs);
 
                 int start = lseek_entries[i].offset_key_start;
@@ -426,8 +430,8 @@ void offset_pattern_check(char* func_name) {
                 char* tmp = calloc(64, 1);
                 sprintf(tmp, "%ld*r+%ld", a, b);
 
-                //if(comm_rank == 0)
-                //    printf("pattern recognized: offset = %ld*rank+%ld\n", a, b);
+                if(comm_rank == 0)
+                    printf("pattern recognized %d: offset = %ld*rank+%ld\n", lseek_entries[i].cs->terminal_id, a, b);
 
                 int old_keylen = lseek_entries[i].cs->key_len;
                 int new_keylen = old_keylen - (end-start-1) + strlen(tmp);
@@ -476,16 +480,22 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
-    //offset_pattern_check("lseek64");
-    //offset_pattern_check("PMPI_File_write_at");
+    offset_pattern_check("lseek64");
+    offset_pattern_check("lseek");
+    offset_pattern_check("PMPI_File_write_at");
+    offset_pattern_check("PMPI_File_read_at");
 
     cleanup_record_stack();
-    //save_cst_local(&logger);
-    save_cst_merged(&logger);
+	if(logger.interprocess_compression)
+    	save_cst_merged(&logger);
+	else
+    	save_cst_local(&logger);
     cleanup_cst(logger.cst);
 
-    //save_cfg_local(&logger);
-    save_cfg_merged(&logger);
+	if(logger.interprocess_compression)
+    	save_cfg_merged(&logger);
+	else
+    	save_cfg_local(&logger);
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
