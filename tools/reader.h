@@ -50,8 +50,8 @@ typedef struct CST_t {
 
 typedef struct RuleHash_t {
     int rule_id;
-    int *rule_body;     // 2i+0: val of symbol i,  2i+1: exp of symbol i
-    int symbols;        // There are a total of 2*symbols integers in the rule body
+    int *rule_body;         // 2i+0: val of symbol i,  2i+1: exp of symbol i
+    int symbols;            // There are a total of 2*symbols integers in the rule body
     UT_hash_handle hh;
 } RuleHash;
 

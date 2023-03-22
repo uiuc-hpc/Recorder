@@ -22,7 +22,7 @@ void check_version(RecorderReader* reader) {
 }
 
 void read_metadata(RecorderReader* reader) {
-    char metadata_file[1024];
+    char metadata_file[4096];
     snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
 
     FILE* fp = fopen(metadata_file, "rb");
@@ -397,10 +397,11 @@ void insert_one_record(Record *record, void* arg) {
     free(record);
 }
 
-PyRecord** read_all_records(char* traces_dir, size_t* counts) {
+PyRecord** read_all_records(char* traces_dir, size_t* counts, RecorderMetadata *metadata) {
 
     RecorderReader reader;
     recorder_init_reader(traces_dir, &reader);
+    memcpy(metadata, &(reader.metadata), sizeof(RecorderMetadata));
 
     PyRecord** records = malloc(sizeof(PyRecord*) * reader.metadata.total_ranks);
 
