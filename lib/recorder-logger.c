@@ -67,13 +67,13 @@ void write_record(Record *record) {
 
     pthread_mutex_lock(&g_mutex);
 
-    RecordHash *entry = NULL;
+    CallSignature *entry = NULL;
     HASH_FIND(hh, logger.cst, key, key_len, entry);
     if(entry) {                         // Found
         entry->count++;
         recorder_free(key, key_len);
     } else {                            // Not exist, add to hash table
-        entry = (RecordHash*) recorder_malloc(sizeof(RecordHash));
+        entry = (CallSignature*) recorder_malloc(sizeof(CallSignature));
         entry->key = key;
         entry->key_len = key_len;
         entry->rank = logger.rank;
@@ -318,7 +318,7 @@ void save_global_metadata() {
 struct lseek_entry {
     int offset_key_start;
     int offset_key_end;
-    RecordHash* cs;
+    CallSignature* cs;
 };
 
 void offset_pattern_check(char* func_name) {
@@ -326,7 +326,7 @@ void offset_pattern_check(char* func_name) {
     int func_count = 0;
     unsigned char filter_func_id = get_function_id_by_name(func_name);
 
-    RecordHash *entry, *tmp;
+    CallSignature *entry, *tmp;
     HASH_ITER(hh, logger.cst, entry, tmp) {
         void* ptr = entry->key+sizeof(pthread_t);
         unsigned char func_id;
