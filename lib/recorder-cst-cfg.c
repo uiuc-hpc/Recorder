@@ -75,7 +75,7 @@ void cleanup_cst(RecordHash* cst) {
     cst = NULL;
 }
 
-void* serialize_cst_merged(RecordHash *table, size_t *len) {
+void* serialize_cst(RecordHash *table, size_t *len) {
     *len = sizeof(int);
 
     RecordHash *entry, *tmp;
@@ -111,7 +111,7 @@ void* serialize_cst_merged(RecordHash *table, size_t *len) {
     return res;
 }
 
-RecordHash* deserialize_cst_merged(void *data) {
+RecordHash* deserialize_cst(void *data) {
     int num;
     memcpy(&num, data, sizeof(int));
 
@@ -147,7 +147,7 @@ RecordHash* deserialize_cst_merged(void *data) {
 void save_cst_local(RecorderLogger* logger) {
     FILE* f = RECORDER_REAL_CALL(fopen) (logger->cst_path, "wb");
     size_t len;
-    void* data = serialize_cst_merged(logger->cst, &len);
+    void* data = serialize_cst(logger->cst, &len);
     RECORDER_REAL_CALL(fwrite)(data, 1, len, f);
     RECORDER_REAL_CALL(fflush)(f);
     RECORDER_REAL_CALL(fclose)(f);
@@ -254,7 +254,7 @@ RecordHash* compress_csts(RecorderLogger* logger) {
             recorder_free(buf, size);
 
         } else {   // SENDER
-            buf = serialize_cst_merged(merged_table, &size);
+            buf = serialize_cst(merged_table, &size);
             RECORDER_REAL_CALL(PMPI_Send)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
             RECORDER_REAL_CALL(PMPI_Send)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
             recorder_free(buf, size);
@@ -288,7 +288,7 @@ void save_cst_merged(RecorderLogger* logger) {
     void *cst_stream;
 
     if(logger->rank == 0) {
-        cst_stream = serialize_cst_merged(compressed_cst, &cst_stream_size);
+        cst_stream = serialize_cst(compressed_cst, &cst_stream_size);
 
         RECORDER_REAL_CALL(PMPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
         RECORDER_REAL_CALL(PMPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -309,7 +309,7 @@ void save_cst_merged(RecorderLogger* logger) {
 
         // 3. Other rank get the compressed cst stream from rank 0
         // then convert it to the CST
-        compressed_cst = deserialize_cst_merged(cst_stream);
+        compressed_cst = deserialize_cst(cst_stream);
     }
 
     // 4. Update function entry's terminal id
