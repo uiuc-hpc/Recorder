@@ -75,36 +75,6 @@ void cleanup_cst(RecordHash* cst) {
     cst = NULL;
 }
 
-void* serialize_cst_local(RecordHash *table, size_t *len) {
-    *len = sizeof(int);
-
-    RecordHash *entry, *tmp;
-    HASH_ITER(hh, table, entry, tmp) {
-        *len = *len + entry->key_len + sizeof(int)*2;
-    }
-
-    int count = HASH_COUNT(table);
-    void *res = recorder_malloc(*len);
-    void *ptr = res;
-
-    memcpy(ptr, &count, sizeof(int));
-    ptr += sizeof(int);
-
-    HASH_ITER(hh, table, entry, tmp) {
-
-        memcpy(ptr, &entry->terminal_id, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, &entry->key_len, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, entry->key, entry->key_len);
-        ptr = ptr + entry->key_len;
-    }
-
-    return res;
-}
-
 void* serialize_cst_merged(RecordHash *table, size_t *len) {
     *len = sizeof(int);
 
@@ -113,11 +83,11 @@ void* serialize_cst_merged(RecordHash *table, size_t *len) {
         *len = *len + entry->key_len + sizeof(int)*3 + sizeof(unsigned);
     }
 
-    int count = HASH_COUNT(table);
+    int entries = HASH_COUNT(table);
     void *res = recorder_malloc(*len);
     void *ptr = res;
 
-    memcpy(ptr, &count, sizeof(int));
+    memcpy(ptr, &entries, sizeof(int));
     ptr += sizeof(int);
 
     HASH_ITER(hh, table, entry, tmp) {
@@ -177,7 +147,7 @@ RecordHash* deserialize_cst_merged(void *data) {
 void save_cst_local(RecorderLogger* logger) {
     FILE* f = RECORDER_REAL_CALL(fopen) (logger->cst_path, "wb");
     size_t len;
-    void* data = serialize_cst_local(logger->cst, &len);
+    void* data = serialize_cst_merged(logger->cst, &len);
     RECORDER_REAL_CALL(fwrite)(data, 1, len, f);
     RECORDER_REAL_CALL(fflush)(f);
     RECORDER_REAL_CALL(fclose)(f);
@@ -372,6 +342,7 @@ void save_cfg_local(RecorderLogger* logger) {
 }
 
 void save_cfg_merged(RecorderLogger* logger) {
-    sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
+    //sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
+	sequitur_save_unique_grammars(logger->traces_dir, &logger->cfg, logger->rank, logger->nprocs);
 }
 

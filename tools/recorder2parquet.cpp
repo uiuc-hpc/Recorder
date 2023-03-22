@@ -212,15 +212,9 @@ int main(int argc, char **argv) {
 
     ParquetWriter writer(0, parquet_file_path);
     for(int rank = start_rank; rank < end_rank; rank++) {
-        CST cst;
-        CFG cfg;
         writer.rank = rank;
-        recorder_read_cst(&reader, rank, &cst);
-        recorder_read_cfg(&reader, rank, &cfg);
-        recorder_decode_records(&reader, &cst, &cfg, handle_one_record, &writer);
+        recorder_decode_records(&reader, rank, handle_one_record, &writer);
         printf("\r[Recorder] rank %d finished, unique call signatures: %d\n", rank, cst.entries);
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
     }
     writer.finish();
     recorder_free_reader(&reader);

@@ -124,6 +124,7 @@ typedef struct RecorderMetadata_t {
     double time_resolution;
     int    ts_buffer_elements;
     int    ts_compression_algo; // timestamp compression algorithm
+	int    interprocess_compression;
 } RecorderMetadata;
 
 

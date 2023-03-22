@@ -18,18 +18,6 @@ extern "C"
 {
 #endif
 
-typedef struct RecorderReader_t {
-
-    RecorderMetadata metadata;
-
-    char func_list[256][64];
-    char logs_dir[1024];
-
-    int mpi_start_idx;
-    int hdf5_start_idx;
-
-    double prev_tstart;
-} RecorderReader;
 
 typedef struct Interval_t {
     int rank;
@@ -73,6 +61,24 @@ typedef struct CFG_t {
     RuleHash* cfg_head;
 } CFG;
 
+typedef struct RecorderReader_t {
+
+    RecorderMetadata metadata;
+
+    char func_list[256][64];
+    char logs_dir[1024];
+
+    int mpi_start_idx;
+    int hdf5_start_idx;
+
+    double prev_tstart;
+
+	int   num_ugs;			// number of unique grammars
+	int*  ug_ids;			// index of unique grammar in cfgs
+	CST** csts;
+	CFG** cfgs;
+} RecorderReader;
+
 
 /**
  * Similar but simplified structure
@@ -92,20 +98,23 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
 void recorder_free_reader(RecorderReader *reader);
 
 /**
- * Read rank-local CST and CFG
- * We have one CST and one CFG file per process
+ * Read CST and CFG from files to RecorderReader
+ *
+ * With interprocess compression, we have
+ * one merged CST and multiple CFG files.
+ * Each CFG file stores a unique grammar.
+ *
+ * Without interprocess compression, we have
+ * one CST and one CFG file per process.
+ *
+ * ! These two functions are only used internally
  */
-void recorder_read_cst(RecorderReader *reader, int rank, CST *cst);
+void recorder_read_cst(RecorderReader *reader, int rank);
+void recorder_read_cfg(RecorderReader *reader, int rank);
 void recorder_free_cst(CST *cst);
-void recorder_read_cfg(RecorderReader *reader, int rank, CFG *cfg);
 void recorder_free_cfg(CFG *cfg);
 
-/**
- * Read merged CST and CFG
- * We have one CST and one CFG for all processes
- */
-void recorder_read_cst_merged(RecorderReader* reader, CST *cst);
-void recorder_read_cfg_merged(RecorderReader* reader, CFG *cfg);
+void recorder_get_cst_cfg(RecorderReader* reader, int rank, CST** cst, CFG** cfg);
 
 
 Record* recorder_cs_to_record(CallSignature *cs);
@@ -124,7 +133,7 @@ void recorder_free_record(Record* r);
  */
 void recorder_decode_records_core(RecorderReader* reader, CST *cst, CFG *cfg,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg, bool free_record);
-void recorder_decode_records(RecorderReader* reader, CST *cst, CFG *cfg,
+void recorder_decode_records(RecorderReader* reader, int rank,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
 
 

@@ -125,15 +125,9 @@ int main(int argc, char **argv) {
     local.outFile << "{\"traceEvents\": [\n";
     local.sep = "";
     for(int rank = start_rank; rank < end_rank; rank++) {
-        CST cst;
-        CFG cfg;
         local.rank = rank;
-        recorder_read_cst(&reader, rank, &cst);
-        recorder_read_cfg(&reader, rank, &cfg);
-        recorder_decode_records(&reader, &cst, &cfg, write_to_json, &local);
-        printf("\r[Recorder] rank %d finished, unique call signatures: %d %s\n", rank, cst.entries, textfile_path);
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
+        recorder_decode_records(&reader, rank, write_to_json, &local);
+        printf("\r[Recorder] rank %d finished, %s\n", rank, textfile_path);
     }
     local.outFile << "],\n\"displayTimeUnit\": \"ms\",\"systemTraceEvents\": \"SystemTraceData\",\"otherData\": {\"version\": \"Taxonomy v1.0\" }, \"stackFrames\": {}, \"samples\": []}\n";
     local.outFile.close();

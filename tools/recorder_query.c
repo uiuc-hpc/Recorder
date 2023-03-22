@@ -68,13 +68,12 @@ int main(int argc, char **argv) {
     RecorderReader reader;
     recorder_init_reader(argv[1], &reader);
 
-    CST cst;
-    recorder_read_cst_merged(&reader, &cst);
+    CST* cst;
+	CFG* cfg;
+    recorder_get_cst_cfg(&reader, 0, &cst, &cfg);
 
-    print_cst(&reader, &cst);
-    show_statistics(&reader, &cst);
-
-    recorder_free_cst(&cst);
+    print_cst(&reader, cst);
+    show_statistics(&reader, cst);
 
     recorder_free_reader(&reader);
 

@@ -164,6 +164,78 @@ Grammar* compress_grammars(Grammar *lg, int mpi_rank, int mpi_size, size_t *unco
     return grammar;
 }
 
+void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, int mpi_size) {
+	int grammar_ids[mpi_size];
+    int integers = 0;
+    int *local_grammar = serialize_grammar(lg, &integers);
+
+    int recvcounts[mpi_size], displs[mpi_size];
+    PMPI_Gather(&integers, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    displs[0] = 0;
+    size_t gathered_integers = recvcounts[0];
+    for(int i = 1; i < mpi_size;i++) {
+        gathered_integers += recvcounts[i];
+        displs[i] = displs[i-1] + recvcounts[i-1];
+    }
+
+    int *gathered_grammars = NULL;
+    if(mpi_rank == 0)
+        gathered_grammars = recorder_malloc(sizeof(int) * gathered_integers);
+
+    PMPI_Gatherv(local_grammar, integers, MPI_INT, gathered_grammars, recvcounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
+    recorder_free(local_grammar, sizeof(int)*integers);
+
+    if(mpi_rank !=0) return;
+
+    // Go through each rank's grammar
+    for(int rank = 0; rank < mpi_size; rank++) {
+
+        // Serialized grammar
+        int* g = gathered_grammars + displs[rank];
+        int g_len = recvcounts[rank] * sizeof(int);
+
+        UniqueGrammar *ug_entry = NULL;
+        HASH_FIND(hh, unique_grammars, g, g_len, ug_entry);
+
+        if(ug_entry) {
+            // A duplicated grammar, only need to store its id
+            ug_entry->count++;
+            grammar_ids[rank] = ug_entry->ugi;
+        } else {
+            ug_entry = recorder_malloc(sizeof(UniqueGrammar));
+            ug_entry->ugi = current_ugi++;
+            ug_entry->key = g;   // use the existing memory, do not copy it
+            HASH_ADD_KEYPTR(hh, unique_grammars, ug_entry->key, g_len, ug_entry);
+            grammar_ids[rank] = ug_entry->ugi;
+
+			char ug_filename[1096] = {0};
+			sprintf(ug_filename, "%s/%d.cfg", path, ug_entry->ugi);
+
+			FILE* ug_file = fopen(ug_filename, "wb");
+			fwrite(g, 1, g_len, ug_file);
+			fflush(ug_file);
+			fclose(ug_file);
+		}
+	}
+
+    // Clean up the hash table, and gathered grammars
+    int num_unique_grammars = HASH_COUNT(unique_grammars);
+
+    UniqueGrammar *ug, *tmp;
+    HASH_ITER(hh, unique_grammars, ug, tmp) {
+        HASH_DEL(unique_grammars, ug);
+        recorder_free(ug, sizeof(UniqueGrammar));
+	}
+
+	char ug_metadata_fname[1096] = {0};
+	sprintf(ug_metadata_fname, "%s/ug.mt", path);
+	FILE* f = fopen(ug_metadata_fname, "wb");
+	fwrite(grammar_ids, sizeof(int), mpi_size, f);
+	fwrite(&num_unique_grammars, sizeof(int), 1, f);
+	fflush(f);
+	fclose(f);
+}
 
 // Return the size of compressed grammar in KB
 double sequitur_dump(const char* path, Grammar *local_grammar, int mpi_rank, int mpi_size) {
