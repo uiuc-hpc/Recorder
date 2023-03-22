@@ -10,7 +10,7 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR             "2.3.3"
+#define VERSION_STR             "2.4.0"
 #define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
 
 
