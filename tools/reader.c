@@ -284,11 +284,11 @@ void recorder_get_cst_cfg(RecorderReader* reader, int rank, CST** cst, CFG** cfg
 
 #define TERMINAL_START_ID 0
 
-void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, CallSignature *cs_list, FILE* ts_file,
+void rule_application(RecorderReader* reader, CFG* cfg, CST* cst, int rule_id, FILE* ts_file,
                       void (*user_op)(Record*, void*), void* user_arg, int free_record) {
 
     RuleHash *rule = NULL;
-    HASH_FIND_INT(rules, &rule_id, rule);
+    HASH_FIND_INT(cfg->cfg_head, &rule_id, rule);
     assert(rule != NULL);
 
     for(int i = 0; i < rule->symbols; i++) {
@@ -296,7 +296,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
         int sym_exp = rule->rule_body[2*i+1];
         if (sym_val >= TERMINAL_START_ID) { // terminal
             for(int j = 0; j < sym_exp; j++) {
-                Record* record = recorder_cs_to_record(&cs_list[sym_val]);
+                Record* record = recorder_cs_to_record(&(cst->cs_list[sym_val]));
 
                 // Fill in timestamps
                 uint32_t ts[2];
@@ -312,7 +312,7 @@ void rule_application(RecorderReader* reader, RuleHash* rules, int rule_id, Call
             }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
-                rule_application(reader, rules, sym_val, cs_list, ts_file, user_op, user_arg, free_record);
+                rule_application(reader, cfg, cst, sym_val, ts_file, user_op, user_arg, free_record);
         }
     }
 }
@@ -329,7 +329,7 @@ void recorder_decode_records_core(RecorderReader *reader, CST *cst, CFG *cfg,
     sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
     FILE* ts_file = fopen(ts_filename, "rb");
 
-    rule_application(reader, cfg->cfg_head, -1, cst->cs_list, ts_file, user_op, user_arg, free_record);
+    rule_application(reader, cfg, cst, -1, ts_file, user_op, user_arg, free_record);
 
     fclose(ts_file);
 }
@@ -349,9 +349,9 @@ void recorder_decode_records(RecorderReader *reader, int rank,
  * Similar to rule application, but only calcuate
  * the total number of calls if uncompressed.
  */
-size_t get_uncompressed_count(RecorderReader* reader, RuleHash* rules, int rule_id) {
+size_t get_uncompressed_count(RecorderReader* reader, CFG* cfg, int rule_id) {
     RuleHash *rule = NULL;
-    HASH_FIND_INT(rules, &rule_id, rule);
+    HASH_FIND_INT(cfg->cfg_head, &rule_id, rule);
     assert(rule != NULL);
 
     size_t count = 0;
@@ -362,7 +362,7 @@ size_t get_uncompressed_count(RecorderReader* reader, RuleHash* rules, int rule_
         if (sym_val >= TERMINAL_START_ID) { // terminal
             count += sym_exp;
         } else {                            // non-terminal (i.e., rule)
-            count += sym_exp * get_uncompressed_count(reader, rules, sym_val);
+            count += sym_exp * get_uncompressed_count(reader, cfg, sym_val);
         }
     }
 
@@ -410,7 +410,7 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts) {
         CFG* cfg;
 		recorder_get_cst_cfg(&reader, rank, &cst, &cfg);
 
-        counts[rank] = get_uncompressed_count(&reader, cfg->cfg_head, -1);
+        counts[rank] = get_uncompressed_count(&reader, cfg, -1);
         records[rank] = malloc(sizeof(PyRecord)* counts[rank]);
 
         records_with_idx_t ri;

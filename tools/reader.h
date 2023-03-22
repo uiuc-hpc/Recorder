@@ -5,13 +5,13 @@
 
 // keep in sync with VERSION_STR in lib/recorder-logger.c
 // equal (major, minor) is needed for compatibility
-#define VERSION_MAJOR 2
-#define VERSION_MINOR 3
-#define VERSION_PATCH 3
+#define VERSION_MAJOR 		2
+#define VERSION_MINOR 		3
+#define VERSION_PATCH 		3
 
-#define POSIX_SEMANTICS 0
-#define COMMIT_SEMANTICS 1
-#define SESSION_SEMANTICS 2
+#define POSIX_SEMANTICS 	0
+#define COMMIT_SEMANTICS 	1
+#define SESSION_SEMANTICS	2
 
 #ifdef __cplusplus
 extern "C"
@@ -94,8 +94,10 @@ typedef struct PyRecord_t {
 } PyRecord;
 
 
+
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
 void recorder_free_reader(RecorderReader *reader);
+
 
 /**
  * Read CST and CFG from files to RecorderReader
@@ -107,7 +109,9 @@ void recorder_free_reader(RecorderReader *reader);
  * Without interprocess compression, we have
  * one CST and one CFG file per process.
  *
- * ! These two functions are only used internally
+ * ! These two functions should only be used internally
+ * recorder_get_cst_cfg() can be used to perform
+ * custom tasks with CST and CFG
  */
 void recorder_read_cst(RecorderReader *reader, int rank);
 void recorder_read_cfg(RecorderReader *reader, int rank);
