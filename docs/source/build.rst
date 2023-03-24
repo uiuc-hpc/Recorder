@@ -1,5 +1,3 @@
-|build|
-
 Build Recorder
 -----------------
 
