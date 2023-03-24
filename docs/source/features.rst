@@ -54,8 +54,8 @@ Storing call levels
 Use ``RECORDER_LOG_LEVEL`` (0 or 1) to control whether to store call
 levels. Default is 1.
 
-Traces location:
--------------------------
+Traces location
+---------------
 
 By default Recorder will output the traces to the current working
 directory. You can use the enviroment variable ``RECORDER_TRACES_DIR``
