@@ -65,62 +65,32 @@ char* compose_call_key(Record *record, int* key_len) {
 }
 
 
-void cleanup_cst(RecordHash* cst) {
-    RecordHash *entry, *tmp;
+void cleanup_cst(CallSignature* cst) {
+    CallSignature *entry, *tmp;
     HASH_ITER(hh, cst, entry, tmp) {
         HASH_DEL(cst, entry);
         recorder_free(entry->key, entry->key_len);
-        recorder_free(entry, sizeof(RecordHash));
+        recorder_free(entry, sizeof(CallSignature));
     }
     cst = NULL;
 }
 
-void* serialize_cst_local(RecordHash *table, size_t *len) {
+void* serialize_cst(CallSignature *cst, size_t *len) {
     *len = sizeof(int);
 
-    RecordHash *entry, *tmp;
-    HASH_ITER(hh, table, entry, tmp) {
-        *len = *len + entry->key_len + sizeof(int)*2;
-    }
-
-    int count = HASH_COUNT(table);
-    void *res = recorder_malloc(*len);
-    void *ptr = res;
-
-    memcpy(ptr, &count, sizeof(int));
-    ptr += sizeof(int);
-
-    HASH_ITER(hh, table, entry, tmp) {
-
-        memcpy(ptr, &entry->terminal_id, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, &entry->key_len, sizeof(int));
-        ptr = ptr + sizeof(int);
-
-        memcpy(ptr, entry->key, entry->key_len);
-        ptr = ptr + entry->key_len;
-    }
-
-    return res;
-}
-
-void* serialize_cst_merged(RecordHash *table, size_t *len) {
-    *len = sizeof(int);
-
-    RecordHash *entry, *tmp;
-    HASH_ITER(hh, table, entry, tmp) {
+    CallSignature *entry, *tmp;
+    HASH_ITER(hh, cst, entry, tmp) {
         *len = *len + entry->key_len + sizeof(int)*3 + sizeof(unsigned);
     }
 
-    int count = HASH_COUNT(table);
+    int entries = HASH_COUNT(cst);
     void *res = recorder_malloc(*len);
     void *ptr = res;
 
-    memcpy(ptr, &count, sizeof(int));
+    memcpy(ptr, &entries, sizeof(int));
     ptr += sizeof(int);
 
-    HASH_ITER(hh, table, entry, tmp) {
+    HASH_ITER(hh, cst, entry, tmp) {
 
         memcpy(ptr, &entry->terminal_id, sizeof(int));
         ptr = ptr + sizeof(int);
@@ -141,15 +111,15 @@ void* serialize_cst_merged(RecordHash *table, size_t *len) {
     return res;
 }
 
-RecordHash* deserialize_cst_merged(void *data) {
+CallSignature* deserialize_cst(void *data) {
     int num;
     memcpy(&num, data, sizeof(int));
 
     void *ptr = data + sizeof(int);
 
-    RecordHash *table = NULL, *entry = NULL;
+    CallSignature *cst= NULL, *entry = NULL;
     for(int i = 0; i < num; i++) {
-        entry = recorder_malloc(sizeof(RecordHash));
+        entry = recorder_malloc(sizeof(CallSignature));
 
         memcpy( &(entry->terminal_id), ptr, sizeof(int) );
         ptr += sizeof(int);
@@ -167,39 +137,39 @@ RecordHash* deserialize_cst_merged(void *data) {
         memcpy( entry->key, ptr, entry->key_len );
         ptr += entry->key_len;
 
-        HASH_ADD_KEYPTR(hh, table, entry->key, entry->key_len, entry);
+        HASH_ADD_KEYPTR(hh, cst, entry->key, entry->key_len, entry);
     }
 
-    return table;
+    return cst;
 }
 
 
 void save_cst_local(RecorderLogger* logger) {
     FILE* f = RECORDER_REAL_CALL(fopen) (logger->cst_path, "wb");
     size_t len;
-    void* data = serialize_cst_local(logger->cst, &len);
+    void* data = serialize_cst(logger->cst, &len);
     RECORDER_REAL_CALL(fwrite)(data, 1, len, f);
     RECORDER_REAL_CALL(fflush)(f);
     RECORDER_REAL_CALL(fclose)(f);
 }
 
-RecordHash* copy_cst(RecordHash* origin) {
-    RecordHash* table = NULL;
-    RecordHash *entry, *tmp, *new_entry;
+CallSignature* copy_cst(CallSignature* origin) {
+    CallSignature* cst = NULL;
+    CallSignature *entry, *tmp, *new_entry;
     HASH_ITER(hh, origin, entry, tmp) {
-        new_entry = recorder_malloc(sizeof(RecordHash));
+        new_entry = recorder_malloc(sizeof(CallSignature));
         new_entry->terminal_id = entry->terminal_id;
         new_entry->key_len = entry->key_len;
         new_entry->rank = entry->rank;
         new_entry->count = entry->count;
         new_entry->key = recorder_malloc(entry->key_len);
         memcpy(new_entry->key, entry->key, entry->key_len);
-        HASH_ADD_KEYPTR(hh, table, new_entry->key, new_entry->key_len, new_entry);
+        HASH_ADD_KEYPTR(hh, cst, new_entry->key, new_entry->key_len, new_entry);
     }
-    return table;
+    return cst;
 }
 
-RecordHash* compress_csts(RecorderLogger* logger) {
+CallSignature* compress_csts(RecorderLogger* logger) {
     int my_rank = logger->rank;
     int other_rank;
     int mask = 1;
@@ -207,7 +177,7 @@ RecordHash* compress_csts(RecorderLogger* logger) {
 
     int phases = recorder_ceil(recorder_log2(logger->nprocs));
 
-    RecordHash* merged_table = copy_cst(logger->cst);
+    CallSignature* merged_cst = copy_cst(logger->cst);
 
     for(int k = 0; k < phases; k++, mask*=2) {
         if(done) break;
@@ -251,25 +221,40 @@ RecordHash* compress_csts(RecorderLogger* logger) {
                 memcpy(key, ptr, key_len);
                 ptr = ptr + key_len;
 
-                // Check to see if this function entry is already in the table
-                RecordHash *entry = NULL;
-                HASH_FIND(hh, merged_table, key, key_len, entry);
+                // Check to see if this function entry is already in the cst
+                CallSignature *entry = NULL;
+                HASH_FIND(hh, merged_cst, key, key_len, entry);
                 if(entry) {
                     recorder_free(key, key_len);
                     entry->count += count;
-                } else {                                // Not exist, add to hash table
-                    entry = (RecordHash*) recorder_malloc(sizeof(RecordHash));
+                } else {                                // Not exist, add to cst
+                    entry = (CallSignature*) recorder_malloc(sizeof(CallSignature));
                     entry->key = key;
                     entry->key_len = key_len;
                     entry->rank = cst_rank;
                     entry->count = count;
-                    HASH_ADD_KEYPTR(hh, merged_table, key, key_len, entry);
+                    HASH_ADD_KEYPTR(hh, merged_cst, key, key_len, entry);
+
+					//*key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
+					//           sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+					/*
+					pthread_t thread_id;
+					unsigned char func_id, level, arg_count;
+					int arg_strlen;
+					memcpy(&thread_id, key, sizeof(thread_id));
+					memcpy(&func_id, key+sizeof(thread_id), sizeof(func_id));
+					memcpy(&level, key+sizeof(thread_id)+sizeof(func_id), sizeof(level));
+					memcpy(&arg_count, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level), sizeof(arg_count));
+					memcpy(&arg_strlen, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level)+sizeof(arg_count), sizeof(arg_strlen));
+					printf("CHEN2 rank:%d tid: %ld, func_id:%d, level:%d, arg_count:%d, arg_strlen:%d, count:%u, key:%s\n",
+							cst_rank, thread_id, func_id, level, arg_count, arg_strlen, count, ((char*)key)+15);
+					*/
                 }
             }
             recorder_free(buf, size);
 
         } else {   // SENDER
-            buf = serialize_cst_merged(merged_table, &size);
+            buf = serialize_cst(merged_cst, &size);
             RECORDER_REAL_CALL(PMPI_Send)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
             RECORDER_REAL_CALL(PMPI_Send)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
             recorder_free(buf, size);
@@ -280,30 +265,30 @@ RecordHash* compress_csts(RecorderLogger* logger) {
     // Eventually the root (rank 0) will get the fully merged CST
     // Update (re-assign) terminal id for all unique signatures
     if(my_rank == 0) {
-        //linear_regression(merged_table);
+        //linear_regression(merged_cst);
         int terminal_id = 0;
-        RecordHash *entry, *tmp;
-        HASH_ITER(hh, merged_table, entry, tmp) {
+        CallSignature *entry, *tmp;
+        HASH_ITER(hh, merged_cst, entry, tmp) {
             entry->terminal_id = terminal_id++;
         }
     } else {
-        cleanup_cst(merged_table);
+        cleanup_cst(merged_cst);
     }
-    return merged_table;
+    return merged_cst;
 }
 
 
 void save_cst_merged(RecorderLogger* logger) {
     // 1. Inter-process copmression for CSTs
-    // Eventually, rank 0 will have the compressed table.
-    RecordHash* compressed_cst = compress_csts(logger);
+    // Eventually, rank 0 will have the compressed cst.
+    CallSignature* compressed_cst = compress_csts(logger);
 
     // 2. Broadcast the merged CST to all ranks
     size_t cst_stream_size;
     void *cst_stream;
 
     if(logger->rank == 0) {
-        cst_stream = serialize_cst_merged(compressed_cst, &cst_stream_size);
+        cst_stream = serialize_cst(compressed_cst, &cst_stream_size);
 
         RECORDER_REAL_CALL(PMPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
         RECORDER_REAL_CALL(PMPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -324,18 +309,18 @@ void save_cst_merged(RecorderLogger* logger) {
 
         // 3. Other rank get the compressed cst stream from rank 0
         // then convert it to the CST
-        compressed_cst = deserialize_cst_merged(cst_stream);
+        compressed_cst = deserialize_cst(cst_stream);
     }
 
     // 4. Update function entry's terminal id
     int *update_terminal_id = recorder_malloc(sizeof(int) * logger->current_cfg_terminal);
-    RecordHash *entry, *tmp, *res;
+    CallSignature *entry, *tmp, *res;
     HASH_ITER(hh, logger->cst, entry, tmp) {
         HASH_FIND(hh, compressed_cst, entry->key, entry->key_len, res);
         if(res)
             update_terminal_id[entry->terminal_id] = res->terminal_id;
         else
-            printf("[Recorder] %d Not possible! Not exist in merged table?\n", logger->rank);
+            printf("[Recorder] %d Not possible! Not exist in merged cst?\n", logger->rank);
     }
 
 
@@ -357,6 +342,7 @@ void save_cfg_local(RecorderLogger* logger) {
 }
 
 void save_cfg_merged(RecorderLogger* logger) {
-    sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
+    //sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
+	sequitur_save_unique_grammars(logger->traces_dir, &logger->cfg, logger->rank, logger->nprocs);
 }
 

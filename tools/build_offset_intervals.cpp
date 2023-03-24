@@ -250,16 +250,11 @@ void flatten_and_sort_records(RecorderReader *reader) {
     int nprocs = reader->metadata.total_ranks;
 
     for(int rank = 0; rank < nprocs; rank++) {
-        CST cst;
-        CFG cfg;
-        recorder_read_cst(reader, rank, &cst);
-        recorder_read_cfg(reader, rank, &cfg);
-
         current_seq_id = 0;
-        recorder_decode_records_core(reader, &cst, &cfg, insert_one_record, &rank, false);
-
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
+		CST* cst;
+		CFG* cfg;
+		recorder_get_cst_cfg(reader, rank, &cst, &cfg);
+        recorder_decode_records_core(reader, cst, cfg, insert_one_record, &rank, false);
     }
 
     sort(records.begin(), records.end(), compare_by_tstart);

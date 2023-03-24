@@ -107,15 +107,14 @@ typedef struct Record_t {
 /*
  * Call Signature
  */
-typedef struct RecordHash_t {
+typedef struct CallSignature_t {
     void *key;
     int key_len;
     int rank;
     int terminal_id;
     int count;
     UT_hash_handle hh;
-} RecordHash;
-typedef struct RecordHash_t CallSignature;
+} CallSignature;
 
 
 typedef struct RecorderMetadata_t {
@@ -124,6 +123,7 @@ typedef struct RecorderMetadata_t {
     double time_resolution;
     int    ts_buffer_elements;
     int    ts_compression_algo; // timestamp compression algorithm
+	int    interprocess_compression;
 } RecorderMetadata;
 
 
@@ -138,8 +138,8 @@ typedef struct RecorderLogger_t {
 
     int current_cfg_terminal;
 
-    Grammar     cfg;
-    RecordHash* cst;
+    Grammar        cfg;
+    CallSignature* cst;
 
     char traces_dir[512];
     char cst_path[1024];
@@ -155,6 +155,7 @@ typedef struct RecorderLogger_t {
 
     int       log_tid;          // Wether to store thread id
     int       log_level;        // Wether to store the level of the call
+	int		  interprocess_compression;	// Wether to perform interprocess compression
 } RecorderLogger;
 
 
@@ -180,7 +181,7 @@ void write_record(Record* record);
 
 /* recorder-cst-cfg.c */
 char* compose_call_key(Record *record, int* key_len);
-void cleanup_cst(RecordHash* cst);
+void cleanup_cst(CallSignature* cst);
 void save_cst_local(RecorderLogger* logger);
 void save_cst_merged(RecorderLogger* logger);
 void save_cfg_local(RecorderLogger* logger);

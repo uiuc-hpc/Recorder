@@ -290,8 +290,22 @@ unsigned char get_function_id_by_name(const char* name) {
  */
 inline char* realrealpath(const char *path) {
     char* res = realpath(path, NULL);   // we do not intercept realpath()
-    if (res == NULL)                    // realpath() could return NULL on error
-        return strdup(path);
+
+    // realpath() could return NULL on error 
+	// e.g., when the file not exists
+    if (res == NULL) {
+		if(path[0] == '/') return strdup(path);
+		char cwd[512] = {0};
+		MAP_OR_FAIL(getcwd);
+		char* tmp = RECORDER_REAL_CALL(getcwd)(cwd, 512);
+
+		res = malloc(strlen(cwd) + strlen(path) + 20);
+		if(tmp == NULL) {
+			sprintf(res, "???/%s", path);
+		} else {
+			sprintf(res, "%s/%s", cwd, path);
+		}
+	}
     return res;
 }
 

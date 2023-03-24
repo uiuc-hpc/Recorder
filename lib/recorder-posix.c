@@ -473,11 +473,30 @@ long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
     RECORDER_INTERCEPTOR(1, args)
 }
 
+
+static int     g_first_seek = 1;
+static off64_t g_first_offset = 0;
+static off64_t g_prev_offset = 0;
+
 extern
 off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
     GET_CHECK_FILENAME(lseek64, (fd, offset, whence), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(off64_t, lseek64, (fd, offset, whence));
-    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
+
+    off64_t stored_offset = offset;
+
+    // CHEN here
+	// for intraprocess compression, i.e., merge local entries in CST
+	/*
+    if(offset > g_prev_offset)
+        stored_offset = -(offset-g_prev_offset);
+    else
+        stored_offset = offset;
+    g_prev_offset = offset;
+	*/	
+
+    char** args = assemble_args_list(3, _fname, itoa(stored_offset), itoa(whence));
+
     RECORDER_INTERCEPTOR(3, args);
 }
 

@@ -10,7 +10,7 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR             "2.3.3"
+#define VERSION_STR             "2.4.0"
 #define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
 
 
@@ -67,18 +67,18 @@ void write_record(Record *record) {
 
     pthread_mutex_lock(&g_mutex);
 
-    RecordHash *entry = NULL;
+    CallSignature *entry = NULL;
     HASH_FIND(hh, logger.cst, key, key_len, entry);
     if(entry) {                         // Found
         entry->count++;
         recorder_free(key, key_len);
     } else {                            // Not exist, add to hash table
-        entry = (RecordHash*) recorder_malloc(sizeof(RecordHash));
+        entry = (CallSignature*) recorder_malloc(sizeof(CallSignature));
         entry->key = key;
         entry->key_len = key_len;
         entry->rank = logger.rank;
         entry->terminal_id = logger.current_cfg_terminal++;
-        entry->count = 0;
+        entry->count = 1;
         HASH_ADD_KEYPTR(hh, logger.cst, entry->key, entry->key_len, entry);
     }
 
@@ -235,8 +235,9 @@ void logger_init() {
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
     logger.directory_created = false;
-    logger.log_tid   = 1;
+    logger.log_tid   = 0;
     logger.log_level = 1;
+    logger.interprocess_compression = 0;
 
     // ts buffer size in MB
     const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
@@ -262,6 +263,11 @@ void logger_init() {
     if(log_level_str)
         logger.log_level = atoi(log_level_str);
 
+    const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
+    if(interprocess_compression)
+        logger.interprocess_compression = atoi(interprocess_compression);
+
+
     initialized = true;
 }
 
@@ -286,6 +292,7 @@ void save_global_metadata() {
         .start_ts            = logger.start_ts,
         .ts_buffer_elements  = logger.ts_max_elements,
         .ts_compression_algo = TS_COMPRESSION_NO,
+		.interprocess_compression = logger.interprocess_compression,
     };
     RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
@@ -308,6 +315,154 @@ void save_global_metadata() {
     RECORDER_REAL_CALL(fclose)(version_file);
 }
 
+struct lseek_entry {
+    int offset_key_start;
+    int offset_key_end;
+    CallSignature* cs;
+};
+
+void offset_pattern_check(char* func_name) {
+
+    int func_count = 0;
+    unsigned char filter_func_id = get_function_id_by_name(func_name);
+
+    CallSignature *entry, *tmp;
+    HASH_ITER(hh, logger.cst, entry, tmp) {
+        void* ptr = entry->key+sizeof(pthread_t);
+        unsigned char func_id;
+        memcpy(&func_id, ptr, sizeof(func_id));
+        if(func_id == filter_func_id)
+            func_count++;
+    }
+
+
+    struct lseek_entry *lseek_entries = malloc(sizeof(struct lseek_entry) * func_count);
+    long int *lseek_offsets = malloc(sizeof(long int) * func_count);
+
+    Record r;
+    size_t arg_offset = sizeof(pthread_t) + sizeof(r.func_id) + sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+
+    int idx = 0;
+    HASH_ITER(hh, logger.cst, entry, tmp) {
+        void* ptr = entry->key+sizeof(pthread_t);
+
+        unsigned char func_id;
+        memcpy(&func_id, ptr, sizeof(r.func_id));
+
+        if(func_id == filter_func_id) {
+            char* key = (char*) entry->key;
+
+            int start = 0, end = 0;
+            for(int i = arg_offset; i < entry->key_len; i++) {
+                if(key[i] == ' ') {
+                    start = i;
+                    break;
+                }
+            }
+            for(int i = start+1; i < entry->key_len; i++) {
+                if(key[i] == ' ') {
+                    end = i;
+                    break;
+                }
+            }
+            assert(end > start);
+            char offset_str[64] = {0};
+            memcpy(offset_str, key+start+1, end-start-1);
+            long int offset = atol(offset_str);
+
+            lseek_offsets[idx] = offset;
+            lseek_entries[idx].offset_key_start = start;
+            lseek_entries[idx].offset_key_end   = end;
+            lseek_entries[idx].cs = entry;
+            assert(end > start);
+
+            idx++;
+        }
+    }
+
+    MAP_OR_FAIL(PMPI_Comm_split);
+    MAP_OR_FAIL(PMPI_Comm_size);
+    MAP_OR_FAIL(PMPI_Comm_rank);
+    MAP_OR_FAIL(PMPI_Comm_free);
+    MAP_OR_FAIL(PMPI_Allgather);
+
+    MPI_Comm comm;
+    int comm_size, comm_rank;
+    RECORDER_REAL_CALL(PMPI_Comm_split)(MPI_COMM_WORLD, func_count, logger.rank, &comm);
+    RECORDER_REAL_CALL(PMPI_Comm_size)(comm, &comm_size);
+    RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
+
+    if(comm_rank == 0)
+        printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
+
+    if(comm_size > 2) {
+        long int *all_offsets = calloc(comm_size*(func_count), sizeof(long int));
+        RECORDER_REAL_CALL(PMPI_Allgather)(lseek_offsets, func_count, MPI_LONG,
+                                            all_offsets, func_count, MPI_LONG, comm);
+
+        // Fory every lseek(), i.e, i-th lseek()
+        // check if it is the form of offset = a * rank + b;
+        for(int i = 0; i < func_count; i++) {
+
+            long int o1 = all_offsets[i];
+            long int o2 = all_offsets[i+func_count];
+            long int a = o2 - o1;
+            long int b = o1;
+            int same_pattern = 1;
+            for(int r = 0; r < comm_size; r++) {
+                long int o = all_offsets[i+func_count*r];
+                if(o != a*r+b) {
+                    same_pattern = 0;
+                    break;
+                }
+            }
+
+            // Everyone has the same pattern of offset
+            // Then modify the call signature to store
+            // the pattern instead of the actuall offset
+            // TODO we should store a and b, but now we
+            // store a only
+            if(same_pattern) {
+                HASH_DEL(logger.cst, lseek_entries[i].cs);
+
+                int start = lseek_entries[i].offset_key_start;
+                int end   = lseek_entries[i].offset_key_end;
+
+                char* tmp = calloc(64, 1);
+                sprintf(tmp, "%ld*r+%ld", a, b);
+
+                if(comm_rank == 0)
+                    printf("pattern recognized %d: offset = %ld*rank+%ld\n", lseek_entries[i].cs->terminal_id, a, b);
+
+                int old_keylen = lseek_entries[i].cs->key_len;
+                int new_keylen = old_keylen - (end-start-1) + strlen(tmp);
+                int new_arg_strlen = new_keylen - arg_offset;
+
+                void* newkey = malloc(new_keylen);
+                void* oldkey = lseek_entries[i].cs->key;
+
+                memcpy(newkey, oldkey, start+1);
+                memcpy(newkey+arg_offset-sizeof(int), &new_arg_strlen, sizeof(int));
+                memcpy(newkey+start+1, tmp, strlen(tmp));
+                memcpy(newkey+start+1+strlen(tmp), oldkey+end, old_keylen-end);
+
+                lseek_entries[i].cs->key = newkey;
+                lseek_entries[i].cs->key_len = new_keylen;
+                HASH_ADD_KEYPTR(hh, logger.cst, lseek_entries[i].cs->key, lseek_entries[i].cs->key_len, lseek_entries[i].cs);
+
+
+                free(oldkey);
+                free(tmp);
+            }
+        }
+        free(all_offsets);
+    }
+
+    RECORDER_REAL_CALL(PMPI_Comm_free)(&comm);
+    free(lseek_offsets);
+    free(lseek_entries);
+}
+
 void logger_finalize() {
 
     if(!logger.directory_created)
@@ -326,20 +481,28 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
-    cleanup_record_stack();
-    save_cst_local(&logger);
-    //save_cst_merged(&logger);
-    cleanup_cst(logger.cst);
+    /*
+    offset_pattern_check("lseek64");
+    offset_pattern_check("lseek");
+    offset_pattern_check("PMPI_File_write_at");
+    offset_pattern_check("PMPI_File_read_at");
+    */
 
-    save_cfg_local(&logger);
-    //save_cfg_merged(&logger);
+    cleanup_record_stack();
+	if(logger.interprocess_compression) {
+    	save_cst_merged(&logger);
+    	save_cfg_merged(&logger);
+	} else {
+    	save_cst_local(&logger);
+    	save_cfg_local(&logger);
+	}
+    cleanup_cst(logger.cst);
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
-        // write out global metadata
         save_global_metadata();
 
-        fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        fprintf(stdout, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
         RECORDER_REAL_CALL(fflush)(stderr);
     }
 }

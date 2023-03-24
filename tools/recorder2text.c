@@ -61,21 +61,14 @@ int main(int argc, char **argv) {
 
     for(int rank = start_rank; rank < end_rank; rank++) {
 
-        CST cst;
-        CFG cfg;
-        recorder_read_cst(&reader, rank, &cst);
-        recorder_read_cfg(&reader, rank, &cfg);
-
         sprintf(textfile_path, "%s/%d.txt", textfile_dir, rank);
         FILE* fout = fopen(textfile_path, "w");
 
-        recorder_decode_records(&reader, &cst, &cfg, write_to_textfile, fout);
+        recorder_decode_records(&reader, rank, write_to_textfile, fout);
 
         fclose(fout);
 
-        printf("\r[Recorder] rank %d, unique call signatures: %d\n", rank, cst.entries);
-        recorder_free_cst(&cst);
-        recorder_free_cfg(&cfg);
+        printf("\r[Recorder] rank %d finished\n", rank);
     }
 
     recorder_free_reader(&reader);
