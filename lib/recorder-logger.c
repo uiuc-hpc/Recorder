@@ -262,7 +262,6 @@ void logger_init() {
     const char* log_level_str = getenv(RECORDER_LOG_LEVEL);
     if(log_level_str)
         logger.log_level = atoi(log_level_str);
-
     const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
     if(interprocess_compression)
         logger.interprocess_compression = atoi(interprocess_compression);
