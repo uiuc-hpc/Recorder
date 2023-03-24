@@ -235,7 +235,7 @@ void logger_init() {
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
     logger.directory_created = false;
-    logger.log_tid   = 1;
+    logger.log_tid   = 0;
     logger.log_level = 1;
     logger.interprocess_compression = 0;
 
@@ -481,10 +481,12 @@ void logger_finalize() {
     RECORDER_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
+    /*
     offset_pattern_check("lseek64");
     offset_pattern_check("lseek");
     offset_pattern_check("PMPI_File_write_at");
     offset_pattern_check("PMPI_File_read_at");
+    */
 
     cleanup_record_stack();
 	if(logger.interprocess_compression) {
