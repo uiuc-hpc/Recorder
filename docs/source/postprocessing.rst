@@ -1,7 +1,8 @@
 Post-processing and Visualization
 =================================
 
-**1. recorder-viz**
+1. recorder-viz
+---------------
 
 We developed a Python library,
 `recorder-viz <https://github.com/wangvsa/recorder-viz>`__, for
@@ -12,7 +13,8 @@ command to generate the visualization report.
 
    python $RECORDER_DIR/tools/reporter/reporter.py /path/to/your_trace_folder/
 
-**2. Format Converters**
+2. Format Converters
+--------------------
 
 We also provide two format converters ``recorder2parquet`` and
 ``recorder2timeline``. They will be placed under $RECORDER_ROOT/bin
@@ -28,7 +30,8 @@ directory after installation.
    trace format files. You can upload them to https://ui.perfetto.dev
    for an interactive visualization.
 
-**3. C APIs**
+3. APIs
+---------
 
 TODO: we have C APIs (tools/reader.h). Need to doc them.
 
