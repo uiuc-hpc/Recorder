@@ -1,6 +1,6 @@
 [![build](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml/badge.svg)](https://github.com/uiuc-hpc/Recorder/actions/workflows/cmake.yml)
 
-# Recorder 2.3
+# Recorder 2.4
 
 **A Multi-Level Library for Understanding I/O Activity in HPC Applications**
 
@@ -113,7 +113,7 @@ However, you can change this behaviour by setting the enviroment variable `RECOR
 
 (3) Storing thread ids
 
-Use `RECORDER_LOG_TID`(0 or 1) to control whether to store thread id. Default is 1.
+Use `RECORDER_LOG_TID`(0 or 1) to control whether to store thread id. Default is 0.
 
 (4) Storing call levels
 
@@ -227,6 +227,10 @@ Publications
 
 Change Log
 ----------
+
+**Recorder 2.4.0** Mar 24, 2023
+1. Implement inter-process compression using offset pattern detection
+2. Clean up code and simplify post-processing APIs
 
 **Recorder 2.3.3** Jan 21, 2022
 1. Still require a RECORDER\_WITH\_NON\_MPI hint for non-mpi programs.
