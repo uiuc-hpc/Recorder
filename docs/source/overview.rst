@@ -16,6 +16,13 @@ traced.
 Publications
 ------------
 
+Recorder has undergone significant changes since the last
+"Recorder 2.0" paper. We have incorporated a new pattern-based
+compression algorithm, along with many new features.
+We are preparing a new paper that will describe all these
+changes in detail.
+
+
 `Wang, Chen, Jinghan Sun, Marc Snir, Kathryn Mohror, and Elsa
 Gonsiorowski. “Recorder 2.0: Efficient Parallel I/O Tracing and
 Analysis.” In IEEE International Workshop on High-Performance Storage
