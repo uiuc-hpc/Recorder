@@ -1,4 +1,4 @@
-Recorder
+Overview
 ========
 
 We believe that multi-level I/O tracing and trace data analysis tool can
@@ -12,16 +12,6 @@ MPI-IO, and POSIX I/O. Recorder requires no modification or
 recompilation of the application and users can control what levels are
 traced.
 
-Dataset
--------
-
-`Traces from 17 HPC applications <https://doi.org/10.6075/J0Z899X4>`__
-
-The traces were collected using an old version of Recorder. The current
-version uses a different trace format. To read those traces please use
-Recorder 2.2.1 from the
-`release <https://github.com/uiuc-hpc/Recorder/releases/tag/v2.2.1>`__
-page.
 
 Publications
 ------------
@@ -42,3 +32,13 @@ applications.” In 2013 IEEE International Conference on Cluster
 Computing (CLUSTER),
 2013. <https://doi.org/10.1109/CLUSTER.2013.6702690>`__
 
+Dataset
+-------
+
+`Traces from 17 HPC applications <https://doi.org/10.6075/J0Z899X4>`__
+
+The traces were collected using an old version of Recorder. The current
+version uses a different trace format. To read those traces please use
+Recorder 2.2.1 from the
+`release <https://github.com/uiuc-hpc/Recorder/releases/tag/v2.2.1>`__
+page.
