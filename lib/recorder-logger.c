@@ -166,7 +166,7 @@ void create_traces_dir() {
     if(base_dir)
         sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
     else
-        strcpy(logger.traces_dir, traces_dir); // current directory
+        strcpy(logger.traces_dir, realrealpath(traces_dir)); // current directory
 
     if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
         RECORDER_REAL_CALL(rmdir) (logger.traces_dir);

@@ -509,11 +509,23 @@ int RECORDER_MPI_IMP(MPI_File_write) (MPI_File fh, CONST void *buf, int count,
     RECORDER_INTERCEPTOR(5, args);
 }
 
+static MPI_Offset g_prev_offset = 0;
 int RECORDER_MPI_IMP(MPI_File_write_at) (MPI_File fh, MPI_Offset offset, CONST void *buf,
         int count, MPI_Datatype datatype, MPI_Status *status) {
     FILTER_MPIIO_CALL(PMPI_File_write_at, (fh, offset, buf, count, datatype, status), &fh);
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_at, (fh, offset, buf, count, datatype, status));
-    char **args = assemble_args_list(6, file2id(&fh), itoa(offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
+
+	MPI_Offset offset_delta = offset;
+
+	// CHEN
+	/*
+	offset_delta = offset - g_prev_offset;
+	if(offset_delta <= 0)
+		offset_delta = offset;
+	g_prev_offset = offset;
+	*/
+
+    char **args = assemble_args_list(6, file2id(&fh), itoa(offset_delta), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);
 }
 
