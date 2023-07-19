@@ -39,7 +39,9 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #define _XOPEN_SOURCE 500
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -296,7 +298,7 @@ FILE* RECORDER_POSIX_DECL(fopen64)(const char *path, const char *mode) {
 extern
 FILE* RECORDER_POSIX_DECL(fopen)(const char *path, const char *mode) {
     GET_CHECK_FILENAME(fopen, (path, mode), path, ARG_TYPE_PATH);
-    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen64, (path, mode))
+    RECORDER_INTERCEPTOR_NOIO(FILE*, fopen, (path, mode))
     add_to_map(_fname, res, ARG_TYPE_STREAM);
     char** args = assemble_args_list(2, realrealpath(path), strdup(mode));
     RECORDER_INTERCEPTOR(2, args);
