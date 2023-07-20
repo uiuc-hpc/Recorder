@@ -944,9 +944,18 @@ extern void RECORDER_MPI_DECL(mpi_type_create_darray)(int* size, int* rank, int*
 extern void RECORDER_MPI_DECL(mpi_type_create_darray_)(int* size, int* rank, int* ndims, const int array_of_gsizes[], const int array_of_distribs[], const int array_of_dargs[], const int array_of_psizes[], int* order, MPI_Fint* oldtype, MPI_Fint* newtype, MPI_Fint *ierr){ imp_MPI_Type_create_darray((*size), (*rank), (*ndims), array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, (*order), PMPI_Type_f2c(*oldtype), (MPI_Datatype*)newtype);}
 extern void RECORDER_MPI_DECL(mpi_type_create_darray__)(int* size, int* rank, int* ndims, const int array_of_gsizes[], const int array_of_distribs[], const int array_of_dargs[], const int array_of_psizes[], int* order, MPI_Fint* oldtype, MPI_Fint* newtype, MPI_Fint *ierr){ imp_MPI_Type_create_darray((*size), (*rank), (*ndims), array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, (*order), PMPI_Type_f2c(*oldtype), (MPI_Datatype*)newtype);}
 int RECORDER_MPI_DECL(MPI_Type_commit)(MPI_Datatype *datatype) { return imp_MPI_Type_commit(datatype); }
-extern void RECORDER_MPI_DECL(mpi_type_commit)(MPI_Fint* datatype, MPI_Fint *ierr){ imp_MPI_Type_commit((MPI_Datatype*)datatype);}
-extern void RECORDER_MPI_DECL(mpi_type_commit_)(MPI_Fint* datatype, MPI_Fint *ierr){ imp_MPI_Type_commit((MPI_Datatype*)datatype);}
-extern void RECORDER_MPI_DECL(mpi_type_commit__)(MPI_Fint* datatype, MPI_Fint *ierr){ imp_MPI_Type_commit((MPI_Datatype*)datatype);}
+extern void RECORDER_MPI_DECL(mpi_type_commit)(MPI_Fint* datatype, MPI_Fint *ierr){
+    MPI_Datatype c_datatype = PMPI_Type_f2c(*datatype);
+    imp_MPI_Type_commit(&c_datatype);
+}
+extern void RECORDER_MPI_DECL(mpi_type_commit_)(MPI_Fint* datatype, MPI_Fint *ierr){
+    MPI_Datatype c_datatype = PMPI_Type_f2c(*datatype);
+    imp_MPI_Type_commit(&c_datatype);
+}
+extern void RECORDER_MPI_DECL(mpi_type_commit__)(MPI_Fint* datatype, MPI_Fint *ierr){
+    MPI_Datatype c_datatype = PMPI_Type_f2c(*datatype);
+    imp_MPI_Type_commit(&c_datatype);
+}
 int RECORDER_MPI_DECL(MPI_Finalized)(int *flag) { return imp_MPI_Finalized(flag); }
 extern void RECORDER_MPI_DECL(mpi_finalized)(int* flag, MPI_Fint *ierr){ imp_MPI_Finalized(flag);}
 extern void RECORDER_MPI_DECL(mpi_finalized_)(int* flag, MPI_Fint *ierr){ imp_MPI_Finalized(flag);}
@@ -1001,18 +1010,6 @@ int RECORDER_MPI_DECL(MPI_Ssend)(const void *buf, int count, MPI_Datatype dataty
 extern void RECORDER_MPI_DECL(mpi_ssend)(const void* buf, int* count, MPI_Fint* datatype, int* dest, int* tag, MPI_Fint* comm, MPI_Fint *ierr){imp_MPI_Ssend(buf, (*count), PMPI_Type_f2c(*datatype), (*dest), (*tag), PMPI_Comm_f2c(*comm));}
 extern void RECORDER_MPI_DECL(mpi_ssend_)(const void* buf, int* count, MPI_Fint* datatype, int* dest, int* tag, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Ssend(buf, (*count), PMPI_Type_f2c(*datatype), (*dest), (*tag), PMPI_Comm_f2c(*comm));}
 extern void RECORDER_MPI_DECL(mpi_ssend__)(const void* buf, int* count, MPI_Fint* datatype, int* dest, int* tag, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Ssend(buf, (*count), PMPI_Type_f2c(*datatype), (*dest), (*tag), PMPI_Comm_f2c(*comm));}
-int RECORDER_MPI_DECL(MPI_Comm_split)(MPI_Comm comm, int color, int key, MPI_Comm *newcomm) { return imp_MPI_Comm_split(comm, color, key, newcomm); }
-extern void RECORDER_MPI_DECL(mpi_comm_split)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_split_)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_split__)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), (MPI_Comm*)newcomm);}
-int RECORDER_MPI_DECL(MPI_Comm_create)(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm) { return imp_MPI_Comm_create(comm, group, newcomm); }
-extern void RECORDER_MPI_DECL(mpi_comm_create)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_create_)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_create__)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), (MPI_Comm*)newcomm);}
-int RECORDER_MPI_DECL(MPI_Comm_dup)(MPI_Comm comm, MPI_Comm *newcomm) { return imp_MPI_Comm_dup(comm, newcomm); }
-extern void RECORDER_MPI_DECL(mpi_comm_dup)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_dup_)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_dup__)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), (MPI_Comm*)newcomm);}
 int RECORDER_MPI_DECL(MPI_Ireduce)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm, MPI_Request *request) { return imp_MPI_Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm, request); }
 extern void RECORDER_MPI_DECL(mpi_ireduce)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, int* root, MPI_Fint* comm, MPI_Fint* request, MPI_Fint *ierr){ imp_MPI_Ireduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), (*root), PMPI_Comm_f2c(*comm), (MPI_Request*)request);}
 extern void RECORDER_MPI_DECL(mpi_ireduce_)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, int* root, MPI_Fint* comm, MPI_Fint* request, MPI_Fint *ierr){ imp_MPI_Ireduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), (*root), PMPI_Comm_f2c(*comm), (MPI_Request*)request);}
@@ -1033,14 +1030,95 @@ int RECORDER_MPI_DECL(MPI_Comm_free)(MPI_Comm *comm) { return imp_MPI_Comm_free(
 extern void RECORDER_MPI_DECL(mpi_comm_free)(MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Comm_free((MPI_Comm*)comm);}
 extern void RECORDER_MPI_DECL(mpi_comm_free_)(MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Comm_free((MPI_Comm*)comm);}
 extern void RECORDER_MPI_DECL(mpi_comm_free__)(MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Comm_free((MPI_Comm*)comm);}
+/* Below are the functions that create new communicators
+ * For fortran wrappers, we need to pass in a C MPI_Comm
+ * and then translate it to MPI_Fint
+ */
+/*
+int RECORDER_MPI_DECL(MPI_Comm_split)(MPI_Comm comm, int color, int key, MPI_Comm *newcomm) { return imp_MPI_Comm_split(comm, color, key, newcomm); }
+extern void RECORDER_MPI_DECL(mpi_comm_split)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_split_)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_split__)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split(PMPI_Comm_f2c(*comm), (*color), (*key), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+int RECORDER_MPI_DECL(MPI_Comm_create)(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm) { return imp_MPI_Comm_create(comm, group, newcomm); }
+extern void RECORDER_MPI_DECL(mpi_comm_create)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_create_)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_create__)(MPI_Fint* comm, MPI_Fint* group, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_create(PMPI_Comm_f2c(*comm), PMPI_Group_f2c(*group), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+int RECORDER_MPI_DECL(MPI_Comm_dup)(MPI_Comm comm, MPI_Comm *newcomm) { return imp_MPI_Comm_dup(comm, newcomm); }
+extern void RECORDER_MPI_DECL(mpi_comm_dup)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_dup_)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_dup__)(MPI_Fint* comm, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_dup(PMPI_Comm_f2c(*comm), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
 int RECORDER_MPI_DECL(MPI_Cart_sub)(MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm) { return imp_MPI_Cart_sub(comm, remain_dims, newcomm); }
-extern void RECORDER_MPI_DECL(mpi_cart_sub)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_cart_sub_)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_cart_sub__)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, (MPI_Comm*)newcomm);}
+extern void RECORDER_MPI_DECL(mpi_cart_sub)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_cart_sub_)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_cart_sub__)(MPI_Fint* comm, const int remain_dims[], MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Cart_sub(PMPI_Comm_f2c(*comm), remain_dims, &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
 int RECORDER_MPI_DECL(MPI_Comm_split_type)(MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) { return imp_MPI_Comm_split_type(comm, split_type, key, info, newcomm); }
-extern void RECORDER_MPI_DECL(mpi_comm_split_type)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_split_type_)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), (MPI_Comm*)newcomm);}
-extern void RECORDER_MPI_DECL(mpi_comm_split_type__)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){ imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), (MPI_Comm*)newcomm);}
+extern void RECORDER_MPI_DECL(mpi_comm_split_type)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_split_type_)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+extern void RECORDER_MPI_DECL(mpi_comm_split_type__)(MPI_Fint* comm, int* split_type, int* key, MPI_Fint* info, MPI_Fint* newcomm, MPI_Fint *ierr){
+    MPI_Comm c_newcomm;
+    imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), &c_newcomm);
+    *newcomm = PMPI_Comm_c2f(c_newcomm);
+}
+*/
+
+
+
 
 
 int RECORDER_MPIIO_DECL(MPI_File_open)(MPI_Comm comm, const char *filename, int amode, MPI_Info info, MPI_File *fh) { return imp_MPI_File_open(comm, filename, amode, info, fh); }
