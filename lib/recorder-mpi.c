@@ -193,15 +193,15 @@ static inline char *type2name(MPI_Datatype type) {
 
 static inline char* status2str(MPI_Status *status) {
     char *tmp = calloc(128, sizeof(char));
-	/*
+    /*
     if(status == MPI_STATUS_IGNORE)
         strcpy(tmp, "MPI_STATUS_IGNORE");
     else
         sprintf(tmp, "[%d %d]", status->MPI_SOURCE, status->MPI_TAG);
-	*/
-	// CHEN MPI-IO calls return status that may have wierd status->MPI_SOURCE,
-	// affecting compressing grammars across ranks
-	memset(tmp, 0, 128);
+    */
+    // CHEN MPI-IO calls return status that may have wierd status->MPI_SOURCE,
+    // affecting compressing grammars across ranks
+    memset(tmp, 0, 128);
     return tmp;
 }
 
@@ -515,15 +515,13 @@ int RECORDER_MPI_IMP(MPI_File_write_at) (MPI_File fh, MPI_Offset offset, CONST v
     FILTER_MPIIO_CALL(PMPI_File_write_at, (fh, offset, buf, count, datatype, status), &fh);
     RECORDER_INTERCEPTOR_NOIO(int, PMPI_File_write_at, (fh, offset, buf, count, datatype, status));
 
-	MPI_Offset offset_delta = offset;
+    MPI_Offset offset_delta = offset;
 
-	// CHEN
-	/*
-	offset_delta = offset - g_prev_offset;
-	if(offset_delta <= 0)
-		offset_delta = offset;
-	g_prev_offset = offset;
-	*/
+    // CHEN
+    offset_delta = offset - g_prev_offset;
+    if(offset_delta <= 0)
+        offset_delta = offset;
+    g_prev_offset = offset;
 
     char **args = assemble_args_list(6, file2id(&fh), itoa(offset_delta), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);

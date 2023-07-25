@@ -67,6 +67,11 @@ typedef int64_t off64_t;
 
 static int recorder_mem_alignment = 1;
 
+// For local offset pattern recognition
+static int     g_first_seek = 1;
+static off64_t g_first_offset = 0;
+static off64_t g_prev_offset = 0;
+
 
 typedef struct stream_map {
     char* filename;
@@ -384,7 +389,20 @@ extern
 ssize_t RECORDER_POSIX_DECL(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
     GET_CHECK_FILENAME(pwrite, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_NOIO(ssize_t, pwrite, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
+
+    off64_t stored_offset = offset;
+
+    // CHEN here
+    // for intraprocess compression, i.e., merge local entries in CST
+    /*
+    if(offset > g_prev_offset)
+        stored_offset = -(offset-g_prev_offset);
+    else
+        stored_offset = offset;
+    g_prev_offset = offset;
+    */
+
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(stored_offset));
     RECORDER_INTERCEPTOR(4, args);
 }
 
@@ -476,9 +494,6 @@ long RECORDER_POSIX_DECL(ftell)(FILE *stream) {
 }
 
 
-static int     g_first_seek = 1;
-static off64_t g_first_offset = 0;
-static off64_t g_prev_offset = 0;
 
 extern
 off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
@@ -488,14 +503,14 @@ off64_t RECORDER_POSIX_DECL(lseek64)(int fd, off64_t offset, int whence) {
     off64_t stored_offset = offset;
 
     // CHEN here
-	// for intraprocess compression, i.e., merge local entries in CST
-	/*
+    // for intraprocess compression, i.e., merge local entries in CST
+    /*
     if(offset > g_prev_offset)
         stored_offset = -(offset-g_prev_offset);
     else
         stored_offset = offset;
     g_prev_offset = offset;
-	*/	
+    */	
 
     char** args = assemble_args_list(3, _fname, itoa(stored_offset), itoa(whence));
 
@@ -536,6 +551,7 @@ int RECORDER_POSIX_DECL(chdir)(const char *path) {
     RECORDER_INTERCEPTOR(1, args);
 }
 int RECORDER_POSIX_DECL(link)(const char *oldpath, const char *newpath) {
+    GET_CHECK_FILENAME(link, (oldpath, newpath), oldpath, ARG_TYPE_PATH);
     RECORDER_INTERCEPTOR_NOIO(int, link, (oldpath, newpath));
     char** args = assemble_args_list(2, realrealpath(oldpath), realrealpath(newpath));
     RECORDER_INTERCEPTOR(2, args);
