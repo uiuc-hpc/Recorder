@@ -6,7 +6,7 @@
 // keep in sync with VERSION_STR in lib/recorder-logger.c
 // equal (major, minor) is needed for compatibility
 #define VERSION_MAJOR 		2
-#define VERSION_MINOR 		4
+#define VERSION_MINOR 		5
 #define VERSION_PATCH 		0
 
 #define POSIX_SEMANTICS 	0
