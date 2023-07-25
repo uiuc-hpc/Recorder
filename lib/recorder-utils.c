@@ -144,10 +144,18 @@ void recorder_free(void* ptr, size_t size) {
  * And they are operating on many strange-name files
  *
  * return 1 if we the filename exists in the inclusion list
- * or not exists in the exclusion list.
+ * and not exists in the exclusion list.
  */
 inline int accept_filename(const char *filename) {
     if (filename == NULL) return 0;
+
+    if(exclusion_prefix) {
+        for (int i = 0; exclusion_prefix[i] != NULL; i++) {
+            char* prefix = exclusion_prefix[i];
+            if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
+                return 0;
+        }
+    }
 
     if(inclusion_prefix) {
         for (int i = 0; inclusion_prefix[i] != NULL; i++) {
@@ -156,15 +164,6 @@ inline int accept_filename(const char *filename) {
                 return 1;
         }
         return 0;
-    }
-
-    if(exclusion_prefix) {
-        for (int i = 0; exclusion_prefix[i] != NULL; i++) {
-            char* prefix = exclusion_prefix[i];
-            if ( 0 == strncmp(prefix, filename, strlen(prefix)) )
-                return 0;
-        }
-        return 1;
     }
 
     return 1;
