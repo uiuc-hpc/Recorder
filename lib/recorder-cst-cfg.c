@@ -53,7 +53,7 @@ int cs_key_length(Record* record) {
     return key_len;
 }
 
-char* compose_call_key(Record* record, int* key_len) {
+char* compose_cs_key(Record* record, int* key_len) {
     int arg_count = record->arg_count;
     char **args = record->args;
 
@@ -91,6 +91,43 @@ char* compose_call_key(Record* record, int* key_len) {
     return key;
 }
 
+// Construct a Recorder* from a call signature key
+// Caller needs to free the record after use
+Record* cs_to_record(CallSignature *cs) {
+
+    Record *record = malloc(sizeof(Record));
+
+    char* key = cs->key;
+
+    int pos = 0;
+    memcpy(&record->tid, key+pos, sizeof(pthread_t));
+    pos += sizeof(pthread_t);
+    memcpy(&record->func_id, key+pos, sizeof(record->func_id));
+    pos += sizeof(record->func_id);
+    memcpy(&record->level, key+pos, sizeof(record->level));
+    pos += sizeof(record->level);
+    memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
+    pos += sizeof(record->arg_count);
+
+    record->args = malloc(sizeof(char*) * record->arg_count);
+
+    int arg_strlen;
+    memcpy(&arg_strlen, key+pos, sizeof(int));
+    pos += sizeof(int);
+
+    char* arg_str = key+pos;
+    int ai = 0;
+    int start = 0;
+    for(int i = 0; i < arg_strlen; i++) {
+        if(arg_str[i] == ' ') {
+            record->args[ai++] = strndup(arg_str+start, (i-start));
+            start = i + 1;
+        }
+    }
+
+    assert(ai == record->arg_count);
+    return record;
+}
 
 void cleanup_cst(CallSignature* cst) {
     CallSignature *entry, *tmp;
