@@ -10,31 +10,58 @@
 
 
 /**
- * Key: func_id + res + all arguments in string
+ * Key:
+ *   thread id:     sizeof(pthread_t)
+ *   func id:       sizeof(record->func_id)
+ *   level:         sizeof(record->level)
+ *   arg count:     sizeof(record->arg_count)
+ *   arg strlen:    sizeof(int)
+ *   args:          arg_strlen
  *
  * arguments seperated by space ' '
  */
-char* compose_call_key(Record *record, int* key_len) {
+int cs_key_args_start() {
+    Record r;
+    size_t args_start = sizeof(pthread_t) + sizeof(r.func_id) +
+                  sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+    return ((int)args_start);
+}
+
+int cs_key_args_strlen(Record* record) {
     int arg_count = record->arg_count;
     char **args = record->args;
 
     char invalid_str[] = "???";
     int invalid_str_len = strlen(invalid_str);
 
-    int arg_strlen = arg_count;
+    int args_strlen = arg_count;
     for(int i = 0; i < arg_count; i++) {
         if(args[i]) {
             for(int j = 0; j < strlen(args[i]); j++)
                 if(args[i][j] == ' ') args[i][j] = '_';
-            arg_strlen += strlen(args[i]);
+            args_strlen += strlen(args[i]);
         } else {
-            arg_strlen += strlen(invalid_str);
+            args_strlen += strlen(invalid_str);
         }
     }
 
-    // thread id, func id, level, arg count, arg strlen, arg str
-    *key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
-               sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+    return args_strlen;
+}
+
+int cs_key_length(Record* record) {
+    int key_len = cs_key_args_start() + cs_key_args_strlen(record);
+    return key_len;
+}
+
+char* compose_call_key(Record* record, int* key_len) {
+    int arg_count = record->arg_count;
+    char **args = record->args;
+
+    char invalid_str[] = "???";
+    int invalid_str_len = strlen(invalid_str);
+
+    int args_strlen = cs_key_args_strlen(record);
+    *key_len = cs_key_length(record);
 
     char* key = recorder_malloc(*key_len);
     int pos = 0;
@@ -46,7 +73,7 @@ char* compose_call_key(Record *record, int* key_len) {
     pos += sizeof(record->level);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
-    memcpy(key+pos, &arg_strlen, sizeof(int));
+    memcpy(key+pos, &args_strlen, sizeof(int));
     pos += sizeof(int);
 
     for(int i = 0; i < arg_count; i++) {

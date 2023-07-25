@@ -10,7 +10,7 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR             "2.4.0"
+#define VERSION_STR             "2.5.0"
 #define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
 
 
@@ -291,7 +291,7 @@ void save_global_metadata() {
         .start_ts            = logger.start_ts,
         .ts_buffer_elements  = logger.ts_max_elements,
         .ts_compression_algo = TS_COMPRESSION_NO,
-		.interprocess_compression = logger.interprocess_compression,
+        .interprocess_compression = logger.interprocess_compression,
     };
     RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
@@ -483,18 +483,20 @@ void logger_finalize() {
     /*
     offset_pattern_check("lseek64");
     offset_pattern_check("lseek");
+    offset_pattern_check("pread");
     offset_pattern_check("PMPI_File_write_at");
     offset_pattern_check("PMPI_File_read_at");
     */
+    offset_pattern_check("pwrite");
 
     cleanup_record_stack();
-	if(logger.interprocess_compression) {
-    	save_cst_merged(&logger);
-    	save_cfg_merged(&logger);
-	} else {
-    	save_cst_local(&logger);
-    	save_cfg_local(&logger);
-	}
+    if(logger.interprocess_compression) {
+        save_cst_merged(&logger);
+        save_cfg_merged(&logger);
+    } else {
+        save_cst_local(&logger);
+        save_cfg_local(&logger);
+    }
     cleanup_cst(logger.cst);
     sequitur_cleanup(&logger.cfg);
 

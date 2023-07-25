@@ -180,6 +180,9 @@ void write_record(Record* record);
 
 
 /* recorder-cst-cfg.c */
+int  cs_key_args_start();
+int  cs_key_args_strlen(Record* record);
+int  cs_key_length(Record* record);
 char* compose_call_key(Record *record, int* key_len);
 void cleanup_cst(CallSignature* cst);
 void save_cst_local(RecorderLogger* logger);
