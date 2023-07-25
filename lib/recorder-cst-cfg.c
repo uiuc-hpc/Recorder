@@ -235,20 +235,20 @@ CallSignature* compress_csts(RecorderLogger* logger) {
                     entry->count = count;
                     HASH_ADD_KEYPTR(hh, merged_cst, key, key_len, entry);
 
-					//*key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
-					//           sizeof(record->arg_count) + sizeof(int) + arg_strlen;
-					/*
-					pthread_t thread_id;
-					unsigned char func_id, level, arg_count;
-					int arg_strlen;
-					memcpy(&thread_id, key, sizeof(thread_id));
-					memcpy(&func_id, key+sizeof(thread_id), sizeof(func_id));
-					memcpy(&level, key+sizeof(thread_id)+sizeof(func_id), sizeof(level));
-					memcpy(&arg_count, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level), sizeof(arg_count));
-					memcpy(&arg_strlen, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level)+sizeof(arg_count), sizeof(arg_strlen));
-					printf("CHEN2 rank:%d tid: %ld, func_id:%d, level:%d, arg_count:%d, arg_strlen:%d, count:%u, key:%s\n",
-							cst_rank, thread_id, func_id, level, arg_count, arg_strlen, count, ((char*)key)+15);
-					*/
+                    //*key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
+                    //           sizeof(record->arg_count) + sizeof(int) + arg_strlen;
+                    /*
+                    pthread_t thread_id;
+                    unsigned char func_id, level, arg_count;
+                    int arg_strlen;
+                    memcpy(&thread_id, key, sizeof(thread_id));
+                    memcpy(&func_id, key+sizeof(thread_id), sizeof(func_id));
+                    memcpy(&level, key+sizeof(thread_id)+sizeof(func_id), sizeof(level));
+                    memcpy(&arg_count, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level), sizeof(arg_count));
+                    memcpy(&arg_strlen, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level)+sizeof(arg_count), sizeof(arg_strlen));
+                    printf("CHEN2 rank:%d tid: %ld, func_id:%d, level:%d, arg_count:%d, arg_strlen:%d, count:%u, key:%s\n",
+                    cst_rank, thread_id, func_id, level, arg_count, arg_strlen, count, ((char*)key)+15);
+                    */
                 }
             }
             recorder_free(buf, size);
@@ -343,6 +343,6 @@ void save_cfg_local(RecorderLogger* logger) {
 
 void save_cfg_merged(RecorderLogger* logger) {
     //sequitur_dump(logger->cfg_path, &logger->cfg, logger->rank, logger->nprocs);
-	sequitur_save_unique_grammars(logger->traces_dir, &logger->cfg, logger->rank, logger->nprocs);
+    sequitur_save_unique_grammars(logger->traces_dir, &logger->cfg, logger->rank, logger->nprocs);
 }
 
