@@ -123,7 +123,7 @@ typedef struct RecorderMetadata_t {
     double time_resolution;
     int    ts_buffer_elements;
     int    ts_compression_algo; // timestamp compression algorithm
-	int    interprocess_compression;
+    int    interprocess_compression;
 } RecorderMetadata;
 
 
@@ -155,7 +155,7 @@ typedef struct RecorderLogger_t {
 
     int       log_tid;          // Wether to store thread id
     int       log_level;        // Wether to store the level of the call
-	int		  interprocess_compression;	// Wether to perform interprocess compression
+    int       interprocess_compression; // Wether to perform interprocess compression
 } RecorderLogger;
 
 
