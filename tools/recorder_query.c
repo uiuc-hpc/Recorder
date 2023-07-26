@@ -9,7 +9,7 @@
 
 
 void print_cst(RecorderReader* reader, CST* cst) {
-	printf("\nBelow are the unique call signatures: \n");
+    printf("\nBelow are the unique call signatures: \n");
 
     for(int i = 0; i < cst->entries; i++) {
         Record* record = recorder_cs_to_record(&cst->cs_list[i]);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     recorder_init_reader(argv[1], &reader);
 
     CST* cst;
-	CFG* cfg;
+    CFG* cfg;
     recorder_get_cst_cfg(&reader, 0, &cst, &cfg);
 
     show_statistics(&reader, cst);
