@@ -55,9 +55,9 @@ add_executable(conflict_detector overlap_conflict.c build_offset_intervals.cpp)
 target_link_libraries(conflict_detector reader)
 add_dependencies(conflict_detector reader)
 
-add_executable(recorder_query recorder_query.c)
-target_link_libraries(recorder_query reader)
-add_dependencies(recorder_query reader)
+add_executable(recorder_summary recorder_summary.c)
+target_link_libraries(recorder_summary reader)
+add_dependencies(recorder_summary reader)
 
 
 if(RECORDER_ENABLE_PARQUET)
@@ -102,7 +102,7 @@ endif()
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
 #set(targets reader recorder2text metaops_checker conflict_detector)
-set(targets reader recorder2text recorder2timeline conflict_detector recorder_query)
+set(targets reader recorder2text recorder2timeline conflict_detector recorder_summary)
 foreach(target ${targets})
     install(
         TARGETS
