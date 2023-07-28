@@ -51,7 +51,7 @@ add_dependencies(recorder2timeline reader)
 #target_link_libraries(metaops_checker reader)
 #add_dependencies(metaops_checker reader)
 
-add_executable(conflict_detector overlap_conflict.c build_offset_intervals.cpp)
+add_executable(conflict_detector conflict_detector.c build_offset_intervals.cpp)
 target_link_libraries(conflict_detector reader)
 add_dependencies(conflict_detector reader)
 

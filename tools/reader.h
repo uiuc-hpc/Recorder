@@ -28,18 +28,13 @@ typedef struct Interval_t {
     bool isRead;
 } Interval;
 
+/* Per-file intervals
+ * <filename, intervals>
+ */
 typedef struct IntervalsMap_t {
     char* filename;
     size_t num_intervals;
     Interval *intervals;    // Pointer to Interval, copied from vector<Interval>
-
-    int *num_opens;         // num_opens[rank] is list of number of opens for rank
-    int *num_closes;
-    int *num_commits;
-
-    double **topens;        // topens[rank] is a list of open timestamps for rank
-    double **tcloses;
-    double **tcommits;
 } IntervalsMap;
 
 typedef struct CST_t {
@@ -158,7 +153,7 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record);
 int recorder_get_func_type(RecorderReader* reader, Record* record);
 
 
-IntervalsMap* build_offset_intervals(RecorderReader *reader, int semantics, int *num_files);
+IntervalsMap* build_offset_intervals(RecorderReader *reader, int *num_files);
 
 #ifdef __cplusplus
 }
