@@ -35,6 +35,7 @@ class VerifyIOGraph:
     def num_nodes(self):
         return len(self.G.nodes)
 
+    # next (program-order) node of funcs in the sam rank
     def next_po_node(self, current, funcs):
         index = self.G.nodes[current.graph_key()]['index']
         nodes = self.nodes[current.rank]
@@ -45,6 +46,7 @@ class VerifyIOGraph:
                 break
         return target
 
+    # previous (program-order) node of funcs in the sam rank
     def prev_po_node(self, current, funcs):
         index = self.G.nodes[current.graph_key()]['index']
         nodes = self.nodes[current.rank]
@@ -52,6 +54,16 @@ class VerifyIOGraph:
         for i in range(index-1, 0, -1):
             if nodes[i].func in funcs:
                 target = nodes[i]
+                break
+        return target
+
+    # next (happens-beofre) node of funcs in the target rank
+    def next_hb_node(self, current, funcs, target_rank):
+        target = None
+        nodes = self.nodes[target_rank]
+        for target in nodes:
+            if (target.func in funcs) and (self.has_path(current, target)):
+                targest.append(target)
                 break
         return target
 

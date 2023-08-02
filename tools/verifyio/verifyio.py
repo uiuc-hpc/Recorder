@@ -54,15 +54,15 @@ def verify_proper_synchronization(G, S, R, pairs):
 
 '''
 
-def check_posix_semantics(G, pairs):
+def verify_posix_semantics(G, conflict_pairs):
     properly_synchronized = True
 
-    for pair in pairs:
-        n1 = G.graph_node_key(pair[0])
-        n2 = G.graph_node_key(pair[1])
+    for pair in conflict_pairs:
+        n1 = pair[0]
+        n2 = pair[1]
         reachable = G.has_path(n1, n2) or G.has_path(n1, n2)
         if not reachable: properly_synchronized = False
-        print("Conflicting I/O operations: %s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
+        print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
 
     return properly_synchronized
 
@@ -95,20 +95,14 @@ def print_shortest_path(G, src, dst, calls):
     print(path)
     return path_str
 
-
-def check_mpi_semantics(G, conflict_pairs):
-    properly_synchronized = True
-
+def verify_session_semantics(G, conflict_pairs, 
+                             close_ops=["close", "fclose"],
+                             open_ops=["open", "fopen"]):
     for pair in conflict_pairs:
         n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
-        if n1.rank == n2.rank: continue             # Same rank conflicts do no cause a issue on most file systems.
-
         next_sync = G.next_po_node(n1, ['MPI_File_sync', 'MPI_File_close'])
         prev_sync = G.prev_po_node(n2, ['MPI_File_sync', 'MPI_File_open'])
-
-        reachable = (bool) ( (next_sync and prev_sync) and G.has_path(G, next_sync, prev_sync) )
-        if not reachable: properly_synchronized = False
-        print("%s --> %s, properly synchronized: %s" %(n1, n2, reachable))
+        reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
 
         if reachable:
             #path_str = print_shortest_path(G, src, dst, calls)
@@ -118,15 +112,39 @@ def check_mpi_semantics(G, conflict_pairs):
             #            graph_node_key(pair[1]), pair[1].func))
             print("\tPath: %s --> %s --> %s --> %s, properly synchronized: true" %(graph_node_key(pair[0]), src, dst, graph_node_key(pair[1])))
 
+        if not reachable: properly_synchronized = False
+        print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
     return properly_synchronized
 
+def verify_mpi_semantics(G, conflict_pairs):
+    return verify_session_semantics(G, conflict_pairs,
+                             close_ops = ["MPI_File_sync", "MPI_File_close"], \
+                             open_ops  = ["MPI_File_sync", "MPI_File_open"])
+
+def verify_commit_semantics(G, conflict_pairs):
+    properly_synchronized = True
+    for pair in conflict_pairs:
+        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
+
+        this_pair_ok = False
+        # TODO need to consider all ranks
+        ranks = [n1.rank, n2.rank]
+        for rank in ranks:
+            next_commit = G.next_hb_node(n1, ["fsync", "close"], rank)
+            if (next_commit) and G.has_path(next_commit, n2):
+                this_pair_ok = True
+                break
+        if not this_pair_ok: properly_synchronized = False
+        print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
+
+    return properly_synchronized
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("traces_folder")
     #parser.add_argument("conflicts_file")
-    parser.add_argument("--semantics", type=str, choices=["POSIX", "MPI-IO", "Commit"],
+    parser.add_argument("--semantics", type=str, choices=["POSIX", "MPI-IO", "Commit", "Session"],
                         default="MPI-IO", help="Verify if I/O operations are properly synchronized under the specific semantics")
     args = parser.parse_args()
 
@@ -155,11 +173,13 @@ if __name__ == "__main__":
     # G.run_vector_clock()
 
     if args.semantics == "POSIX":
-        p = check_posix_semantics(G, conflict_pairs)
+        p = verify_posix_semantics(G, conflict_pairs)
     elif args.semantics == "MPI-IO":
-        p = check_mpi_semantics(G, conflict_pairs)
+        p = verify_mpi_semantics(G, conflict_pairs)
     elif args.semantics == "Commit":
-        pass
+        p = verify_commit_semantics(G, conflict_pairs)
+    elif args.semantics == "Session":
+        p = verify_session_semantics(G, conflict_pairs)
 
     if p:
         print("\nProperly synchronized under %s semantics" %args.semantics)
