@@ -92,6 +92,27 @@ class VerifyIOGraph:
             self.G.nodes[node_key]['vc'] = vc
         print("Vector clock algorith finished")
 
+    def shortest_path(self, src, dst):
+        # Retrive rank from node key
+        def key2rank(key):
+            return (int)(key.split('-')[0])
+
+        if (not src) or (not dst):
+            print("shortest_path Error: must specify src and dst (VerifyIONode)")
+            return []
+
+        # nx.shortest_path will return a list of nodes in
+        # keys. we then retrive the real VerifyIONode and return a
+        # list of them
+        path_in_keys = nx.shortest_path(self.G, src.graph_key(), dst.graph_key())
+        path = []
+        for key in path_in_keys:
+            rank = key2rank(key)
+            index = self.G.nodes[key]['index']
+            path.append(self.nodes[rank][index])
+        return path
+
+
     # private method to build the networkx DiGraph
     # called only by __init__
     # nodes: per rank of nodes of type VerifyIONode

@@ -54,6 +54,7 @@ def verify_proper_synchronization(G, S, R, pairs):
 
 '''
 
+
 def verify_posix_semantics(G, conflict_pairs):
     properly_synchronized = True
 
@@ -61,38 +62,22 @@ def verify_posix_semantics(G, conflict_pairs):
         n1 = pair[0]
         n2 = pair[1]
         reachable = G.has_path(n1, n2) or G.has_path(n1, n2)
-        if not reachable: properly_synchronized = False
+        if reachable:
+            print(get_shortest_path(G, n1, n2))
+        else:
+            properly_synchronized = False
         print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
 
     return properly_synchronized
 
-def print_shortest_path(G, src, dst, calls):
-    def key2rank(key):
-        return int(key.split('-')[0])
-    def key2func(key):
-        rank = key2rank(key)
-        idx = G.nodes[key]['origin_idx']
-        return calls[rank][idx].func
-
+def get_shortest_path(G, src, dst):
     path = G.shortest_path(src, dst)
-    current_rank = key2rank(src)
-
-    selected_keys = [src]
-    for i in range(1, len(path)):
-        r = key2rank(path[i])
-        if current_rank != r:
-            if selected_keys[-1] != path[i-1]:
-                selected_keys.append(path[i-1])
-            if selected_keys[-1] != path[i]:
-                selected_keys.append(path[i])
-            current_rank = r
-    if selected_keys[-1] != dst:
-        selected_keys.append(dst)
-
     path_str = ""
-    for key in selected_keys:
-        path_str += " -> (%s)%s" %(key, key2func(key))
-    print(path)
+    for i in range(len(path)):
+        node = path[i]
+        path_str += str(node) 
+        if i != len(path) - 1:
+            path_str += "->"
     return path_str
 
 def verify_session_semantics(G, conflict_pairs, 
@@ -100,19 +85,14 @@ def verify_session_semantics(G, conflict_pairs,
                              open_ops=["open", "fopen"]):
     for pair in conflict_pairs:
         n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
-        next_sync = G.next_po_node(n1, ['MPI_File_sync', 'MPI_File_close'])
-        prev_sync = G.prev_po_node(n2, ['MPI_File_sync', 'MPI_File_open'])
+        next_sync = G.next_po_node(n1, close_ops)
+        prev_sync = G.prev_po_node(n2, open_ops)
         reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
-
         if reachable:
-            #path_str = print_shortest_path(G, src, dst, calls)
-            #print("(%s)%s%s -> (%s)%s\n"
-            #        %(graph_node_key(pair[0]), pair[0].func, \
-            #            path_str, \
-            #            graph_node_key(pair[1]), pair[1].func))
-            print("\tPath: %s --> %s --> %s --> %s, properly synchronized: true" %(graph_node_key(pair[0]), src, dst, graph_node_key(pair[1])))
-
-        if not reachable: properly_synchronized = False
+            path_str = get_shortest_path(G, next_sync, prev_src)
+            print("%s -> %s -> %s" %(n1, path_str, n2))
+        else:
+            properly_synchronized = False
         print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
     return properly_synchronized
 
