@@ -479,7 +479,7 @@ that guarantee synchronization, this flag is used
 for checking MPI semantics
 '''
 #@profile
-def match_mpi_calls(reader, mpi_sync_calls=False):
+def match_mpi_calls(reader, mpi_sync_calls=True):
     edges = []
     helper = MPIMatchHelper(reader, mpi_sync_calls)
     helper.read_mpi_calls(reader)

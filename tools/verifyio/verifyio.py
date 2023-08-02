@@ -89,7 +89,7 @@ def verify_session_semantics(G, conflict_pairs,
         prev_sync = G.prev_po_node(n2, open_ops)
         reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
         if reachable:
-            path_str = get_shortest_path(G, next_sync, prev_src)
+            path_str = get_shortest_path(G, next_sync, prev_sync)
             print("%s -> %s -> %s" %(n1, path_str, n2))
         else:
             properly_synchronized = False
