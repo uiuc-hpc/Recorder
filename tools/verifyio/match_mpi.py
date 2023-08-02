@@ -1,30 +1,34 @@
 import sys
-from enum import Enum
 from itertools import repeat
-from verifyio_graph import VerifyIONode
+from verifyio_graph import VerifyIONode, MPICallType
 
 ANY_SOURCE = -2
 ANY_TAG = -1
 
-class MPICallType(Enum):
-    ALL_TO_ALL     = 1
-    ONE_TO_MANY    = 2
-    MANY_TO_ONE    = 3
-    POINT_TO_POINT = 4
-    OTHER          = 5  # e.g., wait/test calls
-
 class MPIEdge():
-    def __init__(self, edge_type):
+    def __init__(self, call_type, head=None, tail=None):
+        # Init head/tail according the cal type
         self.call_type = call_type  # enum of MPICallType
-        self.head = head            # list/instance of VerifyIONode
-        self.tail = tail            # list/instance of VerifyIONode
+        if call_type == MPICallType.ALL_TO_ALL:
+            self.head, self.tail = [], []
+        if call_type == MPICallType.ONE_TO_MANY:
+            self.head, self.tail = None, []
+        if call_type == MPICallType.MANY_TO_ONE:
+            self.head, self.tail = [], None
+        if call_type == MPICallType.POINT_TO_POINT:
+            self.head, self.tail = None, None
+        # override if supplied
+        if head:
+            self.head = head        # list/instance of VerifyIONode
+        if tail:
+            self.tail = tail        # list/instance of VerifyIONode
 
 class MPICall():
     def __init__(self, rank, seq_id, func, src, dst, stag, rtag, comm, tindx, req=None, reqflag=-1):
         self.rank   = int(rank)
         self.seq_id = int(seq_id)             # Sequence Id of the mpi call
         self.func   = str(func)
-        self.src    = int(src) if src else None
+        self.src    = int(src) if src else None # root of reduce/bcast call
         self.dst    = int(dst) if dst else None
         self.stag   = int(stag) if stag else None
         self.rtag   = int(rtag) if rtag else None
@@ -44,7 +48,7 @@ class MPICall():
         return True
 
 class MPIMatchHelper:
-    def __init__(self, reader, mpi_sync_calls=True):
+    def __init__(self, reader, mpi_sync_calls):
         self.recorder_reader = reader
         self.num_ranks       = reader.GM.total_ranks
         self.all_mpi_calls   = [[] for i in repeat(None, self.num_ranks)]
@@ -53,7 +57,6 @@ class MPIMatchHelper:
         self.send_calls      = [0 for i in repeat(None, self.num_ranks)]
         self.wait_test_calls = [[] for i in repeat(None, self.num_ranks)]
         self.coll_calls      = [{} for i in repeat(None, self.num_ranks)]
-
 
         self.send_func_names   = ['MPI_Send','MPI_Ssend', 'MPI_Isend','MPI_Sendrecv']
         self.recv_func_names   = ['MPI_Recv', 'MPI_Irecv', 'MPI_Sendrecv']
@@ -104,7 +107,14 @@ class MPIMatchHelper:
     def read_one_mpi_call(self, rank, seq_id, record):
 
         func = self.recorder_reader.funcs[record.func_id]
-        args = record.args
+
+        # in python3, record.args are bytes instead of
+        # str in like python2. need to decode them to
+        # str first
+        args = []
+        for i in range(record.arg_count):
+            arg = record.args[i].decode("utf-8")
+            args.append(arg)
 
         src, dst, stag, rtag = None, None, None, None
         comm, req, reqflag, tindx = None, None, 1, None
@@ -115,9 +125,9 @@ class MPIMatchHelper:
             skip, src, rtag, comm = False, args[3],args[4], args[5]
             # get the actual source from MPI_Status
             if int(src) == ANY_SOURCE:
-                src = args[6][1:-1].split("_")[0]
+                src = args[6][1:-1].split('_')[0]
             if int(rtag) == ANY_TAG:
-                rtag = args[6][1:-1].split("_")[1]
+                rtag = args[6][1:-1].split('_')[1]
         elif func == 'MPI_Sendrecv':
             skip, src, dst, stag, rtag, comm = False, args[8], args[3], args[4], args[9], args[10]
         elif func == 'MPI_Irecv':
@@ -370,18 +380,21 @@ def match_collective(mpi_call, helper):
             edge.head.append(node)
             edge.tail.append(node)
         # One-to-many (bcast) or Many-to-one (reduce)
-        else:
-            if edge.call_type == MPICallType.ONE_TO_MANY or \
-               edge.call_type == MPICallType.MANY_TO_ONE:
-                if call.rank == call.src:
-                    edge.head.append(node)
-                else:
-                    edge.tail.append(node)
+        if edge.call_type == MPICallType.ONE_TO_MANY:
+            if call.rank == call.src:
+                edge.head = node
+            else:
+                edge.tail.append(node)
+        if edge.call_type == MPICallType.MANY_TO_ONE:
+            if call.rank == call.src:
+                edge.tail = node
+            else:
+                edge.head.append(node)
 
     # All matching collective calls have the same name
     # and thus the same call type
-    call_type = helper.call_type(call.func)
-    edge = MPIEdge(call_type=call_type)
+    call_type = helper.call_type(mpi_call.func)
+    edge = MPIEdge(call_type)
 
     for rank in range(helper.num_ranks):
         key = mpi_call.get_key()
@@ -398,7 +411,6 @@ def match_collective(mpi_call, helper):
                 wait_call = find_wait_test_call(coll_call.req, rank, helper)
                 if wait_call:
                     add_nodes_to_edge(edge, wait_call)
-                    h.append((wait_call.rank, wait_call.seq_id, wait_call.func))
 
             # If no more collective calls have the same key
             # then remove this key from the dict
@@ -412,11 +424,8 @@ def match_collective(mpi_call, helper):
             coll_call.matched = True
 
     mpi_call.matched = True 
-    if len(head_nodes) and len(tail_nodes):
-        edge = (head_nodes, tail_nodes)
-        return edge
-    else:
-        return None
+    print("match collective:", mpi_call.func)
+    return edge
 
 #@profile
 def match_pt2pt(send_call, helper):
@@ -456,7 +465,8 @@ def match_pt2pt(send_call, helper):
 
     if tail_node :
         send_call.matched = True
-        edge = (head_node, tail_node)
+        edge = MPIEdge(MPICallType.POINT_TO_POINT, head_node, tail_node)
+        print("match pt2pt: %s --> %s" %(edge.head, edge.tail))
         return edge
     else:
         print("Warnning: unmatched send call:", head_node, global_dst, send_call.stag)
@@ -469,9 +479,9 @@ that guarantee synchronization, this flag is used
 for checking MPI semantics
 '''
 #@profile
-def match_mpi_calls(reader, mpi_sync_calls=True):
+def match_mpi_calls(reader, mpi_sync_calls=False):
     edges = []
-    helper = MPIMatchHelper(reader)
+    helper = MPIMatchHelper(reader, mpi_sync_calls)
     helper.read_mpi_calls(reader)
 
     for rank in range(helper.num_ranks):
@@ -495,10 +505,10 @@ def match_mpi_calls(reader, mpi_sync_calls=True):
             print("Rank %d has %d unmatched recvs" %(rank, recvs_sum))
         if len(helper.coll_calls[rank]) != 0:
             print("Rank %d has %d unmatched colls" %(rank, len(helper.coll_calls[rank])))
-        if len(helper.wait_test_calls[rank]) != 0:
-            # This often is not an issue. For example, test calls with MPI_REQUEST_NULL
-            # as input requrests may also have a output flag set to 1. Such test calls
-            # will never be matched
-            print("Rank %d has %d unmatched wait/test" %(rank, len(helper.wait_test_calls[rank])))
+        # No need to report unmatched test/wait calls. For example,
+        # test calls with some MPI_REQUEST_NULL as input requrests may
+        # not be set to matched and removed from the list
+        #if len(helper.wait_test_calls[rank]) != 0:
+        #    print("Rank %d has %d unmatched wait/test" %(rank, len(helper.wait_test_calls[rank])))
 
     return edges

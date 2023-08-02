@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("traces_folder")
-    parser.add_argument("conflicts_file")
+    #parser.add_argument("conflicts_file")
     parser.add_argument("--semantics", type=str, choices=["POSIX", "MPI-IO", "Commit"],
                         default="MPI-IO", help="Verify if I/O operations are properly synchronized under the specific semantics")
     args = parser.parse_args()
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     reader = RecorderReader(args.traces_folder)
 
     mpi_nodes = read_mpi_nodes(reader)
-    io_nodes, conflict_pairs = read_io_nodes(reader, args.conflicts_file)
+    io_nodes, conflict_pairs = read_io_nodes(reader, args.traces_folder+"/conflicts.txt")
 
     all_nodes = mpi_nodes
     for rank in range(reader.GM.total_ranks):

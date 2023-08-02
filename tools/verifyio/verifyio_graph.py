@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from enum import Enum
 import networkx as nx
+
+class MPICallType(Enum):
+    ALL_TO_ALL     = 1
+    ONE_TO_MANY    = 2
+    MANY_TO_ONE    = 3
+    POINT_TO_POINT = 4
+    OTHER          = 5  # e.g., wait/test calls
 
 class VerifyIONode:
     def __init__(self, rank, seq_id, func):
@@ -77,11 +85,11 @@ class VerifyIOGraph:
     # nodes: per rank of nodes of type VerifyIONode
     # Add neighbouring nodes of the same rank
     # This step will add all nodes
-    def __build_graph(self, nodes, mpi_edges, include_vc):
-        for rank in range(len(nodes)):
-            for i in range(len(nodes[rank]) - 1):
-                h = nodes[rank][i]
-                t = nodes[rank][i+1]
+    def __build_graph(self, all_nodes, mpi_edges, include_vc):
+        for rank in range(len(all_nodes)):
+            for i in range(len(all_nodes[rank]) - 1):
+                h = all_nodes[rank][i]
+                t = all_nodes[rank][i+1]
                 self.add_edge(h, t)
 
                 # Include the original index of the `nodes`
@@ -91,8 +99,8 @@ class VerifyIOGraph:
 
                 # Include vector clock for each node
                 if include_vc:
-                    vc1 = [0] * len(nodes)
-                    vc2 = [0] * len(nodes)
+                    vc1 = [0] * len(all_nodes)
+                    vc2 = [0] * len(all_nodes)
                     vc1[rank] = i
                     vc1[rank] = i+1
                     self.G.nodes[h.graph_key()]['vc'] = vc1
@@ -104,47 +112,44 @@ class VerifyIOGraph:
         # to add edges of matching MPI calls
         ghost_node_index = 0
         for edge in mpi_edges:
-            head, tail = edge[0], edge[1]
+            head, tail = edge.head, edge.tail
 
-            # many-to-many, e.g., barrier, alltoall
-            if type(head) == list and type(tail) == list:
-                if len(head) == len(tail):    
-                    # Opt:
-                    # Add a ghost node and connect all predecessors
-                    # and successors from all ranks. This prvents the circle
-                    '''
-                    ghost_node = (-1, ghost_node_index, "")
-                    ghost_node_index += 1
-                    for h in head:
-                        origin_h, origin_t = h, None
-                        for tmp in self.G.successors(graph_node_key(h)):
-                            origin_t = tmp
-                        self.add_edge(origin_h, ghost_node)
-                        if origin_t:
-                            remove_networkx_edge(self.G, origin_h, origin_t)
-                            self.add_edge(ghost_node, origin_t)
-                    '''
+            # all-to-all
+            # TODO is ther a many-to-many MPI call that
+            # different senders and receivers?
+            if edge.call_type == MPICallType.ALL_TO_ALL:
+                # Opt:
+                # Add a ghost node and connect all predecessors
+                # and successors from all ranks. This prvents the circle
+                '''
+                ghost_node = (-1, ghost_node_index, "")
+                ghost_node_index += 1
+                for h in head:
+                    origin_h, origin_t = h, None
+                    for tmp in self.G.successors(graph_node_key(h)):
+                        origin_t = tmp
+                    self.add_edge(origin_h, ghost_node)
+                    if origin_t:
+                        remove_networkx_edge(self.G, origin_h, origin_t)
+                        self.add_edge(ghost_node, origin_t)
+                '''
 
-                    # Add all-to-all edges will create circle and prevent
-                    # the use of topological sort
-                    for idx in range(len(head) - 1):
-                        h, t = head[idx], head[idx+1]
-                        self.add_edge(h, t)
-                        self.add_edge(t, h)
-                else:
-                    for h in head:
-                        for t in tail:
-                            self.add_edge(h, t)
+                # Add all-to-all edges will create circle and prevent
+                # the use of topological sort
+                for idx in range(len(head) - 1):
+                    h, t = head[idx], head[idx+1]
+                    self.add_edge(h, t)
+                    self.add_edge(t, h)
             # many-to-one, e.g., reduce
-            elif type(head) == list:
+            elif edge.call_type == MPICallType.MANY_TO_ONE:
                 for h in head:
                     self.add_edge(h, tail)
             # one-to-many, e.g., bcast
-            elif type(tail) == list:
+            elif edge.call_type == MPICallType.ONE_TO_MANY:
                 for t in tail:
                     self.add_edge(head, t)
             # point-to-point, i.e., send-recv
-            else:
+            elif edge.call_type == MPICallType.POINT_TO_POINT:
                 self.add_edge(head, tail)
 
         # Transitive clousre is too slow for large graphs
