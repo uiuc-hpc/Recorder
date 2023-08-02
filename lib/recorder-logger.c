@@ -340,8 +340,8 @@ void logger_finalize() {
     interprocess_pattern_recognition("PMPI_File_write_at");
     interprocess_pattern_recognition("PMPI_File_read_at");
     */
-    interprocess_pattern_recognition(&logger, "PMPI_File_write_at", 1);
-    interprocess_pattern_recognition(&logger, "pwrite", 3);
+    //interprocess_pattern_recognition(&logger, "PMPI_File_write_at", 1);
+    //interprocess_pattern_recognition(&logger, "pwrite", 3);
 
     cleanup_record_stack();
     if(logger.interprocess_compression) {

@@ -518,10 +518,12 @@ int RECORDER_MPI_IMP(MPI_File_write_at) (MPI_File fh, MPI_Offset offset, CONST v
     MPI_Offset offset_delta = offset;
 
     // CHEN
+    /*
     offset_delta = offset - g_prev_offset;
     if(offset_delta <= 0)
         offset_delta = offset;
     g_prev_offset = offset;
+    */
 
     char **args = assemble_args_list(6, file2id(&fh), itoa(offset_delta), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR(6, args);

@@ -18,6 +18,9 @@ int sum_array(int *arr, int count) {
 }
 
 int is_conflict(Interval* i1, Interval* i2) {
+    // TODO: same rank but multi-threaded?
+    if(i1->rank == i2->rank)
+        return false;
     if(i1->offset+i1->count <= i2->offset)
         return false;
     if(i2->offset+i2->count <= i1->offset)
@@ -40,7 +43,6 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
         // sort by offset
         qsort(intervals, IM[idx].num_intervals, sizeof(Interval), compare_by_offset);
 
-
         int i = 0, j = 0;
         Interval *i1, *i2;
         while(i < IM[idx].num_intervals-1) {
@@ -53,9 +55,9 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                 bool conflict = is_conflict(i1, i2);
 
                 if(conflict) {
-                    printf("%s, op1(%d-%d, %lu, %lu, %s), op2(%d-%d, %lu, %lu, %s) \n", filename,
-                            i1->rank, i1->seqId, i1->offset, i1->count, i1->isRead?"read":"write",
-                            i2->rank, i2->seqId, i2->offset, i2->count, i2->isRead?"read":"write");
+                    printf("%s, %s(%d-%d, %lu, %lu), %s(%d-%d, %lu, %lu) \n", filename,
+                            i1->isRead?"read":"write", i1->rank, i1->seqId, i1->offset, i1->count, 
+                            i2->isRead?"read":"write", i2->rank, i2->seqId, i2->offset, i2->count);
                     fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n",
                             i1->isRead?"read":"write", i1->rank, i1->seqId,
                             i2->isRead?"read":"write", i2->rank, i2->seqId);
@@ -78,9 +80,9 @@ int main(int argc, char* argv[]) {
     RecorderReader reader;
     recorder_init_reader(argv[1], &reader);
 
-    printf("Format:\nFilename,                          \
-            io op1(rank-seqId, offset, bytes, isRead),  \
-            io op2(rank-seqId, offset, bytes, isRead)\n\n");
+    printf("Format:\nFilename,"
+           "op1(rank-seqId, offset, bytes),"
+           "op2(rank-seqId, offset, bytes)\n\n");
 
     int i, rank, num_files;
     IntervalsMap *IM = build_offset_intervals(&reader, &num_files);
@@ -95,6 +97,5 @@ int main(int argc, char* argv[]) {
     free(IM);
 
     recorder_free_reader(&reader);
-
     return 0;
 }

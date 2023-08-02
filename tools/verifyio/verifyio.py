@@ -1,31 +1,80 @@
-import sys, argparse, time
-import networkx as nx
+import argparse, time
 from recorder_viz import RecorderReader
+from read_nodes import read_mpi_nodes, read_io_nodes
 from match_mpi import match_mpi_calls
-from read_conflicts import read_conflicting_accesses
-from gen_networkx import generate_graph, has_path, graph_node_key, run_vector_clock
+from verifyio_graph import VerifyIONode, VerifyIOGraph
+
+'''
+def verify_proper_synchronization(G, S, R, pairs):
+    O = [0 * len(S)]
+
+    # for every conflict pair
+    for pair in pairs:
+        n1 = graph_node_key(pair[0])
+        n2 = graph_node_key(pair[1])
+
+        # from left to right, for every S[i]
+        # narrow it down to a single op O[i]
+        n_left = n1
+        for i in range(0, len(S), 1):
+            if R[i] == "po":
+                O[i] = next_op(n_left, S[i])
+                # Todo: if O[i] is empty
+                # then the conflict must be
+                # not properly synchornized
+                n_left = O[i]
+            else:
+                break
+    
+        # from right to left, for every S[i]
+        # narrow it down to a single op O[i]
+        n_right = n2
+        for i in range(len(S), 0, -1):
+            if R[i+1] == "po":
+                O[i] = perv_op(n_right, S[i])
+                n_right = O[i]
+            else:
+                break
+
+        # then do the final pass
+        n_left = n1
+        for i in range(0, len(S), 1):
+            # already narrowed down
+            if O[i]:
+                n_left = O[i]
+                continue
+            # hb
+            for o1 in n_left:
+                for every rank:
+                    o2 = next_op(None, S[i])
+                    if tc[o1, o2]:
+                        O[i] += o2
+            if not O[i]:
+                return
+
+'''
 
 def check_posix_semantics(G, pairs):
     properly_synchronized = True
 
     for pair in pairs:
-        n1 = graph_node_key(pair[0])
-        n2 = graph_node_key(pair[1])
-        reachable = has_path(G, n1, n2) or has_path(G, n1, n2)
+        n1 = G.graph_node_key(pair[0])
+        n2 = G.graph_node_key(pair[1])
+        reachable = G.has_path(n1, n2) or G.has_path(n1, n2)
         if not reachable: properly_synchronized = False
         print("Conflicting I/O operations: %s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
 
     return properly_synchronized
 
-def print_shortest_path(G, src, dst, nodes):
+def print_shortest_path(G, src, dst, calls):
     def key2rank(key):
         return int(key.split('-')[0])
     def key2func(key):
         rank = key2rank(key)
         idx = G.nodes[key]['origin_idx']
-        return nodes[rank][idx].func
+        return calls[rank][idx].func
 
-    path = nx.shortest_path(G, src, dst)
+    path = G.shortest_path(src, dst)
     current_rank = key2rank(src)
 
     selected_keys = [src]
@@ -47,48 +96,22 @@ def print_shortest_path(G, src, dst, nodes):
     return path_str
 
 
-def check_mpi_semantics(G, nodes, pairs):
+def check_mpi_semantics(G, conflict_pairs):
     properly_synchronized = True
 
-    for pair in pairs:
-        p1, p2 = pair[0], pair[1]                   # of Call class
-        if p1.rank == p2.rank: continue             # Same rank conflicts do no cause a issue on most file systems.
+    for pair in conflict_pairs:
+        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
+        if n1.rank == n2.rank: continue             # Same rank conflicts do no cause a issue on most file systems.
 
-        idx1, idx2 = -1, -1
-        for i in range(len(nodes[p1.rank])):
-            if p1.index == nodes[p1.rank][i].index:
-                idx1 = i
-                break
-        for i in range(len(nodes[p2.rank])):
-            if p2.index == nodes[p2.rank][i].index:
-                idx2 = i
-                break
+        next_sync = G.next_po_node(n1, ['MPI_File_sync', 'MPI_File_close'])
+        prev_sync = G.prev_po_node(n2, ['MPI_File_sync', 'MPI_File_open'])
 
-        next_sync, prev_sync = None, None
-        # Find the next sync() call for first access
-        for i in range(idx1+1, len(nodes[p1.rank])):
-            record = nodes[p1.rank][i]
-            if record.func == 'MPI_File_sync' or record.func == 'MPI_File_open' \
-                    or record.func == 'MPI_File_close':
-                next_sync = record
-                break
-
-        # Find the previous sync() call for second access
-        for i in range(idx2-1, 0, -1):
-            record = nodes[p2.rank][i]
-            if record.func == 'MPI_File_sync' or record.func == 'MPI_File_open' \
-                    or record.func == 'MPI_File_close':
-                prev_sync = record
-                break
-
-        src = None if not next_sync else graph_node_key(next_sync)
-        dst = None if not prev_sync else graph_node_key(prev_sync)
-        reachable = (bool) ( (next_sync and prev_sync) and has_path(G, src, dst) )
+        reachable = (bool) ( (next_sync and prev_sync) and G.has_path(G, next_sync, prev_sync) )
         if not reachable: properly_synchronized = False
-        print("%s --> %s, properly synchronized: %s" %(graph_node_key(pair[0]), graph_node_key(pair[1]), reachable))
+        print("%s --> %s, properly synchronized: %s" %(n1, n2, reachable))
 
         if reachable:
-            #path_str = print_shortest_path(G, src, dst, nodes)
+            #path_str = print_shortest_path(G, src, dst, calls)
             #print("(%s)%s%s -> (%s)%s\n"
             #        %(graph_node_key(pair[0]), pair[0].func, \
             #            path_str, \
@@ -102,46 +125,43 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("traces_folder")
-    parser.add_argument("conflicts_file", nargs='?', default=None)
-    parser.add_argument("--semantics", type=str, choices=["posix", "mpi"], default="mpi", help="Verify if I/O operations are properly synchronized under the specific semantics")
+    parser.add_argument("conflicts_file")
+    parser.add_argument("--semantics", type=str, choices=["POSIX", "MPI-IO", "Commit"],
+                        default="MPI-IO", help="Verify if I/O operations are properly synchronized under the specific semantics")
     args = parser.parse_args()
-    sync_calls_only = args.semantics == "mpi"
 
-    reader = RecorderReader(sys.argv[1])
+    reader = RecorderReader(args.traces_folder)
+
+    mpi_nodes = read_mpi_nodes(reader)
+    io_nodes, conflict_pairs = read_io_nodes(reader, args.conflicts_file)
+
+    all_nodes = mpi_nodes
+    for rank in range(reader.GM.total_ranks):
+        all_nodes[rank] += io_nodes[rank]
+        all_nodes[rank] = sorted(all_nodes[rank], key=lambda x: x.seq_id)
+
+    # get mpi calls and matched edges
+    t1 = time.time()
+    mpi_edges = match_mpi_calls(reader)
+    t2 = time.time()
+    print("match mpi calls: %.3f secs, mpi edges: %d" %((t2-t1),len(mpi_edges)))
 
     t1 = time.time()
-    nodes, edges = match_mpi_calls(reader, sync_calls_only)
+    G = VerifyIOGraph(all_nodes, mpi_edges, include_vc=False)
     t2 = time.time()
-    #print(t2-t1)
+    print("build happens-before graph: %.3f secs, nodes: %d" %((t2-t1), G.num_nodes()))
 
-    # Add the I/O nodes (conflicting I/O accesses)
-    # to the graph. We add them after the match()
-    # because they are not used for synchronizaitons
-    total_nodes = 0
-    if args.conflicts_file:
-        conflicting_nodes, pairs = read_conflicting_accesses(args.conflicts_file, reader.GM.total_ranks)
+    # G.plot_graph()
+    # G.run_vector_clock()
 
-    for rank in range(reader.GM.total_ranks):
-        if args.conflicts_file:
-            nodes[rank] += conflicting_nodes[rank]
-        nodes[rank] = sorted(nodes[rank], key=lambda x: x.index)
-        total_nodes += len(nodes[rank])
+    if args.semantics == "POSIX":
+        p = check_posix_semantics(G, conflict_pairs)
+    elif args.semantics == "MPI-IO":
+        p = check_mpi_semantics(G, conflict_pairs)
+    elif args.semantics == "Commit":
+        pass
 
-
-    print("Building happens-before graph")
-    G = generate_graph(nodes, edges, include_vc=False)
-    print("Nodes: %d, Edges: %d" %(len(G.nodes()), len(G.edges())))
-
-    # plot_graph(G, reader.GM.total_ranks)
-    # run_vector_clock(G)
-
-    if args.conflicts_file:
-        if sync_calls_only:
-            p = check_mpi_semantics(G, nodes, pairs)
-        else:
-            p = check_posix_semantics(G, pairs)
-
-        if p:
-            print("\nProperly synchronized under %s semantics" %args.semantics)
-        else:
-            print("\nNot properly synchronized under %s semantics" %args.semantics)
+    if p:
+        print("\nProperly synchronized under %s semantics" %args.semantics)
+    else:
+        print("\nNot properly synchronized under %s semantics" %args.semantics)
