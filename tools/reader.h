@@ -68,10 +68,10 @@ typedef struct RecorderReader_t {
 
     double prev_tstart;
 
-	int   num_ugs;			// number of unique grammars
-	int*  ug_ids;			// index of unique grammar in cfgs
-	CST** csts;
-	CFG** cfgs;
+    int   num_ugs;	// number of unique grammars
+    int*  ug_ids;	// index of unique grammar in cfgs
+    CST** csts;
+    CFG** cfgs;
 } RecorderReader;
 
 
