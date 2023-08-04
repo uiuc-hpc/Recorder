@@ -21,6 +21,8 @@ int is_conflict(Interval* i1, Interval* i2) {
     // TODO: same rank but multi-threaded?
     if(i1->rank == i2->rank)
         return false;
+    if(i1->isRead && i2->isRead)
+        return false;
     if(i1->offset+i1->count <= i2->offset)
         return false;
     if(i2->offset+i2->count <= i1->offset)
