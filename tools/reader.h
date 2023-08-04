@@ -26,6 +26,7 @@ typedef struct Interval_t {
     size_t offset;
     size_t count;
     bool isRead;
+    char mpifh[10];
 } Interval;
 
 /* Per-file intervals

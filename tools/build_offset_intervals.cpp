@@ -34,7 +34,8 @@ void handle_data_operation(RRecord &rr,
                             unordered_map<string, size_t> &offset_book,          // <fd, current offset>
                             unordered_map<string, size_t> &local_eof,            // <filename, eof> (locally)
                             unordered_map<string, size_t> &global_eof,           // <filename, eof> (globally)
-                            unordered_map<string, vector<Interval>> &intervals)
+                            unordered_map<string, vector<Interval>> &intervals,
+                            string current_mpifh, int current_mpi_call_depth)
 {
     Record *R = rr.record;
     const char* func = recorder_get_func_name(reader, R);
@@ -47,6 +48,11 @@ void handle_data_operation(RRecord &rr,
     I.seqId = rr.seq_id;
     I.tstart = R->tstart;
     I.isRead = strstr(func, "read") ? true: false;
+    memset(I.mpifh, 0, sizeof(I.mpifh));
+
+    if(R->level == current_mpi_call_depth+1) {
+        strcpy(I.mpifh, current_mpifh.c_str());
+    }
 
     string filename = "";
     if(strstr(func, "writev") || strstr(func, "readv")) {
@@ -75,17 +81,16 @@ void handle_data_operation(RRecord &rr,
     }
 
     if(filename != "") {
-
         if(local_eof.find(filename) == local_eof.end())
             local_eof[filename] = I.offset + I.count;
         else
             local_eof[filename] = max(local_eof[filename], I.offset+I.count);
 
-        /* On POSIX systems, update global eof now
+        /* TODO:
+         * On POSIX systems, update global eof now
          * On other systems (e.,g with commit semantics
          * and session semantics), update global eof at
-         * close/sync ?
-         */
+         * close/sync ? */
         global_eof[filename] = get_eof(filename, local_eof, global_eof);
 
         intervals[filename].push_back(I);
@@ -172,10 +177,16 @@ void insert_one_record(Record* r, void* arg) {
     current_seq_id++;
 
     int func_type = recorder_get_func_type(reader, r);
-    if(func_type != RECORDER_POSIX)
+    const char* func = recorder_get_func_name(reader, r);
+    
+    if((func_type != RECORDER_POSIX) && (func_type != RECORDER_MPIIO))
+        return;
+
+    // For MPI-IO calls keep only MPI_File_write* and MPI_File_read*
+    if((func_type == RECORDER_MPIIO) && (!strstr(func, "MPI_File_write")) 
+        && (!strstr(func, "MPI_File_read")))
         return;
     
-    const char* func = recorder_get_func_name(reader, r);
     if(strstr(func, "dir") || strstr(func, "link"))
         return;
 
@@ -221,11 +232,23 @@ IntervalsMap* build_offset_intervals(RecorderReader *_reader, int *num_files) {
     unordered_map<string, size_t> local_eofs[reader->metadata.total_ranks];
     unordered_map<string, size_t> global_eof;
 
+    string current_mpifh = "";
+    int current_mpi_call_depth;
+
     int i;
     for(i = 0; i < records.size(); i++) {
         RRecord rr = records[i];
-        handle_metadata_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof);
-        handle_data_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof, intervals);
+        const char* func = recorder_get_func_name(reader, rr.record);
+        // Only MPI_File_write* and MPI_File_read* calls here
+        // thanks to insert_one_record()
+        if(strstr(func, "MPI")) {
+            current_mpifh = rr.record->args[0];
+            current_mpi_call_depth = (int) rr.record->level;
+        // POSIX calls
+        } else {
+            handle_metadata_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof);
+            handle_data_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof, intervals, current_mpifh, current_mpi_call_depth);
+        }
     }
 
     /* Now we have the list of intervals for all files,

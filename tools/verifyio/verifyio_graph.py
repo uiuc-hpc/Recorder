@@ -11,16 +11,26 @@ class MPICallType(Enum):
     OTHER          = 5  # e.g., wait/test calls
 
 class VerifyIONode:
-    def __init__(self, rank, seq_id, func):
+    def __init__(self, rank, seq_id, func, fd = -1, mpifh = None):
         self.rank = rank
         self.seq_id = seq_id
         self.func = func
+        # An integer maps to the filename
+        self.fd = fd
+        # Store the MPI-IO file handle so we can match
+        # I/O calls with sync/commit calls during
+        # the verification.
+        self.mpifh = mpifh
     def graph_key(self):
         return str(self.rank) + "-" + \
                str(self.seq_id) + "-" + \
                str(self.func)
     def __str__(self):
-        return "Rank %d: %dth %s" %(self.rank, self.seq_id, self.func)
+        if "write" in self.func or "read" in self.func or \
+            self.func.startswith("MPI_File_"):
+            return "Rank %d: %dth %s(%s)" %(self.rank, self.seq_id, self.func, self.mpifh)
+        else:
+            return "Rank %d: %dth %s" %(self.rank, self.seq_id, self.func)
 
 
 '''

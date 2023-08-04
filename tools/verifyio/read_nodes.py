@@ -33,8 +33,11 @@ def read_mpi_nodes(reader):
         records = reader.records[rank]
         for seq_id in range(reader.LMs[rank].total_records):
             func = func_list[records[seq_id].func_id]
+            mpifh = None
             if func in accepted_mpi_funcs:
-                mpi_node = VerifyIONode(rank, seq_id, func)
+                if func.startswith("MPI_File"):
+                    mpifh = records[seq_id].args[0].decode('utf-8')
+                mpi_node = VerifyIONode(rank, seq_id, func, -1, mpifh)
                 mpi_nodes[rank].append(mpi_node)
 
     return mpi_nodes
@@ -49,6 +52,18 @@ Return:
     pairs: list of [c1, c2], where c1 and c2 are VerifyIONode
 '''
 def read_io_nodes(reader, path):
+    
+    # format: rank,seqId,func(mpifh,offset,count)
+    def parse_one_node(data, file_id):
+        data = data.replace(")", "")
+        meta = data.split("(")[0]
+        args = data.split("(")[1]
+        meta = meta.split(",")
+        args = args.split(",")
+        rank, seq_id, func = int(meta[0]), int(meta[1]), meta[2]
+        mpifh, offset, count = args[0], int(args[1]), int(args[2])
+        return VerifyIONode(rank, seq_id, func, file_id, mpifh);
+
     exist_nodes = set()
 
     nprocs = reader.GM.total_ranks
@@ -56,30 +71,34 @@ def read_io_nodes(reader, path):
     pairs = []
 
     f = open(path, "r")
-    lines = f.readlines()
+    lines = f.readlines()[1:] # skip first line
     f.close()
 
+    file_id = 0
+    filename = ""
     for line in lines:
-        pair = line.replace(" ", "").replace("\n", "").split(",")
+
+        if line[0] == "#":
+            file_id  = line.split(":")[0]
+            filename = line.split(":")[1]
+            continue
+
+        pair = line.replace("\n", "").split(" ")
 
         if pair[0] not in exist_nodes:
-            tmp = pair[0].split("-")
-            func, rank, seq_id = tmp[0], int(tmp[1]), int(tmp[2])
-            c1 = VerifyIONode(rank, seq_id, func);
-            io_nodes[rank].append(c1)
+            n1 = parse_one_node(pair[0], file_id)
+            io_nodes[n1.rank].append(n1)
             exist_nodes.add(pair[0])
 
         if pair[1] not in exist_nodes:
-            tmp = pair[1].split("-")
-            func, rank, seq_id = tmp[0], int(tmp[1]), int(tmp[2])
-            c2 = VerifyIONode(rank, seq_id, func);
-            io_nodes[rank].append(c2)
+            n2 = parse_one_node(pair[1], file_id)
+            io_nodes[n2.rank].append(n2)
             exist_nodes.add(pair[1])
 
         # To test for properly synchonization
         # We can ignore the conflicting pair on
         # same node.
-        if c1.rank != c2.rank:
-            pairs.append([c1, c2])
+        if n1.rank != n2.rank:
+            pairs.append([n1, n2])
 
     return io_nodes, pairs

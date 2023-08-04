@@ -33,12 +33,15 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
     char path[512];
     sprintf(path, "%s/conflicts.txt", base_dir);
     conflict_file = fopen(path, "w");
+    fprintf(conflict_file, "#rank,seqId,op1(fh,offset,count) "
+                           "rank,seqId,op1(fh,offset,count)\n");
 
     int idx, i, j;
     for(idx = 0; idx < num_files; idx++) {
 
         char *filename = IM[idx].filename;
         Interval *intervals = IM[idx].intervals;
+        fprintf(conflict_file, "#%d:%s\n", idx, filename);
 
         // sort by offset
         qsort(intervals, IM[idx].num_intervals, sizeof(Interval), compare_by_offset);
@@ -58,9 +61,9 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                     printf("%s, %s(%d-%d, %lu, %lu), %s(%d-%d, %lu, %lu) \n", filename,
                             i1->isRead?"read":"write", i1->rank, i1->seqId, i1->offset, i1->count, 
                             i2->isRead?"read":"write", i2->rank, i2->seqId, i2->offset, i2->count);
-                    fprintf(conflict_file, "%s-%d-%d, %s-%d-%d\n",
-                            i1->isRead?"read":"write", i1->rank, i1->seqId,
-                            i2->isRead?"read":"write", i2->rank, i2->seqId);
+                    fprintf(conflict_file, "%d,%d,%s(%s,%lu,%lu) %d,%d,%s(%s,%lu,%lu)\n",
+                            i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
+                            i2->rank,i2->seqId,i2->isRead?"read":"write",i2->mpifh,i2->offset,i2->count);
                 }
 
                 if(i1->offset <= i2->offset && i1->offset+i1->count <= i2->offset+i2->count)
