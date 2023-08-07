@@ -56,17 +56,22 @@ def verify_proper_synchronization(G, S, R, pairs):
 
 
 def verify_posix_semantics(G, conflict_pairs):
+
+    def check_pair_in_order(n1, n2):
+        if G.has_path(n1, n2):
+            print(get_shortest_path(G, n1, n2))
+            return True
+        return False
+
     properly_synchronized = True
 
     for pair in conflict_pairs:
         n1 = pair[0]
         n2 = pair[1]
-        reachable = G.has_path(n1, n2) or G.has_path(n1, n2)
-        if reachable:
-            print(get_shortest_path(G, n1, n2))
-        else:
+        this_pair_ok = (check_pair_in_order(n1, n2) or check_pair_in_order(n2, n1))
+        print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
+        if not this_pair_ok:
             properly_synchronized = False
-        print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
 
     return properly_synchronized
 
@@ -83,17 +88,25 @@ def get_shortest_path(G, src, dst):
 def verify_session_semantics(G, conflict_pairs, 
                              close_ops=["close", "fclose"],
                              open_ops=["open", "fopen"]):
-    for pair in conflict_pairs:
-        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
+    def check_pair_in_order(n1 , n2):
         next_sync = G.next_po_node(n1, close_ops)
         prev_sync = G.prev_po_node(n2, open_ops)
         reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
         if reachable:
             path_str = get_shortest_path(G, next_sync, prev_sync)
-            print("%s -> %s -> %s" %(n1, path_str, n2))
+            #print("%s -> %s -> %s" %(n1, path_str, n2))
+            return True
         else:
+            return False
+
+    properly_synchronized = True
+    for pair in conflict_pairs:
+        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
+        this_pair_ok = (check_pair_in_order(n1, n2) or check_pair_in_order(n2, n1))
+        print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
+        if not this_pair_ok:
             properly_synchronized = False
-        print("%s <--> %s, properly synchronized: %s" %(n1, n2, reachable))
+
     return properly_synchronized
 
 def verify_mpi_semantics(G, conflict_pairs):
@@ -102,19 +115,25 @@ def verify_mpi_semantics(G, conflict_pairs):
                              open_ops  = ["MPI_File_sync", "MPI_File_open"])
 
 def verify_commit_semantics(G, conflict_pairs):
-    properly_synchronized = True
-    for pair in conflict_pairs:
-        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
 
+    def check_pair_in_order(n1, n2):
         this_pair_ok = False
         # TODO need to consider all ranks
+        # TODO should check from writer.
         ranks = [n1.rank, n2.rank]
         for rank in ranks:
             next_commit = G.next_hb_node(n1, ["fsync", "close"], rank)
             if (next_commit) and G.has_path(next_commit, n2):
                 this_pair_ok = True
                 break
-        if not this_pair_ok: properly_synchronized = False
+        return this_pair_ok
+
+    properly_synchronized = True
+
+    for pair in conflict_pairs:
+        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
+        if  not check_pair_in_order(n1, n2):
+            properly_synchronized = False
         print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
 
     return properly_synchronized
