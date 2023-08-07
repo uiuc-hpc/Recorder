@@ -68,10 +68,13 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                             i2->rank,i2->seqId,i2->isRead?"read":"write",i2->mpifh,i2->offset,i2->count);
                 }
 
-                if(i1->offset <= i2->offset && i1->offset+i1->count <= i2->offset+i2->count)
+                if(i1->offset+i1->count >= i2->offset+i2->count) {
                     j++;
-                else
+                } else {
+                    // all subsequent intervals will have a larger
+                    // starting offset
                     break;
+                }
             }
 
             i++;
