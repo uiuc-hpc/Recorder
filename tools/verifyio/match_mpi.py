@@ -379,12 +379,13 @@ def match_collective(mpi_call, helper):
         if edge.call_type == MPICallType.ALL_TO_ALL:
             edge.head.append(node)
             edge.tail.append(node)
-        # One-to-many (bcast) or Many-to-one (reduce)
+        # One-to-many (bcast) 
         if edge.call_type == MPICallType.ONE_TO_MANY:
             if call.rank == call.src:
                 edge.head = node
             else:
                 edge.tail.append(node)
+        # Many-to-one (reduce)
         if edge.call_type == MPICallType.MANY_TO_ONE:
             if call.rank == call.src:
                 edge.tail = node
@@ -424,13 +425,7 @@ def match_collective(mpi_call, helper):
             coll_call.matched = True
 
     mpi_call.matched = True
-    
-    if mpi_call.func == "MPI_Barrier":
-        print("barrier head:")
-        for n in edge.head:
-            print(n)
-        print("====")
-    #print("match collective:", mpi_call.func)
+    print("match collective:", mpi_call.func)
     return edge
 
 #@profile

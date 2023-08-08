@@ -11,7 +11,7 @@ accepted_mpi_funcs = [
  'MPI_Testany', 'MPI_Testsome', 'MPI_Bcast',
  'MPI_Ibcast', 'MPI_Reduce', 'MPI_Ireduce',
  'MPI_Gather', 'MPI_Igather', 'MPI_Gatherv',
- 'MPI_Igatherv', 'MPI_Barrier' 'MPI_Alltoall',
+ 'MPI_Igatherv', 'MPI_Barrier', 'MPI_Alltoall',
  'MPI_Allreduce', 'MPI_Allgatherv', 
  'MPI_Reduce_scatter', 'MPI_File_open',
  'MPI_File_close', 'MPI_File_read_at_all',
