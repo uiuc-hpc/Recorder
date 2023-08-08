@@ -87,9 +87,10 @@ class VerifyIOGraph:
         return nx.has_path(self.G, src.graph_key(), dst.graph_key())
 
     def plot_graph(self, fname):
-        nx.draw_networkx(self.G)
         import matplotlib.pyplot as plt
-        plt.savefig(fname)
+        nx.draw_networkx(self.G)
+        #plt.savefig(fname)
+        plt.show()
 
     def run_vector_clock(self):
         print("Run vector clock algorithm...")
