@@ -60,10 +60,10 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
                 bool conflict = is_conflict(i1, i2);
 
                 if(conflict) {
-                    printf("%s, %s(%d-%d, %lu, %lu), %s(%d-%d, %lu, %lu) \n", filename,
+                    printf("%s, %s(%d-%d, %zu, %zu), %s(%d-%d, %zu, %zu) \n", filename,
                             i1->isRead?"read":"write", i1->rank, i1->seqId, i1->offset, i1->count, 
                             i2->isRead?"read":"write", i2->rank, i2->seqId, i2->offset, i2->count);
-                    fprintf(conflict_file, "%d,%d,%s(%s,%lu,%lu) %d,%d,%s(%s,%lu,%lu)\n",
+                    fprintf(conflict_file, "%d,%d,%s(%s,%zu,%zu) %d,%d,%s(%s,%zu,%zu)\n",
                             i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
                             i2->rank,i2->seqId,i2->isRead?"read":"write",i2->mpifh,i2->offset,i2->count);
                 }

@@ -21,6 +21,12 @@ typedef struct RRecord_t {
 RecorderReader *reader;
 vector<RRecord> records;
 
+static inline size_t str2sizet(char* arg) {
+    size_t res;
+    sscanf(arg, "%zu", &res);
+    return res;
+}
+
 size_t get_eof(string filename, unordered_map<string, size_t> local_eof, unordered_map<string, size_t> global_eof) {
     size_t e1 = 0, e2 = 0;
     if(local_eof.find(filename) != local_eof.end())
@@ -58,29 +64,30 @@ void handle_data_operation(RRecord &rr,
     if(strstr(func, "writev") || strstr(func, "readv")) {
         filename = R->args[0];
         I.offset = offset_book[filename];
-        I.count = atol(R->args[1]);
+        I.count = str2sizet(R->args[1]);
         offset_book[filename] += I.count;
     } else if(strstr(func, "fwrite") || strstr(func, "fread")) {
         filename = R->args[3];
         I.offset = offset_book[filename];
-        I.count = atol(R->args[1]) * atol(R->args[2]);
+        I.count = str2sizet(R->args[1]) * str2sizet(R->args[2]);
         offset_book[filename] += I.count;
     } else if(strstr(func, "pwrite") || strstr(func, "pread")) {
         filename = R->args[0];
-        I.count = atol(R->args[2]);
-        I.offset = atol(R->args[3]);
+        I.count = str2sizet(R->args[2]);
+        I.offset = str2sizet(R->args[3]);
     } else if(strstr(func, "write") || strstr(func, "read")) {
         filename = R->args[0];
-        I.count = atol(R->args[2]);
+        I.count = str2sizet(R->args[2]);
         I.offset = offset_book[filename];
         offset_book[filename] += I.count;
     } else if(strstr(func, "fprintf")) {
         filename = R->args[0];
-        I.count = atol(R->args[1]);
+        I.count = str2sizet(R->args[1]);
         offset_book[filename] += I.count;
     }
 
     if(filename != "") {
+
         if(local_eof.find(filename) == local_eof.end())
             local_eof[filename] = I.offset + I.count;
         else
@@ -139,7 +146,7 @@ void handle_metadata_operation(RRecord &rr,
 
     } else if(strstr(func, "seek") || strstr(func, "seeko")) {
         filename = R->args[0];
-        int offset = atol(R->args[1]);
+        size_t offset = str2sizet(R->args[1]);
         int whence = atoi(R->args[2]);
 
         if(whence == SEEK_SET)
@@ -204,9 +211,9 @@ void flatten_and_sort_records(RecorderReader *reader) {
 
     for(int rank = 0; rank < nprocs; rank++) {
         current_seq_id = 0;
-		CST* cst;
-		CFG* cfg;
-		recorder_get_cst_cfg(reader, rank, &cst, &cfg);
+        CST* cst;
+        CFG* cfg;
+        recorder_get_cst_cfg(reader, rank, &cst, &cfg);
         recorder_decode_records_core(reader, cst, cfg, insert_one_record, &rank, false);
     }
 
