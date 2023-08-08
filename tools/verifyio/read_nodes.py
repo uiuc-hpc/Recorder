@@ -85,13 +85,13 @@ def read_io_nodes(reader, path):
 
         pair = line.replace("\n", "").split(" ")
 
+        n1 = parse_one_node(pair[0], file_id)
+        n2 = parse_one_node(pair[1], file_id)
+
         if pair[0] not in exist_nodes:
-            n1 = parse_one_node(pair[0], file_id)
             io_nodes[n1.rank].append(n1)
             exist_nodes.add(pair[0])
-
         if pair[1] not in exist_nodes:
-            n2 = parse_one_node(pair[1], file_id)
             io_nodes[n2.rank].append(n2)
             exist_nodes.add(pair[1])
 
