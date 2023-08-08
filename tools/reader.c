@@ -409,7 +409,7 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts, RecorderMetadata *
 
         CST* cst;
         CFG* cfg;
-		recorder_get_cst_cfg(&reader, rank, &cst, &cfg);
+        recorder_get_cst_cfg(&reader, rank, &cst, &cfg);
 
         counts[rank] = get_uncompressed_count(&reader, cfg, -1);
         records[rank] = malloc(sizeof(PyRecord)* counts[rank]);
