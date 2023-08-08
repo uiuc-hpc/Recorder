@@ -184,8 +184,6 @@ class VerifyIOGraph:
                     for j in range(len(head)):
                         if i != j:
                             self.add_edge(head[i], head[j])
-                            if head[i].rank == 0 and head[j].rank == 5:
-                                print("add edge", head[i], head[j])
             # many-to-one, e.g., reduce
             elif edge.call_type == MPICallType.MANY_TO_ONE:
                 for h in head:
