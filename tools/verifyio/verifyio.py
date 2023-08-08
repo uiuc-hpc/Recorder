@@ -59,7 +59,7 @@ def verify_posix_semantics(G, conflict_pairs):
 
     def check_pair_in_order(n1, n2):
         if G.has_path(n1, n2):
-            print(get_shortest_path(G, n1, n2))
+            #print(get_shortest_path(G, n1, n2))
             return True
         return False
 
@@ -91,9 +91,10 @@ def verify_session_semantics(G, conflict_pairs,
     def check_pair_in_order(n1 , n2):
         next_sync = G.next_po_node(n1, close_ops)
         prev_sync = G.prev_po_node(n2, open_ops)
+        print(next_sync, prev_sync)
         reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
         if reachable:
-            path_str = get_shortest_path(G, next_sync, prev_sync)
+            #path_str = get_shortest_path(G, next_sync, prev_sync)
             #print("%s -> %s -> %s" %(n1, path_str, n2))
             return True
         else:
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     t2 = time.time()
     print("build happens-before graph: %.3f secs, nodes: %d" %((t2-t1), G.num_nodes()))
 
-    # G.plot_graph()
+    G.plot_graph("vgraph.jpg")
     # G.run_vector_clock()
 
     if args.semantics == "POSIX":

@@ -1034,7 +1034,6 @@ extern void RECORDER_MPI_DECL(mpi_comm_free__)(MPI_Fint* comm, MPI_Fint *ierr){ 
  * For fortran wrappers, we need to pass in a C MPI_Comm
  * and then translate it to MPI_Fint
  */
-/*
 int RECORDER_MPI_DECL(MPI_Comm_split)(MPI_Comm comm, int color, int key, MPI_Comm *newcomm) { return imp_MPI_Comm_split(comm, color, key, newcomm); }
 extern void RECORDER_MPI_DECL(mpi_comm_split)(MPI_Fint* comm, int* color, int* key, MPI_Fint* newcomm, MPI_Fint *ierr){
     MPI_Comm c_newcomm;
@@ -1115,9 +1114,6 @@ extern void RECORDER_MPI_DECL(mpi_comm_split_type__)(MPI_Fint* comm, int* split_
     imp_MPI_Comm_split_type(PMPI_Comm_f2c(*comm), (*split_type), (*key), PMPI_Info_f2c(*info), &c_newcomm);
     *newcomm = PMPI_Comm_c2f(c_newcomm);
 }
-*/
-
-
 
 
 

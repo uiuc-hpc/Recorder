@@ -28,7 +28,7 @@ class VerifyIONode:
     def __str__(self):
         if "write" in self.func or "read" in self.func or \
             self.func.startswith("MPI_File_"):
-            return "Rank %d: %dth %s(%s)" %(self.rank, self.seq_id, self.func, self.mpifh)
+                return "Rank %d: %dth %s(%s)" %(self.rank, self.seq_id, self.func, self.mpifh)
         else:
             return "Rank %d: %dth %s" %(self.rank, self.seq_id, self.func)
 
@@ -86,10 +86,10 @@ class VerifyIOGraph:
     def has_path(self, src, dst):
         return nx.has_path(self.G, src.graph_key(), dst.graph_key())
 
-    def plot_graph(self):
+    def plot_graph(self, fname):
         nx.draw_networkx(self.G)
         import matplotlib.pyplot as plt
-        plt.show()
+        plt.savefig(fname)
 
     def run_vector_clock(self):
         print("Run vector clock algorithm...")
@@ -179,10 +179,12 @@ class VerifyIOGraph:
 
                 # Add all-to-all edges will create circle and prevent
                 # the use of topological sort
-                for idx in range(len(head) - 1):
-                    h, t = head[idx], head[idx+1]
-                    self.add_edge(h, t)
-                    self.add_edge(t, h)
+                for i in range(len(head)):
+                    for j in range(len(head)):
+                        if i != j:
+                            self.add_edge(head[i], head[j])
+                            if head[i].rank == 0 and head[j].rank == 5:
+                                print("add edge", head[i], head[j])
             # many-to-one, e.g., reduce
             elif edge.call_type == MPICallType.MANY_TO_ONE:
                 for h in head:

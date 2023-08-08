@@ -101,4 +101,10 @@ def read_io_nodes(reader, path):
         if n1.rank != n2.rank:
             pairs.append([n1, n2])
 
+        # TODO:
+        # To save time, we check up to 1000 conflict
+        # pairs.
+        if len(pairs) > 1000:
+            break;
+
     return io_nodes, pairs

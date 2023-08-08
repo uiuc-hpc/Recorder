@@ -423,8 +423,14 @@ def match_collective(mpi_call, helper):
             # exam this call
             coll_call.matched = True
 
-    mpi_call.matched = True 
-    print("match collective:", mpi_call.func)
+    mpi_call.matched = True
+    
+    if mpi_call.func == "MPI_Barrier":
+        print("barrier head:")
+        for n in edge.head:
+            print(n)
+        print("====")
+    #print("match collective:", mpi_call.func)
     return edge
 
 #@profile
