@@ -89,8 +89,10 @@ int main(int argc, char *argv[]) {
     //MPI_Wait(&req, MPI_STATUS_IGNORE);
     //MPI_Test(&req, &flag, MPI_STATUS_IGNORE);
 
-    int recv, send;
-    MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
+    if(world_size > 2) {
+        int recv, send;
+        MPI_Reduce(&send, &recv, 1, MPI_INT, MPI_MAX, 2, MPI_COMM_WORLD);
+    }
 
     for(int i = 0; i < 10; i++) {
         MPI_Barrier(MPI_COMM_WORLD);
