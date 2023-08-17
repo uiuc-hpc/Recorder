@@ -251,375 +251,375 @@ static inline char *comm2name(MPI_Comm comm) {
 }
 
 hid_t RECORDER_HDF5_DECL(H5Fcreate)(const char *filename, unsigned flags, hid_t create_plist, hid_t access_plist) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Fcreate, (filename, flags, create_plist, access_plist));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Fcreate, (filename, flags, create_plist, access_plist));
     char **args = assemble_args_list(4, realrealpath(filename), itoa(flags), itoa(create_plist), itoa(access_plist));
-    RECORDER_INTERCEPTOR(4, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Fopen)(const char *filename, unsigned flags, hid_t access_plist) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Fopen, (filename, flags, access_plist));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Fopen, (filename, flags, access_plist));
     char **args = assemble_args_list(3, realrealpath(filename), itoa(flags), itoa(access_plist));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Fclose)(hid_t file_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Fclose, (file_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Fclose, (file_id));
     char **args = assemble_args_list(1, itoa(file_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Fflush)(hid_t object_id, H5F_scope_t scope) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Fflush, (object_id, scope));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Fflush, (object_id, scope));
     char **args = assemble_args_list(2, itoa(object_id), itoa(scope));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 
 
 // Group Interface
 herr_t RECORDER_HDF5_DECL(H5Gclose)(hid_t group_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Gclose, (group_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Gclose, (group_id));
     char **args = assemble_args_list(1, itoa(group_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Gcreate1)(hid_t loc_id, const char *name, size_t size_hint) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Gcreate1, (loc_id, name, size_hint));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Gcreate1, (loc_id, name, size_hint));
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(size_hint));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Gcreate2)(hid_t loc_id, const char *name, hid_t lcpl_id, hid_t gcpl_id, hid_t gapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Gcreate2, (loc_id, name, lcpl_id, gcpl_id, gapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Gcreate2, (loc_id, name, lcpl_id, gcpl_id, gapl_id));
     char **args = assemble_args_list(5, itoa(loc_id), strdup(name), itoa(lcpl_id), itoa(gcpl_id), itoa(gapl_id));
-    RECORDER_INTERCEPTOR(5, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Gget_objinfo)(hid_t loc_id, const char *name, hbool_t follow_link, H5G_stat_t *statbuf) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Gget_objinfo, (loc_id, name, follow_link, statbuf));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Gget_objinfo, (loc_id, name, follow_link, statbuf));
     char **args = assemble_args_list(4, itoa(loc_id), strdup(name), itoa(follow_link), ptoa(statbuf));
-    RECORDER_INTERCEPTOR(4, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 
 int RECORDER_HDF5_DECL(H5Giterate)(hid_t loc_id, const char *name, int *idx, H5G_iterate_t operator, void *operator_data) {
-    RECORDER_INTERCEPTOR_NOIO(int, H5Giterate, (loc_id, name, idx, operator, operator_data));
+    RECORDER_INTERCEPTOR_PROLOGUE(int, H5Giterate, (loc_id, name, idx, operator, operator_data));
     char **args = assemble_args_list(4, itoa(loc_id), strdup(name), ptoa(&operator), ptoa(operator_data));
-    RECORDER_INTERCEPTOR(4, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Gopen1)(hid_t loc_id, const char *name) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Gopen1, (loc_id, name));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Gopen1, (loc_id, name));
     char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 
 hid_t RECORDER_HDF5_DECL(H5Gopen2)(hid_t loc_id, const char *name, hid_t gapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Gopen2, (loc_id, name, gapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Gopen2, (loc_id, name, gapl_id));
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(gapl_id));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 // Dataset interface
 herr_t RECORDER_HDF5_DECL(H5Dclose)(hid_t dataset_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Dclose, (dataset_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Dclose, (dataset_id));
     char **args = assemble_args_list(1, itoa(dataset_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dcreate1)(hid_t loc_id, const char *name, hid_t type_id, hid_t space_id, hid_t dcpl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dcreate1, (loc_id, name, type_id, space_id, dcpl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dcreate1, (loc_id, name, type_id, space_id, dcpl_id));
     char **args = assemble_args_list(5, itoa(loc_id), strdup(name), itoa(type_id), itoa(space_id), itoa(dcpl_id));
-    RECORDER_INTERCEPTOR(5, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dcreate2)(hid_t loc_id, const char *name, hid_t dtype_id, hid_t space_id, hid_t lcpl_id, hid_t dcpl_id, hid_t dapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dcreate2, (loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dcreate2, (loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id));
     char **args = assemble_args_list(7, itoa(loc_id), strdup(name), itoa(dtype_id), itoa(space_id), itoa(lcpl_id), itoa(dcpl_id), itoa(dapl_id));
-    RECORDER_INTERCEPTOR(7, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(7, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dget_create_plist)(hid_t dataset_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dget_create_plist, (dataset_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dget_create_plist, (dataset_id));
     char **args = assemble_args_list(1, itoa(dataset_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dget_space)(hid_t dataset_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dget_space, (dataset_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dget_space, (dataset_id));
     char **args = assemble_args_list(1, itoa(dataset_id));
-    RECORDER_INTERCEPTOR(1, args)
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args)
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dget_type)(hid_t dataset_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dget_type, (dataset_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dget_type, (dataset_id));
     char **args = assemble_args_list(1, itoa(dataset_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dopen1)(hid_t loc_id, const char *name) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dopen1, (loc_id, name));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dopen1, (loc_id, name));
     char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Dopen2)(hid_t loc_id, const char *name, hid_t dapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dopen2, (loc_id, name, dapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dopen2, (loc_id, name, dapl_id));
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(dapl_id));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Dread)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, void *buf) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dread, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dread, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf));
     char **args = assemble_args_list(6, itoa(dataset_id), itoa(mem_type_id), itoa(mem_space_id), itoa(file_space_id), itoa(xfer_plist_id), ptoa(buf));
-    RECORDER_INTERCEPTOR(6, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Dwrite)(hid_t dataset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t xfer_plist_id, const void *buf) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Dwrite, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Dwrite, (dataset_id, mem_type_id, mem_space_id, file_space_id, xfer_plist_id, buf));
     char **args = assemble_args_list(6, itoa(dataset_id), itoa(mem_type_id), itoa(mem_space_id), itoa(file_space_id), itoa(xfer_plist_id), ptoa(buf));
-    RECORDER_INTERCEPTOR(6, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Dset_extent)(hid_t dset_id, const hsize_t size[]) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Dset_extent, (dset_id, size));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Dset_extent, (dset_id, size));
     char **args = assemble_args_list(2, itoa(dset_id), ptoa(size));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 
 herr_t RECORDER_HDF5_DECL(H5Sclose)(hid_t space_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Sclose, (space_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Sclose, (space_id));
     char **args = assemble_args_list(1, itoa(space_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Screate)(H5S_class_t type) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Screate, (type));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Screate, (type));
     char **args = assemble_args_list(1, itoa(type));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Screate_simple)(int rank, const hsize_t *current_dims, const hsize_t *maximum_dims) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Screate_simple, (rank, current_dims, maximum_dims));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Screate_simple, (rank, current_dims, maximum_dims));
     char **args = assemble_args_list(3, itoa(rank), ptoa(current_dims), ptoa(maximum_dims));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 hssize_t RECORDER_HDF5_DECL(H5Sget_select_npoints)(hid_t space_id) {
-    RECORDER_INTERCEPTOR_NOIO(hssize_t, H5Sget_select_npoints, (space_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hssize_t, H5Sget_select_npoints, (space_id));
     char **args = assemble_args_list(1, itoa(space_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 int RECORDER_HDF5_DECL(H5Sget_simple_extent_dims)(hid_t space_id, hsize_t *dims, hsize_t *maxdims) {
-    RECORDER_INTERCEPTOR_NOIO(int, H5Sget_simple_extent_dims, (space_id, dims, maxdims));
+    RECORDER_INTERCEPTOR_PROLOGUE(int, H5Sget_simple_extent_dims, (space_id, dims, maxdims));
     char **args = assemble_args_list(3, itoa(space_id), ptoa(dims), ptoa(maxdims));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 hssize_t RECORDER_HDF5_DECL(H5Sget_simple_extent_npoints)(hid_t space_id) {
-    RECORDER_INTERCEPTOR_NOIO(hssize_t, H5Sget_simple_extent_npoints, (space_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hssize_t, H5Sget_simple_extent_npoints, (space_id));
     char **args = assemble_args_list(1, itoa(space_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Sselect_elements)(hid_t space_id, H5S_seloper_t op, size_t num_elements, const hsize_t *coord) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Sselect_elements, (space_id, op, num_elements, coord));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Sselect_elements, (space_id, op, num_elements, coord));
     char **args = assemble_args_list(4, itoa(space_id), itoa(op), itoa(num_elements), ptoa(coord));
-    RECORDER_INTERCEPTOR(4, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Sselect_hyperslab)(hid_t space_id, H5S_seloper_t op, const hsize_t *start, const hsize_t *stride, const hsize_t *count, const hsize_t *block) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Sselect_hyperslab, (space_id, op, start, stride, count, block));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Sselect_hyperslab, (space_id, op, start, stride, count, block));
     char **args = assemble_args_list(6, itoa(space_id), itoa(op), ptoa(start), ptoa(stride), ptoa(count), ptoa(block));
-    RECORDER_INTERCEPTOR(6, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Sselect_none)(hid_t space_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Sselect_none, (space_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Sselect_none, (space_id));
     char **args = assemble_args_list(1, itoa(space_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Tclose)(hid_t dtype_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Tclose, (dtype_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Tclose, (dtype_id));
     char **args = assemble_args_list(1, itoa(dtype_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Tcopy)(hid_t dtype_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Tcopy, (dtype_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Tcopy, (dtype_id));
     char **args = assemble_args_list(1, itoa(dtype_id));
-    RECORDER_INTERCEPTOR(1, args)
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args)
 }
 
 H5T_class_t RECORDER_HDF5_DECL(H5Tget_class)(hid_t dtype_id) {
-    RECORDER_INTERCEPTOR_NOIO(H5T_class_t, H5Tget_class, (dtype_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(H5T_class_t, H5Tget_class, (dtype_id));
     char **args = assemble_args_list(1, itoa(dtype_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 size_t RECORDER_HDF5_DECL(H5Tget_size)(hid_t dtype_id) {
-    RECORDER_INTERCEPTOR_NOIO(size_t, H5Tget_size, (dtype_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(size_t, H5Tget_size, (dtype_id));
     char **args = assemble_args_list(1, itoa(dtype_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Tset_size)(hid_t dtype_id, size_t size) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Tset_size, (dtype_id, size));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Tset_size, (dtype_id, size));
     char **args = assemble_args_list(2, itoa(dtype_id), itoa(size));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Tcreate)(H5T_class_t class, size_t size) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Tcreate, (class, size));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Tcreate, (class, size));
     char **args = assemble_args_list(2, itoa(class), itoa(size));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Tinsert)(hid_t dtype_id, const char *name, size_t offset, hid_t field_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Tinsert, (dtype_id, name, offset, field_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Tinsert, (dtype_id, name, offset, field_id));
     char **args = assemble_args_list(4, itoa(dtype_id), strdup(name), itoa(offset), itoa(field_id));
-    RECORDER_INTERCEPTOR(4, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Aclose)(hid_t attr_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Aclose, (attr_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Aclose, (attr_id));
     char **args = assemble_args_list(1, itoa(attr_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Acreate1)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Acreate1, (loc_id, attr_name, type_id, space_id, acpl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Acreate1, (loc_id, attr_name, type_id, space_id, acpl_id));
     char **args = assemble_args_list(5, itoa(loc_id), strdup(attr_name), itoa(type_id), itoa(space_id), itoa(acpl_id));
-    RECORDER_INTERCEPTOR(5, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Acreate2)(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id, hid_t aapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Acreate2, (loc_id, attr_name, type_id, space_id, acpl_id, aapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Acreate2, (loc_id, attr_name, type_id, space_id, acpl_id, aapl_id));
     char **args = assemble_args_list(6, itoa(loc_id), strdup(attr_name), itoa(type_id), itoa(space_id), itoa(acpl_id), itoa(aapl_id));
-    RECORDER_INTERCEPTOR(6, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 
 ssize_t RECORDER_HDF5_DECL(H5Aget_name)(hid_t attr_id, size_t buf_size, char *buf) {
-    RECORDER_INTERCEPTOR_NOIO(ssize_t, H5Aget_name, (attr_id, buf_size, buf));
+    RECORDER_INTERCEPTOR_PROLOGUE(ssize_t, H5Aget_name, (attr_id, buf_size, buf));
     char **args = assemble_args_list(3, itoa(attr_id), itoa(buf_size), ptoa(buf));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 int RECORDER_HDF5_DECL(H5Aget_num_attrs)(hid_t loc_id) {
-    RECORDER_INTERCEPTOR_NOIO(int, H5Aget_num_attrs, (loc_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(int, H5Aget_num_attrs, (loc_id));
     char **args = assemble_args_list(1, itoa(loc_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Aget_space)(hid_t attr_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Aget_space, (attr_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Aget_space, (attr_id));
     char **args = assemble_args_list(1, itoa(attr_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Aget_type)(hid_t attr_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Aget_type, (attr_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Aget_type, (attr_id));
     char **args = assemble_args_list(1, itoa(attr_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Aopen)(hid_t obj_id, const char *attr_name, hid_t aapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Aopen, (obj_id, attr_name, aapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Aopen, (obj_id, attr_name, aapl_id));
     char **args = assemble_args_list(3, itoa(obj_id), strdup(attr_name), itoa(aapl_id));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Aopen_idx)(hid_t loc_id, unsigned int idx) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Aopen_idx, (loc_id,idx));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Aopen_idx, (loc_id,idx));
     char **args = assemble_args_list(2, itoa(loc_id), itoa(idx));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Aopen_name)(hid_t loc_id, const char *name) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Aopen_name, (loc_id, name));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Aopen_name, (loc_id, name));
     char **args = assemble_args_list(2, itoa(loc_id), strdup(name));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Aread)(hid_t attr_id, hid_t mem_type_id, void *buf) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Aread, (attr_id, mem_type_id, buf));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Aread, (attr_id, mem_type_id, buf));
     char **args = assemble_args_list(3, itoa(attr_id), itoa(mem_type_id), ptoa(buf));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Awrite)(hid_t attr_id, hid_t mem_type_id, const void *buf) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Awrite, (attr_id, mem_type_id, buf));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Awrite, (attr_id, mem_type_id, buf));
     char **args = assemble_args_list(3, itoa(attr_id), itoa(mem_type_id), ptoa(buf));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pclose)(hid_t plist) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pclose, (plist));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pclose, (plist));
     char **args = assemble_args_list(1, itoa(plist));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 hid_t RECORDER_HDF5_DECL(H5Pcreate)(hid_t cls_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Pcreate, (cls_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Pcreate, (cls_id));
     char **args = assemble_args_list(1, itoa(cls_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 int RECORDER_HDF5_DECL(H5Pget_chunk)(hid_t plist, int max_ndims, hsize_t *dims) {
-    RECORDER_INTERCEPTOR_NOIO(int, H5Pget_chunk, (plist, max_ndims, dims));
+    RECORDER_INTERCEPTOR_PROLOGUE(int, H5Pget_chunk, (plist, max_ndims, dims));
     char **args = assemble_args_list(3, itoa(plist), itoa(max_ndims), ptoa(dims));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pget_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pget_mdc_config, (plist_id, config_ptr));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pget_mdc_config, (plist_id, config_ptr));
     char **args = assemble_args_list(2, itoa(plist_id), ptoa(config_ptr));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_alignment)(hid_t plist, hsize_t threshold, hsize_t alignment) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_alignment, (plist, threshold, alignment));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_alignment, (plist, threshold, alignment));
     char **args = assemble_args_list(3, itoa(plist), itoa(threshold), itoa(alignment));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_chunk)(hid_t plist, int ndims, const hsize_t *dim) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_chunk, (plist, ndims, dim));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_chunk, (plist, ndims, dim));
     char **args = assemble_args_list(3, itoa(plist), itoa(ndims), ptoa(dim));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_dxpl_mpio)(hid_t dxpl_id, H5FD_mpio_xfer_t xfer_mode) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_dxpl_mpio, (dxpl_id, xfer_mode));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_dxpl_mpio, (dxpl_id, xfer_mode));
     char **args = assemble_args_list(2, itoa(dxpl_id), itoa(xfer_mode));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_fapl_core)(hid_t fapl_id, size_t increment, hbool_t backing_store) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_fapl_core, (fapl_id, increment, backing_store));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_fapl_core, (fapl_id, increment, backing_store));
     char **args = assemble_args_list(3, itoa(fapl_id), itoa(increment), itoa(backing_store));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm, MPI_Info info) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_fapl_mpio, (fapl_id, comm, info));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_fapl_mpio, (fapl_id, comm, info));
     char **args = assemble_args_list(3, itoa(fapl_id), comm2name(comm), ptoa(&info));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_fapl_mpiposix)(hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_fapl_mpiposix, (fapl_id, comm, use_gpfs_hints));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_fapl_mpiposix, (fapl_id, comm, use_gpfs_hints));
     char **args = assemble_args_list(3, itoa(fapl_id), comm2name(comm), itoa(use_gpfs_hints));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_istore_k)(hid_t plist, unsigned ik) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_istore_k, (plist, ik));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_istore_k, (plist, ik));
     char **args = assemble_args_list(2, itoa(plist), itoa(ik));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t *config_ptr) {
@@ -659,39 +659,39 @@ herr_t RECORDER_HDF5_DECL(H5Pset_mdc_config)(hid_t plist_id, H5AC_cache_config_t
             config_ptr->dirty_bytes_threshold,
             config_ptr->metadata_write_strategy);
     */
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_mdc_config, (plist_id, config_ptr));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_mdc_config, (plist_id, config_ptr));
     char **args = assemble_args_list(2, itoa(plist_id), ptoa(config_ptr));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_meta_block_size)(hid_t fapl_id, hsize_t size) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_meta_block_size, (fapl_id, size));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_meta_block_size, (fapl_id, size));
     char **args = assemble_args_list(2, itoa(fapl_id), itoa(size));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 htri_t RECORDER_HDF5_DECL(H5Lexists)(hid_t loc_id, const char *name, hid_t lapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(htri_t, H5Lexists, (loc_id, name, lapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(htri_t, H5Lexists, (loc_id, name, lapl_id));
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(lapl_id));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Lget_val)(hid_t link_loc_id, const char *link_name, void *linkval_buff, size_t size, hid_t lapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Lget_val, (link_loc_id, link_name, linkval_buff, size, lapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Lget_val, (link_loc_id, link_name, linkval_buff, size, lapl_id));
     char **args = assemble_args_list(5, itoa(link_loc_id), strdup(link_name), ptoa(linkval_buff), itoa(size), itoa(lapl_id));
-    RECORDER_INTERCEPTOR(5, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Literate)(hid_t group_id, H5_index_t index_type, H5_iter_order_t order, hsize_t *idx, H5L_iterate_t op, void *op_data) {
-    RECORDER_INTERCEPTOR_NOIO(htri_t, H5Literate, (group_id, index_type, order, idx, op, op_data));
+    RECORDER_INTERCEPTOR_PROLOGUE(htri_t, H5Literate, (group_id, index_type, order, idx, op, op_data));
     char **args = assemble_args_list(6, itoa(group_id), itoa(index_type), itoa(order), ptoa(idx), ptoa(op), ptoa(op_data));
-    RECORDER_INTERCEPTOR(6, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Oclose)(hid_t object_id) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Oclose, (object_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Oclose, (object_id));
     char **args = assemble_args_list(1, itoa(object_id));
-    RECORDER_INTERCEPTOR(1, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(1, args);
 }
 
 /*
@@ -699,46 +699,46 @@ herr_t RECORDER_HDF5_DECL(H5Oclose)(hid_t object_id) {
 herr_t RECORDER_HDF5_DECL(H5Oget_info)(hid_t object_id, H5O_info_t *object_info) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Oget_info (%d, %p)", object_id, object_info);
-    RECORDER_INTERCEPTOR(H5Oget_info, herr_t, (object_id, object_info), 0, 0, log_text);
+    RECORDER_INTERCEPTOR_EPILOGUE(H5Oget_info, herr_t, (object_id, object_info), 0, 0, log_text);
 
 }
 
 herr_t RECORDER_HDF5_DECL(H5Oget_info_by_name)(hid_t loc_id, const char *object_name, H5O_info_t *object_info, hid_t lapl_id) {
     char log_text[TRACE_LEN];
     sprintf(log_text, "H5Oget_info_by_name (%d, %s, %p, %d)", loc_id, object_name, object_info, lapl_id);
-    RECORDER_INTERCEPTOR(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
+    RECORDER_INTERCEPTOR_EPILOGUE(H5Oget_info_by_name, herr_t, (loc_id, object_name, object_info, lapl_id), 0, 0, log_text);
 
 }
 */
 
 hid_t RECORDER_HDF5_DECL(H5Oopen)(hid_t loc_id, const char *name, hid_t lapl_id) {
-    RECORDER_INTERCEPTOR_NOIO(hid_t, H5Oopen, (loc_id, name, lapl_id));
+    RECORDER_INTERCEPTOR_PROLOGUE(hid_t, H5Oopen, (loc_id, name, lapl_id));
     char **args = assemble_args_list(3, itoa(loc_id), strdup(name), itoa(lapl_id));
-    RECORDER_INTERCEPTOR(3, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 
 herr_t RECORDER_HDF5_DECL(H5Pset_coll_metadata_write)(hid_t fapl_id, hbool_t is_collective) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_coll_metadata_write, (fapl_id, is_collective));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_coll_metadata_write, (fapl_id, is_collective));
     char **args = assemble_args_list(2, itoa(fapl_id), itoa(is_collective));
-    RECORDER_INTERCEPTOR(2, args)
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args)
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pget_coll_metadata_write)(hid_t fapl_id, hbool_t* is_collective) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pget_coll_metadata_write, (fapl_id, is_collective));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pget_coll_metadata_write, (fapl_id, is_collective));
     char **args = assemble_args_list(2, itoa(fapl_id), ptoa(is_collective));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pset_all_coll_metadata_ops)(hid_t fapl_id, hbool_t is_collective) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pset_all_coll_metadata_ops, (fapl_id, is_collective));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_all_coll_metadata_ops, (fapl_id, is_collective));
     char **args = assemble_args_list(2, itoa(fapl_id), itoa(is_collective));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 
 herr_t RECORDER_HDF5_DECL(H5Pget_all_coll_metadata_ops)(hid_t fapl_id, hbool_t* is_collective) {
-    RECORDER_INTERCEPTOR_NOIO(herr_t, H5Pget_all_coll_metadata_ops, (fapl_id, is_collective));
+    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pget_all_coll_metadata_ops, (fapl_id, is_collective));
     char **args = assemble_args_list(2, itoa(fapl_id), ptoa(is_collective));
-    RECORDER_INTERCEPTOR(2, args);
+    RECORDER_INTERCEPTOR_EPILOGUE(2, args);
 }
 

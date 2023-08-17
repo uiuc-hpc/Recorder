@@ -91,8 +91,8 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
     RECORDER_REAL_CALL(PMPI_Comm_size)(comm, &comm_size);
     RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
 
-    if(comm_rank == 0)
-        printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
+    //if(comm_rank == 0)
+    //    printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
 
     if(comm_size > 2) {
         long int *all_offsets = calloc(comm_size*(func_count), sizeof(long int));
@@ -130,8 +130,8 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
                 char* tmp = calloc(64, 1);
                 sprintf(tmp, "%ld*r+%ld", a, b);
 
-                if(comm_rank == 0)
-                    printf("pattern recognized %d: offset = %ld*rank+%ld\n", offset_cs_entries[i].cs->terminal_id, a, b);
+                //if(comm_rank == 0)
+                //    printf("pattern recognized %d: offset = %ld*rank+%ld\n", offset_cs_entries[i].cs->terminal_id, a, b);
 
                 int old_keylen = offset_cs_entries[i].cs->key_len;
                 int new_keylen = old_keylen - (end-start-1) + strlen(tmp);

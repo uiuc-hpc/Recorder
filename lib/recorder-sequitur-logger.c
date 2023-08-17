@@ -194,7 +194,7 @@ void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, 
         // Serialized grammar
         int* g = gathered_grammars + displs[rank];
         int g_len = recvcounts[rank] * sizeof(int);
-        printf("rank: %d, grammar lengh: %d\n", rank, g_len);
+        //printf("rank: %d, grammar lengh: %d\n", rank, g_len);
 
         UniqueGrammar *ug_entry = NULL;
         HASH_FIND(hh, unique_grammars, g, g_len, ug_entry);
