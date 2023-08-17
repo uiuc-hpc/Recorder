@@ -92,6 +92,19 @@ static int mpi_comm_id = 0;
 // placeholder for C wrappers
 static MPI_Fint* ierr = NULL;
 
+
+/* Our own bcast call during the tracing process
+ * it creates a tmp comm to perform the bcast
+ * this avoids interfering with applicaiton's
+ * bcast calls.
+ */
+void safe_bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
+    MPI_Comm tmp_comm;
+    PMPI_Comm_dup(comm, &tmp_comm);
+    PMPI_Bcast(buffer, count, datatype, root, tmp_comm);
+    PMPI_Comm_free(&tmp_comm);
+}
+
 void add_mpi_file(MPI_Comm comm, MPI_File *file, CONST char* filename) {
     if(file == NULL)
         return;
@@ -107,7 +120,7 @@ void add_mpi_file(MPI_Comm comm, MPI_File *file, CONST char* filename) {
     char* id = calloc(32, sizeof(char));
     if(rank == 0)
         sprintf(id, "%d-%d", world_rank, mpi_file_id++);
-    PMPI_Bcast(id, 32, MPI_BYTE, 0, comm);
+    safe_bcast(id, 32, MPI_BYTE, 0, comm);
     entry->id = id;
     char* tmp_filename = realrealpath(filename);
     entry->accept = accept_filename(tmp_filename);
@@ -160,7 +173,7 @@ int add_mpi_comm(MPI_Comm *newcomm) {
     char *id = calloc(32, sizeof(char));
     if(new_rank == 0)
         sprintf(id, "%d-%d", world_rank, mpi_comm_id++);
-    PMPI_Bcast(id, 32, MPI_BYTE, 0, *newcomm);
+    safe_bcast(id, 32, MPI_BYTE, 0, *newcomm);
     entry->id = id;
 
     HASH_ADD_KEYPTR(hh, mpi_comm_table, entry->key, sizeof(MPI_Comm), entry);
