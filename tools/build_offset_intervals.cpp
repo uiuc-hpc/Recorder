@@ -191,7 +191,8 @@ void insert_one_record(Record* r, void* arg) {
 
     // For MPI-IO calls keep only MPI_File_write* and MPI_File_read*
     if((func_type == RECORDER_MPIIO) && (!strstr(func, "MPI_File_write")) 
-        && (!strstr(func, "MPI_File_read")))
+        && (!strstr(func, "MPI_File_read")) && (!strstr(func, "MPI_File_iread"))
+        && (!strstr(func, "MPI_File_iwrite")))
         return;
     
     if(strstr(func, "dir") || strstr(func, "link"))
