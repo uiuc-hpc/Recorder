@@ -199,10 +199,15 @@ char* comm2name(MPI_Comm *comm) {
 
 static inline char *type2name(MPI_Datatype type) {
     char *tmp = malloc(128);
-    int len;
-    PMPI_Type_get_name(type, tmp, &len);
-    tmp[len] = 0;
-    if(len == 0) strcpy(tmp, "MPI_TYPE_UNKNOWN");
+    if(type == MPI_DATATYPE_NULL) {
+        strcpy(tmp, "MPI_DATATYPE_NULL");
+    } else {
+        int len;
+        PMPI_Type_get_name(type, tmp, &len);
+        tmp[len] = 0;
+        if(len == 0)
+            strcpy(tmp, "MPI_TYPE_UNKNOWN");
+    }
     return tmp;
 }
 
@@ -304,11 +309,23 @@ int RECORDER_MPI_IMP(MPI_Scatter) (CONST void *sbuf, int scount, MPI_Datatype st
 
 int RECORDER_MPI_IMP(MPI_Gatherv) (CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf, CONST int *rcount, CONST int *displs, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Fint* ierr) {
     // TODO: *displs
-    RECORDER_INTERCEPTOR_PROLOGUE_F(int, PMPI_Gatherv, (sbuf, scount, stype, rbuf, rcount, displs, rtype, root, comm), ierr);
+    /* TODO: ugly fix for mpich fortran wrapper
+     * when (stype == MPI_DATATYPE_NULL) and (sbuf != MPI_INPLACE)
+     * mpich will abort and through a null datatype error.
+     * the fortran MPI_IN_PLACE has a different value than that of C.
+     * so if this was invoked by the fortran wrapper, we never see
+     * sbuf == MPI_IN_PLACE.
+     * in that case, we scerectly set stype to MPI_INT when scount = 0.
+     */
+    MPI_Datatype sstype = stype;
+    if(stype == MPI_DATATYPE_NULL && sbuf != MPI_IN_PLACE && scount == 0) {
+        sstype = MPI_INT;
+    }
+
+    RECORDER_INTERCEPTOR_PROLOGUE_F(int, PMPI_Gatherv, (sbuf, scount, sstype, rbuf, rcount, displs, rtype, root, comm), ierr);
     char **args = assemble_args_list(9, ptoa(sbuf), itoa(scount), type2name(stype), ptoa(rbuf),
                                         ptoa(rcount), ptoa(displs), type2name(rtype), itoa(root), comm2name(&comm));
     RECORDER_INTERCEPTOR_EPILOGUE(9, args);
-
 }
 
 int RECORDER_MPI_IMP(MPI_Scatterv) (CONST void *sbuf, CONST int *scount, CONST int *displa, MPI_Datatype stype, void *rbuf, int rcount, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Fint* ierr) {
