@@ -357,7 +357,7 @@ void logger_finalize() {
     if(logger.rank == 0) {
         save_global_metadata();
 
-        fprintf(stdout, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
         RECORDER_REAL_CALL(fflush)(stderr);
     }
 }

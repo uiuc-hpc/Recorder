@@ -119,7 +119,7 @@ void recorder_finalize() {
     local_tend = recorder_wtime();
 
     if (rank == 0) {
-        fprintf(stderr, "[Recorder] elapsed time on rank 0: %.2f\n", local_tend-local_tstart);
+        fprintf(stderr, "[Recorder] elapsed time: %.2f\n", local_tend-local_tstart);
     }
 }
 
