@@ -134,7 +134,7 @@ class MPIMatchHelper:
             skip, src, rtag, comm, req = False, args[3], args[4], args[5], args[6]
         elif func == 'MPI_Wait':
             skip, req = False, set([args[0]])
-            src, rtag = mpi_status_to_src_tag(args[1])
+            src, rtag = self.mpi_status_to_src_tag(args[1])
         elif func == 'MPI_Waitall':
             reqs = args[1][1:-1].split(',')
             skip, req = False, set(reqs)
@@ -147,7 +147,7 @@ class MPIMatchHelper:
             skip, req, reqflag, tindx = False, reqs, int(args[2]), tind
         elif func == 'MPI_Test':
             skip, req, reqflag = False, set([args[0]]), int(args[1])
-            src, rtag = mpi_status_to_src_tag(args[2])
+            src, rtag = self.mpi_status_to_src_tag(args[2])
         elif func == 'MPI_Testall':
             reqs = args[1][1:-1].split(',')
             skip, req, reqflag = False, set(reqs), int(args[2])
@@ -227,7 +227,7 @@ class MPIMatchHelper:
         else:
             return None
 
-    def mpi_status_to_src_tag(status_str):
+    def mpi_status_to_src_tag(self, status_str):
         if str(status_str).startswith("["):
             return status_str[1:-1].split("_")[0], status_str[1:-1].split("_")[1]
         else:   # MPI_STATUS_IGNORE
