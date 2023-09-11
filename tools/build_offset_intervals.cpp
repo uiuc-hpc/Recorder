@@ -104,7 +104,7 @@ void handle_data_operation(RRecord &rr,
     }
 }
 
-/* 
+/*
  * Inspect metadata operations to make
  * sure we can correctly keep track of
  * the position of file pointers.
@@ -185,7 +185,7 @@ void insert_one_record(Record* r, void* arg) {
 
     int func_type = recorder_get_func_type(reader, r);
     const char* func = recorder_get_func_name(reader, r);
-    
+
     if((func_type != RECORDER_POSIX) && (func_type != RECORDER_MPIIO))
         return;
 

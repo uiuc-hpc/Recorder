@@ -35,8 +35,8 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
     char path[512];
     sprintf(path, "%s/conflicts.txt", base_dir);
     conflict_file = fopen(path, "w");
-    fprintf(conflict_file, "#rank,seqId,op1(fh,offset,count) "
-                           "rank,seqId,op1(fh,offset,count)\n");
+    fprintf(conflict_file, "#rank,id,op1(fh,offset,count) "
+                           "rank,id,op1(fh,offset,count)\n");
 
     int idx, i, j;
     for(idx = 0; idx < num_files; idx++) {
@@ -51,28 +51,33 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
         int i = 0, j = 0;
         Interval *i1, *i2;
         while(i < IM[idx].num_intervals-1) {
-            i1 = &intervals[i];
 
+            i1 = &intervals[i];
             j = i + 1;
+
+            int conflict_count = 0;
+
             while(j < IM[idx].num_intervals) {
                 i2 = &intervals[j];
 
-                bool conflict = is_conflict(i1, i2);
-
-                if(conflict) {
-                    printf("%s, %s(%d-%d, %zu, %zu), %s(%d-%d, %zu, %zu) \n", filename,
-                            i1->isRead?"read":"write", i1->rank, i1->seqId, i1->offset, i1->count, 
-                            i2->isRead?"read":"write", i2->rank, i2->seqId, i2->offset, i2->count);
+                if(is_conflict(i1,i2)) {
                     fprintf(conflict_file, "%d,%d,%s(%s,%zu,%zu) %d,%d,%s(%s,%zu,%zu)\n",
                             i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
                             i2->rank,i2->seqId,i2->isRead?"read":"write",i2->mpifh,i2->offset,i2->count);
+                    conflict_count++;
                 }
 
-                if(i1->offset+i1->count >= i2->offset+i2->count) {
+                if(i1->offset+i1->count > i2->offset) {
                     j++;
                 } else {
-                    // all subsequent intervals will have a larger
-                    // starting offset
+                    // print out the number of conflicts
+                    if (conflict_count > 0) {
+                        fprintf(stdout, "rank:%d, id:%d, %s(%s,%zu,%zu) conflicts: %d\n",
+                                i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
+                                conflict_count);
+                    }
+                    // skip the rest, as they will all have
+                    // a bigger starting offset
                     break;
                 }
             }
