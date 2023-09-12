@@ -130,6 +130,7 @@ class VerifyIOGraph:
     # Add neighbouring nodes of the same rank
     # This step will add all nodes
     def __build_graph(self, all_nodes, mpi_edges, include_vc):
+        # 1. Add program orders
         for rank in range(len(all_nodes)):
             for i in range(len(all_nodes[rank]) - 1):
                 h = all_nodes[rank][i]
@@ -151,6 +152,7 @@ class VerifyIOGraph:
                     self.G.nodes[t.graph_key()]['vc'] = vc2
 
 
+        # 2. Add synchornzation orders (using mpi edges)
         # Before calling this function, we should
         # have added all nodes. We use this function
         # to add edges of matching MPI calls
@@ -190,6 +192,7 @@ class VerifyIOGraph:
                     self.add_edge(h, tail)
             # one-to-many, e.g., bcast
             elif edge.call_type == MPICallType.ONE_TO_MANY:
+                #print(head, tail)
                 for t in tail:
                     self.add_edge(head, t)
             # point-to-point, i.e., send-recv

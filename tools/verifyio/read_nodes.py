@@ -4,7 +4,7 @@ from itertools import repeat
 from verifyio_graph import VerifyIONode
 
 accepted_mpi_funcs = [
- 'MPI_Send', 'MPI_Ssend', 'MPI_Isend',          
+ 'MPI_Send', 'MPI_Ssend', 'MPI_Isend',
  'MPI_Recv', 'MPI_Sendrecv', 'MPI_Irecv',
  'MPI_Wait', 'MPI_Waitall', 'MPI_Waitany',
  'MPI_Waitsome', 'MPI_Test', 'MPI_Testall',
@@ -52,16 +52,11 @@ Return:
     pairs: list of [c1, c2], where c1 and c2 are VerifyIONode
 '''
 def read_io_nodes(reader, path):
-    
+
     # format: rank,seqId,func(mpifh,offset,count)
     def parse_one_node(data, file_id):
-        data = data.replace(")", "")
-        meta = data.split("(")[0]
-        args = data.split("(")[1]
-        meta = meta.split(",")
-        args = args.split(",")
-        rank, seq_id, func = int(meta[0]), int(meta[1]), meta[2]
-        mpifh, offset, count = args[0], int(args[1]), int(args[2])
+        args = data.split(",")
+        rank, seq_id, func, mpifh = int(args[0]), int(args[1]), args[2], args[3]
         return VerifyIONode(rank, seq_id, func, file_id, mpifh);
 
     exist_nodes = set()
@@ -83,22 +78,20 @@ def read_io_nodes(reader, path):
             filename = line.split(":")[1]
             continue
 
-        pair = line.replace("\n", "").split(" ")
+        buf = line.replace("\n", "").split(":")
+        n1_buf = buf[0]
+        n2s_buf = buf[1].split(" ")
 
-        n1 = parse_one_node(pair[0], file_id)
-        n2 = parse_one_node(pair[1], file_id)
-
-        if pair[0] not in exist_nodes:
+        n1 = parse_one_node(n1_buf, file_id)
+        if n1_buf not in exist_nodes:
             io_nodes[n1.rank].append(n1)
-            exist_nodes.add(pair[0])
-        if pair[1] not in exist_nodes:
-            io_nodes[n2.rank].append(n2)
-            exist_nodes.add(pair[1])
+            exist_nodes.add(n1_buf)
 
-        # To test for properly synchonization
-        # We can ignore the conflicting pair on
-        # same node.
-        if n1.rank != n2.rank:
+        for n2_buf in n2s_buf:
+            n2 = parse_one_node(n2_buf, file_id)
+            if n2_buf not in exist_nodes:
+                io_nodes[n2.rank].append(n2)
+                exist_nodes.add(n2_buf)
             pairs.append([n1, n2])
 
         # TODO:

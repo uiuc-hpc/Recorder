@@ -159,6 +159,8 @@ class MPIMatchHelper:
             tind = args[3][1:-1].split(',')
             skip, req, reqflag, tindx  = False, reqs, int(args[2]), tind
         ## Collective calls
+        # for one-tomany and many-to-one calls like
+        # reduce and gather we use src to store root parameters
         elif func == 'MPI_Bcast':
             skip, src, comm = False, args[3], args[4]
         elif func == 'MPI_Ibcast':
@@ -166,15 +168,15 @@ class MPIMatchHelper:
         elif func == 'MPI_Reduce':
             skip, src, comm = False, args[5], args[6]
         elif func == 'MPI_Ireduce':
-            skip, dst, comm, req = False, args[5], args[6], args[7]
+            skip, src, comm, req = False, args[5], args[6], args[7]
         elif func == 'MPI_Gather':
-            skip, dst, comm = False, args[6], args[7]
+            skip, src, comm = False, args[6], args[7]
         elif func == 'MPI_Igather':
-            skip, dst, comm, req = False, args[6], args[7], args[8]
+            skip, src, comm, req = False, args[6], args[7], args[8]
         elif func == 'MPI_Gatherv':
-            skip, dst, comm = False, args[7], args[8]
+            skip, src, comm = False, args[7], args[8]
         elif func == 'MPI_Igatherv':
-            skip, dst, comm, req = False, args[7], args[8], args[9]
+            skip, src, comm, req = False, args[7], args[8], args[9]
         elif func == 'MPI_Barrier':
             skip, comm = False, args[0]
         elif func == 'MPI_Alltoall':
@@ -310,10 +312,11 @@ class MPIMatchHelper:
                     local_rank = int(record.args[3])
 
                 if comm_id:
-                    if comm_id not in translate:
-                        translate[comm_id] = list(range(self.num_ranks))
-                    translate[comm_id][local_rank] = world_rank
-        return translate 
+                    comm = comm_id.decode() if isinstance(comm_id, bytes) else comm_id
+                    if comm not in translate:
+                        translate[comm] = list(range(self.num_ranks))
+                    translate[comm][local_rank] = world_rank
+        return translate
 
     # Local rank to global rank
     def local2global(self, comm_id, local_rank):
@@ -379,15 +382,15 @@ def match_collective(mpi_call, helper):
         if edge.call_type == MPICallType.ALL_TO_ALL:
             edge.head.append(node)
             edge.tail.append(node)
-        # One-to-many (bcast) 
+        # One-to-many (bcast)
         if edge.call_type == MPICallType.ONE_TO_MANY:
-            if call.rank == call.src:
+            if call.rank == helper.local2global(call.comm, call.src):
                 edge.head = node
             else:
                 edge.tail.append(node)
         # Many-to-one (reduce)
         if edge.call_type == MPICallType.MANY_TO_ONE:
-            if call.rank == call.src:
+            if call.rank == helper.local2global(call.comm, call.src):
                 edge.tail = node
             else:
                 edge.head.append(node)
@@ -398,34 +401,39 @@ def match_collective(mpi_call, helper):
     edge = MPIEdge(call_type)
 
     for rank in range(helper.num_ranks):
+
         key = mpi_call.get_key()
 
-        if key in helper.coll_calls[rank]:
-            coll_call_index = helper.coll_calls[rank][key][0]
-            coll_call       = helper.all_mpi_calls[rank][coll_call_index]
+        # this rank has not made this particular
+        # collective call
+        if key not in helper.coll_calls[rank]:
+            continue
 
-            # Blocking calls
-            if mpi_call.is_blocking_call():
-                add_nodes_to_edge(edge, coll_call)
-            # Non-blocking calls
-            else:
-                wait_call = find_wait_test_call(coll_call.req, rank, helper)
-                if wait_call:
-                    add_nodes_to_edge(edge, wait_call)
+        # this rank has made this collective call
+        coll_call_index = helper.coll_calls[rank][key][0]
+        coll_call       = helper.all_mpi_calls[rank][coll_call_index]
 
-            # If no more collective calls have the same key
-            # then remove this key from the dict
-            helper.coll_calls[rank][key].pop(0)
-            if(len(helper.coll_calls[rank][key]) == 0):
-                helper.coll_calls[rank].pop(key)
+        # blocking vs. non-blocking
+        if mpi_call.is_blocking_call():
+            add_nodes_to_edge(edge, coll_call)
+        else:
+            wait_call = find_wait_test_call(coll_call.req, rank, helper)
+            if wait_call:
+                add_nodes_to_edge(edge, wait_call)
 
-            # Set this collective call as matched
-            # so we don't do repeat work when later
-            # exam this call
-            coll_call.matched = True
+        # If no more collective calls have the same key
+        # then remove this key from the dict
+        helper.coll_calls[rank][key].pop(0)
+        if(len(helper.coll_calls[rank][key]) == 0):
+            helper.coll_calls[rank].pop(key)
+
+        # Set this collective call as matched
+        # so we don't do repeat work when later
+        # exam this call
+        coll_call.matched = True
 
     mpi_call.matched = True
-    print("match collective:", mpi_call.func)
+    #print("match collective:", mpi_call.func, "root:", mpi_call.src, mpi_call.comm)
     return edge
 
 #@profile
@@ -467,7 +475,7 @@ def match_pt2pt(send_call, helper):
     if tail_node :
         send_call.matched = True
         edge = MPIEdge(MPICallType.POINT_TO_POINT, head_node, tail_node)
-        print("match pt2pt: %s --> %s" %(edge.head, edge.tail))
+        #print("match pt2pt: %s --> %s" %(edge.head, edge.tail))
         return edge
     else:
         print("Warnning: unmatched send call:", head_node, global_dst, send_call.stag)

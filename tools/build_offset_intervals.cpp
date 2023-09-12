@@ -55,10 +55,10 @@ void handle_data_operation(RRecord &rr,
     I.tstart = R->tstart;
     I.isRead = strstr(func, "read") ? true: false;
     memset(I.mpifh, 0, sizeof(I.mpifh));
+    strcpy(I.mpifh, "-");
 
-    if(R->level == current_mpi_call_depth+1) {
+    if(R->level == current_mpi_call_depth+1)
         strcpy(I.mpifh, current_mpifh.c_str());
-    }
 
     string filename = "";
     if(strstr(func, "writev") || strstr(func, "readv")) {

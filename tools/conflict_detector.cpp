@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <vector>
+extern "C" {
 #include "reader.h"
+}
+using namespace std;
 
 int compare_by_offset(const void *lhs, const void *rhs) {
     Interval *first = (Interval*)lhs;
@@ -36,7 +40,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
     sprintf(path, "%s/conflicts.txt", base_dir);
     conflict_file = fopen(path, "w");
     fprintf(conflict_file, "#rank,id,op1(fh,offset,count) "
-                           "rank,id,op1(fh,offset,count)\n");
+                           "rank,id,op2(fh,offset,count)\n");
 
     int idx, i, j;
     for(idx = 0; idx < num_files; idx++) {
@@ -50,38 +54,45 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
 
         int i = 0, j = 0;
         Interval *i1, *i2;
+
         while(i < IM[idx].num_intervals-1) {
 
             i1 = &intervals[i];
             j = i + 1;
 
-            int conflict_count = 0;
 
+            vector<Interval*> conflicts;
             while(j < IM[idx].num_intervals) {
                 i2 = &intervals[j];
 
                 if(is_conflict(i1,i2)) {
-                    fprintf(conflict_file, "%d,%d,%s(%s,%zu,%zu) %d,%d,%s(%s,%zu,%zu)\n",
-                            i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
-                            i2->rank,i2->seqId,i2->isRead?"read":"write",i2->mpifh,i2->offset,i2->count);
-                    conflict_count++;
+                    conflicts.push_back(i2);
                 }
 
                 if(i1->offset+i1->count > i2->offset) {
                     j++;
                 } else {
-                    // print out the number of conflicts
-                    if (conflict_count > 0) {
-                        fprintf(stdout, "rank:%d, id:%d, %s(%s,%zu,%zu) conflicts: %d\n",
-                                i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
-                                conflict_count);
-                    }
                     // skip the rest, as they will all have
                     // a bigger starting offset
                     break;
                 }
             }
 
+            if (conflicts.size() > 0) {
+                fprintf(stdout, "rank:%4d, id:%10d, %5s(%5s,%12zu,%12zu) conflicts: %10d\n",
+                        i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
+                        conflicts.size());
+                fprintf(conflict_file, "%d,%d,%s,%s:",
+                        i1->rank,i1->seqId,i1->isRead?"r":"w",i1->mpifh);
+                for (vector<Interval*>::iterator it = conflicts.begin(); it!=conflicts.end(); ++it) {
+                    i2 = *it;
+                    fprintf(conflict_file, "%d,%d,%s,%s%s",
+                            i2->rank,i2->seqId,i2->isRead?"r":"w",
+                            i2->mpifh,(it==conflicts.end()-1)?"":" ");
+                }
+                fprintf(conflict_file, "\n");
+                conflicts.clear();
+            }
             i++;
         }
     }
