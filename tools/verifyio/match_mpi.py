@@ -39,7 +39,9 @@ class MPICall():
         self.matched = False
 
     def get_key(self):
-        key = self.func + ";" + str(self.comm)
+        # self.comm for calls like MPI_Bcast, MPI_Barier
+        # self.req for calls like MPI_File_close
+        key = self.func + ";" + str(self.comm) + ";" + str(self.req)
         return key
 
     def is_blocking_call(self):
@@ -188,7 +190,7 @@ class MPIMatchHelper:
         elif func == 'MPI_Reduce_scatter':
             skip, comm = False, args[5]
         elif func == 'MPI_File_open':
-            skip, comm, req, reqflag = False, args[0], args[1], args[2]
+            skip, comm, req, reqflag = False, args[0], args[4], args[2]
         elif func == 'MPI_File_close':
             skip, req = False, args[0]
         elif func == 'MPI_File_read_at_all':
@@ -238,9 +240,7 @@ class MPIMatchHelper:
     # Go through every record in the trace and preprocess
     # the mpi calls, so they can be matched later.
     def read_mpi_calls(self, reader):
-
         ignored_funcs = set()
-
         for rank in range(self.num_ranks):
             records = reader.records[rank]
             for seq_id in range(reader.LMs[rank].total_records):

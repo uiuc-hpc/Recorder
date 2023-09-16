@@ -1,4 +1,4 @@
-import argparse, time
+import argparse, time, sys
 from recorder_viz import RecorderReader
 from read_nodes import read_mpi_nodes, read_io_nodes
 from match_mpi import match_mpi_calls
@@ -91,22 +91,49 @@ def verify_session_semantics(G, conflict_pairs,
     def check_pair_in_order(n1 , n2):
         next_sync = G.next_po_node(n1, close_ops)
         prev_sync = G.prev_po_node(n2, open_ops)
-        #print(next_sync, prev_sync)
-        reachable = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
-        if reachable:
-            #path_str = get_shortest_path(G, next_sync, prev_sync)
-            #print("%s -> %s -> %s" %(n1, path_str, n2))
-            return True
-        else:
-            return False
+        inorder = False
+
+        # Algorithm 1: Reachibility
+        # inorder = (bool) ( (next_sync and prev_sync) and G.has_path(next_sync, prev_sync) )
+
+        # Algorithm 2: Vector Clock
+        if next_sync and prev_sync:
+            vc1 = G.get_vector_clock(next_sync)
+            vc2 = G.get_vector_clock(prev_sync)
+            inorder = (bool) (vc1[next_sync.rank] < vc2[next_sync.rank])
+
+        # if inorder:
+        #   path_str = get_shortest_path(G, next_sync, prev_sync)
+        #   print("%s -> %s -> %s" %(n1, path_str, n2))
+        return inorder
 
     properly_synchronized = True
+    total = len(conflict_pairs)
+    i = 1
     for pair in conflict_pairs:
-        n1, n2 = pair[0], pair[1]                   # of VerifyIONode class
-        this_pair_ok = (check_pair_in_order(n1, n2) or check_pair_in_order(n2, n1))
-        print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
-        if not this_pair_ok:
-            properly_synchronized = False
+
+        sys.stdout.write("%s/%s\r" %(i,total))
+        sys.stdout.flush()
+        i = i + 1
+
+        n1, n2s = pair[0], pair[1]                   # n1:VerifyIONode, n2s[rank]: array of VerifyIONode
+        for rank in range(len(n2s)):
+            if len(n2s[rank]) < 1: continue
+            # check if n1 happens-before the first in n2s[rank]
+            # n1 ->hb n2s[rank][0], then n1 ->hb all n2s[rank]
+            if check_pair_in_order(n1, n2s[rank][0]):
+                continue
+            # otherwise, check if last of n2s[rank] happens-beofre n1
+            # n2s[rank][-1] ->hb n1, then all n2s[rank] ->hb n1
+            if check_pair_in_order(n2s[rank][-1], n1):
+                continue
+
+            # now we are here, check for every n2s[rank]
+            for n2 in n2s[rank]:
+                this_pair_ok = (check_pair_in_order(n1, n2) or check_pair_in_order(n2, n1))
+                if not this_pair_ok:
+                    print("%s <--> %s, properly synchronized: %s" %(n1, n2, this_pair_ok))
+                    properly_synchronized = False
 
     return properly_synchronized
 
@@ -165,23 +192,29 @@ if __name__ == "__main__":
     print("match mpi calls: %.3f secs, mpi edges: %d" %((t2-t1),len(mpi_edges)))
 
     t1 = time.time()
-    G = VerifyIOGraph(all_nodes, mpi_edges, include_vc=False)
+    G = VerifyIOGraph(all_nodes, mpi_edges, include_vc=True)
+    G.run_vector_clock()
+    #G.run_transitive_closure()
     t2 = time.time()
     print("build happens-before graph: %.3f secs, nodes: %d" %((t2-t1), G.num_nodes()))
 
     # G.plot_graph("vgraph.jpg")
-    # G.run_vector_clock()
 
+    t1 = time.time()
+    p = True
     if args.semantics == "POSIX":
         p = verify_posix_semantics(G, conflict_pairs)
     elif args.semantics == "MPI-IO":
-        p = verify_mpi_semantics(G, conflict_pairs)
+        pass
+        #p = verify_mpi_semantics(G, conflict_pairs)
     elif args.semantics == "Commit":
         p = verify_commit_semantics(G, conflict_pairs)
     elif args.semantics == "Session":
         p = verify_session_semantics(G, conflict_pairs)
+    t2 = time.time()
 
     if p:
         print("\nProperly synchronized under %s semantics" %args.semantics)
     else:
         print("\nNot properly synchronized under %s semantics" %args.semantics)
+    print("verify time: %.3f secs" %(t2-t1))

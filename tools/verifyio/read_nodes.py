@@ -60,6 +60,8 @@ def read_io_nodes(reader, path):
         return VerifyIONode(rank, seq_id, func, file_id, mpifh);
 
     exist_nodes = set()
+    exist_n2s = set()
+    duplicate = 0
 
     nprocs = reader.GM.total_ranks
     io_nodes = [[] for i in repeat(None, nprocs)]
@@ -80,24 +82,29 @@ def read_io_nodes(reader, path):
 
         buf = line.replace("\n", "").split(":")
         n1_buf = buf[0]
-        n2s_buf = buf[1].split(" ")
+        n2s_buf = buf[1].split(" ")[:2]
+
+        if buf[1] not in exist_n2s:
+            exist_n2s.add(buf[1])
 
         n1 = parse_one_node(n1_buf, file_id)
         if n1_buf not in exist_nodes:
             io_nodes[n1.rank].append(n1)
             exist_nodes.add(n1_buf)
 
+        n2s = [[] for i in repeat(None, nprocs)]
         for n2_buf in n2s_buf:
             n2 = parse_one_node(n2_buf, file_id)
             if n2_buf not in exist_nodes:
                 io_nodes[n2.rank].append(n2)
                 exist_nodes.add(n2_buf)
-            pairs.append([n1, n2])
+            n2s[n2.rank].append(n2)
 
+        pairs.append((n1, n2s))
         # TODO:
         # To save time, we check up to 1000 conflict
         # pairs.
-        if len(pairs) > 1000:
-            break;
+        #if len(pairs) >= 1000:
+        #    break;
 
     return io_nodes, pairs

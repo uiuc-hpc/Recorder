@@ -40,6 +40,7 @@ class VerifyIOGraph:
     def __init__(self, nodes, edges, include_vc=False):
         self.G = nx.DiGraph()
         self.nodes = nodes
+        self.include_vc = include_vc
         self.__build_graph(nodes, edges, include_vc)
 
     def num_nodes(self):
@@ -92,21 +93,36 @@ class VerifyIOGraph:
         #plt.savefig(fname)
         plt.show()
 
+    def get_vector_clock(self, n):
+        return self.G.nodes[n.graph_key()]['vc']
+
     def run_vector_clock(self):
-        print("Run vector clock algorithm...")
+        # Degug
+        #edges = nx.find_cycle(self.G)
+        #for edge in edges:
+        #    print(edge[0], edge[1])
+        print("run vector clock algorithm...")
         for node_key in nx.topological_sort(self.G):
             vc = self.G.nodes[node_key]['vc']
             for eachpred in self.G.predecessors(node_key):
-                pred_vc = self.G.nodes[eachpred]['vc']
+                pred_vc = self.G.nodes[eachpred]['vc'].copy()
+                pred_vc[self.key2rank(eachpred)] += 1
                 vc = list(map(max, zip(vc, pred_vc)))
 
             self.G.nodes[node_key]['vc'] = vc
-        print("Vector clock algorith finished")
+            #print(node_key, vc)
+        print("vector clock algorith finished")
+
+    def run_transitive_closure(self):
+        print("run transitive closure algorithm...")
+        tc = nx.transitive_closure(self.G)
+        print("transitive closure algorithm finished")
+
+    # Retrive rank from node key
+    def key2rank(self, key):
+        return (int)(key.split('-')[0])
 
     def shortest_path(self, src, dst):
-        # Retrive rank from node key
-        def key2rank(key):
-            return (int)(key.split('-')[0])
 
         if (not src) or (not dst):
             print("shortest_path Error: must specify src and dst (VerifyIONode)")
@@ -118,7 +134,7 @@ class VerifyIOGraph:
         path_in_keys = nx.shortest_path(self.G, src.graph_key(), dst.graph_key())
         path = []
         for key in path_in_keys:
-            rank = key2rank(key)
+            rank = self.key2rank(key)
             index = self.G.nodes[key]['index']
             path.append(self.nodes[rank][index])
         return path
@@ -131,7 +147,8 @@ class VerifyIOGraph:
     # This step will add all nodes
     def __build_graph(self, all_nodes, mpi_edges, include_vc):
         # 1. Add program orders
-        for rank in range(len(all_nodes)):
+        nprocs = len(all_nodes)
+        for rank in range(nprocs):
             for i in range(len(all_nodes[rank]) - 1):
                 h = all_nodes[rank][i]
                 t = all_nodes[rank][i+1]
@@ -144,13 +161,12 @@ class VerifyIOGraph:
 
                 # Include vector clock for each node
                 if include_vc:
-                    vc1 = [0] * len(all_nodes)
-                    vc2 = [0] * len(all_nodes)
+                    vc1 = [0] * (nprocs + 1)    # one more for ghost rank
+                    vc2 = [0] * (nprocs + 1)    # one more for ghost rank 
                     vc1[rank] = i
-                    vc1[rank] = i+1
+                    vc2[rank] = i+1
                     self.G.nodes[h.graph_key()]['vc'] = vc1
                     self.G.nodes[t.graph_key()]['vc'] = vc2
-
 
         # 2. Add synchornzation orders (using mpi edges)
         # Before calling this function, we should
@@ -159,33 +175,43 @@ class VerifyIOGraph:
         ghost_node_index = 0
         for edge in mpi_edges:
             head, tail = edge.head, edge.tail
-
             # all-to-all
-            # TODO is ther a many-to-many MPI call that
+            # TODO is there a many-to-many MPI call that
             # different senders and receivers?
+            # for now we assume head == tail
             if edge.call_type == MPICallType.ALL_TO_ALL:
-                # Opt:
+                if len(head) <= 1: continue
+                # Method 1:
                 # Add a ghost node and connect all predecessors
                 # and successors from all ranks. This prvents the circle
-                '''
-                ghost_node = (-1, ghost_node_index, "")
-                ghost_node_index += 1
+                ghost_node = VerifyIONode(rank=nprocs, seq_id=ghost_node_index, func="ghost")
                 for h in head:
-                    origin_h, origin_t = h, None
-                    for tmp in self.G.successors(graph_node_key(h)):
-                        origin_t = tmp
-                    self.add_edge(origin_h, ghost_node)
-                    if origin_t:
-                        remove_networkx_edge(self.G, origin_h, origin_t)
-                        self.add_edge(ghost_node, origin_t)
-                '''
+                    # use list() to make a copy to avoid the runtime
+                    # error of "dictionary size changed during iteration"
+                    successors = list(self.G.successors(h.graph_key()))
+                    for successor in successors:
+                        self.G.remove_edge(h.graph_key(), successor)
+                    if len(list(self.G.successors(h.graph_key()))) != 0 :
+                        print("Not possible!")
+                    for successor in successors:
+                        self.G.add_edge(ghost_node.graph_key(), successor)
+                
+                for h in head:
+                    self.add_edge(h, ghost_node)
 
+                vc = [0] * (nprocs + 1)
+                vc[nprocs] = ghost_node_index
+                self.G.nodes[ghost_node.graph_key()]['vc'] = vc
+                ghost_node_index += 1
+
+                # Method 2: Native method, connecting all nodes
                 # Add all-to-all edges will create circle and prevent
                 # the use of topological sort
-                for i in range(len(head)):
-                    for j in range(len(head)):
-                        if i != j:
-                            self.add_edge(head[i], head[j])
+                #for i in range(len(head)):
+                #    for j in range(len(head)):
+                #        if i != j:
+                #            self.add_edge(head[i], head[j])
+
             # many-to-one, e.g., reduce
             elif edge.call_type == MPICallType.MANY_TO_ONE:
                 for h in head:
