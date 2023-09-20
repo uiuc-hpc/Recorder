@@ -73,7 +73,10 @@ char** read_prefix_list(const char* path) {
     MAP_OR_FAIL(fclose);
 
     FILE* f = RECORDER_REAL_CALL(fopen)(path, "r");
-    assert(f != NULL);
+    if (f == NULL) {
+        fprintf(stderr, "[Recorder] error: invalid prefix file: %s\n", path);
+        return NULL;
+    }
 
     RECORDER_REAL_CALL(fseek)(f, 0, SEEK_END);
     size_t fsize = RECORDER_REAL_CALL(ftell)(f);
