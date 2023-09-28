@@ -213,15 +213,14 @@ static inline char *type2name(MPI_Datatype type) {
 
 static inline char* status2str(MPI_Status *status) {
     char *tmp = calloc(128, sizeof(char));
-    /*
     if(status == MPI_STATUS_IGNORE)
         strcpy(tmp, "MPI_STATUS_IGNORE");
     else
-        sprintf(tmp, "[%d %d]", status->MPI_SOURCE, status->MPI_TAG);
-    */
-    // CHEN MPI-IO calls return status that may have wierd status->MPI_SOURCE,
+        sprintf(tmp, "[%d_%d]", status->MPI_SOURCE, status->MPI_TAG);
+
+    // TODO: CHEN MPI-IO calls return status that may have wierd status->MPI_SOURCE,
     // affecting compressing grammars across ranks
-    memset(tmp, 0, 128);
+    // memset(tmp, 0, 128);
     return tmp;
 }
 
@@ -309,13 +308,14 @@ int RECORDER_MPI_IMP(MPI_Scatter) (CONST void *sbuf, int scount, MPI_Datatype st
 
 int RECORDER_MPI_IMP(MPI_Gatherv) (CONST void *sbuf, int scount, MPI_Datatype stype, void *rbuf, CONST int *rcount, CONST int *displs, MPI_Datatype rtype, int root, MPI_Comm comm, MPI_Fint* ierr) {
     // TODO: *displs
-    /* TODO: ugly fix for mpich fortran wrapper
-     * when (stype == MPI_DATATYPE_NULL) and (sbuf != MPI_INPLACE)
+    /* TODO: Ugly fix for mpich fortran wrapper
+     * When (stype == MPI_DATATYPE_NULL) and (sbuf != MPI_INPLACE),
      * mpich will abort and through a null datatype error.
-     * the fortran MPI_IN_PLACE has a different value than that of C.
-     * so if this was invoked by the fortran wrapper, we never see
+     * The fortran MPI_IN_PLACE has a different value than that of C,
+     * and we don't have f2c call for it.
+     * So if this was invoked by the fortran wrapper, we never see
      * sbuf == MPI_IN_PLACE.
-     * in that case, we scerectly set stype to MPI_INT when scount = 0.
+     * In that case, we scerectly set stype to MPI_INT when scount = 0.
      */
     MPI_Datatype sstype = stype;
     if(stype == MPI_DATATYPE_NULL && sbuf != MPI_IN_PLACE && scount == 0) {
@@ -368,6 +368,8 @@ int RECORDER_MPI_IMP(MPI_Reduce) (CONST void *sbuf, void *rbuf, int count, MPI_D
 }
 
 int RECORDER_MPI_IMP(MPI_Allreduce) (CONST void *sbuf, void *rbuf, int count, MPI_Datatype stype, MPI_Op op, MPI_Comm comm, MPI_Fint* ierr) {
+    // TODO: sbuf == MPI_IN_PLACE
+    // fortran MPI_IN_PLACE does not equal C MPI_IN_PLACE
     RECORDER_INTERCEPTOR_PROLOGUE_F(int, PMPI_Allreduce, (sbuf, rbuf, count, stype, op, comm), ierr);
     char **args = assemble_args_list(6, ptoa(sbuf), ptoa(rbuf), itoa(count), type2name(stype), itoa(op), comm2name(&comm));
     RECORDER_INTERCEPTOR_EPILOGUE(6, args);
@@ -925,6 +927,7 @@ int RECORDER_MPI_DECL(MPI_Gatherv)(const void *sendbuf, int sendcount, MPI_Datat
 extern void RECORDER_MPI_DECL(mpi_gatherv)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, const int recvcounts[], const int displs[], MPI_Fint* recvtype, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Gatherv(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, recvcounts, displs, PMPI_Type_f2c(*recvtype), (*root), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_gatherv_)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, const int recvcounts[], const int displs[], MPI_Fint* recvtype, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Gatherv(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, recvcounts, displs, PMPI_Type_f2c(*recvtype), (*root), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_gatherv__)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, const int recvcounts[], const int displs[], MPI_Fint* recvtype, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Gatherv(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, recvcounts, displs, PMPI_Type_f2c(*recvtype), (*root), PMPI_Comm_f2c(*comm), ierr);}
+/*
 int RECORDER_MPI_DECL(MPI_Scatterv)(const void *sendbuf, const int sendcounts[], const int displs[], MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) { return imp_MPI_Scatterv(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount, recvtype, root, comm, ierr); }
 extern void RECORDER_MPI_DECL(mpi_scatterv)(const void* sendbuf, const int sendcounts[], const int displs[], MPI_Fint* sendtype, void* recvbuf, int* recvcount, MPI_Fint* recvtype, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Scatterv(sendbuf, sendcounts, displs, PMPI_Type_f2c(*sendtype), recvbuf, (*recvcount), PMPI_Type_f2c(*recvtype), (*root), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_scatterv_)(const void* sendbuf, const int sendcounts[], const int displs[], MPI_Fint* sendtype, void* recvbuf, int* recvcount, MPI_Fint* recvtype, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Scatterv(sendbuf, sendcounts, displs, PMPI_Type_f2c(*sendtype), recvbuf, (*recvcount), PMPI_Type_f2c(*recvtype), (*root), PMPI_Comm_f2c(*comm), ierr);}
@@ -941,6 +944,9 @@ int RECORDER_MPI_DECL(MPI_Alltoall)(const void *sendbuf, int sendcount, MPI_Data
 extern void RECORDER_MPI_DECL(mpi_alltoall)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, int* recvcount, MPI_Fint* recvtype, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Alltoall(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, (*recvcount), PMPI_Type_f2c(*recvtype), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_alltoall_)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, int* recvcount, MPI_Fint* recvtype, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Alltoall(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, (*recvcount), PMPI_Type_f2c(*recvtype), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_alltoall__)(const void* sendbuf, int* sendcount, MPI_Fint* sendtype, void* recvbuf, int* recvcount, MPI_Fint* recvtype, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Alltoall(sendbuf, (*sendcount), PMPI_Type_f2c(*sendtype), recvbuf, (*recvcount), PMPI_Type_f2c(*recvtype), PMPI_Comm_f2c(*comm), ierr);}
+*/
+
+
 int RECORDER_MPI_DECL(MPI_Reduce)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm) { return imp_MPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, ierr); }
 extern void RECORDER_MPI_DECL(mpi_reduce)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Reduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), (*root), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_reduce_)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, int* root, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Reduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), (*root), PMPI_Comm_f2c(*comm), ierr);}
@@ -949,6 +955,8 @@ int RECORDER_MPI_DECL(MPI_Allreduce)(const void *sendbuf, void *recvbuf, int cou
 extern void RECORDER_MPI_DECL(mpi_allreduce)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Allreduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_allreduce_)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Allreduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_allreduce__)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Allreduce(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
+
+/*
 int RECORDER_MPI_DECL(MPI_Reduce_scatter)(const void *sendbuf, void *recvbuf, const int recvcounts[], MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) { return imp_MPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, datatype, op, comm, ierr); }
 extern void RECORDER_MPI_DECL(mpi_reduce_scatter)(const void* sendbuf, void* recvbuf, const int recvcounts[], MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_reduce_scatter_)(const void* sendbuf, void* recvbuf, const int recvcounts[], MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Reduce_scatter(sendbuf, recvbuf, recvcounts, PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
@@ -957,6 +965,8 @@ int RECORDER_MPI_DECL(MPI_Scan)(const void *sendbuf, void *recvbuf, int count, M
 extern void RECORDER_MPI_DECL(mpi_scan)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Scan(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_scan_)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Scan(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
 extern void RECORDER_MPI_DECL(mpi_scan__)(const void* sendbuf, void* recvbuf, int* count, MPI_Fint* datatype, MPI_Fint* op, MPI_Fint* comm, MPI_Fint *ierr){ imp_MPI_Scan(sendbuf, recvbuf, (*count), PMPI_Type_f2c(*datatype), PMPI_Op_f2c(*op), PMPI_Comm_f2c(*comm), ierr);}
+*/
+
 int RECORDER_MPI_DECL(MPI_Type_create_darray)(int size, int rank, int ndims, const int array_of_gsizes[], const int array_of_distribs[], const int array_of_dargs[], const int array_of_psizes[], int order, MPI_Datatype oldtype, MPI_Datatype *newtype) { return imp_MPI_Type_create_darray(size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype, ierr); }
 extern void RECORDER_MPI_DECL(mpi_type_create_darray)(int* size, int* rank, int* ndims, const int array_of_gsizes[], const int array_of_distribs[], const int array_of_dargs[], const int array_of_psizes[], int* order, MPI_Fint* oldtype, MPI_Fint* newtype, MPI_Fint *ierr){ imp_MPI_Type_create_darray((*size), (*rank), (*ndims), array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, (*order), PMPI_Type_f2c(*oldtype), (MPI_Datatype*)newtype, ierr);}
 extern void RECORDER_MPI_DECL(mpi_type_create_darray_)(int* size, int* rank, int* ndims, const int array_of_gsizes[], const int array_of_distribs[], const int array_of_dargs[], const int array_of_psizes[], int* order, MPI_Fint* oldtype, MPI_Fint* newtype, MPI_Fint *ierr){ imp_MPI_Type_create_darray((*size), (*rank), (*ndims), array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, (*order), PMPI_Type_f2c(*oldtype), (MPI_Datatype*)newtype, ierr);}

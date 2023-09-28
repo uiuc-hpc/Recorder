@@ -74,7 +74,7 @@ char** read_prefix_list(const char* path) {
 
     FILE* f = RECORDER_REAL_CALL(fopen)(path, "r");
     if (f == NULL) {
-        fprintf(stderr, "[Recorder] error: invalid prefix file: %s\n", path);
+        fprintf(stderr, "[Recorder] invalid prefix file: %s\n", path);
         return NULL;
     }
 
