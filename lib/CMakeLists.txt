@@ -3,6 +3,8 @@
 #------------------------------------------------------------------------------
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------
@@ -10,12 +12,13 @@ set(RECORDER_SRCS
         ${CMAKE_SOURCE_DIR}/include/recorder.h
         ${CMAKE_SOURCE_DIR}/include/recorder-sequitur.h
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cst-cfg.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-init-finalize.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-gotcha.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-pattern-recognition.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur.c
@@ -25,9 +28,21 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-utils.c)
 
 
+
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
+find_package(GOTCHA REQUIRED)
+if(GOTCHA_FOUND)
+    include_directories(${gotcha_INCLUDE_DIRS})
+    set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${gotcha_INCLUDE_DIRS}
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
+    set(RECORDER_EXT_LIB_DEPENDENCIES
+	    ${gotcha_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+else()
+    message(STATUS, "GOTCHA not found")
+endif()
+
 find_package(HDF5 REQUIRED)
 if(HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIRS})
@@ -94,12 +109,14 @@ set(RECORDER_BUILD_INCLUDE_DEPENDENCIES
         ${CMAKE_CURRENT_BINARY_DIR}
         )
 add_library(recorder ${RECORDER_SRCS})
+#set_property(TARGET recorder PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(recorder
         PUBLIC "$<BUILD_INTERFACE:${RECORDER_BUILD_INCLUDE_DEPENDENCIES}>"
         $<INSTALL_INTERFACE:${RECORDER_INSTALL_INCLUDE_INTERFACE}>
         )
 
 target_link_libraries(recorder
+        PUBLIC ${gotcha_LIBRARIES}
         PUBLIC ${HDF5_LIBRARIES}
         PUBLIC ${MPI_C_LIBRARIES}
         PUBLIC ${RECORDER_EXT_LIB_DEPENDENCIES}

@@ -183,20 +183,20 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
     int mpi_initialized;
     PMPI_Initialized(&mpi_initialized);      // MPI_Initialized() is not intercepted
     if(mpi_initialized)
-        RECORDER_REAL_CALL(PMPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Create traces directory
     create_traces_dir();
 
     // Rank 0 broadcasts the trace direcotry path
     if(mpi_initialized)
-        RECORDER_REAL_CALL(PMPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
 
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, mpi_rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, mpi_rank);
 
     if(mpi_initialized)
-        RECORDER_REAL_CALL(PMPI_Barrier) (MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
 
     char ts_filename[1024];
     sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, mpi_rank);
@@ -207,6 +207,10 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 
 
 void logger_init() {
+
+    // Must call this first (before any MAP_OR_FAIL)
+    gotcha_register_functions();
+
     // Map the functions we will use later
     // We did not intercept fprintf
     MAP_OR_FAIL(fopen);
@@ -215,10 +219,9 @@ void logger_init() {
     MAP_OR_FAIL(fwrite);
     MAP_OR_FAIL(rmdir);
     MAP_OR_FAIL(access);
-    MAP_OR_FAIL(PMPI_Barrier);
-    MAP_OR_FAIL(PMPI_Bcast);
-    MAP_OR_FAIL(PMPI_Recv);
-    MAP_OR_FAIL(PMPI_Send);
+    MAP_OR_FAIL(MPI_Bcast);
+    MAP_OR_FAIL(MPI_Barrier);
+
 
     double global_tstart = recorder_wtime();
 
@@ -298,10 +301,7 @@ void save_global_metadata() {
 
     for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
         const char *funcname = get_function_name_by_id(i);
-        if(strstr(funcname, "PMPI_"))       // replace PMPI with MPI
-            RECORDER_REAL_CALL(fwrite)(funcname+1, strlen(funcname)-1, 1, metafh);
-        else
-            RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
+        RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
         RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
     }
     RECORDER_REAL_CALL(fflush)(metafh);
@@ -337,10 +337,10 @@ void logger_finalize() {
     interprocess_pattern_recognition("lseek64");
     interprocess_pattern_recognition("lseek");
     interprocess_pattern_recognition("pread");
-    interprocess_pattern_recognition("PMPI_File_write_at");
-    interprocess_pattern_recognition("PMPI_File_read_at");
+    interprocess_pattern_recognition("MPI_File_write_at");
+    interprocess_pattern_recognition("MPI_File_read_at");
     */
-    //interprocess_pattern_recognition(&logger, "PMPI_File_write_at", 1);
+    //interprocess_pattern_recognition(&logger, "MPI_File_write_at", 1);
     //interprocess_pattern_recognition(&logger, "pwrite", 3);
 
     cleanup_record_stack();

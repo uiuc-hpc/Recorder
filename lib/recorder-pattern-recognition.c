@@ -79,24 +79,24 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
         }
     }
 
-    MAP_OR_FAIL(PMPI_Comm_split);
-    MAP_OR_FAIL(PMPI_Comm_size);
-    MAP_OR_FAIL(PMPI_Comm_rank);
-    MAP_OR_FAIL(PMPI_Comm_free);
-    MAP_OR_FAIL(PMPI_Allgather);
+    MAP_OR_FAIL(MPI_Comm_split);
+    MAP_OR_FAIL(MPI_Comm_size);
+    MAP_OR_FAIL(MPI_Comm_rank);
+    MAP_OR_FAIL(MPI_Comm_free);
+    MAP_OR_FAIL(MPI_Allgather);
 
     MPI_Comm comm;
     int comm_size, comm_rank;
-    RECORDER_REAL_CALL(PMPI_Comm_split)(MPI_COMM_WORLD, func_count, logger->rank, &comm);
-    RECORDER_REAL_CALL(PMPI_Comm_size)(comm, &comm_size);
-    RECORDER_REAL_CALL(PMPI_Comm_rank)(comm, &comm_rank);
+    RECORDER_REAL_CALL(MPI_Comm_split)(MPI_COMM_WORLD, func_count, logger->rank, &comm);
+    RECORDER_REAL_CALL(MPI_Comm_size)(comm, &comm_size);
+    RECORDER_REAL_CALL(MPI_Comm_rank)(comm, &comm_rank);
 
     //if(comm_rank == 0)
     //    printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
 
     if(comm_size > 2) {
         long int *all_offsets = calloc(comm_size*(func_count), sizeof(long int));
-        RECORDER_REAL_CALL(PMPI_Allgather)(offsets, func_count, MPI_LONG,
+        RECORDER_REAL_CALL(MPI_Allgather)(offsets, func_count, MPI_LONG,
                                             all_offsets, func_count, MPI_LONG, comm);
 
         // Fory every offset of the same I/O call
@@ -157,7 +157,7 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
         free(all_offsets);
     }
 
-    RECORDER_REAL_CALL(PMPI_Comm_free)(&comm);
+    RECORDER_REAL_CALL(MPI_Comm_free)(&comm);
     free(offsets);
     free(offset_cs_entries);
 }

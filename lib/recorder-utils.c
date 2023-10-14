@@ -202,7 +202,7 @@ inline double recorder_wtime(void) {
 /* Integer to stirng */
 inline char* itoa(off64_t val) {
     char *str = calloc(32, sizeof(char));
-    sprintf(str, "%lld", val);
+    sprintf(str, "%ld", val);
     return str;
 }
 

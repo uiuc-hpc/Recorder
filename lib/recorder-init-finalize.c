@@ -67,7 +67,7 @@ void signal_handler(int sig);
  *
  * If this is an MPI program, then later we will intercept
  * one of MPI_Init* call, where we update the mpi info
- * using update_mpi_inf(). Only in that function, we actually
+ * using update_mpi_info(). Only in that function, we actually
  * create the log directory.
  *
  * If this is not an MPI program, then we create the log
@@ -94,15 +94,15 @@ void recorder_init() {
 void update_mpi_info() {
     recorder_init();
 
-    MAP_OR_FAIL(PMPI_Comm_size);
-    MAP_OR_FAIL(PMPI_Comm_rank);
+    MAP_OR_FAIL(MPI_Comm_size);
+    MAP_OR_FAIL(MPI_Comm_rank);
 
     int mpi_initialized = 0;
-    PMPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
+    MPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
 
     if(mpi_initialized) {
-        RECORDER_REAL_CALL(PMPI_Comm_rank)(MPI_COMM_WORLD, &rank);
-        RECORDER_REAL_CALL(PMPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
+        RECORDER_REAL_CALL(MPI_Comm_rank)(MPI_COMM_WORLD, &rank);
+        RECORDER_REAL_CALL(MPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
     }
 
     logger_set_mpi_info(rank, nprocs);
@@ -123,37 +123,21 @@ void recorder_finalize() {
     }
 }
 
-int PMPI_Init(int *argc, char ***argv) {
-    MAP_OR_FAIL(PMPI_Init);
-    int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
-    update_mpi_info();
-    return ret;
-}
-
 int MPI_Init(int *argc, char ***argv) {
-    MAP_OR_FAIL(PMPI_Init);
-    int ret = RECORDER_REAL_CALL(PMPI_Init) (argc, argv);
+    int ret = PMPI_Init(argc, argv);
     update_mpi_info();
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
-    MAP_OR_FAIL(PMPI_Init_thread)
-    int ret = RECORDER_REAL_CALL(PMPI_Init_thread) (argc, argv, required, provided);
+    int ret = PMPI_Init_thread(argc, argv, required, provided);
     update_mpi_info();
     return ret;
 }
 
-int PMPI_Finalize(void) {
-    recorder_finalize();
-    MAP_OR_FAIL(PMPI_Finalize);
-    return RECORDER_REAL_CALL(PMPI_Finalize) ();
-}
-
 int MPI_Finalize(void) {
     recorder_finalize();
-    MAP_OR_FAIL(PMPI_Finalize);
-    return RECORDER_REAL_CALL(PMPI_Finalize) ();
+    return PMPI_Finalize();
 }
 
 
@@ -190,7 +174,4 @@ void signal_handler(int sig) {
     if(rank == 0)
         printf("[Recorder] signal [%s] captured, finalize now.\n", strsignal(sig));
     recorder_finalize();
-
-
-
 }

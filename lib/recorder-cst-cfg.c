@@ -255,9 +255,9 @@ CallSignature* compress_csts(RecorderLogger* logger) {
 
         // bigger ranks send to smaller ranks
         if(my_rank < other_rank) {
-            RECORDER_REAL_CALL(PMPI_Recv)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            RECORDER_REAL_CALL(MPI_Recv)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             buf = recorder_malloc(size);
-            RECORDER_REAL_CALL(PMPI_Recv)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            RECORDER_REAL_CALL(MPI_Recv)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             int cst_rank, entries, key_len;
             unsigned count;
@@ -319,8 +319,8 @@ CallSignature* compress_csts(RecorderLogger* logger) {
 
         } else {   // SENDER
             buf = serialize_cst(merged_cst, &size);
-            RECORDER_REAL_CALL(PMPI_Send)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
-            RECORDER_REAL_CALL(PMPI_Send)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
+            RECORDER_REAL_CALL(MPI_Send)(&size, sizeof(size), MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
+            RECORDER_REAL_CALL(MPI_Send)(buf, size, MPI_BYTE, other_rank, mask, MPI_COMM_WORLD);
             recorder_free(buf, size);
             done = true;
         }
@@ -354,8 +354,8 @@ void save_cst_merged(RecorderLogger* logger) {
     if(logger->rank == 0) {
         cst_stream = serialize_cst(compressed_cst, &cst_stream_size);
 
-        RECORDER_REAL_CALL(PMPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
-        RECORDER_REAL_CALL(PMPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
 
         // 3. Rank 0 write out the compressed CST
         errno = 0;
@@ -367,9 +367,9 @@ void save_cst_merged(RecorderLogger* logger) {
             printf("[Recorder] Open file: %s failed, errno: %d\n", logger->cst_path, errno);
         }
     } else {
-        RECORDER_REAL_CALL(PMPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
         cst_stream = recorder_malloc(cst_stream_size);
-        RECORDER_REAL_CALL(PMPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+        RECORDER_REAL_CALL(MPI_Bcast)(cst_stream, cst_stream_size, MPI_BYTE, 0, MPI_COMM_WORLD);
 
         // 3. Other rank get the compressed cst stream from rank 0
         // then convert it to the CST
