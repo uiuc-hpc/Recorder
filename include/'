@@ -18,35 +18,26 @@
 
 void gotcha_init();
 
-/**
- * WRAPPER_TYPE:   type of function pointer of the wrapper
- * WRAPPEE_HANDLE: wrapee handle name 
- * WRAPPER_NAME:   wrapper name 
- */
+// Type of wrapper funciton pointer
 #define WRAPPER_TYPE(func)   fptr_type_##func
+#define WRAPPER_DEF(func)    wrapper_##func
 #define WRAPPEE_HANDLE(func) wrappee_handle_##func
-#define WRAPPER_NAME(func)   wrapper_##func
 
-/*
- * The real call
- */
 #define GOTCHA_REAL_CALL(func)   real_##func
 
-#define GOTCHA_WRAP(func, ret, args)                                    \
-    gotcha_wrappee_handle_t WRAPPEE_HANDLE(func);                       \
-    typedef ret (*WRAPPER_TYPE(func)) args;                             \
-    ret (*GOTCHA_REAL_CALL(func)) args;                                 \
-    ret WRAPPER_NAME(func) args;
 
-/*
- * Used in recorder-gotcha.c to define binding structures
- */
-#define GOTCHA_WRAP_ACTION(func)                                        \
-    {#func, WRAPPER_NAME(func), &WRAPPEE_HANDLE(func)}
+#define GOTCHA_WRAP(func, ret, args)                                \
+    gotcha_wrappee_handle_t WRAPPEE_HANDLE(func);                   \
+    typedef ret (*WRAPPER_TYPE(func)) args;                         \
+    ret (*real_##func) args;                                        \
+    ret WRAPPER_DEF(func) args;
+
+#define GOTCHA_WRAP_ACTION(func)                                    \
+    {#func, WRAPPER_DEF(func), &WRAPEE_HANDLE(func)}
 
 #define GOTCHA_SET_REAL_CALL_NOCHECK(func)                              \
-    void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));           \
-    GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);            \
+    void* funcptr = gotcha_get_wrappee(WRAPEE_HANDLE(func));            \
+    real_##func = (fptr_type_##func) (funcptr);                         \
 
 #define GOTCHA_SET_REAL_CALL(func, func_layer)                          \
     do {                                                                \
@@ -56,13 +47,20 @@ void gotcha_init();
                 intercept = 0;                                          \
         }                                                               \
         if (intercept) {                                                \
-            void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));   \
-            GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);    \
+            void* funcptr = gotcha_get_wrappee(wrappee_handle_##func);  \
+            real_##func = (fptr_type_##func) (funcptr);                 \
         } else {                                                        \
-            GOTCHA_REAL_CALL(func) = func;                              \
+            real_##func = func;                                         \
         }                                                               \
     } while(0);
 
+
+/*
+#define GOTCHA_WRAP(func, ret, args)                                \
+    static gotcha_wrappee_handle_t GOTCHA_WRAPPEE_HANDLE(func);      \
+    typedef ret (*GOTCHA_WRAPPER_TYPE(func)) args;                  \
+    static GOTCHA_WRAPPER_TYPE(func) RECORDER_REAL_CALL(func);
+*/
 
 /* POSIX I/O */
 GOTCHA_WRAP(creat, int, (const char *path, mode_t mode));
