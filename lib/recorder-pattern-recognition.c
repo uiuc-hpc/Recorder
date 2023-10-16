@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <dlfcn.h>
 #include <errno.h>
 #include "recorder.h"
 
