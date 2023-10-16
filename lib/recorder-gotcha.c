@@ -73,7 +73,7 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(ftello)
     };
 
-    struct gotcha_binding_t mpi_wrap_actions [] = {
+    struct gotcha_binding_t mpiio_wrap_actions [] = {
         GOTCHA_WRAP_ACTION(MPI_File_close),
         GOTCHA_WRAP_ACTION(MPI_File_set_size),
         GOTCHA_WRAP_ACTION(MPI_File_iread_at),
@@ -103,6 +103,11 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(MPI_File_write_ordered_begin),
         GOTCHA_WRAP_ACTION(MPI_File_write_ordered),
         GOTCHA_WRAP_ACTION(MPI_File_write_shared),
+        GOTCHA_WRAP_ACTION(MPI_File_seek),
+        GOTCHA_WRAP_ACTION(MPI_File_seek_shared)
+    };
+
+    struct gotcha_binding_t mpi_wrap_actions [] = {
         GOTCHA_WRAP_ACTION(MPI_Finalized),
         GOTCHA_WRAP_ACTION(MPI_Comm_rank),
         GOTCHA_WRAP_ACTION(MPI_Comm_size),
@@ -141,8 +146,6 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(MPI_Comm_split),
         GOTCHA_WRAP_ACTION(MPI_Comm_dup),
         GOTCHA_WRAP_ACTION(MPI_Comm_create),
-        GOTCHA_WRAP_ACTION(MPI_File_seek),
-        GOTCHA_WRAP_ACTION(MPI_File_seek_shared),
         GOTCHA_WRAP_ACTION(MPI_Ibcast),
         GOTCHA_WRAP_ACTION(MPI_Test),
         GOTCHA_WRAP_ACTION(MPI_Testall),
@@ -217,7 +220,6 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(H5Pset_dxpl_mpio),
         GOTCHA_WRAP_ACTION(H5Pset_fapl_core),
         GOTCHA_WRAP_ACTION(H5Pset_fapl_mpio),
-        GOTCHA_WRAP_ACTION(H5Pset_fapl_mpiposix),
         GOTCHA_WRAP_ACTION(H5Pset_istore_k),
         GOTCHA_WRAP_ACTION(H5Pset_mdc_config),
         GOTCHA_WRAP_ACTION(H5Pset_meta_block_size),
@@ -234,15 +236,29 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(H5Pget_all_coll_metadata_ops)
     };
 
-    gotcha_wrap(posix_wrap_actions,
-                sizeof(posix_wrap_actions)/sizeof(struct gotcha_binding_t),
-                "recorder_posix_actions");
-    gotcha_wrap(mpi_wrap_actions,
-                sizeof(mpi_wrap_actions)/sizeof(struct gotcha_binding_t),
-                "recorder_mpi_actions");
-    gotcha_wrap(hdf5_wrap_actions,
-                sizeof(hdf5_wrap_actions)/sizeof(struct gotcha_binding_t),
-                "recorder_hdf5_actions");
+    char* posix_tracing = getenv(RECORDER_POSIX_TRACING);
+    char* mpiio_tracing = getenv(RECORDER_MPIIO_TRACING);
+    char* mpi_tracing   = getenv(RECORDER_MPI_TRACING);
+    char* hdf5_tracing  = getenv(RECORDER_HDF5_TRACING);
 
-    //gotcha_filter_libraries_by_name("hdf5");
+    if (!posix_tracing || (atoi(posix_tracing)!=0))
+        gotcha_wrap(posix_wrap_actions,
+                    sizeof(posix_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_posix_actions");
+    if (!mpiio_tracing || (atoi(mpiio_tracing)!=0))
+        gotcha_wrap(mpiio_wrap_actions,
+                    sizeof(mpiio_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_mpiio_actions");
+    if (!mpi_tracing || (atoi(mpi_tracing)!=0))
+        gotcha_wrap(mpi_wrap_actions,
+                    sizeof(mpi_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_mpi_actions");
+    if (!hdf5_tracing || (atoi(hdf5_tracing)!=0))
+        gotcha_wrap(hdf5_wrap_actions,
+                    sizeof(hdf5_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_hdf5_actions");
+}
+
+void gotcha_init() {
+    gotcha_register_functions();
 }

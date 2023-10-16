@@ -94,7 +94,7 @@ void write_record(Record *record) {
     if(logger.ts_index == logger.ts_max_elements) {
         if(!logger.directory_created)
             logger_set_mpi_info(0, 1);
-        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), logger.ts_max_elements, logger.ts_file);
+        GOTCHA_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), logger.ts_max_elements, logger.ts_file);
         logger.ts_index = 0;
     }
 
@@ -169,8 +169,8 @@ void create_traces_dir() {
     else
         strcpy(logger.traces_dir, realrealpath(traces_dir)); // current directory
 
-    if(RECORDER_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
-        RECORDER_REAL_CALL(rmdir) (logger.traces_dir);
+    if(GOTCHA_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
+        GOTCHA_REAL_CALL(rmdir) (logger.traces_dir);
     mkpath(logger.traces_dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
 }
 
@@ -183,24 +183,24 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
     int mpi_initialized;
     PMPI_Initialized(&mpi_initialized);      // MPI_Initialized() is not intercepted
     if(mpi_initialized)
-        RECORDER_REAL_CALL(MPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Create traces directory
     create_traces_dir();
 
     // Rank 0 broadcasts the trace direcotry path
     if(mpi_initialized)
-        RECORDER_REAL_CALL(MPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
 
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, mpi_rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, mpi_rank);
 
     if(mpi_initialized)
-        RECORDER_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
 
     char ts_filename[1024];
     sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, mpi_rank);
-    logger.ts_file = RECORDER_REAL_CALL(fopen) (ts_filename, "wb");
+    logger.ts_file = GOTCHA_REAL_CALL(fopen) (ts_filename, "wb");
 
     logger.directory_created = true;
 }
@@ -208,19 +208,19 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 
 void logger_init() {
 
-    // Must call this first (before any MAP_OR_FAIL)
-    gotcha_register_functions();
+    // Must call this first (before any GOTCHA_SET_REAL_CALL)
+    gotcha_init();
 
     // Map the functions we will use later
     // We did not intercept fprintf
-    MAP_OR_FAIL(fopen);
-    MAP_OR_FAIL(fflush);
-    MAP_OR_FAIL(fclose);
-    MAP_OR_FAIL(fwrite);
-    MAP_OR_FAIL(rmdir);
-    MAP_OR_FAIL(access);
-    MAP_OR_FAIL(MPI_Bcast);
-    MAP_OR_FAIL(MPI_Barrier);
+    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fflush, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(MPI_Bcast, RECORDER_MPI_TRACING);
+    GOTCHA_SET_REAL_CALL(MPI_Barrier, RECORDER_MPI_TRACING);
 
 
     double global_tstart = recorder_wtime();
@@ -288,7 +288,7 @@ void save_global_metadata() {
 
     char metadata_filename[1024] = {0};
     sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
-    FILE* metafh = RECORDER_REAL_CALL(fopen) (metadata_filename, "wb");
+    FILE* metafh = GOTCHA_REAL_CALL(fopen) (metadata_filename, "wb");
     RecorderMetadata metadata = {
         .time_resolution     = logger.ts_resolution,
         .total_ranks         = logger.nprocs,
@@ -297,22 +297,22 @@ void save_global_metadata() {
         .ts_compression_algo = TS_COMPRESSION_NO,
         .interprocess_compression = logger.interprocess_compression,
     };
-    RECORDER_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
+    GOTCHA_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
     for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
         const char *funcname = get_function_name_by_id(i);
-        RECORDER_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
-        RECORDER_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
+        GOTCHA_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
+        GOTCHA_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
     }
-    RECORDER_REAL_CALL(fflush)(metafh);
-    RECORDER_REAL_CALL(fclose)(metafh);
+    GOTCHA_REAL_CALL(fflush)(metafh);
+    GOTCHA_REAL_CALL(fclose)(metafh);
 
     char version_filename[1024];
     sprintf(version_filename, "%s/VERSION", logger.traces_dir);
-    FILE* version_file = RECORDER_REAL_CALL(fopen) (version_filename, "w");
-    RECORDER_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
-    RECORDER_REAL_CALL(fflush)(version_file);
-    RECORDER_REAL_CALL(fclose)(version_file);
+    FILE* version_file = GOTCHA_REAL_CALL(fopen) (version_filename, "w");
+    GOTCHA_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
+    GOTCHA_REAL_CALL(fflush)(version_file);
+    GOTCHA_REAL_CALL(fclose)(version_file);
 }
 
 void logger_finalize() {
@@ -327,10 +327,10 @@ void logger_finalize() {
     #endif
 
     if(logger.ts_index > 0)
-        RECORDER_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
+        GOTCHA_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
 
-    RECORDER_REAL_CALL(fflush)(logger.ts_file);
-    RECORDER_REAL_CALL(fclose)(logger.ts_file);
+    GOTCHA_REAL_CALL(fflush)(logger.ts_file);
+    GOTCHA_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
     /*
@@ -358,7 +358,7 @@ void logger_finalize() {
         save_global_metadata();
 
         fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
-        RECORDER_REAL_CALL(fflush)(stderr);
+        GOTCHA_REAL_CALL(fflush)(stderr);
     }
 }
 

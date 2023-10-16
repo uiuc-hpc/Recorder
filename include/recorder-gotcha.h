@@ -7,6 +7,7 @@
 #include "mpi.h"
 #include "hdf5.h"
 #include "gotcha/gotcha.h"
+#include "recorder-logger.h"
 
 #define __D_MPI_REQUEST MPIO_Request
 #if MPI_VERSION >= 3
@@ -15,23 +16,12 @@
 #define CONST
 #endif
 
-void gotcha_register_functions();
+void gotcha_init();
 
 // Type of wrapper funciton pointer
 #define GOTCHA_WRAPPER_TYPE(func)   fptr_type_##func
 #define GOTCHA_WRAPPER_DEF(func)    wrapper_##func
 #define GOTCHA_WRAPPEE_HANDLE(func) wrappee_handle_##func
-
-#define MAP_OR_FAIL(func)                                           \
-    do {                                                            \
-        void* funcptr = gotcha_get_wrappee(wrappee_handle_##func);  \
-        if (funcptr)                                                \
-            real_##func = (fptr_type_##func) (funcptr);             \
-        else                                                        \
-            real_##func = NULL;                                     \
-    } while(0);
-
-#define RECORDER_REAL_CALL(func)   real_##func
 
 #define GOTCHA_WRAP(func, ret, args)                                \
     gotcha_wrappee_handle_t wrappee_handle_##func;                  \
@@ -41,6 +31,28 @@ void gotcha_register_functions();
 
 #define GOTCHA_WRAP_ACTION(func)                                    \
     {#func, wrapper_##func, &wrappee_handle_##func}
+
+#define GOTCHA_SET_REAL_CALL_NOCHECK(func)                              \
+    void* funcptr = gotcha_get_wrappee(wrappee_handle_##func);          \
+    real_##func = (fptr_type_##func) (funcptr);                         \
+
+#define GOTCHA_SET_REAL_CALL(func, func_layer)                          \
+    do {                                                                \
+        int intercept = 1;                                              \
+        if (getenv(func_layer) != NULL) {                               \
+            if (atoi(getenv(func_layer)) == 0)                          \
+                intercept = 0;                                          \
+        }                                                               \
+        if (intercept) {                                                \
+            void* funcptr = gotcha_get_wrappee(wrappee_handle_##func);  \
+            real_##func = (fptr_type_##func) (funcptr);                 \
+        } else {                                                        \
+            real_##func = func;                                         \
+        }                                                               \
+    } while(0);
+
+
+#define GOTCHA_REAL_CALL(func)   real_##func
 
 /*
 #define GOTCHA_WRAP(func, ret, args)                                \
@@ -307,7 +319,8 @@ GOTCHA_WRAP(H5Pset_chunk, herr_t, (hid_t plist, int ndims, const hsize_t *dim));
 GOTCHA_WRAP(H5Pset_dxpl_mpio, herr_t, (hid_t dxpl_id, H5FD_mpio_xfer_t xfer_mode));
 GOTCHA_WRAP(H5Pset_fapl_core, herr_t, (hid_t fapl_id, size_t increment, hbool_t backing_store));
 GOTCHA_WRAP(H5Pset_fapl_mpio, herr_t, (hid_t fapl_id, MPI_Comm comm, MPI_Info info));
-GOTCHA_WRAP(H5Pset_fapl_mpiposix, herr_t, (hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints));
+// removed from from HDF5 1.8.13
+// GOTCHA_WRAP(H5Pset_fapl_mpiposix, herr_t, (hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints));
 GOTCHA_WRAP(H5Pset_istore_k, herr_t, (hid_t plist, unsigned ik));
 GOTCHA_WRAP(H5Pset_mdc_config, herr_t, (hid_t plist_id, H5AC_cache_config_t * config_ptr));
 GOTCHA_WRAP(H5Pset_meta_block_size, herr_t, (hid_t fapl_id, hsize_t size));

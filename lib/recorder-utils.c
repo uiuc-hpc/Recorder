@@ -4,10 +4,10 @@
 #include <stdarg.h>     // for va_list, va_start and va_end
 #include <sys/syscall.h> // for SYS_gettid
 #include <assert.h>
+#include <string.h>
 #include <errno.h>
 #include <math.h>
 #include "recorder.h"
-#include "recorder-utils.h"
 
 // Log pointer addresses in the trace file?
 static bool   log_pointer = false;
@@ -66,26 +66,26 @@ char** str_split(char* a_str, const char a_delim) {
 }
 
 char** read_prefix_list(const char* path) {
-    MAP_OR_FAIL(fopen);
-    MAP_OR_FAIL(fseek);
-    MAP_OR_FAIL(ftell);
-    MAP_OR_FAIL(fread);
-    MAP_OR_FAIL(fclose);
+    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fseek,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(ftell,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fread,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
 
-    FILE* f = RECORDER_REAL_CALL(fopen)(path, "r");
+    FILE* f = GOTCHA_REAL_CALL(fopen)(path, "r");
     if (f == NULL) {
         fprintf(stderr, "[Recorder] invalid prefix file: %s\n", path);
         return NULL;
     }
 
-    RECORDER_REAL_CALL(fseek)(f, 0, SEEK_END);
-    size_t fsize = RECORDER_REAL_CALL(ftell)(f);
-    RECORDER_REAL_CALL(fseek)(f, 0, SEEK_SET);
+    GOTCHA_REAL_CALL(fseek)(f, 0, SEEK_END);
+    size_t fsize = GOTCHA_REAL_CALL(ftell)(f);
+    GOTCHA_REAL_CALL(fseek)(f, 0, SEEK_SET);
     char* data = recorder_malloc(fsize+1);
     data[fsize] = 0;
 
-    RECORDER_REAL_CALL(fread)(data, 1, fsize, f);
-    RECORDER_REAL_CALL(fclose)(f);
+    GOTCHA_REAL_CALL(fread)(data, 1, fsize, f);
+    GOTCHA_REAL_CALL(fclose)(f);
 
     char** res = str_split(data, '\n');
     recorder_free(data, fsize);
@@ -298,8 +298,8 @@ inline char* realrealpath(const char *path) {
     if (res == NULL) {
 		if(path[0] == '/') return strdup(path);
 		char cwd[512] = {0};
-		MAP_OR_FAIL(getcwd);
-		char* tmp = RECORDER_REAL_CALL(getcwd)(cwd, 512);
+		GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX_TRACING);
+		char* tmp = GOTCHA_REAL_CALL(getcwd)(cwd, 512);
 
 		res = malloc(strlen(cwd) + strlen(path) + 20);
 		if(tmp == NULL) {
@@ -317,13 +317,13 @@ inline char* realrealpath(const char *path) {
  */
 int mkpath(char* file_path, mode_t mode) {
 
-    MAP_OR_FAIL(mkdir);
+    GOTCHA_SET_REAL_CALL(mkdir, RECORDER_POSIX_TRACING);
 
     assert(file_path && *file_path);
 
     for (char* p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
         *p = '\0';
-        if (RECORDER_REAL_CALL(mkdir)(file_path, mode) == -1) {
+        if (GOTCHA_REAL_CALL(mkdir)(file_path, mode) == -1) {
             if (errno != EEXIST) {
                 *p = '/';
                 return -1;

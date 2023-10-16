@@ -236,7 +236,7 @@ static const char* func_list[] = {
     "H5Pclose",             "H5Pcreate",            "H5Pget_chunk", // Property List interface
     "H5Pget_mdc_config",    "H5Pset_alignment",     "H5Pset_chunk",
     "H5Pset_dxpl_mpio",     "H5Pset_fapl_core",     "H5Pset_fapl_mpio",
-    "H5Pset_fapl_mpiposix", "H5Pset_istore_k",      "H5Pset_mdc_config",
+    "H5Pset_istore_k",      "H5Pset_mdc_config",
     "H5Pset_meta_block_size","H5Lexists",           "H5Lget_val",   // Link interface
     "H5Literate",            "H5Literate1",         "H5Literate2",           
     "H5Oclose",              "H5Oget_info",                         // Object interface

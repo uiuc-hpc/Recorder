@@ -17,6 +17,18 @@
 #define RECORDER_EXCLUSION_FILE     		"RECORDER_EXCLUSION_FILE"
 #define RECORDER_INCLUSION_FILE     		"RECORDER_INCLUSION_FILE"
 
+/* 
+ * Allowing users to exclude the interception
+ * of certain layers at runtime.
+ *
+ * e.g., export RECORDER_MPIIO_TRACING=0
+ */
+#define RECORDER_POSIX_TRACING              "RECORDER_POSIX_TRACING"
+#define RECORDER_MPIIO_TRACING              "RECORDER_MPIIO_TRACING"
+#define RECORDER_MPI_TRACING                "RECORDER_MPI_TRACING"
+#define RECORDER_HDF5_TRACING               "RECORDER_HDF5_TRACING"
+
+
 /**
  * I/O Interceptor
  * Phase 1:
@@ -37,16 +49,16 @@
     record->tid = recorder_gettid();                                                \
     logger_record_enter(record);                                                    \
     record->tstart = recorder_wtime();                                              \
-    MAP_OR_FAIL(func);                                                              \
-    ret res = RECORDER_REAL_CALL(func) real_args ;                                  \
+    GOTCHA_SET_REAL_CALL_NOCHECK(func);                                             \
+    ret res = GOTCHA_REAL_CALL(func) real_args ;                                    \
     record->tend = recorder_wtime();
 
 // Fortran wrappers call this
 // ierr is of type MPI_Fint*, set only for fortran calls
 #define RECORDER_INTERCEPTOR_PROLOGUE_F(ret, func, real_args, ierr)                 \
     if(!logger_initialized()) {                                                     \
-        MAP_OR_FAIL(func);                                                          \
-        ret res = RECORDER_REAL_CALL(func) real_args ;                              \
+        GOTCHA_SET_REAL_CALL_NOCHECK(func);                                         \
+        ret res = GOTCHA_REAL_CALL(func) real_args ;                                \
         if ((ierr) != NULL) { *(ierr) = res; }                                      \
         return res;                                                                 \
     }                                                                               \
@@ -56,8 +68,8 @@
 // C wrappers call this
 #define RECORDER_INTERCEPTOR_PROLOGUE(ret, func, real_args)                         \
     if(!logger_initialized()) {                                                     \
-        MAP_OR_FAIL(func);                                                          \
-        ret res = RECORDER_REAL_CALL(func) real_args ;                              \
+        GOTCHA_SET_REAL_CALL_NOCHECK(func);                                         \
+        ret res = GOTCHA_REAL_CALL(func) real_args ;                                \
         return res;                                                                 \
     }                                                                               \
     RECORDER_INTERCEPTOR_PROLOGUE_CORE(ret, func, real_args)

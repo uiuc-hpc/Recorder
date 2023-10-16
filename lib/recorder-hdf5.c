@@ -610,12 +610,6 @@ herr_t GOTCHA_WRAPPER_DEF(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm, MPI_In
     RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
-herr_t GOTCHA_WRAPPER_DEF(H5Pset_fapl_mpiposix)(hid_t fapl_id, MPI_Comm comm, hbool_t use_gpfs_hints) {
-    RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_fapl_mpiposix, (fapl_id, comm, use_gpfs_hints));
-    char **args = assemble_args_list(3, itoa(fapl_id), comm2name(comm), itoa(use_gpfs_hints));
-    RECORDER_INTERCEPTOR_EPILOGUE(3, args);
-}
-
 herr_t GOTCHA_WRAPPER_DEF(H5Pset_istore_k)(hid_t plist, unsigned ik) {
     RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_istore_k, (plist, ik));
     char **args = assemble_args_list(2, itoa(plist), itoa(ik));
