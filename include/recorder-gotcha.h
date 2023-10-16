@@ -45,8 +45,10 @@ void gotcha_init();
     {#func, WRAPPER_NAME(func), &WRAPPEE_HANDLE(func)}
 
 #define GOTCHA_SET_REAL_CALL_NOCHECK(func)                              \
-    void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));           \
-    GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);            \
+    do {                                                                \
+        void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));       \
+        GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);        \
+    } while(0);
 
 #define GOTCHA_SET_REAL_CALL(func, func_layer)                          \
     do {                                                                \
