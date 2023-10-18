@@ -1,5 +1,5 @@
-#ifndef _RECORDER_UTILS_H_
-#define _RECORDER_UTILS_H_
+#ifndef __RECORDER_UTILS_H_
+#define __RECORDER_UTILS_H_
 
 #include <fcntl.h>
 #include <pthread.h>
