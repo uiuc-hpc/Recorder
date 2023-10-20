@@ -100,3 +100,6 @@ install
 *.html
 
 /build/
+
+# clangd database
+compile_commands.json
