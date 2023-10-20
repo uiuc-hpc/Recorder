@@ -207,9 +207,6 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 
 void logger_init() {
 
-    // Must call this first (before any GOTCHA_SET_REAL_CALL)
-    gotcha_init();
-
     // Map the functions we will use later
     // We did not intercept fprintf
     GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
@@ -344,8 +341,12 @@ void logger_finalize() {
 
     cleanup_record_stack();
     if(logger.interprocess_compression) {
+        double t1 = recorder_wtime();
         save_cst_merged(&logger);
         save_cfg_merged(&logger);
+        double t2 = recorder_wtime();
+        if(logger.rank == 0)
+            fprintf(stderr, "[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
     } else {
         save_cst_local(&logger);
         save_cfg_local(&logger);

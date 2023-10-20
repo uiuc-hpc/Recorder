@@ -45,7 +45,8 @@ void recorder_init() {
     signal(SIGTERM, signal_handler);
     */
 
-    logger_init(rank, nprocs);
+    gotcha_init();
+    logger_init();
     utils_init();
 
     local_tstart = recorder_wtime();
