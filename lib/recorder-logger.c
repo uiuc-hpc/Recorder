@@ -4,13 +4,15 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <libgen.h>
+#include <alloca.h>
 #include "recorder.h"
+#include "recorder-logger.h"
 #include "recorder-pattern-recognition.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define VERSION_STR             "2.5.0"
 #define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
 
 
@@ -303,10 +305,13 @@ void save_global_metadata() {
     GOTCHA_REAL_CALL(fflush)(metafh);
     GOTCHA_REAL_CALL(fclose)(metafh);
 
-    char version_filename[1024];
+    char version_str[20] = {0};
+    char version_filename[1024] = {0};
     sprintf(version_filename, "%s/VERSION", logger.traces_dir);
     FILE* version_file = GOTCHA_REAL_CALL(fopen) (version_filename, "w");
-    GOTCHA_REAL_CALL(fwrite) (VERSION_STR, 5, 1, version_file);
+    sprintf(version_str, "%d.%d.%d", RECORDER_VERSION_MAJOR,
+            RECORDER_VERSION_MINOR, RECORDER_VERSION_PATCH);
+    GOTCHA_REAL_CALL(fwrite) (version_str, strlen(version_str), 1, version_file);
     GOTCHA_REAL_CALL(fflush)(version_file);
     GOTCHA_REAL_CALL(fclose)(version_file);
 }

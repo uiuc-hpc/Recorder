@@ -13,41 +13,26 @@
 #endif
 #include "recorder-sequitur.h"
 
-#if !defined PRId64 || defined(PRI_MACROS_BROKEN)
-#ifndef __WORDSIZE
-#error failed to detect PRId64 or word size
-#endif
-# undef PRId64
-#if __WORDSIZE == 64
-# define PRId64 "ld"
-#else
-# define PRId64 "lld"
-#endif
-#endif
-#if !defined PRIu64 || defined(PRI_MACROS_BROKEN)
-#ifndef __WORDSIZE
-#error failed to detect PRId64 or word size
-#endif
-# undef PRIu64
-#if __WORDSIZE == 64
-# define PRIu64 "lu"
-#else
-# define PRIu64 "llu"
-#endif
-#endif
+/**
+ * In post-processing, reader.c will check
+ * the version of the traces. a matching 
+ * major.minor guarantees compatibility
+ */
+#define RECORDER_VERSION_MAJOR  2
+#define RECORDER_VERSION_MINOR  5
+#define RECORDER_VERSION_PATCH  0
 
-#define TS_COMPRESSION_NO   0
-#define TS_COMPRESSION_ZLIB 1
-#define TS_COMPRESSION_ZFP  2
+#define TS_COMPRESSION_NO       0
+#define TS_COMPRESSION_ZLIB     1
+#define TS_COMPRESSION_ZFP      2
 
-#define RECORDER_USER_FUNCTION 255
+#define RECORDER_POSIX          0
+#define RECORDER_MPIIO          1
+#define RECORDER_MPI            2
+#define RECORDER_HDF5           3
+#define RECORDER_FTRACE         4
 
-
-#define RECORDER_POSIX      0
-#define RECORDER_MPIIO      1
-#define RECORDER_MPI        2
-#define RECORDER_HDF5       3
-#define RECORDER_FTRACE     4
+#define RECORDER_USER_FUNCTION  255
 
 
 

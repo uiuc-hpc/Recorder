@@ -13,9 +13,10 @@ void check_version(RecorderReader* reader) {
     assert(fp != NULL);
     int major, minor, patch;
     fscanf(fp, "%d.%d.%d", &major, &minor, &patch);
-    if(major != VERSION_MAJOR || minor != VERSION_MINOR) {
+    if(major != RECORDER_VERSION_MAJOR || minor != RECORDER_VERSION_MINOR) {
         fprintf(stderr, "incompatible version: file=%d.%d.%d != reader=%d.%d.%d\n",
-                major, minor, patch, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+                major, minor, patch, RECORDER_VERSION_MAJOR,
+                RECORDER_VERSION_MINOR, RECORDER_VERSION_PATCH);
         exit(1);
     }
     fclose(fp);
