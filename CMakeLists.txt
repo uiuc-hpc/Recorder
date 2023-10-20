@@ -136,10 +136,9 @@ else()
 endif()
 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Werror")
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -fcommon")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcommon")
 endif()
 
 
