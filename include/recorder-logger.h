@@ -110,7 +110,7 @@ typedef struct RecorderLogger_t {
 
 /* recorder-logger.c */
 void logger_init();
-void logger_set_mpi_info();
+void logger_set_mpi_info(int mpi_rank, int mpi_size);
 void logger_finalize();
 bool logger_initialized();
 void logger_record_enter(Record *record);
