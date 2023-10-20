@@ -11,7 +11,7 @@
 
 RecorderReader reader;
 static char formatting_record[32];
-static char formatting_fname[20];
+static char formatting_fname[128];
 
 int digits_count(int n) {
     int digits = 0;
@@ -46,9 +46,9 @@ int max(int a, int b) { return a > b ? a : b; }
 
 int main(int argc, char **argv) {
 
-    char textfile_dir[256];
-    char textfile_path[256];
-    sprintf(textfile_dir, "%s/_text", argv[1]);
+    char textfile_dir[512];
+    char textfile_path[1024];
+    snprintf(textfile_dir, sizeof(textfile_dir), "%s/_text", argv[1]);
 
     int mpi_size, mpi_rank;
     MPI_Init(&argc, &argv);

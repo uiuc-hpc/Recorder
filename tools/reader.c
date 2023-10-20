@@ -6,8 +6,8 @@
 #include "./reader.h"
 
 void check_version(RecorderReader* reader) {
-    char version_file[1024];
-    snprintf(version_file, sizeof(version_file), "%s/VERSION", reader->logs_dir);
+    char version_file[1096] = {0};
+    sprintf(version_file, "%s/VERSION", reader->logs_dir);
 
     FILE* fp = fopen(version_file, "r");
     assert(fp != NULL);
@@ -23,8 +23,8 @@ void check_version(RecorderReader* reader) {
 }
 
 void read_metadata(RecorderReader* reader) {
-    char metadata_file[4096];
-    snprintf(metadata_file, sizeof(metadata_file), "%s/recorder.mt", reader->logs_dir);
+    char metadata_file[1096] = {0};
+    sprintf(metadata_file, "%s/recorder.mt", reader->logs_dir);
 
     FILE* fp = fopen(metadata_file, "rb");
     assert(fp != NULL);
@@ -93,7 +93,7 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 		for(int i = 1; i < nprocs; i++)
 			reader->csts[i] = reader->csts[0];
 
-		char ug_metadata_fname[1024] = {0};
+		char ug_metadata_fname[1096] = {0};
 		sprintf(ug_metadata_fname, "%s/ug.mt", reader->logs_dir);
 		FILE* f = fopen(ug_metadata_fname, "rb");
 		fread(reader->ug_ids, sizeof(int), nprocs, f);
