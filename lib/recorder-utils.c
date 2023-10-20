@@ -283,7 +283,7 @@ unsigned char get_function_id_by_name(const char* name) {
         if (strcmp(func_list[i], name) == 0)
             return i;
     }
-    printf("[Recorder ERROR] Missing function %s\n", name);
+    fprintf(stderr, "[Recorder] error: missing function %s\n", name);
     return 255;
 }
 
@@ -300,13 +300,13 @@ inline char* realrealpath(const char *path) {
 		char cwd[512] = {0};
 		GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX_TRACING);
 		char* tmp = GOTCHA_REAL_CALL(getcwd)(cwd, 512);
+        if (tmp == NULL) {
+            fprintf(stderr, "[Recorder] error: getcwd failed\n");
+            return NULL;
+        }
 
 		res = malloc(strlen(cwd) + strlen(path) + 20);
-		if(tmp == NULL) {
-			sprintf(res, "???/%s", path);
-		} else {
-			sprintf(res, "%s/%s", cwd, path);
-		}
+		sprintf(res, "%s/%s", cwd, path);
 	}
     return res;
 }

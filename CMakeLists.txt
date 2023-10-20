@@ -5,8 +5,8 @@ include_directories(${PROJECT_BINARY_DIR})
 # Version information
 #------------------------------------------------------------------------------
 set(RECORDER_VERSION_MAJOR "2")
-set(RECORDER_VERSION_MINOR "3")
-set(RECORDER_VERSION_PATCH "3")
+set(RECORDER_VERSION_MINOR "5")
+set(RECORDER_VERSION_PATCH "0")
 set(RECORDER_PACKAGE "recorder")
 set(RECORDER_PACKAGE_NAME "RECORDER")
 set(RECORDER_PACKAGE_VERSION "${RECORDER_VERSION_MAJOR}.${RECORDER_VERSION_MINOR}.${RECORDER_VERSION_PATCH}")
@@ -119,18 +119,11 @@ endif()
 #------------------------------------------------------------------------------
 option(BUILD_SHARED_LIBS "Build with shared libraries." ON)
 option(RECORDER_ENABLE_PARQUET "Build Parquet format converter." OFF)
-option(RECORDER_ENABLE_POSIX_TRACE "Enable tracing of POSIX calls." ON)
-option(RECORDER_ENABLE_MPI_TRACE "Enable tracing of MPI communication calls." ON)
-option(RECORDER_ENABLE_MPIIO_TRACE "Enable tracing of MPI-IO calls." ON)
-option(RECORDER_ENABLE_HDF5_TRACE "Enable tracing of HDF5 calls." ON)
 option(RECORDER_ENABLE_CUDA_TRACE "Enable tracing of CUDA kernels." OFF)
 option(RECORDER_ENABLE_FCNTL_TRACE "Enable tracing of fcntl()." ON)
 option(RECORDER_INSTALL_TESTS "Enable installation of tests." OFF)
 
-#mark_as_advanced(RECORDER_ENABLE_POSIX_TRACE)
-#mark_as_advanced(RECORDER_ENABLE_MPI_TRACE)
-#mark_as_advanced(RECORDER_ENABLE_MPIIO_TRACE)
-#mark_as_advanced(RECORDER_ENABLE_HDF5_TRACE)
+#mark_as_advanced(RECORDER_ENABLE_CUDA_TRACE)
 #mark_as_advanced(RECORDER_ENABLE_FCNTL_TRACE)
 
 
@@ -143,8 +136,9 @@ else()
 endif()
 
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -std=c99 -fcommon")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fgnu89-inline -fcommon")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 endif()
 
