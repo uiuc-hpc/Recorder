@@ -3,13 +3,39 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
+#include <string.h>
+#include "uthash.h"
 #include "recorder.h"
+#include "recorder-pattern-recognition.h"
 
 struct offset_cs_entry {
     int offset_key_start;
     int offset_key_end;
     CallSignature* cs;
 };
+
+static offset_map_t* func2offset_map;
+
+
+off64_t pr_intra_offset(const char *func, off64_t offset) {
+    // intraprocess pattern recognition disabled
+    if (!logger_intraprocess_pattern_recognition()) {
+        return offset;
+    }
+
+    offset_map_t* entry = NULL;
+    HASH_FIND_STR(func2offset_map, func, entry);
+    if (!entry) {
+        entry = (offset_map_t*) malloc(sizeof(offset_map_t));
+        entry->func = strdup(func);
+        entry->offset = offset;
+        HASH_ADD_STR(func2offset_map, func, entry);
+        return offset;
+    } else {
+        return offset - entry->offset;
+    }
+
+}
 
 int count_function(RecorderLogger *logger, unsigned char filter_func_id) {
     int func_count = 0;

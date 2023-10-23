@@ -499,22 +499,11 @@ int RECORDER_MPI_IMP(MPI_File_write) (MPI_File fh, CONST void *buf, int count, M
     RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 }
 
-static MPI_Offset g_prev_offset = 0;
 int RECORDER_MPI_IMP(MPI_File_write_at) (MPI_File fh, MPI_Offset offset, CONST void *buf, int count, MPI_Datatype datatype, MPI_Status *status, MPI_Fint* ierr) {
     FILTER_MPIIO_CALL(MPI_File_write_at, (fh, offset, buf, count, datatype, status), &fh);
     RECORDER_INTERCEPTOR_PROLOGUE_F(int, MPI_File_write_at, (fh, offset, buf, count, datatype, status), ierr);
-
-    MPI_Offset offset_delta = offset;
-
-    // CHEN
-    /*
-    offset_delta = offset - g_prev_offset;
-    if(offset_delta <= 0)
-        offset_delta = offset;
-    g_prev_offset = offset;
-    */
-
-    char **args = assemble_args_list(6, file2id(&fh), itoa(offset_delta), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
+    off64_t stored_offset = pr_intra_offset("MPI_File_write_at", (off64_t)offset);
+    char **args = assemble_args_list(6, file2id(&fh), itoa(stored_offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 

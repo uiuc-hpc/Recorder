@@ -7,8 +7,6 @@
 #include <libgen.h>
 #include <alloca.h>
 #include "recorder.h"
-#include "recorder-logger.h"
-#include "recorder-pattern-recognition.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
 #endif
@@ -35,6 +33,15 @@ struct RecordStack {
     UT_hash_handle hh;
 };
 static struct RecordStack *g_record_stack = NULL;
+
+
+bool logger_intraprocess_pattern_recognition() {
+    return logger.intraprocess_pattern_recognition;
+}
+
+bool logger_interprocess_pattern_recognition() {
+    return logger.interprocess_pattern_recognition;
+}
 
 
 void free_record(Record *record) {
@@ -240,6 +247,8 @@ void logger_init() {
     logger.log_tid   = 0;
     logger.log_level = 1;
     logger.interprocess_compression = 0;
+    logger.intraprocess_pattern_recognition = 0;
+    logger.interprocess_pattern_recognition = 0;
 
     // ts buffer size in MB
     const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);

@@ -119,6 +119,9 @@ void logger_finalize();
 bool logger_initialized();
 void logger_record_enter(Record *record);
 void logger_record_exit(Record *record);
+bool logger_intraprocess_pattern_recognition();
+bool logger_interprocess_pattern_recognition();
+
 void free_record(Record *record);
 // TODO only used by ftrace logger
 // Need to see how to replace it

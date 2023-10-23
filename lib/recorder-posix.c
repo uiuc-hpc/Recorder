@@ -21,10 +21,6 @@
 #include <pthread.h>
 #include "recorder.h"
 
-#ifndef HAVE_OFF64_T
-typedef int64_t off64_t;
-#endif
-
 
 typedef struct stream_map {
     char* filename;
@@ -59,13 +55,12 @@ static inline char* stream2name(FILE* stream) {
 
 
 /**
- * Given char* path, int fd or FILE* stream
- * in the argument void* f_arg.  Get the absolute
- * filename and check if we should intercept this call.
+ * Given a (char* path), (int fd) or (FILE* stream)
+ * as the argument of (void* f_arg), get the absolute
+ * file path and check if we should intercept this call.
  *
  * If not, we directly call the real call and return
- * If so, the absolution name is stored in _fname
- *
+ * If so, the absolute name is stored in _fname
  */
 #define ARG_TYPE_FD         0
 #define ARG_TYPE_STREAM     1
@@ -131,6 +126,12 @@ static inline void remove_from_map(void* arg, int arg_type) {
     }
 }
 
+
+/*********************************************************************************
+ *
+ * Below are the wrappers of the POSIX functions
+ *
+ *********************************************************************************/
 
 int WRAPPER_NAME(close)(int fd) {
     GET_CHECK_FILENAME(close, (fd), &fd, ARG_TYPE_FD);
@@ -307,6 +308,7 @@ int WRAPPER_NAME(__fxstat64)(int vers, int fd, struct stat64 *buf) {
 ssize_t WRAPPER_NAME(pread64)(int fd, void *buf, size_t count, off64_t offset) {
     GET_CHECK_FILENAME(pread64, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(ssize_t, pread64, (fd, buf, count, offset));
+    off64_t stored_offset = pr_intra_offset("pread64", (off64_t)offset);
     char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
@@ -314,6 +316,7 @@ ssize_t WRAPPER_NAME(pread64)(int fd, void *buf, size_t count, off64_t offset) {
 ssize_t WRAPPER_NAME(pread)(int fd, void *buf, size_t count, off_t offset) {
     GET_CHECK_FILENAME(pread, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(ssize_t, pread, (fd, buf, count, offset));
+    off64_t stored_offset = pr_intra_offset("pread", (off64_t)offset);
     char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
     RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
@@ -321,25 +324,14 @@ ssize_t WRAPPER_NAME(pread)(int fd, void *buf, size_t count, off_t offset) {
 ssize_t WRAPPER_NAME(pwrite64)(int fd, const void *buf, size_t count, off64_t offset) {
     GET_CHECK_FILENAME(pwrite64, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(ssize_t, pwrite64, (fd, buf, count, offset));
-    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(offset));
+    off64_t stored_offset = pr_intra_offset("pwrite64", (off64_t)offset);
+    char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(stored_offset));
     RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
 ssize_t WRAPPER_NAME(pwrite)(int fd, const void *buf, size_t count, off_t offset) {
     GET_CHECK_FILENAME(pwrite, (fd, buf, count, offset), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(ssize_t, pwrite, (fd, buf, count, offset));
-
-    off64_t stored_offset = offset;
-
-    // CHEN here
-    // for intraprocess compression, i.e., merge local entries in CST
-    /*
-    if(offset > g_prev_offset)
-        stored_offset = -(offset-g_prev_offset);
-    else
-        stored_offset = offset;
-    g_prev_offset = offset;
-    */
-
+    off64_t stored_offset = pr_intra_offset("pwrite", (off64_t)offset);
     char** args = assemble_args_list(4, _fname, ptoa(buf), itoa(count), itoa(stored_offset));
     RECORDER_INTERCEPTOR_EPILOGUE(4, args);
 }
@@ -431,28 +423,16 @@ long WRAPPER_NAME(ftell)(FILE *stream) {
 off64_t WRAPPER_NAME(lseek64)(int fd, off64_t offset, int whence) {
     GET_CHECK_FILENAME(lseek64, (fd, offset, whence), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(off64_t, lseek64, (fd, offset, whence));
-
-    off64_t stored_offset = offset;
-
-    // CHEN here
-    // for intraprocess compression, i.e., merge local entries in CST
-    /*
-    if(offset > g_prev_offset)
-        stored_offset = -(offset-g_prev_offset);
-    else
-        stored_offset = offset;
-    g_prev_offset = offset;
-    */	
-
+    off64_t stored_offset = pr_intra_offset("lseek64", (off64_t)offset);
     char** args = assemble_args_list(3, _fname, itoa(stored_offset), itoa(whence));
-
     RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 
 off_t WRAPPER_NAME(lseek)(int fd, off_t offset, int whence) {
     GET_CHECK_FILENAME(lseek, (fd, offset, whence), &fd, ARG_TYPE_FD);
     RECORDER_INTERCEPTOR_PROLOGUE(off_t, lseek, (fd, offset, whence));
-    char** args = assemble_args_list(3, _fname, itoa(offset), itoa(whence));
+    off64_t stored_offset = pr_intra_offset("lseek", (off64_t)offset);
+    char** args = assemble_args_list(3, _fname, itoa(stored_offset), itoa(whence));
     RECORDER_INTERCEPTOR_EPILOGUE(3, args);
 }
 

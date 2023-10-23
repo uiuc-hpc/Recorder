@@ -4,6 +4,7 @@
 #include "recorder-utils.h"
 #include "recorder-logger.h"
 #include "recorder-gotcha.h"
+#include "recorder-pattern-recognition.h"
 
 /* List of runtime environment variables */
 #define RECORDER_WITH_NON_MPI       		        "RECORDER_WITH_NON_MPI"
