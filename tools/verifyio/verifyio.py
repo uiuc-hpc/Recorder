@@ -112,8 +112,10 @@ def verify_session_semantics(G, conflict_pairs,
     i = 1
     for pair in conflict_pairs:
 
-        sys.stdout.write("%s/%s\r" %(i,total))
-        sys.stdout.flush()
+        # print progress
+        #sys.stdout.write("%s/%s\r" %(i,total))
+        #sys.stdout.flush()
+
         i = i + 1
 
         n1, n2s = pair[0], pair[1]                   # n1:VerifyIONode, n2s[rank]: array of VerifyIONode
@@ -205,8 +207,7 @@ if __name__ == "__main__":
     if args.semantics == "POSIX":
         p = verify_posix_semantics(G, conflict_pairs)
     elif args.semantics == "MPI-IO":
-        pass
-        #p = verify_mpi_semantics(G, conflict_pairs)
+        p = verify_mpi_semantics(G, conflict_pairs)
     elif args.semantics == "Commit":
         p = verify_commit_semantics(G, conflict_pairs)
     elif args.semantics == "Session":
