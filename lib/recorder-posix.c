@@ -25,13 +25,6 @@
 typedef int64_t off64_t;
 #endif
 
-static int recorder_mem_alignment = 1;
-
-// For local offset pattern recognition
-static int     g_first_seek = 1;
-static off64_t g_first_offset = 0;
-static off64_t g_prev_offset = 0;
-
 
 typedef struct stream_map {
     char* filename;
@@ -383,10 +376,6 @@ size_t WRAPPER_NAME(fread)(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 }
 
 size_t WRAPPER_NAME(fwrite)(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    // TODO:what's this aligned_flag for?
-    // int aligned_flag = 0;
-    //if ((unsigned long)ptr % recorder_mem_alignment == 0)
-    //    aligned_flag = 1;
     GET_CHECK_FILENAME(fwrite, (ptr, size, nmemb, stream), stream, ARG_TYPE_STREAM);
     RECORDER_INTERCEPTOR_PROLOGUE(size_t, fwrite, (ptr, size, nmemb, stream));
     char** args = assemble_args_list(4, ptoa(ptr), itoa(size), itoa(nmemb), _fname);

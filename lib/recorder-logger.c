@@ -267,7 +267,12 @@ void logger_init() {
     const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
     if(interprocess_compression)
         logger.interprocess_compression = atoi(interprocess_compression);
-
+    const char* interprocess_pattern_recognition = getenv(RECORDER_INTERPROCESS_PATTERN_RECOGNITION);
+    if(interprocess_pattern_recognition)
+        logger.interprocess_pattern_recognition= atoi(interprocess_compression);
+    const char* intraprocess_pattern_recognition = getenv(RECORDER_INTRAPROCESS_PATTERN_RECOGNITION);
+    if(intraprocess_pattern_recognition)
+        logger.intraprocess_pattern_recognition = atoi(interprocess_compression);
 
     initialized = true;
 }
@@ -294,6 +299,8 @@ void save_global_metadata() {
         .ts_buffer_elements  = logger.ts_max_elements,
         .ts_compression_algo = TS_COMPRESSION_NO,
         .interprocess_compression = logger.interprocess_compression,
+        .interprocess_pattern_recognition = logger.interprocess_pattern_recognition,
+        .intraprocess_pattern_recognition = logger.intraprocess_pattern_recognition,
     };
     GOTCHA_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
 
