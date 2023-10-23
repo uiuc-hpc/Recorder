@@ -502,7 +502,9 @@ int RECORDER_MPI_IMP(MPI_File_write) (MPI_File fh, CONST void *buf, int count, M
 int RECORDER_MPI_IMP(MPI_File_write_at) (MPI_File fh, MPI_Offset offset, CONST void *buf, int count, MPI_Datatype datatype, MPI_Status *status, MPI_Fint* ierr) {
     FILTER_MPIIO_CALL(MPI_File_write_at, (fh, offset, buf, count, datatype, status), &fh);
     RECORDER_INTERCEPTOR_PROLOGUE_F(int, MPI_File_write_at, (fh, offset, buf, count, datatype, status), ierr);
-    off64_t stored_offset = pr_intra_offset("MPI_File_write_at", (off64_t)offset);
+    off64_t stored_offset = (off64_t) offset;
+    if (logger_intraprocess_pattern_recognition())
+        stored_offset = iopr_intraprocess("MPI_File_write_at", (off64_t)offset);
     char **args = assemble_args_list(6, file2id(&fh), itoa(stored_offset), ptoa(buf), itoa(count), type2name(datatype), status2str(status));
     RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }

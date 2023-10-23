@@ -17,12 +17,7 @@ struct offset_cs_entry {
 static offset_map_t* func2offset_map;
 
 
-off64_t pr_intra_offset(const char *func, off64_t offset) {
-    // intraprocess pattern recognition disabled
-    if (!logger_intraprocess_pattern_recognition()) {
-        return offset;
-    }
-
+off64_t iopr_intraprocess(const char *func, off64_t offset) {
     offset_map_t* entry = NULL;
     HASH_FIND_STR(func2offset_map, func, entry);
     if (!entry) {
@@ -34,7 +29,6 @@ off64_t pr_intra_offset(const char *func, off64_t offset) {
     } else {
         return offset - entry->offset;
     }
-
 }
 
 int count_function(RecorderLogger *logger, unsigned char filter_func_id) {
@@ -185,4 +179,15 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
     GOTCHA_REAL_CALL(MPI_Comm_free)(&comm);
     free(offsets);
     free(offset_cs_entries);
+}
+
+void iopr_interprocess(RecorderLogger *logger) {
+    interprocess_pattern_recognition(logger, "lseek", 1);
+    interprocess_pattern_recognition(logger, "lseek64", 1);
+    interprocess_pattern_recognition(logger, "pread", 3);
+    interprocess_pattern_recognition(logger, "pread64", 3);
+    interprocess_pattern_recognition(logger, "pwrite", 3);
+    interprocess_pattern_recognition(logger, "pwrite64", 3);
+    interprocess_pattern_recognition(logger, "MPI_File_read_at", 1);
+    interprocess_pattern_recognition(logger, "MPI_File_write_at", 1);
 }

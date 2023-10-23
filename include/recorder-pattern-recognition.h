@@ -13,8 +13,15 @@ typedef struct offset_map {
     UT_hash_handle hh;
 } offset_map_t;
 
-off64_t pr_intra_offset(const char* func, off64_t offset);
+/* all functions in this unit starts with iopr_
+ * (I/O Pattern Recognition)
+ *
+ */
 
-void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, int offset_arg_idx);
+// intraprocess
+off64_t iopr_intraprocess(const char* func, off64_t offset);
+
+// interprocess
+void    iopr_interprocess(RecorderLogger* logger);
 
 #endif

@@ -350,15 +350,9 @@ void logger_finalize() {
     GOTCHA_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
-    /*
-    interprocess_pattern_recognition("lseek64");
-    interprocess_pattern_recognition("lseek");
-    interprocess_pattern_recognition("pread");
-    interprocess_pattern_recognition("MPI_File_write_at");
-    interprocess_pattern_recognition("MPI_File_read_at");
-    */
-    //interprocess_pattern_recognition(&logger, "MPI_File_write_at", 1);
-    //interprocess_pattern_recognition(&logger, "pwrite", 3);
+    if (logger.interprocess_pattern_recognition) {
+        iopr_interprocess(&logger);
+    }
 
     cleanup_record_stack();
     if(logger.interprocess_compression) {
