@@ -278,10 +278,10 @@ void logger_init() {
         logger.interprocess_compression = atoi(interprocess_compression);
     const char* interprocess_pattern_recognition = getenv(RECORDER_INTERPROCESS_PATTERN_RECOGNITION);
     if(interprocess_pattern_recognition)
-        logger.interprocess_pattern_recognition= atoi(interprocess_compression);
+        logger.interprocess_pattern_recognition= atoi(interprocess_pattern_recognition);
     const char* intraprocess_pattern_recognition = getenv(RECORDER_INTRAPROCESS_PATTERN_RECOGNITION);
     if(intraprocess_pattern_recognition)
-        logger.intraprocess_pattern_recognition = atoi(interprocess_compression);
+        logger.intraprocess_pattern_recognition = atoi(intraprocess_pattern_recognition);
 
     initialized = true;
 }
