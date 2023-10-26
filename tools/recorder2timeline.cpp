@@ -57,7 +57,7 @@ operator<<( std::ostream&      out,
 void write_to_json(Record *record, void* arg) {
 
    int cat = recorder_get_func_type(&reader, record);
-   if (record->level == 0 || (cat == 0 || cat == 1 || cat == 3)) {
+   if (record->call_depth == 0 || (cat == 0 || cat == 1 || cat == 3)) {
         Writer *writer = (Writer *) arg;
         bool user_func = (record->func_id == RECORDER_USER_FUNCTION);
         const char *func_name = recorder_get_func_name(&reader, record);

@@ -95,7 +95,7 @@ char** read_prefix_list(const char* path) {
 
 void utils_init() {
     log_pointer = false;
-    const char* s = getenv(RECORDER_LOG_POINTER);
+    const char* s = getenv(RECORDER_STORE_POINTER);
     if(s)
         log_pointer = atoi(s);
 

@@ -39,7 +39,7 @@
 /* For each function call in the trace file */
 typedef struct Record_t {
     double tstart, tend;
-    unsigned char level;
+    unsigned char call_depth;
     unsigned char func_id;      // we have about 200 functions in total
     unsigned char arg_count;
     char **args;                // Store all arguments in array
@@ -101,8 +101,8 @@ typedef struct RecorderLogger_t {
     int       ts_max_elements;  // max elements can be stored in the buffer
     double    ts_resolution;
 
-    int       log_tid;          // Wether to store thread id
-    int       log_level;        // Wether to store the level of the call
+    int       store_tid;            // Wether to store thread id
+    int       store_call_depth;     // Wether to store the call depth
     int       interprocess_compression; // Wether to perform interprocess compression of cst/cfg
     int       interprocess_pattern_recognition; 
     int       intraprocess_pattern_recognition; 

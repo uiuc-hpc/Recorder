@@ -158,8 +158,8 @@ Record* recorder_cs_to_record(CallSignature *cs) {
     pos += sizeof(pthread_t);
     memcpy(&record->func_id, key+pos, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(&record->level, key+pos, sizeof(record->level));
-    pos += sizeof(record->level);
+    memcpy(&record->call_depth, key+pos, sizeof(record->call_depth));
+    pos += sizeof(record->call_depth);
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 
@@ -386,7 +386,7 @@ void insert_one_record(Record *record, void* arg) {
 
     PyRecord *r = &(ri->records[ri->idx]);
     r->func_id = record->func_id;
-    r->level = record->level;
+    r->call_depth = record->call_depth;
     r->tstart = record->tstart;
     r->tend = record->tend;
     r->arg_count = record->arg_count;

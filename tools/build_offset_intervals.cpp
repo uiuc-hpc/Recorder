@@ -57,7 +57,7 @@ void handle_data_operation(RRecord &rr,
     memset(I.mpifh, 0, sizeof(I.mpifh));
     strcpy(I.mpifh, "-");
 
-    if(R->level == current_mpi_call_depth+1)
+    if(R->call_depth == current_mpi_call_depth+1)
         strcpy(I.mpifh, current_mpifh.c_str());
 
     string filename = "";
@@ -251,7 +251,7 @@ IntervalsMap* build_offset_intervals(RecorderReader *_reader, int *num_files) {
         // thanks to insert_one_record()
         if(strstr(func, "MPI")) {
             current_mpifh = rr.record->args[0];
-            current_mpi_call_depth = (int) rr.record->level;
+            current_mpi_call_depth = (int) rr.record->call_depth;
         // POSIX calls
         } else {
             handle_metadata_operation(rr, offset_books[rr.rank], local_eofs[rr.rank], global_eof);

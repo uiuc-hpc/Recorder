@@ -30,7 +30,7 @@ void write_to_textfile(Record *record, void* arg) {
     const char* func_name = recorder_get_func_name(&reader, record);
 
     fprintf(f, formatting_record, record->tstart, record->tend, // record->tid
-                             func_name, record->level, recorder_get_func_type(&reader, record));
+                             func_name, record->call_depth, recorder_get_func_type(&reader, record));
 
     for(int arg_id = 0; !user_func && arg_id < record->arg_count; arg_id++) {
         char *arg = record->args[arg_id];

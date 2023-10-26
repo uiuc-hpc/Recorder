@@ -404,7 +404,10 @@ int RECORDER_MPI_IMP(MPI_File_set_size) (MPI_File fh, MPI_Offset size, MPI_Fint*
 int RECORDER_MPI_IMP(MPI_File_set_view) (MPI_File fh, MPI_Offset disp, MPI_Datatype etype, MPI_Datatype filetype, CONST char *datarep, MPI_Info info, MPI_Fint* ierr) {
     FILTER_MPIIO_CALL(MPI_File_set_view, (fh, disp, etype, filetype, datarep, info), &fh);
     RECORDER_INTERCEPTOR_PROLOGUE_F(int, MPI_File_set_view, (fh, disp, etype, filetype, datarep, info), ierr);
-    char **args = assemble_args_list(6, file2id(&fh), itoa(disp), type2name(etype), type2name(filetype), ptoa(datarep), ptoa(&info));
+    off64_t stored_offset = (off64_t) disp;
+    if (logger_intraprocess_pattern_recognition())
+        stored_offset = iopr_intraprocess("MPI_File_set_view", (off64_t)disp);
+    char **args = assemble_args_list(6, file2id(&fh), itoa(stored_offset), type2name(etype), type2name(filetype), ptoa(datarep), ptoa(&info));
     RECORDER_INTERCEPTOR_EPILOGUE(6, args);
 }
 

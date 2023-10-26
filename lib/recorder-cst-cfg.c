@@ -11,7 +11,7 @@
  * Key:
  *   thread id:     sizeof(pthread_t)
  *   func id:       sizeof(record->func_id)
- *   level:         sizeof(record->level)
+ *   call_depth:    sizeof(record->call_depth)
  *   arg count:     sizeof(record->arg_count)
  *   arg strlen:    sizeof(int)
  *   args:          arg_strlen
@@ -21,7 +21,7 @@
 int cs_key_args_start() {
     Record r;
     size_t args_start = sizeof(pthread_t) + sizeof(r.func_id) +
-                  sizeof(r.level) + sizeof(r.arg_count) + sizeof(int);
+                  sizeof(r.call_depth) + sizeof(r.arg_count) + sizeof(int);
     return ((int)args_start);
 }
 
@@ -67,8 +67,8 @@ char* compose_cs_key(Record* record, int* key_len) {
     pos += sizeof(pthread_t);
     memcpy(key+pos, &record->func_id, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(key+pos, &record->level, sizeof(record->level));
-    pos += sizeof(record->level);
+    memcpy(key+pos, &record->call_depth, sizeof(record->call_depth));
+    pos += sizeof(record->call_depth);
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
     memcpy(key+pos, &args_strlen, sizeof(int));
@@ -102,8 +102,8 @@ Record* cs_to_record(CallSignature *cs) {
     pos += sizeof(pthread_t);
     memcpy(&record->func_id, key+pos, sizeof(record->func_id));
     pos += sizeof(record->func_id);
-    memcpy(&record->level, key+pos, sizeof(record->level));
-    pos += sizeof(record->level);
+    memcpy(&record->call_depth, key+pos, sizeof(record->call_depth));
+    pos += sizeof(record->call_depth);
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 
@@ -301,19 +301,19 @@ CallSignature* compress_csts(RecorderLogger* logger) {
                     entry->count = count;
                     HASH_ADD_KEYPTR(hh, merged_cst, key, key_len, entry);
 
-                    //*key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->level) +
+                    //*key_len = sizeof(pthread_t) + sizeof(record->func_id) + sizeof(record->call_depth) +
                     //           sizeof(record->arg_count) + sizeof(int) + arg_strlen;
                     /*
                     pthread_t thread_id;
-                    unsigned char func_id, level, arg_count;
+                    unsigned char func_id, call_depth, arg_count;
                     int arg_strlen;
                     memcpy(&thread_id, key, sizeof(thread_id));
                     memcpy(&func_id, key+sizeof(thread_id), sizeof(func_id));
-                    memcpy(&level, key+sizeof(thread_id)+sizeof(func_id), sizeof(level));
-                    memcpy(&arg_count, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level), sizeof(arg_count));
-                    memcpy(&arg_strlen, key+sizeof(thread_id)+sizeof(func_id)+sizeof(level)+sizeof(arg_count), sizeof(arg_strlen));
-                    printf("CHEN2 rank:%d tid: %ld, func_id:%d, level:%d, arg_count:%d, arg_strlen:%d, count:%u, key:%s\n",
-                    cst_rank, thread_id, func_id, level, arg_count, arg_strlen, count, ((char*)key)+15);
+                    memcpy(&call_depth, key+sizeof(thread_id)+sizeof(func_id), sizeof(call_depth));
+                    memcpy(&arg_count, key+sizeof(thread_id)+sizeof(func_id)+sizeof(call_depth), sizeof(arg_count));
+                    memcpy(&arg_strlen, key+sizeof(thread_id)+sizeof(func_id)+sizeof(call_depth)+sizeof(arg_count), sizeof(arg_strlen));
+                    printf("CHEN2 rank:%d tid: %ld, func_id:%d, call_depth:%d, arg_count:%d, arg_strlen:%d, count:%u, key:%s\n",
+                    cst_rank, thread_id, func_id, call_depth, arg_count, arg_strlen, count, ((char*)key)+15);
                     */
                 }
             }

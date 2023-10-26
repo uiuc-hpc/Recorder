@@ -26,5 +26,13 @@ int min_in_array(int* arr, size_t len);
 double recorder_log2(int val);
 int recorder_ceil(double val);
 
+#define RECORDER_LOG(level, ...)            \
+    do {                                    \
+        if (level < 999) {                  \
+            fprintf(stderr, __VA_ARGS__);   \
+        }                                   \
+    } while (0)
+
+#define RECORDER_LOGDBG(...)  RECORDER_LOG(1, __VA_ARGS__)
 
 #endif

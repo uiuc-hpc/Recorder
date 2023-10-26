@@ -27,7 +27,7 @@ static RecorderLogger logger;
  * e.g., H5Dwrite -> MPI_File_write_at -> pwrite
  */
 struct RecordStack {
-    int level;
+    int call_depth;
     pthread_t tid;
     Record *records;
     UT_hash_handle hh;
@@ -66,10 +66,10 @@ void write_record(Record *record) {
     // set them to 0 if not needed.
     // TODO: this is a ugly fix for ignoring them, but
     // they still occupy the space in the key.
-    if(!logger.log_tid)
+    if(!logger.store_tid)
         record->tid   = 0;
-    if(!logger.log_level)
-        record->level = 0;
+    if(!logger.store_call_depth)
+        record->call_depth = 0;
 
     int key_len;
     char* key = compose_cs_key(record, &key_len);
@@ -115,24 +115,24 @@ void logger_record_enter(Record* record) {
     if(!rs) {
         rs = recorder_malloc(sizeof(struct RecordStack));
         rs->records = NULL;
-        rs->level = 0;
+        rs->call_depth  = 0;
         rs->tid = record->tid;
         HASH_ADD(hh, g_record_stack, tid, sizeof(pthread_t), rs);
     }
 
     DL_APPEND(rs->records, record);
 
-    record->level = rs->level++;
+    record->call_depth = rs->call_depth++;
     record->record_stack = rs;
 }
 
 void logger_record_exit(Record* record) {
     struct RecordStack *rs = record->record_stack;
-    rs->level--;
+    rs->call_depth--;
 
-    // In most cases, rs->level is 0 and
+    // In most cases, rs->call_depth is 0 and
     // rs->records have only one record
-    if(rs->level == 0) {
+    if (rs->call_depth == 0) {
         Record *current, *tmp;
         DL_FOREACH_SAFE(rs->records, current, tmp) {
             DL_DELETE(rs->records, current);
@@ -244,8 +244,8 @@ void logger_init() {
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
     logger.directory_created = false;
-    logger.log_tid   = 0;
-    logger.log_level = 1;
+    logger.store_tid   = 0;
+    logger.store_call_depth = 1;
     logger.interprocess_compression = 0;
     logger.intraprocess_pattern_recognition = 0;
     logger.interprocess_pattern_recognition = 0;
@@ -267,12 +267,12 @@ void logger_init() {
         logger.ts_resolution = atof(time_resolution_str);
 
 
-    const char* log_tid_str = getenv(RECORDER_LOG_TID);
-    if(log_tid_str)
-        logger.log_tid = atoi(log_tid_str);
-    const char* log_level_str = getenv(RECORDER_LOG_LEVEL);
-    if(log_level_str)
-        logger.log_level = atoi(log_level_str);
+    const char* store_tid_str = getenv(RECORDER_STORE_TID);
+    if(store_tid_str)
+        logger.store_tid = atoi(store_tid_str);
+    const char* store_call_depth_str = getenv(RECORDER_STORE_CALL_DEPTH);
+    if(store_call_depth_str)
+        logger.store_call_depth = atoi(store_call_depth_str);
     const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
     if(interprocess_compression)
         logger.interprocess_compression = atoi(interprocess_compression);

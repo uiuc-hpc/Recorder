@@ -76,7 +76,7 @@ typedef struct RecorderReader_t {
  */
 typedef struct PyRecord_t {
     double tstart, tend;
-    unsigned char level;
+    unsigned char call_depth;
     unsigned char func_id;
     int tid;
     unsigned char arg_count;
