@@ -16,8 +16,6 @@
 
 #define ERROR_ABORT(msg) {fprintf(stderr, msg);abort();}
 
-//#define DEBUG
-
 
 
 /**

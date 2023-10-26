@@ -33,7 +33,6 @@ void sequitur_print_rules(Grammar *grammar) {
         DL_COUNT(rule->rule_body, sym, count);
         symbols_count += count;
 
-        //#ifdef DEBUG
         printf("Rule %d :-> ", rule->val);
 
         DL_FOREACH(rule->rule_body, sym) {

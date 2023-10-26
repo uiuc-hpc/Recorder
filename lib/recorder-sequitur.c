@@ -10,6 +10,8 @@
 #include "recorder-sequitur.h"
 #include "recorder-utils.h"
 
+// Uncomment to print debugging messages
+// define SEQUITUR_DEBUG
 
 void delete_symbol(Symbol *sym) {
     symbol_delete(sym->rule, sym, true);
@@ -147,7 +149,7 @@ void process_match(Grammar *grammar, Symbol *this, Symbol *match) {
     if(rule && rule->rule_body) {
         Symbol* tocheck = rule->rule_body->rule_head;
         if(tocheck && tocheck->ref < 2 && tocheck->exp < 2) {
-            #ifdef DEBUG
+            #ifdef SEQUITUR_DEBUG
                 printf("rule utility:%d %d\n", tocheck->val, tocheck->ref);
             #endif
             expand_instance(grammar, rule->rule_body);
@@ -181,7 +183,7 @@ int check_digram(Grammar *grammar, Symbol *sym) {
 
     if(match == NULL) {
         // Case 1. new digram, put it in the table
-        #ifdef DEBUG
+        #ifdef SEQUITUR_DEBUG
             printf("new digram %d %d\n", sym->val, sym->next->val);
         #endif
         digram_put(&(grammar->digram_table), sym);
@@ -190,13 +192,13 @@ int check_digram(Grammar *grammar, Symbol *sym) {
 
     if(match->next == sym) {
         // Case 2. match found but overlap: do nothing
-        #ifdef DEBUG
+        #ifdef SEQUITUR_DEBUG
             printf("found digram but overlap\n");
         #endif
         return 0;
     } else {
         // Case 3. non-overlapping match found
-        #ifdef DEBUG
+        #ifdef SEQUITUR_DEBUG
             printf("found non-overlapping digram %d %d\n", sym->val, sym->next->val);
         #endif
         process_match(grammar, sym, match);
