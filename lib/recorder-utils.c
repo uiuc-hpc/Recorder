@@ -74,7 +74,7 @@ char** read_prefix_list(const char* path) {
 
     FILE* f = GOTCHA_REAL_CALL(fopen)(path, "r");
     if (f == NULL) {
-        fprintf(stderr, "[Recorder] invalid prefix file: %s\n", path);
+        RECORDER_LOGDBG("[Recorder] invalid prefix file: %s\n", path);
         return NULL;
     }
 
@@ -283,7 +283,7 @@ unsigned char get_function_id_by_name(const char* name) {
         if (strcmp(func_list[i], name) == 0)
             return i;
     }
-    fprintf(stderr, "[Recorder] error: missing function %s\n", name);
+    RECORDER_LOGDBG("[Recorder] error: missing function %s\n", name);
     return 255;
 }
 
@@ -301,7 +301,7 @@ inline char* realrealpath(const char *path) {
 		GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX_TRACING);
 		char* tmp = GOTCHA_REAL_CALL(getcwd)(cwd, 512);
         if (tmp == NULL) {
-            fprintf(stderr, "[Recorder] error: getcwd failed\n");
+            RECORDER_LOGDBG("[Recorder] error: getcwd failed\n");
             return NULL;
         }
 

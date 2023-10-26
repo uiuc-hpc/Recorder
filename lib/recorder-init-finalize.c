@@ -80,7 +80,7 @@ void recorder_finalize() {
     local_tend = recorder_wtime();
 
     if (rank == 0) {
-        fprintf(stderr, "[Recorder] elapsed time: %.2f\n", local_tend-local_tstart);
+        RECORDER_LOGDBG("[Recorder] elapsed time: %.2f\n", local_tend-local_tstart);
     }
 }
 
@@ -127,7 +127,7 @@ void signal_handler(int sig) {
     void *array[20];
     size_t size;
     size = backtrace(array, 20);
-    fprintf(stdout, "Error: signal %d:\n", sig);
+    RECORDER_LOGDBG("Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, STDOUT_FILENO);
     exit(1);
     */

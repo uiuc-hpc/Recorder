@@ -12,7 +12,7 @@
         if (_status != CUPTI_SUCCESS) {                                         \
             const char *errstr;                                                   \
             cuptiGetResultString(_status, &errstr);                               \
-            fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n",  \
+            RECORDER_LOGDBG("%s:%d: error: function %s failed with error %s.\n",  \
                     __FILE__, __LINE__, #call, errstr);                           \
             exit(-1);                                                             \
         }                                                                       \

@@ -237,7 +237,7 @@ void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, 
     fflush(f);
     fclose(f);
 
-    fprintf(stderr, "[Recorder] unique grammars: %d\n", num_unique_grammars);
+    RECORDER_LOGDBG("[Recorder] unique grammars: %d\n", num_unique_grammars);
 }
 
 // Return the size of compressed grammar in KB

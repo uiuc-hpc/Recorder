@@ -217,7 +217,6 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 void logger_init() {
 
     // Map the functions we will use later
-    // We did not intercept fprintf
     GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(fflush, RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
@@ -361,7 +360,7 @@ void logger_finalize() {
         save_cfg_merged(&logger);
         double t2 = recorder_wtime();
         if(logger.rank == 0)
-            fprintf(stderr, "[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
+            RECORDER_LOGDBG("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
     } else {
         save_cst_local(&logger);
         save_cfg_local(&logger);
@@ -372,7 +371,7 @@ void logger_finalize() {
     if(logger.rank == 0) {
         save_global_metadata();
 
-        fprintf(stderr, "[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        RECORDER_LOGDBG("[Recorder] trace files have been written to %s\n", logger.traces_dir);
         GOTCHA_REAL_CALL(fflush)(stderr);
     }
 }
