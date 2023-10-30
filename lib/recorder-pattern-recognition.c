@@ -111,7 +111,7 @@ void iopr_interprocess_by_func(RecorderLogger *logger, char* func_name, int offs
     GOTCHA_REAL_CALL(MPI_Comm_rank)(comm, &comm_rank);
 
     if(comm_rank == 0)
-        printf("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
+        RECORDER_LOGDBG("%s count: %d, comm size: %d\n", func_name, func_count, comm_size);
 
     if(comm_size > 2) {
         long int *all_offsets = calloc(comm_size*(func_count), sizeof(long int));
@@ -150,7 +150,7 @@ void iopr_interprocess_by_func(RecorderLogger *logger, char* func_name, int offs
                 sprintf(tmp, "%ld*r+%ld", a, b);
 
                 if(comm_rank == 0)
-                    printf("pattern recognized %d: offset = %ld*rank+%ld\n", offset_cs_entries[i].cs->terminal_id, a, b);
+                    RECORDER_LOGDBG("pattern recognized %d: offset = %ld*rank+%ld\n", offset_cs_entries[i].cs->terminal_id, a, b);
 
                 int old_keylen = offset_cs_entries[i].cs->key_len;
                 int new_keylen = old_keylen - (end-start-1) + strlen(tmp);

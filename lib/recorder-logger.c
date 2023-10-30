@@ -375,7 +375,7 @@ void logger_finalize() {
         save_cfg_merged(&logger);
         double t2 = recorder_wtime();
         if(logger.rank == 0)
-            RECORDER_LOGDBG("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
+            RECORDER_LOGINFO("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
     } else {
         save_cst_local(&logger);
         save_cfg_local(&logger);
@@ -385,7 +385,7 @@ void logger_finalize() {
 
     if(logger.rank == 0) {
         save_global_metadata();
-        RECORDER_LOGDBG("[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        RECORDER_LOGINFO("[Recorder] trace files have been written to %s\n", logger.traces_dir);
         GOTCHA_REAL_CALL(fflush)(stderr);
     }
 }

@@ -28,7 +28,7 @@ void ts_write_out_zlib(RecorderLogger* logger) {
     ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
     // ret = deflateInit(&strm, Z_BEST_COMPRESSION);
     if (ret != Z_OK) {
-        RECORDER_LOGDBG("[Recorder] fatal error: can't initialize zlib.");
+        RECORDER_LOGERR("[Recorder] fatal error: can't initialize zlib.");
         return;
     }
 
@@ -43,7 +43,7 @@ void ts_write_out_zlib(RecorderLogger* logger) {
         assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
         have = buf_size - strm.avail_out;
         if (GOTCHA_REAL_CALL(fwrite)(out, 1, have, logger->ts_file) != have) {
-            RECORDER_LOGDBG("[Recorder] fatal error: zlib write out error.");
+            RECORDER_LOGERR("[Recorder] fatal error: zlib write out error.");
             (void)deflateEnd(&strm);
             return;
         }

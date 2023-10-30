@@ -28,12 +28,14 @@ int recorder_ceil(double val);
 
 #define RECORDER_LOG(level, ...)              \
     do {                                      \
-        if (level < 999) {                    \
+        if (level <= 2) {                     \
             /* we do not intercept fprintf */ \
             fprintf(stderr, __VA_ARGS__);     \
         }                                     \
     } while (0)
 
-#define RECORDER_LOGDBG(...)  RECORDER_LOG(1, __VA_ARGS__)
+#define RECORDER_LOGERR(...)  RECORDER_LOG(1, __VA_ARGS__)
+#define RECORDER_LOGINFO(...) RECORDER_LOG(2, __VA_ARGS__)
+#define RECORDER_LOGDBG(...)  RECORDER_LOG(3, __VA_ARGS__)
 
 #endif
