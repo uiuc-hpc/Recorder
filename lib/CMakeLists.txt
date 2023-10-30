@@ -21,6 +21,7 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-gotcha.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-pattern-recognition.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-timestamps.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-symbol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-digram.c

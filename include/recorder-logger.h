@@ -22,10 +22,6 @@
 #define RECORDER_VERSION_MINOR  5
 #define RECORDER_VERSION_PATCH  0
 
-#define TS_COMPRESSION_NO       0
-#define TS_COMPRESSION_ZLIB     1
-#define TS_COMPRESSION_ZFP      2
-
 #define RECORDER_POSIX          0
 #define RECORDER_MPIIO          1
 #define RECORDER_MPI            2
@@ -68,7 +64,7 @@ typedef struct RecorderMetadata_t {
     double start_ts;
     double time_resolution;
     int    ts_buffer_elements;
-    int    ts_compression_algo;         // timestamp compression algorithm
+    int    ts_compression;              // whether to compress timestamps (using zlib)
     int    interprocess_compression;    // interprocess compression of cst/cfg
     int    interprocess_pattern_recognition;
     int    intraprocess_pattern_recognition;
@@ -81,6 +77,7 @@ typedef struct RecorderMetadata_t {
 typedef struct RecorderLogger_t {
     int rank;
     int nprocs;
+    int num_records;            // total number of records stored by this rank
 
     bool directory_created;
 
@@ -100,6 +97,7 @@ typedef struct RecorderLogger_t {
     int       ts_index;         // current position of ts buffer, spill to file once full.
     int       ts_max_elements;  // max elements can be stored in the buffer
     double    ts_resolution;
+    int       ts_compression;
 
     int       store_tid;            // Wether to store thread id
     int       store_call_depth;     // Wether to store the call depth

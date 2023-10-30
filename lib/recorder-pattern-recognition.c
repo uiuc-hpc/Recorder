@@ -46,7 +46,7 @@ int count_function(RecorderLogger *logger, unsigned char filter_func_id) {
     return func_count;
 }
 
-void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, int offset_arg_idx) {
+void iopr_interprocess_by_func(RecorderLogger *logger, char* func_name, int offset_arg_idx) {
 
     unsigned char filter_func_id = get_function_id_by_name(func_name);
     int func_count = count_function(logger, filter_func_id);
@@ -182,12 +182,12 @@ void interprocess_pattern_recognition(RecorderLogger *logger, char* func_name, i
 }
 
 void iopr_interprocess(RecorderLogger *logger) {
-    interprocess_pattern_recognition(logger, "lseek", 1);
-    interprocess_pattern_recognition(logger, "lseek64", 1);
-    interprocess_pattern_recognition(logger, "pread", 3);
-    interprocess_pattern_recognition(logger, "pread64", 3);
-    interprocess_pattern_recognition(logger, "pwrite", 3);
-    interprocess_pattern_recognition(logger, "pwrite64", 3);
-    interprocess_pattern_recognition(logger, "MPI_File_read_at", 1);
-    interprocess_pattern_recognition(logger, "MPI_File_write_at", 1);
+    iopr_interprocess_by_func(logger, "lseek", 1);
+    iopr_interprocess_by_func(logger, "lseek64", 1);
+    iopr_interprocess_by_func(logger, "pread", 3);
+    iopr_interprocess_by_func(logger, "pread64", 3);
+    iopr_interprocess_by_func(logger, "pwrite", 3);
+    iopr_interprocess_by_func(logger, "pwrite64", 3);
+    iopr_interprocess_by_func(logger, "MPI_File_read_at", 1);
+    iopr_interprocess_by_func(logger, "MPI_File_write_at", 1);
 }

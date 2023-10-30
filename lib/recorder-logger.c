@@ -13,7 +13,6 @@
 
 #define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
 
-
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
 
@@ -64,7 +63,7 @@ void write_record(Record *record) {
 
     // Before pass the record to compose_cs_key()
     // set them to 0 if not needed.
-    // TODO: this is a ugly fix for ignoring them, but
+    // TODO: this is a ugly fix for ignoring them, as
     // they still occupy the space in the key.
     if(!logger.store_tid)
         record->tid   = 0;
@@ -102,10 +101,11 @@ void write_record(Record *record) {
     if(logger.ts_index == logger.ts_max_elements) {
         if(!logger.directory_created)
             logger_set_mpi_info(0, 1);
-        GOTCHA_REAL_CALL(fwrite)(logger.ts, sizeof(uint32_t), logger.ts_max_elements, logger.ts_file);
+        ts_write_out(&logger);
         logger.ts_index = 0;
     }
 
+    logger.num_records++;
     pthread_mutex_unlock(&g_mutex);
 }
 
@@ -206,9 +206,9 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
     if(mpi_initialized)
         GOTCHA_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
 
-    char ts_filename[1024];
-    sprintf(ts_filename, "%s/%d.ts", logger.traces_dir, mpi_rank);
-    logger.ts_file = GOTCHA_REAL_CALL(fopen) (ts_filename, "wb");
+    char perprocess_ts_filename[1024];
+    ts_get_filename(&logger, perprocess_ts_filename);
+    logger.ts_file = GOTCHA_REAL_CALL(fopen) (perprocess_ts_filename, "wb");
 
     logger.directory_created = true;
 }
@@ -222,6 +222,7 @@ void logger_init() {
     GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(remove, RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX_TRACING);
     GOTCHA_SET_REAL_CALL(MPI_Bcast, RECORDER_MPI_TRACING);
     GOTCHA_SET_REAL_CALL(MPI_Barrier, RECORDER_MPI_TRACING);
@@ -237,6 +238,7 @@ void logger_init() {
     // Initialize the global values
     logger.rank   = 0;
     logger.nprocs = 1;
+    logger.num_records = 0;
     logger.start_ts = global_tstart;
     logger.prev_tstart = logger.start_ts;
     logger.cst = NULL;
@@ -260,6 +262,11 @@ void logger_init() {
     if(logger.ts_max_elements % 2 != 0) logger.ts_max_elements += 1;
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7; // 100ns
+    logger.ts_compression = 0;
+    
+    const char* ts_compression_str = getenv(RECORDER_TIME_COMPRESSION);
+    if(ts_compression_str)
+        logger.ts_compression = atoi(ts_compression_str);
 
     const char* time_resolution_str = getenv(RECORDER_TIME_RESOLUTION);
     if(time_resolution_str)
@@ -305,7 +312,7 @@ void save_global_metadata() {
         .total_ranks         = logger.nprocs,
         .start_ts            = logger.start_ts,
         .ts_buffer_elements  = logger.ts_max_elements,
-        .ts_compression_algo = TS_COMPRESSION_NO,
+        .ts_compression      = logger.ts_compression,
         .interprocess_compression = logger.interprocess_compression,
         .interprocess_pattern_recognition = logger.interprocess_pattern_recognition,
         .intraprocess_pattern_recognition = logger.intraprocess_pattern_recognition,
@@ -342,17 +349,25 @@ void logger_finalize() {
     cuda_profiler_exit();
     #endif
 
+    // write out the remaining timestamps
     if(logger.ts_index > 0)
-        GOTCHA_REAL_CALL(fwrite)(logger.ts, sizeof(int), logger.ts_index, logger.ts_file);
-
+        ts_write_out(&logger);
     GOTCHA_REAL_CALL(fflush)(logger.ts_file);
-    GOTCHA_REAL_CALL(fclose)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
 
+    // Merge per-process ts files into a single one
+    ts_merge_files(&logger);
+    GOTCHA_REAL_CALL(fclose)(logger.ts_file);
+    char perprocess_ts_filename[1024];
+    ts_get_filename(&logger, perprocess_ts_filename);
+    GOTCHA_REAL_CALL(remove)(perprocess_ts_filename);
+
+    // interprocess I/O pattern recognition
     if (logger.interprocess_pattern_recognition) {
         iopr_interprocess(&logger);
     }
 
+    // interprocess cst and cfg compression
     cleanup_record_stack();
     if(logger.interprocess_compression) {
         double t1 = recorder_wtime();
@@ -370,7 +385,6 @@ void logger_finalize() {
 
     if(logger.rank == 0) {
         save_global_metadata();
-
         RECORDER_LOGDBG("[Recorder] trace files have been written to %s\n", logger.traces_dir);
         GOTCHA_REAL_CALL(fflush)(stderr);
     }
