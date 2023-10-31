@@ -363,8 +363,8 @@ void save_cst_merged(RecorderLogger* logger) {
         errno = 0;
         FILE *trace_file = fopen(logger->cst_path, "wb");
         if(trace_file) {
-            fwrite(cst_stream, 1, cst_stream_size, trace_file);
-            fclose(trace_file);
+            GOTCHA_REAL_CALL(fwrite)(cst_stream, 1, cst_stream_size, trace_file);
+            GOTCHA_REAL_CALL(fclose)(trace_file);
         } else {
             printf("[Recorder] Open file: %s failed, errno: %d\n", logger->cst_path, errno);
         }

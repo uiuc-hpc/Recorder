@@ -1,8 +1,8 @@
 #ifndef __RECORDER_UTILS_H_
 #define __RECORDER_UTILS_H_
-
 #include <fcntl.h>
 #include <pthread.h>
+#include <stdio.h>
 
 void utils_init();
 void utils_finalize();
@@ -25,6 +25,11 @@ int mkpath(char* file_path, mode_t mode);       // recursive mkdir()
 int min_in_array(int* arr, size_t len);
 double recorder_log2(int val);
 int recorder_ceil(double val);
+/* 
+ * compress buf using zlib and then write to the output file 
+ * the file stream must has been opened with write permission.
+ */
+void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file);
 
 #define RECORDER_LOG(level, ...)              \
     do {                                      \

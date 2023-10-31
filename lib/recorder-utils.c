@@ -7,6 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
+#include <zlib.h>
 #include "recorder.h"
 
 // Log pointer addresses in the trace file?
@@ -353,5 +354,48 @@ int recorder_ceil(double val) {
     int tmp = (int) val;
     if(val > tmp)
         return tmp + 1;
+    else
+        return tmp;
 }
 
+
+void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
+    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
+    int ret;
+    unsigned have;
+    z_stream strm;
+
+    unsigned char out[buf_size];
+
+    /* allocate deflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree  = Z_NULL;
+    strm.opaque = Z_NULL;
+    ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
+    // ret = deflateInit(&strm, Z_BEST_COMPRESSION);
+    if (ret != Z_OK) {
+        RECORDER_LOGERR("[Recorder] fatal error: can't initialize zlib.");
+        return;
+    }
+
+    strm.avail_in = buf_size;
+    strm.next_in  = buf;
+    /* run deflate() on input until output buffer not full, finish
+       compression if all of source has been read in */
+    do {
+        strm.avail_out = buf_size;
+        strm.next_out = out;
+        ret = deflate(&strm, Z_FINISH);    /* no bad return value */
+        assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+        have = buf_size - strm.avail_out;
+        if (GOTCHA_REAL_CALL(fwrite)(out, 1, have, out_file) != have) {
+            RECORDER_LOGERR("[Recorder] fatal error: zlib write out error.");
+            (void)deflateEnd(&strm);
+            return;
+        }
+    } while (strm.avail_out == 0);
+    assert(strm.avail_in == 0);         /* all input will be used */
+
+    /* clean up and return */
+    (void)deflateEnd(&strm);
+}

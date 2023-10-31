@@ -250,6 +250,9 @@ void logger_init() {
     logger.interprocess_compression = 0;
     logger.intraprocess_pattern_recognition = 0;
     logger.interprocess_pattern_recognition = 0;
+    logger.ts_index = 0;
+    logger.ts_resolution = 1e-7; // 100ns
+    logger.ts_compression = 0;
 
     // ts buffer size in MB
     const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
@@ -259,10 +262,8 @@ void logger_init() {
 
     logger.ts = recorder_malloc(buffer_size);
     logger.ts_max_elements = buffer_size / sizeof(uint32_t);    // make sure its can be divided by 2
-    if(logger.ts_max_elements % 2 != 0) logger.ts_max_elements += 1;
-    logger.ts_index = 0;
-    logger.ts_resolution = 1e-7; // 100ns
-    logger.ts_compression = 0;
+    if(logger.ts_max_elements % 2 != 0)
+        logger.ts_max_elements += 1;
     
     const char* ts_compression_str = getenv(RECORDER_TIME_COMPRESSION);
     if(ts_compression_str)
