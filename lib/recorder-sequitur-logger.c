@@ -188,6 +188,10 @@ void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, 
 
     if(mpi_rank !=0) return;
 
+    char ug_filename[1096] = {0};
+    sprintf(ug_filename, "%s/ug.cfg", path);
+    FILE* ug_file = fopen(ug_filename, "wb");
+
     // Go through each rank's grammar
     for(int rank = 0; rank < mpi_size; rank++) {
 
@@ -209,16 +213,11 @@ void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, 
             ug_entry->key = g;   // use the existing memory, do not copy it
             HASH_ADD_KEYPTR(hh, unique_grammars, ug_entry->key, g_len, ug_entry);
             grammar_ids[rank] = ug_entry->ugi;
-
-            char ug_filename[1096] = {0};
-            sprintf(ug_filename, "%s/%d.cfg", path, ug_entry->ugi);
-
-            FILE* ug_file = fopen(ug_filename, "wb");
-            fwrite(g, 1, g_len, ug_file);
-            fflush(ug_file);
-            fclose(ug_file);
+            fwrite(&g_len, 1, sizeof(g_len), ug_file);
+            recorder_write_zlib((unsigned char*)g, g_len, ug_file);
         }
     }
+    fclose(ug_file);
 
     // Clean up the hash table, and gathered grammars
     int num_unique_grammars = HASH_COUNT(unique_grammars);
@@ -238,42 +237,4 @@ void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, 
     fclose(f);
 
     RECORDER_LOGINFO("[Recorder] unique grammars: %d\n", num_unique_grammars);
-}
-
-// Return the size of compressed grammar in KB
-double sequitur_dump(const char* path, Grammar *local_grammar, int mpi_rank, int mpi_size) {
-    int compressed_integers = 0;
-
-    // Compressed grammar is NULL except rank 0
-    size_t uncompressed_integers = 0;
-    int grammar_ids[mpi_size];
-    int num_unique_grammars;
-    Grammar *grammar = compress_grammars(local_grammar, mpi_rank, mpi_size, &uncompressed_integers, &num_unique_grammars, grammar_ids);
-
-    // Serialize the compressed grammar and write it to file
-    if(mpi_rank == 0) {
-
-        int* compressed_grammar = serialize_grammar(grammar, &compressed_integers);
-
-        errno = 0;
-        FILE* f = fopen(path, "wb");
-        if(f) {
-            fwrite(grammar_ids, sizeof(int), mpi_size, f);
-            fwrite(&num_unique_grammars, sizeof(int), 1, f);
-            fwrite(&(grammar->start_rule_id), sizeof(int), 1, f);
-            fwrite(&uncompressed_integers, sizeof(size_t), 1, f);
-            fwrite(compressed_grammar, sizeof(int), compressed_integers, f);
-            fclose(f);
-        } else {
-            printf("[recorder] Open file: %s failed, errno: %d!\n", path, errno);
-        }
-
-        sequitur_cleanup(grammar);
-        recorder_free(grammar, sizeof(Grammar));
-        recorder_free(compressed_grammar, compressed_integers*sizeof(int));
-
-        printf("[recorder] unique grammars: %d, uncompressed integers: %ld, compressed integers: %d\n", num_unique_grammars, uncompressed_integers, compressed_integers);
-    }
-
-    return (compressed_integers/1024.0*sizeof(int));
 }
