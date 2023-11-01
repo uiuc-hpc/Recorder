@@ -87,7 +87,7 @@ void detect_conflicts(IntervalsMap *IM, int num_files, const char* base_dir) {
 
             if (conflicts.size() > 0) {
                 total_conflicts += conflicts.size();
-                fprintf(stdout, "rank:%4d, id:%10d, %5s(%5s,%12zu,%12zu) conflicts: %10d\n",
+                fprintf(stdout, "rank:%4d, id:%10d, %5s(%5s,%12zu,%12zu) conflicts: %10ld\n",
                         i1->rank,i1->seqId,i1->isRead?"read":"write",i1->mpifh,i1->offset,i1->count,
                         conflicts.size());
                 fprintf(conflict_file, "%d,%d,%s,%s:",
