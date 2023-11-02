@@ -48,17 +48,17 @@ target_link_libraries(recorder2timeline
 add_dependencies(recorder2timeline reader)
 
 
-#add_executable(metaops_checker meta_ops_checker.c)
-#target_link_libraries(metaops_checker reader)
-#add_dependencies(metaops_checker reader)
+#add_executable(metaops-checker meta-ops-checker.c)
+#target_link_libraries(metaops-checker reader)
+#add_dependencies(metaops-checker reader)
 
-add_executable(conflict_detector conflict_detector.cpp build_offset_intervals.cpp)
-target_link_libraries(conflict_detector reader)
-add_dependencies(conflict_detector reader)
+add_executable(conflict-detector conflict-detector.cpp build-offset-intervals.cpp)
+target_link_libraries(conflict-detector reader)
+add_dependencies(conflict-detector reader)
 
-add_executable(recorder_summary recorder_summary.c)
-target_link_libraries(recorder_summary reader)
-add_dependencies(recorder_summary reader)
+add_executable(recorder-summary recorder-summary.c)
+target_link_libraries(recorder-summary reader)
+add_dependencies(recorder-summary reader)
 
 
 if(RECORDER_ENABLE_PARQUET)
@@ -103,7 +103,7 @@ endif()
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
 #set(targets reader recorder2text metaops_checker conflict_detector)
-set(targets reader recorder2text recorder2timeline conflict_detector recorder_summary)
+set(targets reader recorder2text recorder2timeline conflict-detector recorder-summary)
 foreach(target ${targets})
     install(
         TARGETS
