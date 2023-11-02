@@ -10,7 +10,6 @@
 /* List of runtime environment variables */
 #define RECORDER_WITH_NON_MPI       		        "RECORDER_WITH_NON_MPI"
 #define RECORDER_TRACES_DIR         		        "RECORDER_TRACES_DIR"
-#define RECORDER_BUFFER_SIZE        		        "RECORDER_BUFFER_SIZE"
 #define RECORDER_TIME_RESOLUTION    		        "RECORDER_TIME_RESOLUTION"
 #define RECORDER_TIME_COMPRESSION                   "RECORDER_TIME_COMPRESSION"
 #define RECORDER_STORE_POINTER        		        "RECORDER_STORE_POINTER"

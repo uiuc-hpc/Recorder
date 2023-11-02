@@ -5,8 +5,6 @@
 #include "mpi.h"
 #include "recorder.h"
 
-#define CHUNK 16384
-
 void ts_get_filename(RecorderLogger *logger, char* ts_filename) {
     sprintf(ts_filename, "%s/%d.ts", logger->traces_dir, logger->rank);
 }

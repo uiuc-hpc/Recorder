@@ -92,17 +92,21 @@ void write_record(Record *record) {
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
 
-    // write timestamps
+    // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
     uint32_t delta_tend   = (record->tend-logger.prev_tstart)   / logger.ts_resolution;
     logger.prev_tstart = record->tstart;
     logger.ts[logger.ts_index++] = delta_tstart;
     logger.ts[logger.ts_index++] = delta_tend;
+
+    // ts buffer is full, double it
     if(logger.ts_index == logger.ts_max_elements) {
-        if(!logger.directory_created)
-            logger_set_mpi_info(0, 1);
-        ts_write_out(&logger);
-        logger.ts_index = 0;
+        logger.ts_max_elements *= 2;
+        size_t ts_buf_size = logger.ts_max_elements*sizeof(uint32_t);
+        void* ptr = (uint32_t*) recorder_malloc(ts_buf_size);
+        memcpy(ptr, logger.ts, ts_buf_size/2);
+        recorder_free(logger.ts, ts_buf_size/2);
+        logger.ts = ptr;
     }
 
     logger.num_records++;
@@ -251,19 +255,12 @@ void logger_init() {
     logger.intraprocess_pattern_recognition = 0;
     logger.interprocess_pattern_recognition = 0;
     logger.ts_index = 0;
-    logger.ts_resolution = 1e-7; // 100ns
+    logger.ts_resolution = 1e-7;            // 100ns
     logger.ts_compression = 0;
+    logger.ts_max_elements = 1*1024*1024;   // enough for half million records
 
-    // ts buffer size in MB
-    const char* buffer_size_str = getenv(RECORDER_BUFFER_SIZE);
-    size_t buffer_size = DEFAULT_TS_BUFFER_SIZE;
-    if(buffer_size_str)
-        buffer_size = atoi(buffer_size_str) * 1024 * 1024;
-
-    logger.ts = recorder_malloc(buffer_size);
-    logger.ts_max_elements = buffer_size / sizeof(uint32_t);    // make sure its can be divided by 2
-    if(logger.ts_max_elements % 2 != 0)
-        logger.ts_max_elements += 1;
+    size_t ts_buf_size = logger.ts_max_elements*sizeof(uint32_t);
+    logger.ts = recorder_malloc(ts_buf_size);
     
     const char* ts_compression_str = getenv(RECORDER_TIME_COMPRESSION);
     if(ts_compression_str)
@@ -350,7 +347,7 @@ void logger_finalize() {
     cuda_profiler_exit();
     #endif
 
-    // write out the remaining timestamps
+    // Write out timestamps
     if(logger.ts_index > 0)
         ts_write_out(&logger);
     GOTCHA_REAL_CALL(fflush)(logger.ts_file);
