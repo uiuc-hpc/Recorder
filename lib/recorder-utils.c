@@ -361,6 +361,18 @@ int recorder_ceil(double val) {
 
 void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
     GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fseek, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX_TRACING);
+
+    // Always write two size_t (compressed_size and decopmressed_size)
+    // before writting the the compressed data.
+    // This allows easier post-processing.
+    long off = GOTCHA_REAL_CALL(ftell)(out_file);
+    size_t compressed_size   = 0;
+    size_t decompressed_size = buf_size;
+    GOTCHA_REAL_CALL(fwrite)(&compressed_size, sizeof(size_t), 1, out_file);
+    GOTCHA_REAL_CALL(fwrite)(&decompressed_size, sizeof(size_t), 1, out_file);
+
     int ret;
     unsigned have;
     z_stream strm;
@@ -388,6 +400,7 @@ void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
         ret = deflate(&strm, Z_FINISH);    /* no bad return value */
         assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
         have = buf_size - strm.avail_out;
+        compressed_size += have;
         if (GOTCHA_REAL_CALL(fwrite)(out, 1, have, out_file) != have) {
             RECORDER_LOGERR("[Recorder] fatal error: zlib write out error.");
             (void)deflateEnd(&strm);
@@ -398,4 +411,11 @@ void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
 
     /* clean up and return */
     (void)deflateEnd(&strm);
+
+    GOTCHA_REAL_CALL(fseek)(out_file, off, SEEK_SET);
+    GOTCHA_REAL_CALL(fwrite)(&compressed_size, sizeof(size_t), 1, out_file);
+    GOTCHA_REAL_CALL(fwrite)(&decompressed_size, sizeof(size_t), 1, out_file);
+    GOTCHA_REAL_CALL(fseek)(out_file, compressed_size, SEEK_CUR);
+    RECORDER_LOGDBG("[Recorder] recorder_write_zlib seek off: %ld, compressed_size: %ld, decompressed_size: %ld\n",
+                    off, compressed_size, decompressed_size);
 }

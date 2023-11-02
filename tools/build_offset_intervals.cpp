@@ -7,6 +7,7 @@
 #include <algorithm>
 extern "C" {                            // Needed to mix linking C and C++ sources
 #include "reader.h"
+#include "reader-private.h"
 }
 
 using namespace std;
@@ -212,10 +213,7 @@ void flatten_and_sort_records(RecorderReader *reader) {
 
     for(int rank = 0; rank < nprocs; rank++) {
         current_seq_id = 0;
-        CST* cst;
-        CFG* cfg;
-        recorder_get_cst_cfg(reader, rank, &cst, &cfg);
-        recorder_decode_records_core(reader, cst, cfg, insert_one_record, &rank, false);
+        recorder_decode_records2(reader, rank, insert_one_record, &rank);
     }
 
     sort(records.begin(), records.end(), compare_by_tstart);

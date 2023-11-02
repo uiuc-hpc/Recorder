@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include "reader.h"
+#include "reader-private.h"
 
 
 
@@ -12,7 +13,7 @@ void print_cst(RecorderReader* reader, CST* cst) {
     printf("\nBelow are the unique call signatures: \n");
 
     for(int i = 0; i < cst->entries; i++) {
-        Record* record = recorder_cs_to_record(&cst->cs_list[i]);
+        Record* record = reader_cs_to_record(&cst->cs_list[i]);
 
         const char* func_name = recorder_get_func_name(reader, record);
         printf("%s(", func_name);
@@ -35,7 +36,7 @@ void show_statistics(RecorderReader* reader, CST* cst) {
     int mpiio_count = 0, hdf5_count = 0, posix_count = 0;
 
     for(int i = 0; i < cst->entries; i++) {
-        Record* record = recorder_cs_to_record(&cst->cs_list[i]);
+        Record* record = reader_cs_to_record(&cst->cs_list[i]);
         const char* func_name = recorder_get_func_name(reader, record);
 
         int type = recorder_get_func_type(reader, record);
@@ -52,7 +53,7 @@ void show_statistics(RecorderReader* reader, CST* cst) {
         recorder_free_record(record);
     }
     long int total = hdf5_count + mpiio_count + posix_count;
-    printf("Total: %ld\nHDF5: %d\nMPI-IO Count: %d\nPOSIX: %d\n", total, hdf5_count, mpiio_count, posix_count);
+    printf("Total: %ld\nHDF5: %d\nMPI-IO: %d\nPOSIX: %d\n", total, hdf5_count, mpiio_count, posix_count);
 
     printf("\n%-25s %18s %18s\n", "Func", "Unique Signature", "Total Call Count");
     for(int i = 0; i < 256; i++) {
@@ -69,9 +70,8 @@ int main(int argc, char **argv) {
     RecorderReader reader;
     recorder_init_reader(argv[1], &reader);
 
-    CST* cst;
-    CFG* cfg;
-    recorder_get_cst_cfg(&reader, 0, &cst, &cfg);
+    CST* cst = reader_get_cst(&reader, 0);
+    CFG* cfg = reader_get_cfg(&reader, 0);
 
     show_statistics(&reader, cst);
 

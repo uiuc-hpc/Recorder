@@ -12,26 +12,6 @@ extern "C"
 {
 #endif
 
-
-typedef struct Interval_t {
-    int rank;
-    int seqId;              // The sequence id of the I/O call
-    double tstart;
-    size_t offset;
-    size_t count;
-    bool isRead;
-    char mpifh[10];
-} Interval;
-
-/* Per-file intervals
- * <filename, intervals>
- */
-typedef struct IntervalsMap_t {
-    char* filename;
-    size_t num_intervals;
-    Interval *intervals;    // Pointer to Interval, copied from vector<Interval>
-} IntervalsMap;
-
 typedef struct CST_t {
     int rank;
     int entries;
@@ -84,36 +64,10 @@ typedef struct PyRecord_t {
 } PyRecord;
 
 
-
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader);
 void recorder_free_reader(RecorderReader *reader);
 
-
-/**
- * Read CST and CFG from files to RecorderReader
- *
- * With interprocess compression, we have
- * one merged CST and multiple CFG files.
- * Each CFG file stores a unique grammar.
- *
- * Without interprocess compression, we have
- * one CST and one CFG file per process.
- *
- * ! These two functions should only be used internally
- * recorder_get_cst_cfg() can be used to perform
- * custom tasks with CST and CFG
- */
-void recorder_read_cst(RecorderReader *reader, int rank);
-void recorder_read_cfg(RecorderReader *reader, int rank);
-void recorder_free_cst(CST *cst);
-void recorder_free_cfg(CFG *cfg);
-
-void recorder_get_cst_cfg(RecorderReader* reader, int rank, CST** cst, CFG** cfg);
-
-
-Record* recorder_cs_to_record(CallSignature *cs);
 void recorder_free_record(Record* r);
-
 
 /**
  * This function reads all records of a rank
@@ -125,15 +79,10 @@ void recorder_free_record(Record* r);
  * void* user_arg can be used to pass in user argument.
  *
  */
-void recorder_decode_records_core(RecorderReader* reader, CST *cst, CFG *cfg,
-                             void (*user_op)(Record* r, void* user_arg), void* user_arg, bool free_record);
 void recorder_decode_records(RecorderReader* reader, int rank,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
-
-
-void recorder_decode_records2(RecorderReader *reader, CST *cst, CFG *cfg,
+void recorder_decode_records2(RecorderReader* reader, int rank,
                              void (*user_op)(Record* r, void* user_arg), void* user_arg);
-
 
 const char* recorder_get_func_name(RecorderReader* reader, Record* record);
 
@@ -146,9 +95,6 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record);
  *  - RECORDER_FTRACE
  */
 int recorder_get_func_type(RecorderReader* reader, Record* record);
-
-
-IntervalsMap* build_offset_intervals(RecorderReader *reader, int *num_files);
 
 #ifdef __cplusplus
 }

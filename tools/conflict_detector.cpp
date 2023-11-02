@@ -5,6 +5,7 @@
 #include <vector>
 extern "C" {
 #include "reader.h"
+#include "reader-private.h"
 }
 using namespace std;
 

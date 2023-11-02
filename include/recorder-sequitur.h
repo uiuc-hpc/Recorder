@@ -110,7 +110,7 @@ int digram_delete(Digram **digram_table, Symbol *symbol);
 
 
 /* recorder_sequitur_logger.c */
-int* serialize_grammar(Grammar *grammar, int *integers);
+int* serialize_grammar(Grammar *grammar, int* serialized_integers);
 void sequitur_save_unique_grammars(const char* path, Grammar* lg, int mpi_rank, int mpi_size);
 
 /* recorder_sequitur_utils.c */

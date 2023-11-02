@@ -3,7 +3,67 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "./reader.h"
+#include <zlib.h>
+#include "reader.h"
+#include "reader-private.h"
+
+void* read_zlib(FILE* source) {
+    const int CHUNK = 65536;
+    int ret;
+    unsigned have;
+    z_stream strm;
+    unsigned char out[CHUNK]; // TODO remove out, and store directly to uncompressed.
+
+    /* allocate inflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = 0;
+    strm.next_in = Z_NULL;
+    ret = inflateInit(&strm);
+    if (ret != Z_OK)
+        return NULL;
+
+    // In the first two size_t we alway store comperssed_size
+    // and decompressed_size. See write_zlib in recorder-utils.c
+    size_t compressed_size, decompressed_size;
+    fread(&compressed_size, sizeof(size_t), 1, source);
+    fread(&decompressed_size, sizeof(size_t), 1, source);
+    void* compressed   = malloc(compressed_size);
+    void* decompressed = malloc(decompressed_size);
+    void* p_decompressed = decompressed;
+    //printf("compressed size: %ld, decompressed size: %ld\n", 
+    //       compressed_size, decompressed_size);
+
+    strm.avail_in = fread(compressed, 1, compressed_size, source);
+    strm.next_in  = compressed;
+    assert(strm.avail_in == compressed_size);
+
+    /* run inflate() on input until output buffer not full */
+    do {
+        strm.avail_out = CHUNK;
+        strm.next_out  = out;
+        ret = inflate(&strm, Z_NO_FLUSH);
+        assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+        switch (ret) {
+            case Z_NEED_DICT:
+                ret = Z_DATA_ERROR;     /* and fall through */
+            case Z_DATA_ERROR:
+            case Z_MEM_ERROR:
+                (void)inflateEnd(&strm);
+                free(compressed);
+                free(decompressed);
+                return NULL;
+        }
+        have = CHUNK - strm.avail_out;
+        memcpy(p_decompressed, out, have);
+        p_decompressed += have;
+    } while (strm.avail_out == 0);
+
+    (void)inflateEnd(&strm);
+    free(compressed);
+    return decompressed;
+}
 
 void check_version(RecorderReader* reader) {
     char version_file[1096] = {0};
@@ -89,9 +149,20 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 	}
 
 	if(reader->metadata.interprocess_compression) {
-		recorder_read_cst(reader, 0);
-		for(int i = 1; i < nprocs; i++)
-			reader->csts[i] = reader->csts[0];
+        // a single file for merged csts
+        // and a single for unique cfgs
+        void* buf_cst;
+        void* buf_cfg;
+
+        // Read and parse the cst file
+		char cst_fname[1096] = {0};
+		sprintf(cst_fname, "%s/recorder.cst", reader->logs_dir);
+		FILE* cst_file = fopen(cst_fname, "rb");
+        buf_cst = read_zlib(cst_file);
+        reader->csts[0] = (CST*) malloc(sizeof(CST));
+		reader_decode_cst(0, buf_cst, reader->csts[0]);
+        fclose(cst_file);
+        free(buf_cst);
 
 		char ug_metadata_fname[1096] = {0};
 		sprintf(ug_metadata_fname, "%s/ug.mt", reader->logs_dir);
@@ -100,10 +171,43 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 		fread(&reader->num_ugs, sizeof(int), 1, f);
 		fclose(f);
 
-		for(int i = 0; i < reader->num_ugs; i++) {
-			recorder_read_cfg(reader, i);
-		}
-	}
+		char cfg_fname[1096] = {0};
+		sprintf(cfg_fname, "%s/ug.cfg", reader->logs_dir);
+		FILE* cfg_file = fopen(cfg_fname, "rb");
+        for(int i = 0; i < reader->num_ugs; i++) {
+            buf_cfg = read_zlib(cfg_file);
+            reader->cfgs[i] = (CFG*) malloc(sizeof(CFG));
+            reader_decode_cfg(i, buf_cfg, reader->cfgs[i]);
+            free(buf_cfg);
+        }
+        fclose(cfg_file);
+
+        for(int rank = 0; rank < nprocs; rank++) {
+            reader->csts[rank] = reader->csts[0];
+            reader->cfgs[rank] = reader->cfgs[reader->ug_ids[rank]];
+        }
+
+	} else {
+        for(int rank = 0; rank < nprocs; rank++) {
+            char cst_fname[1096] = {0};
+            sprintf(cst_fname, "%s/%d.cst", reader->logs_dir, rank);
+            FILE* cst_file = fopen(cst_fname, "rb");
+            void* buf_cst = read_zlib(cst_file);
+            reader->csts[rank] = (CST*) malloc(sizeof(CST));
+		    reader_decode_cst(rank, buf_cst, reader->csts[rank]);
+            free(buf_cst);
+            fclose(cst_file);
+
+            char cfg_fname[1096] = {0};
+            sprintf(cfg_fname, "%s/%d.cfg", reader->logs_dir, rank);
+            FILE* cfg_file = fopen(cfg_fname, "rb");
+            void* buf_cfg = read_zlib(cfg_file);
+            reader->cfgs[rank] = (CFG*) malloc(sizeof(CFG));
+            reader_decode_cfg(rank, buf_cfg, reader->cfgs[rank]);
+            free(buf_cfg);
+            fclose(cfg_file);
+        }
+    }
 }
 
 void recorder_free_reader(RecorderReader *reader) {
@@ -111,13 +215,18 @@ void recorder_free_reader(RecorderReader *reader) {
 	free(reader->ug_ids);
 
 	if(reader->metadata.interprocess_compression) {
-		recorder_free_cst(reader->csts[0]);
+		reader_free_cst(reader->csts[0]);
 		free(reader->csts[0]);
 		for(int i = 0; i < reader->num_ugs; i++) {
-			recorder_free_cfg(reader->cfgs[i]);
+			reader_free_cfg(reader->cfgs[i]);
 			free(reader->cfgs[i]);
 		}
-	}
+	} else {
+		for(int rank = 0; rank < reader->metadata.total_ranks; rank++) {
+            reader_free_cst(reader->csts[rank]);
+            reader_free_cfg(reader->cfgs[rank]);
+        }
+    }
 
 	free(reader->csts);
 	free(reader->cfgs);
@@ -145,59 +254,6 @@ int recorder_get_func_type(RecorderReader* reader, Record* record) {
     return RECORDER_HDF5;
 }
 
-// Caller needs to free the record after use
-// with the recorder_free_record() call.
-Record* recorder_cs_to_record(CallSignature *cs) {
-
-    Record *record = malloc(sizeof(Record));
-
-    char* key = cs->key;
-
-    int pos = 0;
-    memcpy(&record->tid, key+pos, sizeof(pthread_t));
-    pos += sizeof(pthread_t);
-    memcpy(&record->func_id, key+pos, sizeof(record->func_id));
-    pos += sizeof(record->func_id);
-    memcpy(&record->call_depth, key+pos, sizeof(record->call_depth));
-    pos += sizeof(record->call_depth);
-    memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
-    pos += sizeof(record->arg_count);
-
-    record->args = malloc(sizeof(char*) * record->arg_count);
-
-    int arg_strlen;
-    memcpy(&arg_strlen, key+pos, sizeof(int));
-    pos += sizeof(int);
-
-    char* arg_str = key+pos;
-    int ai = 0;
-    int start = 0;
-    for(int i = 0; i < arg_strlen; i++) {
-        if(arg_str[i] == ' ') {
-            record->args[ai++] = strndup(arg_str+start, (i-start));
-            start = i + 1;
-        }
-    }
-
-    assert(ai == record->arg_count);
-    return record;
-}
-
-void recorder_free_cst(CST* cst) {
-    for(int i = 0; i < cst->entries; i++)
-        free(cst->cs_list[i].key);
-    free(cst->cs_list);
-}
-
-void recorder_free_cfg(CFG* cfg) {
-    RuleHash *r, *tmp;
-    HASH_ITER(hh, cfg->cfg_head, r, tmp) {
-        HASH_DEL(cfg->cfg_head, r);
-        free(r->rule_body);
-        free(r);
-    }
-}
-
 void recorder_free_record(Record* r) {
     for(int i = 0; i < r->arg_count; i++)
         free(r->args[i]);
@@ -205,87 +261,10 @@ void recorder_free_record(Record* r) {
     free(r);
 }
 
-void recorder_read_cst(RecorderReader *reader, int rank) {
-	reader->csts[rank] = malloc(sizeof(CST));
-	CST* cst = reader->csts[rank];
-
-    cst->rank = rank;
-    char cst_filename[1096] = {0};
-    sprintf(cst_filename, "%s/%d.cst", reader->logs_dir, rank);
-
-    FILE* f = fopen(cst_filename, "rb");
-
-    int key_len;
-    fread(&cst->entries, sizeof(int), 1, f);
-
-	// cst->cs_list will be stored in the terminal_id order.
-    cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
-
-    for(int i = 0; i < cst->entries; i++) {
-		int terminal_id;
-        fread(&terminal_id, sizeof(int), 1, f);
-		assert(terminal_id < cst->entries);
-
-		CallSignature* cs = &(cst->cs_list[terminal_id]);
-		cs->terminal_id = terminal_id;
-
-        fread(&(cs->rank), sizeof(int), 1, f);
-        fread(&(cs->key_len), sizeof(int), 1, f);
-        fread(&(cs->count), sizeof(int), 1, f);
-
-        cs->key = malloc(cs->key_len);
-        fread(cs->key, 1, cs->key_len, f);
-    }
-    fclose(f);
-}
-
-
-void recorder_read_cfg(RecorderReader *reader, int rank) {
-	reader->cfgs[rank] = malloc(sizeof(CFG));
-	CFG* cfg = reader->cfgs[rank];
-
-    cfg->rank = rank;
-    char cfg_filename[1096] = {0};
-    sprintf(cfg_filename, "%s/%d.cfg", reader->logs_dir, rank);
-
-    FILE* f = fopen(cfg_filename, "rb");
-
-    fread(&cfg->rules, sizeof(int), 1, f);
-
-    cfg->cfg_head = NULL;
-    for(int i = 0; i < cfg->rules; i++) {
-        RuleHash *rule = malloc(sizeof(RuleHash));
-
-        fread(&(rule->rule_id), sizeof(int), 1, f);
-        fread(&(rule->symbols), sizeof(int), 1, f);
-        //printf("rule id: %d, symbols: %d\n", rule->rule_id, rule->symbols);
-
-        rule->rule_body = (int*) malloc(sizeof(int)*rule->symbols*2);
-        fread(rule->rule_body, sizeof(int), rule->symbols*2, f);
-        HASH_ADD_INT(cfg->cfg_head, rule_id, rule);
-    }
-    fclose(f);
-}
-
-void recorder_get_cst_cfg(RecorderReader* reader, int rank, CST** cst, CFG** cfg) {
-	if(reader->metadata.interprocess_compression) {
-		// Do nothing, as we have already read
-		// csts and cfgs during initialization
-	} else {
-		if(reader->csts[rank] == NULL)
-			recorder_read_cst(reader, rank);
-		if(reader->cfgs[rank] == NULL)
-			recorder_read_cfg(reader, rank);
-	}
-
-	*cst = reader->csts[rank];
-	*cfg = reader->cfgs[reader->ug_ids[rank]];
-}
-
 
 #define TERMINAL_START_ID 0
 
-void rule_application(RecorderReader* reader, CFG* cfg, CST* cst, int rule_id, FILE* ts_file,
+void rule_application(RecorderReader* reader, CFG* cfg, CST* cst, int rule_id, uint32_t* ts_buf,
                       void (*user_op)(Record*, void*), void* user_arg, int free_record) {
 
     RuleHash *rule = NULL;
@@ -297,11 +276,11 @@ void rule_application(RecorderReader* reader, CFG* cfg, CST* cst, int rule_id, F
         int sym_exp = rule->rule_body[2*i+1];
         if (sym_val >= TERMINAL_START_ID) { // terminal
             for(int j = 0; j < sym_exp; j++) {
-                Record* record = recorder_cs_to_record(&(cst->cs_list[sym_val]));
+                Record* record = reader_cs_to_record(&(cst->cs_list[sym_val]));
 
                 // Fill in timestamps
-                uint32_t ts[2];
-                fread(ts, sizeof(uint32_t), 2, ts_file);
+                uint32_t ts[2] = {ts_buf[0], ts_buf[1]};
+                ts_buf += 2;
                 record->tstart = ts[0] * reader->metadata.time_resolution + reader->prev_tstart;
                 record->tend   = ts[1] * reader->metadata.time_resolution + reader->prev_tstart;
                 reader->prev_tstart = record->tstart;
@@ -313,37 +292,64 @@ void rule_application(RecorderReader* reader, CFG* cfg, CST* cst, int rule_id, F
             }
         } else {                            // non-terminal (i.e., rule)
             for(int j = 0; j < sym_exp; j++)
-                rule_application(reader, cfg, cst, sym_val, ts_file, user_op, user_arg, free_record);
+                rule_application(reader, cfg, cst, sym_val, ts_buf, user_op, user_arg, free_record);
         }
     }
 }
 
-
-// Decode all records for one rank
-// one record at a time
-void recorder_decode_records_core(RecorderReader *reader, CST *cst, CFG *cfg,
+void decode_records_core(RecorderReader *reader, int rank,
                              void (*user_op)(Record*, void*), void* user_arg, bool free_record) {
+
+    int nprocs = reader->metadata.total_ranks;
+	CST* cst = reader_get_cst(reader, rank);
+	CFG* cfg = reader_get_cfg(reader, rank);
 
     reader->prev_tstart = 0.0;
 
-    char ts_filename[1096] = {0};
-    sprintf(ts_filename, "%s/%d.ts", reader->logs_dir, cst->rank);
-    FILE* ts_file = fopen(ts_filename, "rb");
+    char ts_fname[1096] = {0};
+    sprintf(ts_fname, "%s/recorder.ts", reader->logs_dir);
+    FILE* ts_file = fopen(ts_fname, "rb");
 
-    rule_application(reader, cfg, cst, -1, ts_file, user_op, user_arg, free_record);
+    // the first nprocs size_t store the buf size 
+    // of timestamps of each rank
+    // see lib/recorder-timestamps.c
+    size_t buf_sizes[nprocs];
+    fread(buf_sizes, sizeof(size_t), nprocs, ts_file);
 
+    // calculate the starting offset of the desired rank
+    // nprocs*sizeof(size_t) + offset
+    size_t offset = 0;
+    for(int r = 0; r < rank; r++) {
+        offset += buf_sizes[r];
+    }
+    fseek(ts_file, offset, SEEK_CUR);
+
+    // finally read to the buffer
+    uint32_t* ts_buf;
+    if (reader->metadata.ts_compression) {
+        ts_buf = (uint32_t*) read_zlib(ts_file);
+    } else {
+        ts_buf = (uint32_t*) malloc(buf_sizes[rank]); 
+        fread(ts_buf, 1, buf_sizes[rank], ts_file);
+    }
     fclose(ts_file);
+
+    rule_application(reader, cfg, cst, -1, ts_buf, user_op, user_arg, free_record);
+
+    free(ts_buf);
 }
 
+// Decode all records for one rank
+// one record at a time
 void recorder_decode_records(RecorderReader *reader, int rank,
                              void (*user_op)(Record*, void*), void* user_arg) {
-
-	CST* cst;
-	CFG* cfg;
-	recorder_get_cst_cfg(reader, rank, &cst, &cfg);
-    recorder_decode_records_core(reader, cst, cfg, user_op, user_arg, true);
+    decode_records_core(reader, rank, user_op, user_arg, true);
 }
 
+void recorder_decode_records2(RecorderReader *reader, int rank,
+                             void (*user_op)(Record*, void*), void* user_arg) {
+    decode_records_core(reader, rank, user_op, user_arg, false);
+}
 
 
 /**
@@ -408,9 +414,8 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts, RecorderMetadata *
 
     for(int rank = 0; rank < reader.metadata.total_ranks; rank++) {
 
-        CST* cst;
-        CFG* cfg;
-        recorder_get_cst_cfg(&reader, rank, &cst, &cfg);
+        CST* cst = reader_get_cst(&reader, rank);
+        CFG* cfg = reader_get_cfg(&reader, rank);
 
         counts[rank] = get_uncompressed_count(&reader, cfg, -1);
         records[rank] = malloc(sizeof(PyRecord)* counts[rank]);
@@ -419,7 +424,7 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts, RecorderMetadata *
         ri.records = records[rank];
         ri.idx = 0;
 
-        recorder_decode_records_core(&reader, cst, cfg, insert_one_record, &ri, false);
+        recorder_decode_records2(&reader, rank, insert_one_record, &ri);
     }
 
     recorder_free_reader(&reader);

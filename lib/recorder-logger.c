@@ -208,7 +208,7 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 
     char perprocess_ts_filename[1024];
     ts_get_filename(&logger, perprocess_ts_filename);
-    logger.ts_file = GOTCHA_REAL_CALL(fopen) (perprocess_ts_filename, "wb");
+    logger.ts_file = GOTCHA_REAL_CALL(fopen) (perprocess_ts_filename, "w+b");
 
     logger.directory_created = true;
 }
@@ -387,7 +387,6 @@ void logger_finalize() {
     if(logger.rank == 0) {
         save_global_metadata();
         RECORDER_LOGINFO("[Recorder] trace files have been written to %s\n", logger.traces_dir);
-        GOTCHA_REAL_CALL(fflush)(stderr);
     }
 }
 

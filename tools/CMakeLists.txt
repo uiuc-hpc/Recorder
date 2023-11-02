@@ -12,25 +12,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result -std=c++11")
 
 find_package(MPI REQUIRED)
 if(MPI_FOUND)
-    include_directories(${MPI_CXX_INCLUDE_DIRS})
-    set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${MPI_C_INCLUDE_DIRS}
-            ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
-            )
-    set(RECORDER_EXT_LIB_DEPENDENCIES
-            ${MPI_C_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+    include_directories(${MPI_CXX_INCLUDE_DIRS} ${MPI_C_INCLUDE_DIRS})
 else()
     message(STATUS, "MPI not found")
 endif()
 
-
-
+find_package(ZLIB REQUIRED)
+if(ZLIB_FOUND)
+    include_directories(${ZLIB_INCLUDE_DIRS})
+else()
+    message(STATUS, "ZLIB not found")
+endif()
 
 #------------------------------------------------------------------------------
 # Tools
 #------------------------------------------------------------------------------
 
-
-add_library(reader reader.c)
+add_library(reader reader.c reader-cst-cfg.c)
+target_link_libraries(reader
+                        PUBLIC ${ZLIB_LIBRARIES}
+                    )
 
 add_executable(recorder2text recorder2text.c)
 target_link_libraries(recorder2text

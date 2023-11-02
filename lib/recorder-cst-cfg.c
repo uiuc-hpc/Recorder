@@ -360,12 +360,14 @@ void save_cst_merged(RecorderLogger* logger) {
 
         // 3. Rank 0 write out the compressed CST
         errno = 0;
-        FILE *cst_file = fopen(logger->cst_path, "wb");
+        char cst_fname[1096];
+        sprintf(cst_fname, "%s/recorder.cst", logger->traces_dir);
+        FILE *cst_file = fopen(cst_fname, "wb");
         if(cst_file) {
             recorder_write_zlib(cst_stream, cst_stream_size, cst_file);
             GOTCHA_REAL_CALL(fclose)(cst_file);
         } else {
-            printf("[Recorder] Open file: %s failed, errno: %d\n", logger->cst_path, errno);
+            printf("[Recorder] Open file: %s failed, errno: %d\n", cst_fname, errno);
         }
     } else {
         GOTCHA_REAL_CALL(MPI_Bcast)(&cst_stream_size, sizeof(cst_stream_size), MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -399,14 +401,12 @@ void save_cst_merged(RecorderLogger* logger) {
 
 void save_cfg_local(RecorderLogger* logger) {
     FILE* f = GOTCHA_REAL_CALL(fopen) (logger->cfg_path, "wb");
-    int count;
-    int* data = serialize_grammar(&logger->cfg, &count);
-    GOTCHA_REAL_CALL(fwrite)(data, sizeof(int), count, f);
-    recorder_write_zlib((unsigned char*)data, sizeof(int)*count, f);
+    int integers;
+    int* data = serialize_grammar(&logger->cfg, &integers);
+    recorder_write_zlib((unsigned char*)data, sizeof(int)*integers, f);
     GOTCHA_REAL_CALL(fclose)(f);
 }
 
 void save_cfg_merged(RecorderLogger* logger) {
     sequitur_save_unique_grammars(logger->traces_dir, &logger->cfg, logger->rank, logger->nprocs);
 }
-
