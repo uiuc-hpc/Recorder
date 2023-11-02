@@ -43,10 +43,19 @@ typedef struct RecorderReader_t {
 
     double prev_tstart;
 
+    // in the case of metadata.interprocess_compression = true
+    // store the unique grammars in ugs.
+    // cfgs[rank] = ugs[ug_ids[rank]];
     int   num_ugs;	// number of unique grammars
     int*  ug_ids;	// index of unique grammar in cfgs
+    CFG** ugs;      // store actual grammars
+
+    // in the case of metadata.interprocess_compression = false
+    // we have one file for each rank's cst and one file
+    // for each rank's cfg. We directly store them in csts[rnak] 
+    // and cfgs[rank]. 
     CST** csts;
-    CFG** cfgs;
+    CFG** cfgs;     
 } RecorderReader;
 
 

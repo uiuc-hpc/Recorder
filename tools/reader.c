@@ -139,14 +139,9 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 	int nprocs= reader->metadata.total_ranks;
 
 	reader->ug_ids = malloc(sizeof(int) * nprocs);
+    reader->ugs    = malloc(sizeof(CFG*) * nprocs);
 	reader->csts   = malloc(sizeof(CST*) * nprocs);
 	reader->cfgs   = malloc(sizeof(CFG*) * nprocs);
-
-	for(int i = 0; i < nprocs; i++) {
-		reader->ug_ids[i] = i;
-		reader->csts[i] = NULL;
-		reader->cfgs[i] = NULL;
-	}
 
 	if(reader->metadata.interprocess_compression) {
         // a single file for merged csts
@@ -176,15 +171,15 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 		FILE* cfg_file = fopen(cfg_fname, "rb");
         for(int i = 0; i < reader->num_ugs; i++) {
             buf_cfg = read_zlib(cfg_file);
-            reader->cfgs[i] = (CFG*) malloc(sizeof(CFG));
-            reader_decode_cfg(i, buf_cfg, reader->cfgs[i]);
+            reader->ugs[i] = (CFG*) malloc(sizeof(CFG));
+            reader_decode_cfg(i, buf_cfg, reader->ugs[i]);
             free(buf_cfg);
         }
         fclose(cfg_file);
 
         for(int rank = 0; rank < nprocs; rank++) {
             reader->csts[rank] = reader->csts[0];
-            reader->cfgs[rank] = reader->cfgs[reader->ug_ids[rank]];
+            reader->cfgs[rank] = reader->ugs[reader->ug_ids[rank]];
         }
 
 	} else {
@@ -212,14 +207,13 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
 
 void recorder_free_reader(RecorderReader *reader) {
     assert(reader);
-	free(reader->ug_ids);
 
 	if(reader->metadata.interprocess_compression) {
 		reader_free_cst(reader->csts[0]);
 		free(reader->csts[0]);
 		for(int i = 0; i < reader->num_ugs; i++) {
-			reader_free_cfg(reader->cfgs[i]);
-			free(reader->cfgs[i]);
+			reader_free_cfg(reader->ugs[i]);
+			free(reader->ugs[i]);
 		}
 	} else {
 		for(int rank = 0; rank < reader->metadata.total_ranks; rank++) {
@@ -230,6 +224,8 @@ void recorder_free_reader(RecorderReader *reader) {
 
 	free(reader->csts);
 	free(reader->cfgs);
+	free(reader->ugs);
+	free(reader->ug_ids);
 
     memset(reader, 0, sizeof(*reader));
 }
