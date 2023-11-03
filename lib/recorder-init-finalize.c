@@ -55,8 +55,8 @@ void recorder_init() {
 void update_mpi_info() {
     recorder_init();
 
-    GOTCHA_SET_REAL_CALL(MPI_Comm_size, RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Comm_rank, RECORDER_MPI_TRACING);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_size, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_rank, RECORDER_MPI);
 
     int mpi_initialized = 0;
     MPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.

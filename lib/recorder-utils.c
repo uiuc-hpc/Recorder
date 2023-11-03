@@ -67,11 +67,11 @@ char** str_split(char* a_str, const char a_delim) {
 }
 
 char** read_prefix_list(const char* path) {
-    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fseek,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(ftell,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fread,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fseek,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(ftell,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fread,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX);
 
     FILE* f = GOTCHA_REAL_CALL(fopen)(path, "r");
     if (f == NULL) {
@@ -299,7 +299,7 @@ inline char* realrealpath(const char *path) {
     if (res == NULL) {
 		if(path[0] == '/') return strdup(path);
 		char cwd[512] = {0};
-		GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX_TRACING);
+		GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX);
 		char* tmp = GOTCHA_REAL_CALL(getcwd)(cwd, 512);
         if (tmp == NULL) {
             RECORDER_LOGERR("[Recorder] error: getcwd failed\n");
@@ -318,7 +318,7 @@ inline char* realrealpath(const char *path) {
  */
 int mkpath(char* file_path, mode_t mode) {
 
-    GOTCHA_SET_REAL_CALL(mkdir, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(mkdir, RECORDER_POSIX);
 
     assert(file_path && *file_path);
 
@@ -360,9 +360,9 @@ int recorder_ceil(double val) {
 
 
 void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
-    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fseek, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX_TRACING);
+    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fseek, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX);
 
     // Always write two size_t (compressed_size and decopmressed_size)
     // before writting the the compressed data.

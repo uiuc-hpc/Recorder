@@ -232,8 +232,8 @@ CallSignature* copy_cst(CallSignature* origin) {
 
 CallSignature* compress_csts(RecorderLogger* logger) {
 
-    GOTCHA_SET_REAL_CALL(MPI_Send, RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Recv, RECORDER_MPI_TRACING);
+    GOTCHA_SET_REAL_CALL(MPI_Send, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Recv, RECORDER_MPI);
 
     int my_rank = logger->rank;
     int other_rank;

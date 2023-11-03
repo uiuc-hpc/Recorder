@@ -98,11 +98,11 @@ void iopr_interprocess_by_func(RecorderLogger *logger, char* func_name, int offs
         }
     }
 
-    GOTCHA_SET_REAL_CALL(MPI_Comm_split, RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Comm_size,  RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Comm_rank,  RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Comm_free,  RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Allgather,  RECORDER_MPI_TRACING);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_split, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_size,  RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_rank,  RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Comm_free,  RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Allgather,  RECORDER_MPI);
 
     MPI_Comm comm;
     int comm_size, comm_rank;

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <utime.h>
+#include <stdbool.h>
 #include "mpi.h"
 #include "hdf5.h"
 #include "gotcha/gotcha.h"
@@ -16,7 +17,15 @@
 #define CONST
 #endif
 
+/*
+ * Public functions
+ */
 void gotcha_init();
+bool gotcha_posix_tracing();
+bool gotcha_mpi_tracing();
+bool gotcha_mpiio_tracing();
+bool gotcha_hdf5_tracing();
+
 
 /**
  * WRAPPER_TYPE:   type of function pointer of the wrapper
@@ -50,13 +59,17 @@ void gotcha_init();
         GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);        \
     } while(0);
 
-#define GOTCHA_SET_REAL_CALL(func, func_layer)                          \
+#define GOTCHA_SET_REAL_CALL(func, func_type)                           \
     do {                                                                \
-        int intercept = 1;                                              \
-        if (getenv(func_layer) != NULL) {                               \
-            if (atoi(getenv(func_layer)) == 0)                          \
-                intercept = 0;                                          \
-        }                                                               \
+        bool intercept = false;                                         \
+        if (func_type == RECORDER_POSIX)                                \
+            intercept = gotcha_posix_tracing();                         \
+        if (func_type == RECORDER_MPI)                                  \
+            intercept = gotcha_mpi_tracing();                           \
+        if (func_type == RECORDER_MPIIO)                                \
+            intercept = gotcha_mpiio_tracing();                         \
+        if (func_type == RECORDER_HDF5)                                \
+            intercept = gotcha_hdf5_tracing();                         \
         if (intercept) {                                                \
             void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));   \
             GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);    \

@@ -11,8 +11,6 @@
 #include "recorder-cuda-profiler.h"
 #endif
 
-#define DEFAULT_TS_BUFFER_SIZE  (1*1024*1024)       // 1MB
-
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
 
@@ -221,16 +219,15 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
 void logger_init() {
 
     // Map the functions we will use later
-    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fflush, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(remove, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Bcast, RECORDER_MPI_TRACING);
-    GOTCHA_SET_REAL_CALL(MPI_Barrier, RECORDER_MPI_TRACING);
-
+    GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fflush, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(remove, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(MPI_Bcast, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Barrier, RECORDER_MPI);
 
     double global_tstart = recorder_wtime();
 
@@ -249,14 +246,14 @@ void logger_init() {
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
     logger.directory_created = false;
-    logger.store_tid   = 0;
-    logger.store_call_depth = 1;
-    logger.interprocess_compression = 0;
-    logger.intraprocess_pattern_recognition = 0;
-    logger.interprocess_pattern_recognition = 0;
+    logger.store_tid   = false;
+    logger.store_call_depth = true;
+    logger.interprocess_compression = true;
+    logger.intraprocess_pattern_recognition = false;
+    logger.interprocess_pattern_recognition = false;
     logger.ts_index = 0;
     logger.ts_resolution = 1e-7;            // 100ns
-    logger.ts_compression = 0;
+    logger.ts_compression = true;
     logger.ts_max_elements = 1*1024*1024;   // enough for half million records
 
     size_t ts_buf_size = logger.ts_max_elements*sizeof(uint32_t);
@@ -277,15 +274,15 @@ void logger_init() {
     const char* store_call_depth_str = getenv(RECORDER_STORE_CALL_DEPTH);
     if(store_call_depth_str)
         logger.store_call_depth = atoi(store_call_depth_str);
-    const char* interprocess_compression = getenv(RECORDER_INTERPROCESS_COMPRESSION);
-    if(interprocess_compression)
-        logger.interprocess_compression = atoi(interprocess_compression);
-    const char* interprocess_pattern_recognition = getenv(RECORDER_INTERPROCESS_PATTERN_RECOGNITION);
-    if(interprocess_pattern_recognition)
-        logger.interprocess_pattern_recognition= atoi(interprocess_pattern_recognition);
-    const char* intraprocess_pattern_recognition = getenv(RECORDER_INTRAPROCESS_PATTERN_RECOGNITION);
-    if(intraprocess_pattern_recognition)
-        logger.intraprocess_pattern_recognition = atoi(intraprocess_pattern_recognition);
+    const char* interprocess_compression_env = getenv(RECORDER_INTERPROCESS_COMPRESSION);
+    if(interprocess_compression_env)
+        logger.interprocess_compression = atoi(interprocess_compression_env);
+    const char* interprocess_pattern_recognition_env = getenv(RECORDER_INTERPROCESS_PATTERN_RECOGNITION);
+    if(interprocess_pattern_recognition_env)
+        logger.interprocess_pattern_recognition = atoi(interprocess_pattern_recognition_env);
+    const char* intraprocess_pattern_recognition_env = getenv(RECORDER_INTRAPROCESS_PATTERN_RECOGNITION);
+    if(intraprocess_pattern_recognition_env)
+        logger.intraprocess_pattern_recognition = atoi(intraprocess_pattern_recognition_env);
 
     initialized = true;
 }
@@ -308,6 +305,12 @@ void save_global_metadata() {
     RecorderMetadata metadata = {
         .time_resolution     = logger.ts_resolution,
         .total_ranks         = logger.nprocs,
+        .posix_tracing       = gotcha_posix_tracing(),
+        .mpi_tracing         = gotcha_mpi_tracing(),
+        .mpiio_tracing       = gotcha_mpiio_tracing(),
+        .hdf5_tracing        = gotcha_hdf5_tracing(),
+        .store_tid           = logger.store_tid,
+        .store_call_depth    = logger.store_call_depth,
         .start_ts            = logger.start_ts,
         .ts_buffer_elements  = logger.ts_max_elements,
         .ts_compression      = logger.ts_compression,
@@ -348,12 +351,11 @@ void logger_finalize() {
     #endif
 
     // Write out timestamps
+    // and merge per-process ts files into a single one
     if(logger.ts_index > 0)
         ts_write_out(&logger);
     GOTCHA_REAL_CALL(fflush)(logger.ts_file);
     recorder_free(logger.ts, sizeof(uint32_t)*logger.ts_max_elements);
-
-    // Merge per-process ts files into a single one
     ts_merge_files(&logger);
     GOTCHA_REAL_CALL(fclose)(logger.ts_file);
     char perprocess_ts_filename[1024];

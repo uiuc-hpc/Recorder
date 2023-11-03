@@ -78,7 +78,7 @@ static inline char* stream2name(FILE* stream) {
     }                                                               \
     if(_fname== NULL || !accept_filename(_fname)) {                 \
         if(_fname) free(_fname);                                    \
-        GOTCHA_SET_REAL_CALL(func, RECORDER_POSIX_TRACING);         \
+        GOTCHA_SET_REAL_CALL(func, RECORDER_POSIX);         \
         return GOTCHA_REAL_CALL(func) func_args;                    \
     }                                                               \
     assert(accept_filename(_fname) == 1);

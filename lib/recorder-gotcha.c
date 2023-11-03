@@ -1,4 +1,10 @@
+#include "recorder-gotcha.h"
 #include "recorder.h"
+
+static bool posix_tracing = true;
+static bool mpi_tracing   = false;
+static bool mpiio_tracing = true;
+static bool hdf5_tracing  = true;
 
 void gotcha_register_functions() {
     struct gotcha_binding_t posix_wrap_actions [] = {
@@ -236,27 +242,44 @@ void gotcha_register_functions() {
         GOTCHA_WRAP_ACTION(H5Pget_all_coll_metadata_ops)
     };
 
-    char* posix_tracing = getenv(RECORDER_POSIX_TRACING);
-    char* mpiio_tracing = getenv(RECORDER_MPIIO_TRACING);
-    char* mpi_tracing   = getenv(RECORDER_MPI_TRACING);
-    char* hdf5_tracing  = getenv(RECORDER_HDF5_TRACING);
+    char* posix_tracing_env = getenv(RECORDER_POSIX_TRACING);
+    char* mpi_tracing_env   = getenv(RECORDER_MPI_TRACING);
+    char* mpiio_tracing_env = getenv(RECORDER_MPIIO_TRACING);
+    char* hdf5_tracing_env  = getenv(RECORDER_HDF5_TRACING);
+    if (posix_tracing_env) posix_tracing = atoi(posix_tracing_env);
+    if (mpi_tracing_env) mpi_tracing = atoi(mpi_tracing_env);
+    if (mpiio_tracing_env) mpiio_tracing = atoi(mpiio_tracing_env);
+    if (hdf5_tracing_env) hdf5_tracing = atoi(hdf5_tracing_env);
 
-    if (!posix_tracing || (atoi(posix_tracing)!=0))
+    if (posix_tracing)
         gotcha_wrap(posix_wrap_actions,
                     sizeof(posix_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_posix_actions");
-    if (!mpiio_tracing || (atoi(mpiio_tracing)!=0))
-        gotcha_wrap(mpiio_wrap_actions,
-                    sizeof(mpiio_wrap_actions)/sizeof(struct gotcha_binding_t),
-                    "recorder_mpiio_actions");
-    if (!mpi_tracing || (atoi(mpi_tracing)!=0))
+    if (mpi_tracing)
         gotcha_wrap(mpi_wrap_actions,
                     sizeof(mpi_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_mpi_actions");
-    if (!hdf5_tracing || (atoi(hdf5_tracing)!=0))
+    if (mpiio_tracing)
+        gotcha_wrap(mpiio_wrap_actions,
+                    sizeof(mpiio_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_mpiio_actions");
+    if (hdf5_tracing)
         gotcha_wrap(hdf5_wrap_actions,
                     sizeof(hdf5_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_hdf5_actions");
+}
+
+bool gotcha_posix_tracing() {
+    return posix_tracing;
+}
+bool gotcha_mpi_tracing() {
+    return mpi_tracing;
+}
+bool gotcha_mpiio_tracing() {
+    return mpiio_tracing;
+}
+bool gotcha_hdf5_tracing() {
+    return hdf5_tracing;
 }
 
 void gotcha_init() {

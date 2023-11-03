@@ -61,13 +61,19 @@ typedef struct CallSignature_t {
 
 typedef struct RecorderMetadata_t {
     int    total_ranks;
+    bool   posix_tracing;
+    bool   mpi_tracing;
+    bool   mpiio_tracing;
+    bool   hdf5_tracing;
+    bool   store_tid;            // Wether to store thread id
+    bool   store_call_depth;     // Wether to store the call depth
     double start_ts;
     double time_resolution;
     int    ts_buffer_elements;
-    int    ts_compression;              // whether to compress timestamps (using zlib)
-    int    interprocess_compression;    // interprocess compression of cst/cfg
-    int    interprocess_pattern_recognition;
-    int    intraprocess_pattern_recognition;
+    bool   ts_compression;              // whether to compress timestamps (using zlib)
+    bool   interprocess_compression;    // interprocess compression of cst/cfg
+    bool   interprocess_pattern_recognition;
+    bool   intraprocess_pattern_recognition;
 } RecorderMetadata;
 
 
@@ -97,13 +103,13 @@ typedef struct RecorderLogger_t {
     int       ts_index;         // current position of ts buffer, spill to file once full.
     int       ts_max_elements;  // max elements can be stored in the buffer
     double    ts_resolution;
-    int       ts_compression;
+    bool      ts_compression;
 
-    int       store_tid;            // Wether to store thread id
-    int       store_call_depth;     // Wether to store the call depth
-    int       interprocess_compression; // Wether to perform interprocess compression of cst/cfg
-    int       interprocess_pattern_recognition; 
-    int       intraprocess_pattern_recognition; 
+    bool      store_tid;            // Wether to store thread id
+    bool      store_call_depth;     // Wether to store the call depth
+    bool      interprocess_compression; // Wether to perform interprocess compression of cst/cfg
+    bool      interprocess_pattern_recognition; 
+    bool      intraprocess_pattern_recognition; 
 } RecorderLogger;
 
 
