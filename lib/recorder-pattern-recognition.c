@@ -189,5 +189,7 @@ void iopr_interprocess(RecorderLogger *logger) {
     iopr_interprocess_by_func(logger, "pwrite", 3);
     iopr_interprocess_by_func(logger, "pwrite64", 3);
     iopr_interprocess_by_func(logger, "MPI_File_read_at", 1);
+    iopr_interprocess_by_func(logger, "MPI_File_read_at_all", 1);
     iopr_interprocess_by_func(logger, "MPI_File_write_at", 1);
+    iopr_interprocess_by_func(logger, "MPI_File_write_at_all", 1);
 }
