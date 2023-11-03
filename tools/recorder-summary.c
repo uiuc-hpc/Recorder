@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     }
 
     RecorderReader reader;
-    recorder_init_reader(argv[1], &reader);
+    recorder_init_reader(argv[optind], &reader);
     CST* cst = reader_get_cst(&reader, 0);
     print_metadata(&reader);
     print_statistics(&reader, cst);
