@@ -173,11 +173,17 @@ void create_traces_dir() {
             exec_name, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
     free(tmp);
 
-    const char* base_dir = getenv(RECORDER_TRACES_DIR);
-    if(base_dir)
-        sprintf(logger.traces_dir, "%s/%s", base_dir, traces_dir);
-    else
-        strcpy(logger.traces_dir, realrealpath(traces_dir)); // current directory
+    const char* traces_dir_from_env = getenv(RECORDER_TRACES_DIR);
+    if(traces_dir_from_env) {
+        strcpy(logger.traces_dir, traces_dir_from_env);
+        size_t len = strlen(logger.traces_dir);
+        if (logger.traces_dir[len-1] != '/') {
+            logger.traces_dir[len] = '/';
+            logger.traces_dir[len+1] = 0;
+        }
+    } else {
+        strcpy(logger.traces_dir, realrealpath(traces_dir));
+    }
 
     if(GOTCHA_REAL_CALL(access) (logger.traces_dir, F_OK) != -1)
         GOTCHA_REAL_CALL(rmdir) (logger.traces_dir);
