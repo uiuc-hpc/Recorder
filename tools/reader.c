@@ -410,7 +410,6 @@ PyRecord** read_all_records(char* traces_dir, size_t* counts, RecorderMetadata *
 
     for(int rank = 0; rank < reader.metadata.total_ranks; rank++) {
 
-        CST* cst = reader_get_cst(&reader, rank);
         CFG* cfg = reader_get_cfg(&reader, rank);
 
         counts[rank] = get_uncompressed_count(&reader, cfg, -1);

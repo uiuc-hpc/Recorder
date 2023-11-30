@@ -6,12 +6,12 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
-#include <uthash.h>
 #include <pthread.h>
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
 #include "recorder-sequitur.h"
+#include "uthash.h"
 
 /**
  * In post-processing, reader.c will check
