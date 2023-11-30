@@ -53,13 +53,12 @@ void recorder_init() {
 }
 
 void update_mpi_info() {
-    recorder_init();
 
     GOTCHA_SET_REAL_CALL(MPI_Comm_size, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(MPI_Comm_rank, RECORDER_MPI);
 
     int mpi_initialized = 0;
-    MPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
+    PMPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
 
     if(mpi_initialized) {
         GOTCHA_REAL_CALL(MPI_Comm_rank)(MPI_COMM_WORLD, &rank);
@@ -86,12 +85,14 @@ void recorder_finalize() {
 
 int MPI_Init(int *argc, char ***argv) {
     int ret = PMPI_Init(argc, argv);
+    recorder_init();
     update_mpi_info();
     return ret;
 }
 
 int MPI_Init_thread(int *argc, char ***argv, int required, int *provided) {
     int ret = PMPI_Init_thread(argc, argv, required, provided);
+    recorder_init();
     update_mpi_info();
     return ret;
 }
@@ -110,12 +111,16 @@ int MPI_Finalize(void) {
  */
 void __attribute__((constructor)) no_mpi_init() {
     char* with_non_mpi = getenv(RECORDER_WITH_NON_MPI);
-    if(with_non_mpi)
+    if(with_non_mpi && atoi(with_non_mpi) == 1) {
         recorder_init();
+    }
 }
 
 void __attribute__((destructor))  no_mpi_finalize() {
-    recorder_finalize();
+    char* with_non_mpi = getenv(RECORDER_WITH_NON_MPI);
+    if(with_non_mpi && atoi(with_non_mpi) == 1) {
+        recorder_finalize();
+    }
 }
 
 #endif

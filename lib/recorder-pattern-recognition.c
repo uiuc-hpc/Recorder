@@ -182,6 +182,14 @@ void iopr_interprocess_by_func(RecorderLogger *logger, char* func_name, int offs
 }
 
 void iopr_interprocess(RecorderLogger *logger) {
+
+    // Non-MPI programs
+    // no need for interprocess pattern recognition
+    int mpi_initialized;
+    PMPI_Initialized(&mpi_initialized);
+    if (!mpi_initialized)
+        return;
+
     iopr_interprocess_by_func(logger, "lseek", 1);
     iopr_interprocess_by_func(logger, "lseek64", 1);
     iopr_interprocess_by_func(logger, "pread", 3);

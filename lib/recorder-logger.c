@@ -290,6 +290,13 @@ void logger_init() {
     if(intraprocess_pattern_recognition_env)
         logger.intraprocess_pattern_recognition = atoi(intraprocess_pattern_recognition_env);
 
+    // For non-mpi programs, ignore interprocess configurations.
+    const char* non_mpi_env = getenv(RECORDER_WITH_NON_MPI);
+    if (non_mpi_env && atoi(non_mpi_env) == 1) {
+        logger.interprocess_pattern_recognition = false;
+        logger.interprocess_compression = false;
+    }
+
     initialized = true;
 }
 
