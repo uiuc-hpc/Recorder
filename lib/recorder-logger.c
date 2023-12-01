@@ -149,7 +149,7 @@ bool logger_initialized() {
     return initialized;
 }
 
-// Traces dir: recorder-YYYYMMDD/appname-username-HHmmSS.fff
+// Traces dir: recorder-YYYYMMDD/HHmmSS.ff-hostname-username-appname-pid
 void create_traces_dir() {
     if(logger.rank != 0) return;
 
@@ -168,9 +168,10 @@ void create_traces_dir() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    sprintf(traces_dir, "recorder-%d%02d%02d/%s-%s-%s-%lu-%02d%02d%02d.%03d/",
-            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, hostname, user_name,
-            exec_name, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000));
+    sprintf(traces_dir, "recorder-%d%02d%02d/%02d%02d%02d.%02d-%s-%s-%s-%lu/",
+            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, 
+            tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(tv.tv_usec/1000),
+            hostname, user_name, exec_name, pid);
     free(tmp);
 
     const char* traces_dir_from_env = getenv(RECORDER_TRACES_DIR);

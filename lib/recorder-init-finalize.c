@@ -60,6 +60,8 @@ void update_mpi_info() {
     int mpi_initialized = 0;
     PMPI_Initialized(&mpi_initialized);  // we do not intercept MPI_Initialized() call.
 
+    rank   = 0;
+    nprocs = 1;
     if(mpi_initialized) {
         GOTCHA_REAL_CALL(MPI_Comm_rank)(MPI_COMM_WORLD, &rank);
         GOTCHA_REAL_CALL(MPI_Comm_size)(MPI_COMM_WORLD, &nprocs);
