@@ -65,6 +65,14 @@ typedef struct CallSignature_t {
 } CallSignature;
 
 
+typedef struct RuleConfidence_t {
+    int rule;
+    int count;
+    int probability;
+    UT_hash_handle hh;
+} RuleConfidence;
+
+
 typedef struct RecorderMetadata_t {
     int    total_ranks;
     bool   posix_tracing;
@@ -99,10 +107,12 @@ typedef struct RecorderLogger_t {
 
     Grammar        cfg;
     CallSignature* cst;
+    RuleConfidence* cfg_conf;
 
     char traces_dir[512];
     char cst_path[1024];
     char cfg_path[1024];
+    char pattern[512];
 
     double    start_ts;
     double    prev_tstart;      // delta compression for timestamps
@@ -122,7 +132,10 @@ typedef struct RecorderLogger_t {
 
 
 
-
+void push(int x, int inp_array[]);
+void pop(int inp_array[]);
+void show(int inp_array[]);
+void analysis(CallSignature *entry);
 
 /* recorder-logger.c */
 void logger_init();
