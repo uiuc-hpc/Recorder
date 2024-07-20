@@ -12,6 +12,7 @@ include_directories(${CMAKE_SOURCE_DIR}/deps/GOTCHA/include)
 set(RECORDER_SRCS
         ${CMAKE_SOURCE_DIR}/include/recorder.h
         ${CMAKE_SOURCE_DIR}/include/recorder-sequitur.h
+        ${CMAKE_SOURCE_DIR}/include/recorder-analysis.h
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cst-cfg.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
@@ -27,8 +28,8 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-symbol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-digram.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-logger.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-utils.c)
-
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-sequitur-utils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-analysis.c)
 
 
 #------------------------------------------------------------------------------
