@@ -326,6 +326,12 @@ void logger_init() {
     hdf5_optimizations = (HDF5Optimizations*)recorder_malloc(sizeof(HDF5Optimizations));
     hdf5_optimizations->alignment = false;
     hdf5_optimizations->chunking = false;
+
+    GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
+
 }
 
 void cleanup_record_stack() {

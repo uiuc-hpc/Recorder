@@ -74,7 +74,8 @@ void extract_io_behavior(RecorderLogger* logger, int stack[], Knowledge *knowled
                 else if (strcmp(func_name, "write") == 0){
                     sprintf(knowledge->operation, "write");
                     sprintf(knowledge->file_name, record->args[0]);
-                    knowledge->transfer_size = record->args[2];
+                    char *transfer_size = (char*) record->args[2];
+                    knowledge->transfer_size = atoi(transfer_size);
                 }
                 else if (strcmp(func_name, "read") == 0){
                     sprintf(knowledge->operation, "read");
@@ -305,13 +306,16 @@ int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* ent
     }
 
     if(is_collective){  
+        // GOTCHA_SET_REAL_CALL(MPI_Comm_dup, RECORDER_MPI);
+        // MPI_Comm tmp_comm;
+        // GOTCHA_REAL_CALL(MPI_Comm_dup)(MPI_COMM_WORLD, &tmp_comm);
+
         int* recvcounts = NULL;
         if (logger->rank == 0){
             recvcounts = (int *) recorder_malloc(logger->nprocs*sizeof(int)); 
         }
         int mylen = strlen(knowledge->file_name); 
 
-        GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
         GOTCHA_REAL_CALL(MPI_Gather)(&mylen,1,MPI_INT,recvcounts,1,MPI_INT,0,MPI_COMM_WORLD);
         
         int totlen = 0; 
@@ -337,10 +341,8 @@ int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* ent
             }
         }
 
-        GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
         GOTCHA_REAL_CALL(MPI_Gatherv)(&knowledge->file_name, mylen, MPI_CHAR,
-                    totalstring, recvcounts, displs, MPI_CHAR,
-                    0, MPI_COMM_WORLD);
+                    totalstring, recvcounts, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
 
         if (logger->rank == 0){
             char * token = strtok(totalstring, " ");
@@ -373,22 +375,19 @@ int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* ent
 
         if (strcmp(knowledge->operation, "write") == 0){
             if (knowledge->transfer_size < 16777216){
-                if (hdf5_optimizations->alignment == false){
-                    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+                if (hdf5_optimizations->alignment == false){      
                     GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
                     hdf5_optimizations->alignment = true;
                 }
             }
             else {
                 if (hdf5_optimizations->alignment == false){
-                    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
                     GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
                     hdf5_optimizations->alignment = true;
                 }
 
                 if (!hdf5_optimizations->chunking){
                     hsize_t	chunk_dims[2] = {2, 2};
-                    GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
                     GOTCHA_REAL_CALL(H5Pset_chunk)(knowledge->dcpl_id, 2, chunk_dims);
                     hdf5_optimizations->chunking = true;
                 }
