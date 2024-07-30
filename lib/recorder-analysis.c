@@ -55,8 +55,6 @@ void extract_io_behavior(RecorderLogger* logger, int stack[], Knowledge *knowled
     }
 
     int terminal_id = 0;
-    knowledge->collective = 0;
-    sprintf(knowledge->spatial_locality, "random");
 
     for (int i = 0; i <= tmp_top; i++){
         terminal_id = tmp_stack[i];
@@ -66,25 +64,20 @@ void extract_io_behavior(RecorderLogger* logger, int stack[], Knowledge *knowled
             if (s->terminal_id == terminal_id){
                 Record * record = cs_to_record(s);
                 const char * func_name = get_function_name_by_id(record->func_id);
-                
-                printf("Function name: %s\n", func_name);
-                printf("Terminal ID: %d\n", terminal_id);
-                printf("Printing Args\n\n");
-                
-                for (int i = 0; i < record->arg_count; i++){
-                    printf(record->args[i]);
-                    printf("\n");
-                }
-                printf("\nFinished printing Args\n");
-                // Extract collective I/O knowledge
-                
-                if (strcmp(func_name, "MPI_File_write_at_all") == 0){
+
+                if (strcmp(func_name, "MPI_File_write_at_all") == 0 || strcmp(func_name, "MPI_File_read_at_all") == 0){
                     knowledge->collective = 1;
                 }
-                if (strcmp(func_name, "MPI_File_write_at") == 0){
+                else if (strcmp(func_name, "MPI_File_write_at") == 0 || strcmp(func_name, "MPI_File_read_at") == 0){
                     knowledge->collective = 0;
                 }
-                if (strcmp(func_name, "write") == 0){
+                else if (strcmp(func_name, "write") == 0){
+                    sprintf(knowledge->operation, "write");
+                    sprintf(knowledge->file_name, record->args[0]);
+                    knowledge->transfer_size = record->args[2];
+                }
+                else if (strcmp(func_name, "read") == 0){
+                    sprintf(knowledge->operation, "read");
                     sprintf(knowledge->file_name, record->args[0]);
                 }
             }  
@@ -216,25 +209,25 @@ int find_pattern_start(RecorderLogger* logger, int search_value, bool initial, i
 }
 
 void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowledge){
-    Symbol *rule1, *sym1;
-    int rules_count1 = 0, symbols_count1 = 0;
-    DL_COUNT(logger->cfg.rules, rule1, rules_count1);
+    // Symbol *rule1, *sym1;
+    // int rules_count1 = 0, symbols_count1 = 0;
+    // DL_COUNT(logger->cfg.rules, rule1, rules_count1);
 
-    DL_FOREACH(logger->cfg.rules, rule1) {
-        int count1;
-        DL_COUNT(rule1->rule_body, sym1, count1);
-        symbols_count1 += count1;
+    // DL_FOREACH(logger->cfg.rules, rule1) {
+    //     int count1;
+    //     DL_COUNT(rule1->rule_body, sym1, count1);
+    //     symbols_count1 += count1;
 
-        RECORDER_LOGINFO("Rule %d :-> ", rule1->val);
+    //     RECORDER_LOGINFO("Rule %d :-> ", rule1->val);
 
-        DL_FOREACH(rule1->rule_body, sym1) {
-            if(sym1->exp > 1)
-                RECORDER_LOGINFO("%d^%d ", sym1->val, sym1->exp);
-            else
-                RECORDER_LOGINFO("%d ", sym1->val);
-        }
-        RECORDER_LOGINFO("\n");
-    }
+    //     DL_FOREACH(rule1->rule_body, sym1) {
+    //         if(sym1->exp > 1)
+    //             RECORDER_LOGINFO("%d^%d ", sym1->val, sym1->exp);
+    //         else
+    //             RECORDER_LOGINFO("%d ", sym1->val);
+    //     }
+    //     RECORDER_LOGINFO("\n");
+    // }
 
     int stack[SIZE];
     top = -1;
@@ -275,7 +268,7 @@ void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowle
         }
 
         if (max_rule_count > THRESHOLD){
-            printf("Chosen rule %d, count %d, terminal ID %d , Rank %d\n\n", max_rule, max_rule_count, entry->terminal_id, logger->rank);
+            // printf("Chosen rule %d, count %d, terminal ID %d , Rank %d\n\n", max_rule, max_rule_count, entry->terminal_id, logger->rank);
             find_pattern_start(logger, max_rule, false, stack);
         }
     }
@@ -285,12 +278,23 @@ void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowle
     }
 }
 
-int recorder_analysis(RecorderLogger* logger,  Record* record, CallSignature* entry, Knowledge *knowledge) {
+int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge *knowledge, HDF5Optimizations* hdf5_optimizations) {
     
     
     const char * func_name = get_function_name_by_id(record->func_id);
     size_t len = sizeof(collective_func_list) / sizeof(char *);
     
+    if ((strcmp(func_name, "H5Pcreate") == 0)){
+        char *temp_dcpl_id = (char*) record->args[0];
+        knowledge->dcpl_id = strtol(temp_dcpl_id, NULL, 10);
+    }
+
+    if ((strcmp(func_name, "H5Pset_fapl_mpio") == 0)){
+        char *temp_fapl_Id = (char*) record->args[0];
+        knowledge->faplID = strtol(temp_fapl_Id, NULL, 10);
+    }
+
+
     unsigned char i;
     bool is_collective = false;
     for(i = 0; i < len; i++) {
@@ -300,46 +304,15 @@ int recorder_analysis(RecorderLogger* logger,  Record* record, CallSignature* en
         }
     }
 
-    if(is_collective){
-        // int * all_pattern_ids;
-        // if (logger->rank == 0) {
-        //     all_pattern_ids = (int *) recorder_malloc(sizeof(int) * logger->nprocs);
-        // }
-        // PMPI_Gather(&logger->pattern_id, 1, MPI_INT, all_pattern_ids, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        
-        // if (logger->rank == 0){
-        //     int max_pattern_id = 0;
-        //     for (int i = 0; i < logger->nprocs; i++){
-        //         RECORDER_LOGINFO("Val %d :-> ", all_pattern_ids[i]);
-        //     }
-
-        //     int maxcount = 0; 
-        //     int element_having_max_freq; 
-        //     for (int i = 0; i < logger->nprocs; i++) { 
-        //         int count = 0; 
-        //         for (int j = 0; j < logger->nprocs; j++) { 
-        //             if (all_pattern_ids[i] == all_pattern_ids[j]) 
-        //                 count++; 
-        //         } 
-        
-        //         if (count > maxcount) { 
-        //             maxcount = count; 
-        //             element_having_max_freq = all_pattern_ids[i]; 
-        //         } 
-        //     }
-        //     RECORDER_LOGINFO("MAX  %d :-> ", element_having_max_freq);
-        // }
-        
-        // if (logger->rank == 0)
-        //     recorder_free(all_pattern_ids, logger->nprocs);  
-                
+    if(is_collective){  
         int* recvcounts = NULL;
         if (logger->rank == 0){
             recvcounts = (int *) recorder_malloc(logger->nprocs*sizeof(int)); 
         }
         int mylen = strlen(knowledge->file_name); 
-        
-        MPI_Gather(&mylen,1,MPI_INT,recvcounts,1,MPI_INT,0,MPI_COMM_WORLD); 
+
+        GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
+        GOTCHA_REAL_CALL(MPI_Gather)(&mylen,1,MPI_INT,recvcounts,1,MPI_INT,0,MPI_COMM_WORLD);
         
         int totlen = 0; 
         int* displs = NULL;
@@ -363,18 +336,18 @@ int recorder_analysis(RecorderLogger* logger,  Record* record, CallSignature* en
             totalstring[totlen - 1] = '\0'; 
             }
         }
-    
-        MPI_Gatherv(&knowledge->file_name, mylen, MPI_CHAR,
+
+        GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
+        GOTCHA_REAL_CALL(MPI_Gatherv)(&knowledge->file_name, mylen, MPI_CHAR,
                     totalstring, recvcounts, displs, MPI_CHAR,
                     0, MPI_COMM_WORLD);
-
 
         if (logger->rank == 0){
             char * token = strtok(totalstring, " ");
             char * first_token = token;
             bool shared_file = true;
             while( token != NULL ) {
-                printf( " %s\n", token ); 
+                // printf( " %s\n", token ); 
                 token = strtok(NULL, " ");
                 if (token != NULL){
                     if (strcmp(first_token, token) != 0){
@@ -390,15 +363,39 @@ int recorder_analysis(RecorderLogger* logger,  Record* record, CallSignature* en
                 sprintf(knowledge->file_operation, "shared_file");
             }
 
-            printf("Knowledge for rank %d, Collective I/O %d, Spatial Locality %s, File Operation %s \n", logger->rank, knowledge->collective, knowledge->spatial_locality, knowledge->file_operation);
-
+            // printf("Knowledge for rank %d --> Operation %s, Transfer Size %d, Collective I/O %d, Spatial Locality %s, File Operation %s, File Name %s \n", 
+            //         logger->rank, knowledge->operation, knowledge->transfer_size, knowledge->collective, knowledge->spatial_locality, knowledge->file_operation, knowledge->file_name);
+            
             free(totalstring);
             free(displs);
             free(recvcounts);
-
         }
-   
+
+        if (strcmp(knowledge->operation, "write") == 0){
+            if (knowledge->transfer_size < 16777216){
+                if (hdf5_optimizations->alignment == false){
+                    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+                    GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
+                    hdf5_optimizations->alignment = true;
+                }
+            }
+            else {
+                if (hdf5_optimizations->alignment == false){
+                    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+                    GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
+                    hdf5_optimizations->alignment = true;
+                }
+
+                if (!hdf5_optimizations->chunking){
+                    hsize_t	chunk_dims[2] = {2, 2};
+                    GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
+                    GOTCHA_REAL_CALL(H5Pset_chunk)(knowledge->dcpl_id, 2, chunk_dims);
+                    hdf5_optimizations->chunking = true;
+                }
+            }
+        }
     }
+
     find_rule_confidence(logger, entry);
     analysis_cs(logger, entry, knowledge);    
     

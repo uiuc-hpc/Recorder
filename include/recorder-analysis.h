@@ -11,7 +11,23 @@ typedef struct RuleConfidence_t {
     UT_hash_handle hh;
 } RuleConfidence;
 
-int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge *knowledge);
+typedef struct Knowledge_t {
+    int collective;
+    int transfer_size;
+    hid_t faplID; 
+    hid_t dcpl_id; 
+    char operation[100];
+    char spatial_locality[100];
+    char file_name[512];
+    char file_operation[100];
+} Knowledge;
+
+typedef struct HDF5Optimizations_t {
+    bool alignment;
+    bool chunking;
+} HDF5Optimizations;
+
+int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge* knowledge, HDF5Optimizations* hdf5_optimizations);
 
 static const char* collective_func_list[] = {
     // MPI 16 functions
