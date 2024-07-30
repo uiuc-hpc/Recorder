@@ -65,13 +65,6 @@ typedef struct CallSignature_t {
 } CallSignature;
 
 
-typedef struct Knowledge_t {
-    int collective;
-    char spatial_locality[100];
-    char file_name[512];
-    char file_operation[100];
-} Knowledge;
-
 typedef struct RecorderMetadata_t {
     int    total_ranks;
     bool   posix_tracing;

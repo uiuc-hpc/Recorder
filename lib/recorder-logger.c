@@ -104,9 +104,6 @@ void write_record(Record *record) {
     // Analysis Point!
     recorder_analysis(&logger, record, entry, rank_knowledge, hdf5_optimizations);
 
-    // Analysis Point!
-    recorder_analysis(&logger, record, entry, rank_knowledge);
-
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
     uint32_t delta_tend   = (record->tend-logger.prev_tstart)   / logger.ts_resolution;
