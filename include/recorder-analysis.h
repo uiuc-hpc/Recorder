@@ -25,6 +25,8 @@ typedef struct Knowledge_t {
 typedef struct HDF5Optimizations_t {
     bool alignment;
     bool chunking;
+    bool metadata_cache;
+    bool collective_transfer;
 } HDF5Optimizations;
 
 int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge* knowledge, HDF5Optimizations* hdf5_optimizations);

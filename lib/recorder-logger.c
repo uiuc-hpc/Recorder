@@ -102,7 +102,7 @@ void write_record(Record *record) {
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
     // Analysis Point!
-    recorder_analysis(&logger, record, entry, rank_knowledge, hdf5_optimizations);
+    // recorder_analysis(&logger, record, entry, rank_knowledge, hdf5_optimizations);
 
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
@@ -327,12 +327,16 @@ void logger_init() {
     hdf5_optimizations = (HDF5Optimizations*)recorder_malloc(sizeof(HDF5Optimizations));
     hdf5_optimizations->alignment = false;
     hdf5_optimizations->chunking = false;
+    hdf5_optimizations->metadata_cache = false;
+    hdf5_optimizations->collective_transfer = false;
 
     GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
-
+    GOTCHA_SET_REAL_CALL(H5Pget_mdc_config, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pset_mdc_config, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pset_dxpl_mpio, RECORDER_HDF5);
 }
 
 void cleanup_record_stack() {

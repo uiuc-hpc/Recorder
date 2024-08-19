@@ -1,15 +1,21 @@
 #include <stdio.h>
-#include <sqlite3.h> 
+#include <H5ACpublic.h>
 #include "recorder-analysis.h"
+#include "recorder-optimization.h"
 #include "mpi.h"
 
 
 #define SIZE 100
-#define THRESHOLD 4
+#define THRESHOLD 2 
+
+#define H5AC__CURR_CACHE_CONFIG_VERSION   1
 
 static RuleConfidence* cfg_conf = NULL;
 
 static int top = -1;
+static int timestep = 0;
+static hid_t dcplID = 0;
+static hid_t faplID = 0;
 
 void push(int x, int stack[])
 {
@@ -64,26 +70,46 @@ void extract_io_behavior(RecorderLogger* logger, int stack[], Knowledge *knowled
             if (s->terminal_id == terminal_id){
                 Record * record = cs_to_record(s);
                 const char * func_name = get_function_name_by_id(record->func_id);
+                // RECORDER_LOGINFO("Function Name %s, rank %d \n ", func_name, logger->rank);
 
                 if (strcmp(func_name, "MPI_File_write_at_all") == 0 || strcmp(func_name, "MPI_File_read_at_all") == 0){
                     knowledge->collective = 1;
+                    if (strcmp(func_name, "MPI_File_write_at_all") == 0){
+                        sprintf(knowledge->operation, "write");
+                    }
+                    else if (strcmp(func_name, "MPI_File_read_at_all") == 0){
+                        sprintf(knowledge->operation, "read");
+                    }
+                    
+                    char *transfer_size = (char*) record->args[3];
+                    knowledge->transfer_size = atoi(transfer_size);
                 }
                 else if (strcmp(func_name, "MPI_File_write_at") == 0 || strcmp(func_name, "MPI_File_read_at") == 0){
                     knowledge->collective = 0;
-                }
-                else if (strcmp(func_name, "write") == 0){
-                    sprintf(knowledge->operation, "write");
-                    sprintf(knowledge->file_name, record->args[0]);
-                    char *transfer_size = (char*) record->args[2];
+                    if (strcmp(func_name, "MPI_File_write_at") == 0){
+                        sprintf(knowledge->operation, "write");
+                    }
+                    else if (strcmp(func_name, "MPI_File_read_at") == 0){
+                        sprintf(knowledge->operation, "read");
+                    }
+                    
+                    char *transfer_size = (char*) record->args[3];
                     knowledge->transfer_size = atoi(transfer_size);
                 }
+                else if (strcmp(func_name, "write") == 0){
+                    // sprintf(knowledge->operation, "write");
+                    sprintf(knowledge->file_name, record->args[0]);
+                    // char *transfer_size = (char*) record->args[2];
+                    // knowledge->transfer_size = atoi(transfer_size);
+                }
                 else if (strcmp(func_name, "read") == 0){
-                    sprintf(knowledge->operation, "read");
+                    // sprintf(knowledge->operation, "read");
                     sprintf(knowledge->file_name, record->args[0]);
                 }
             }  
         } 
     }
+    // RECORDER_LOGINFO("\n");
 }
 
 void find_rule_confidence(RecorderLogger* logger, CallSignature *entry){
@@ -234,16 +260,18 @@ void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowle
     top = -1;
 
     int target_rule = find_pattern_start(logger, entry->terminal_id, true, stack);
-    int max_rule = target_rule;
-    int max_rule_count = 0;
-
-    RuleConfidence *s = NULL;
-    HASH_FIND_INT(cfg_conf, &target_rule, s);
-    if (s){
-        max_rule_count = s->count;
-    }
-
     if (target_rule < -1){
+        find_rule_confidence(logger, entry);
+
+        int max_rule = target_rule;
+        int max_rule_count = 0;
+
+        RuleConfidence *s = NULL;
+        HASH_FIND_INT(cfg_conf, &target_rule, s);
+        if (s){
+            max_rule_count = s->count;
+        }
+
         Symbol *rule, *sym;
         bool first = true;
 
@@ -267,6 +295,7 @@ void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowle
             }
             first = false;
         }
+        // RECORDER_LOGINFO("Max Rule Count %d\n", max_rule_count);
 
         if (max_rule_count > THRESHOLD){
             // printf("Chosen rule %d, count %d, terminal ID %d , Rank %d\n\n", max_rule, max_rule_count, entry->terminal_id, logger->rank);
@@ -280,123 +309,120 @@ void analysis_cs(RecorderLogger* logger, CallSignature *entry, Knowledge *knowle
 }
 
 int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge *knowledge, HDF5Optimizations* hdf5_optimizations) {
-    
-    
     const char * func_name = get_function_name_by_id(record->func_id);
-    size_t len = sizeof(collective_func_list) / sizeof(char *);
-    
+    // Get dcpl_id
     if ((strcmp(func_name, "H5Pcreate") == 0)){
-        char *temp_dcpl_id = (char*) record->args[0];
-        knowledge->dcpl_id = strtol(temp_dcpl_id, NULL, 10);
+        dcplID = *(hid_t*) record->res;
+        // printf("DCPL ID %lu\n", dcplID);
     }
-
+    
     if ((strcmp(func_name, "H5Pset_fapl_mpio") == 0)){
         char *temp_fapl_Id = (char*) record->args[0];
-        knowledge->faplID = strtol(temp_fapl_Id, NULL, 10);
+        faplID = strtol(temp_fapl_Id, NULL, 10);
     }
-
-
-    unsigned char i;
-    bool is_collective = false;
-    for(i = 0; i < len; i++) {
-        if (strcmp(collective_func_list[i], func_name) == 0){
-            is_collective = true;
-            break;
-        }
-    }
-
-    if(is_collective){  
-        // GOTCHA_SET_REAL_CALL(MPI_Comm_dup, RECORDER_MPI);
-        // MPI_Comm tmp_comm;
-        // GOTCHA_REAL_CALL(MPI_Comm_dup)(MPI_COMM_WORLD, &tmp_comm);
-
-        int* recvcounts = NULL;
-        if (logger->rank == 0){
-            recvcounts = (int *) recorder_malloc(logger->nprocs*sizeof(int)); 
-        }
-        int mylen = strlen(knowledge->file_name); 
-
-        GOTCHA_REAL_CALL(MPI_Gather)(&mylen,1,MPI_INT,recvcounts,1,MPI_INT,0,MPI_COMM_WORLD);
-        
-        int totlen = 0; 
-        int* displs = NULL;
-        char* totalstring = NULL;
-
-        if(logger->rank == 0)
-        {   
-            displs = (int *) recorder_malloc(logger->nprocs*sizeof(int));
-            displs[0] = 0; 
-            totlen += recvcounts[0] + 1; 
-            for(int i=1; i < logger->nprocs; i++)
-            {
-                totlen += recvcounts[i]+1; 
-                displs[i] = displs[i-1] + recvcounts[i-1] + 1; 
-            }
-            
-            totalstring = (char *) recorder_malloc(totlen*sizeof(char)); 
-            for (int i = 0; i < totlen - 1; i++) {
-                totalstring[i] = ' '; 
-            
-            totalstring[totlen - 1] = '\0'; 
-            }
-        }
-
-        GOTCHA_REAL_CALL(MPI_Gatherv)(&knowledge->file_name, mylen, MPI_CHAR,
-                    totalstring, recvcounts, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-        if (logger->rank == 0){
-            char * token = strtok(totalstring, " ");
-            char * first_token = token;
-            bool shared_file = true;
-            while( token != NULL ) {
-                // printf( " %s\n", token ); 
-                token = strtok(NULL, " ");
-                if (token != NULL){
-                    if (strcmp(first_token, token) != 0){
-                        shared_file = false;
-                        break;
-                    }
-                } 
-            }
-
-            if (!shared_file){
-                sprintf(knowledge->file_operation, "file-per-process");
-            } else {
-                sprintf(knowledge->file_operation, "shared_file");
-            }
-
-            // printf("Knowledge for rank %d --> Operation %s, Transfer Size %d, Collective I/O %d, Spatial Locality %s, File Operation %s, File Name %s \n", 
-            //         logger->rank, knowledge->operation, knowledge->transfer_size, knowledge->collective, knowledge->spatial_locality, knowledge->file_operation, knowledge->file_name);
-            
-            free(totalstring);
-            free(displs);
-            free(recvcounts);
-        }
-
-        if (strcmp(knowledge->operation, "write") == 0){
-            if (knowledge->transfer_size < 16777216){
-                if (hdf5_optimizations->alignment == false){      
-                    GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
-                    hdf5_optimizations->alignment = true;
-                }
-            }
-            else {
-                if (hdf5_optimizations->alignment == false){
-                    GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->faplID, 1, 1);
-                    hdf5_optimizations->alignment = true;
-                }
-
-                if (!hdf5_optimizations->chunking){
-                    hsize_t	chunk_dims[2] = {2, 2};
-                    GOTCHA_REAL_CALL(H5Pset_chunk)(knowledge->dcpl_id, 2, chunk_dims);
-                    hdf5_optimizations->chunking = true;
-                }
-            }
-        }
-    }
-
-    find_rule_confidence(logger, entry);
-    analysis_cs(logger, entry, knowledge);    
     
+    if ((strcmp(func_name, "H5Gcreate2") == 0)){
+        timestep = timestep + 1;
+    }
+    
+    if (timestep == 1){
+        analysis_cs(logger, entry, knowledge);   
+        if (strcmp(func_name, "MPI_File_write_at_all") == 0 || strcmp(func_name, "MPI_File_read_at_all") == 0){
+            knowledge->collective = 1;
+            if (strcmp(func_name, "MPI_File_write_at_all") == 0){
+                sprintf(knowledge->operation, "write");
+            }
+            else if (strcmp(func_name, "MPI_File_read_at_all") == 0){
+                sprintf(knowledge->operation, "read");
+            }
+            
+            char *transfer_size = (char*) record->args[3];
+            knowledge->transfer_size = atoi(transfer_size);
+        }
+        else if (strcmp(func_name, "MPI_File_write_at") == 0 || strcmp(func_name, "MPI_File_read_at") == 0){
+            knowledge->collective = 0;
+            if (strcmp(func_name, "MPI_File_write_at") == 0){
+                sprintf(knowledge->operation, "write");
+            }
+            else if (strcmp(func_name, "MPI_File_read_at") == 0){
+                sprintf(knowledge->operation, "read");
+            }
+            
+            char *transfer_size = (char*) record->args[3];
+            knowledge->transfer_size = atoi(transfer_size);
+        }
+    }
+    else if (timestep == 2){
+        if ((strcmp(func_name, "H5Gcreate2") == 0)){
+            // RECORDER_LOGINFO("Doing Analysis & Optimizaton\n");
+            // GOTCHA_SET_REAL_CALL(MPI_Comm_dup, RECORDER_MPI);
+            // MPI_Comm tmp_comm;
+            // GOTCHA_REAL_CALL(MPI_Comm_dup)(MPI_COMM_WORLD, &tmp_comm);
+
+            // int* recvcounts = NULL;
+            // if (logger->rank == 0){
+            //     recvcounts = (int *) recorder_malloc(logger->nprocs*sizeof(int)); 
+            // }
+            // int mylen = strlen(knowledge->file_name); 
+
+            // GOTCHA_REAL_CALL(MPI_Gather)(&mylen,1,MPI_INT,recvcounts,1,MPI_INT,0,MPI_COMM_WORLD);
+            
+            // int totlen = 0; 
+            // int* displs = NULL;
+            // char* totalstring = NULL;
+
+            // if(logger->rank == 0)
+            // {   
+            //     displs = (int *) recorder_malloc(logger->nprocs*sizeof(int));
+            //     displs[0] = 0; 
+            //     totlen += recvcounts[0] + 1; 
+            //     for(int i=1; i < logger->nprocs; i++)
+            //     {
+            //         totlen += recvcounts[i]+1; 
+            //         displs[i] = displs[i-1] + recvcounts[i-1] + 1; 
+            //     }
+                
+            //     totalstring = (char *) recorder_malloc(totlen*sizeof(char)); 
+            //     for (int i = 0; i < totlen - 1; i++) {
+            //         totalstring[i] = ' '; 
+            //         totalstring[totlen - 1] = '\0'; 
+            //     }
+            // }
+
+            // GOTCHA_REAL_CALL(MPI_Gatherv)(&knowledge->file_name, mylen, MPI_CHAR,
+            //             totalstring, recvcounts, displs, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+            // if (logger->rank == 0){
+            //     char * token = strtok(totalstring, " ");
+            //     char * first_token = token;
+            //     bool shared_file = true;
+            //     while( token != NULL ) {
+            //         // printf( " %s\n", token ); 
+            //         token = strtok(NULL, " ");
+            //         if (token != NULL){
+            //             if (strcmp(first_token, token) != 0){
+            //                 shared_file = false;
+            //                 break;
+            //             }
+            //         } 
+            //     }
+
+            //     if (!shared_file){
+            //         sprintf(knowledge->file_operation, "file-per-process");
+            //     } else {
+            //         sprintf(knowledge->file_operation, "shared_file");
+            //     }
+
+            //     free(totalstring);
+            //     free(displs);
+            //     free(recvcounts);
+            // }
+
+            // printf("Knowledge for rank %d, Operation %s, Transfer Size %d, Collective I/O %d, Spatial Locality %s, File Operation %s, File Name %s \n", 
+            //         logger->rank, knowledge->operation, knowledge->transfer_size, knowledge->collective, knowledge->spatial_locality, knowledge->file_operation, knowledge->file_name);             
+            // GOTCHA_REAL_CALL(H5Pset_dxpl_mpio)(dcplID, H5FD_MPIO_INDEPENDENT);
+            apply_optimizations(knowledge, dcplID, faplID, logger->nprocs);
+        }
+    }
     return 0;
 }
