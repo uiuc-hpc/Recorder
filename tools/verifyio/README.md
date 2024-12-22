@@ -4,7 +4,7 @@ The workflow for VerifyIO can generally be divided into three independent steps 
 
 Make sure `$RECORDER_INSTALL_PATH` is the install location of Recorder. 
 
-Additional scripts ('path/to/verifyio/scripts') are available for exporting results as CSV files and visualizing them (Step 4 and Step 5). The verification can be performed in a batched manner for multiple traces. For this, alternative steps can be followed to handle multiple traces more efficiently.
+Additional [scripts](https://github.com/uiuc-hpc/Recorder/blob/dev/tools/verifyio/scripts/) are available for exporting results as CSV files and visualizing them (Step 4 and Step 5). The verification can be performed in a batched manner for multiple traces. For this, alternative steps can be followed to handle multiple traces more efficiently.
 
 ## Step 1:  Run the application with Recorder to generate traces.
 
@@ -26,7 +26,7 @@ $RECORDER_INSTALL_PATH/bin/conflict-detector /path/to/trace
 ```
 This command will write all potential conflicts found to the file `/path/to/traces/conflicts.txt`
 
-Alternatively, the [`auto_detect.sh`](https://github.com/lalilalalalu/verifyio_scripts/blob/main/auto_detect.sh)  script can be used to process multiple traces and detect conflicts. The script requires the path to the directory containing the traces as an argument. Please adjust the configuartion for resource manager accordingly. 
+Alternatively, the [`auto_detect.sh`](https://github.com/uiuc-hpc/Recorder/blob/dev/tools/verifyio/scripts/auto_detect.sh)  script can be used to process multiple traces and detect conflicts. The script requires the path to the directory containing the traces as an argument. Please adjust the configuartion for resource manager accordingly. 
 
 ```bash
 ./auto_detect.sh /path/to/target/traces
@@ -54,7 +54,7 @@ Available arguments:
 * --show_summary: Displays a summary of the conflicts.
 * --show_full_chain: Displays the full call chain of the conflicts.
 
-Alternatively, the [`auto_verify.sh`](https://github.com/lalilalalalu/verifyio_scripts/blob/main/auto_verify.sh) script can be used for verification. This script requires the path to the directory containing the traces, and the path to verifyio as arguments. By default, it verifies all supported semantics, i.e., POSIX, MPI-IO, Commit, Session with Vector clock algorithm.
+Alternatively, the [`auto_verify.sh`](https://github.com/uiuc-hpc/Recorder/blob/dev/tools/verifyio/scripts/auto_verify.sh) script can be used for verification. This script requires the path to the directory containing the traces, and the path to verifyio as arguments. By default, it verifies all supported semantics, i.e., POSIX, MPI-IO, Commit, Session with Vector clock algorithm.
 
 ```bash
 ./auto_verify.sh /path/to/target/traces /path/to/verifyio.py
@@ -93,7 +93,7 @@ Ensure the following dependencies are installed:
 - **matplotlib**: For creating static, animated, and interactive plots. Install using `pip install matplotlib`.
 - **numpy**: For numerical computations. Install using `pip install numpy`.
 
-VerifyIO results can be exported to a CSV format for further analysis by using [`verifyio_to_csv.py `](https://github.com/lalilalalalu/verifyio_scripts/blob/main/verifyio_to_csv.py). Use the following command, providing the output file (usually stdout from VerifyIO execution) as an argument:
+VerifyIO results can be exported to a CSV format for further analysis by using [`verifyio_to_csv.py `](https://github.com/uiuc-hpc/Recorder/blob/dev/tools/verifyio/scripts/verifyio_to_csv.py). Use the following command, providing the output file (usually stdout from VerifyIO execution) as an argument:
 
 ```bash
 python verifyio_to_csv.py /path/to/verifyio/output /path/to/output.csv
@@ -104,7 +104,7 @@ Optional arguments:
 
 ## Step 5: Heatmap Visualization
 
-To visualize the results from VerifyIO, use the [`verifyio_plot_heatmap.py`](https://github.com/lalilalalalu/verifyio_scripts/blob/main/verifyio_plot_violation_heatmap.py) script:
+To visualize the results from VerifyIO, use the [`verifyio_plot_heatmap.py`](https://github.com/uiuc-hpc/Recorder/blob/dev/tools/verifyio/scripts/verifyio_plot_violation_heatmap.py) script:
 
 ```bash
 python verifyio_plot_heatmap.py --file=/path/to/output.csv
