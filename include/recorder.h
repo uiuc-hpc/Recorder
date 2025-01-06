@@ -51,8 +51,6 @@
  *
  */
 #define RECORDER_INTERCEPTOR_PROLOGUE_CORE(ret, func, real_args)                    \
-    /*printf("chen intercept %s\n", #func);*/\
-    /*fflush(stdout);*/\
     Record *record = recorder_malloc(sizeof(Record));                               \
     record->func_id = get_function_id_by_name(#func);                               \
     record->tid = recorder_gettid();                                                \
