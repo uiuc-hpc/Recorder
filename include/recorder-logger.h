@@ -15,7 +15,7 @@
 
 /**
  * In post-processing, reader.c will check
- * the version of the traces. a matching 
+ * the version of the traces. a matching
  * major.minor guarantees compatibility
  */
 #define RECORDER_VERSION_MAJOR  3
@@ -116,8 +116,8 @@ typedef struct RecorderLogger_t {
     bool      store_tid;            // Wether to store thread id
     bool      store_call_depth;     // Wether to store the call depth
     bool      interprocess_compression; // Wether to perform interprocess compression of cst/cfg
-    bool      interprocess_pattern_recognition; 
-    bool      intraprocess_pattern_recognition; 
+    bool      interprocess_pattern_recognition;
+    bool      intraprocess_pattern_recognition;
 } RecorderLogger;
 
 
@@ -130,7 +130,7 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size);
 void logger_finalize();
 bool logger_initialized();
 void logger_record_enter(Record *record);
-void logger_record_exit(Record *record);
+void logger_record_exit(Record *record, int real_arg_count, void** real_args);
 bool logger_intraprocess_pattern_recognition();
 bool logger_interprocess_pattern_recognition();
 
@@ -176,7 +176,7 @@ static const char* func_list[] = {
     // MPI 84 functions
     "MPI_File_close",              "MPI_File_set_size",       "MPI_File_iread_at",
     "MPI_File_iread",              "MPI_File_iread_shared",   "MPI_File_iwrite_at",
-    "MPI_File_iwrite",             "MPI_File_iwrite_shared",  
+    "MPI_File_iwrite",             "MPI_File_iwrite_shared",
     "MPI_File_iwrite_all",         "MPI_File_iwrite_at_all",
     "MPI_File_open",
     "MPI_File_read_all_begin",     "MPI_File_read_all",       "MPI_File_read_at_all",
@@ -185,7 +185,7 @@ static const char* func_list[] = {
     "MPI_File_set_view",           "MPI_File_sync",           "MPI_File_write_all_begin",
     "MPI_File_write_all",          "MPI_File_write_at_all_begin", "MPI_File_write_at_all",
     "MPI_File_write_at",           "MPI_File_write",          "MPI_File_write_ordered_begin",
-    "MPI_File_write_ordered",      "MPI_File_write_shared", 
+    "MPI_File_write_ordered",      "MPI_File_write_shared",
     "MPI_Finalized",
     "MPI_Wtime",                   "MPI_Comm_rank",           "MPI_Comm_size",
     "MPI_Get_processor_name",      "MPI_Get_processor_name",  "MPI_Comm_set_errhandler",
