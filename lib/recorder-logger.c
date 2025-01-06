@@ -17,8 +17,6 @@ pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
 
 static RecorderLogger logger;
-static Knowledge* rank_knowledge;
-static HDF5Optimizations* hdf5_optimizations;
 
 /**
  * Per-thread FIFO record stack
@@ -34,7 +32,6 @@ struct RecordStack {
     UT_hash_handle hh;
 };
 static struct RecordStack *g_record_stack = NULL;
-
 
 bool logger_intraprocess_pattern_recognition() {
     return logger.intraprocess_pattern_recognition;
@@ -102,7 +99,7 @@ void write_record(Record *record) {
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
     // Analysis Point!
-    // recorder_analysis(&logger, record, entry, rank_knowledge, hdf5_optimizations);
+    recorder_analysis(&logger, record, entry);
 
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
@@ -321,22 +318,23 @@ void logger_init() {
         logger.interprocess_pattern_recognition = false;
         logger.interprocess_compression = false;
     }
-
     initialized = true;
-    rank_knowledge = (Knowledge*)recorder_malloc(sizeof(Knowledge));
-    hdf5_optimizations = (HDF5Optimizations*)recorder_malloc(sizeof(HDF5Optimizations));
-    hdf5_optimizations->alignment = false;
-    hdf5_optimizations->chunking = false;
-    hdf5_optimizations->metadata_cache = false;
-    hdf5_optimizations->collective_transfer = false;
+    analysis_init();
+}
+
+void analysis_init(){
+    // rank_knowledge = (Knowledge*)recorder_malloc(sizeof(Knowledge));
+    // sprintf(rank_knowledge->file_name, "");
+    // rank_knowledge->dcpl_ID = 0;
 
     GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pget_mdc_config, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pset_mdc_config, RECORDER_HDF5);
-    GOTCHA_SET_REAL_CALL(H5Pset_dxpl_mpio, RECORDER_HDF5);
 }
 
 void cleanup_record_stack() {
@@ -431,9 +429,10 @@ void logger_finalize() {
         double t2 = recorder_wtime();
         if(logger.rank == 0)
             RECORDER_LOGINFO("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
-    } else {
-        save_cst_local(&logger);
-        save_cfg_local(&logger);
+    }
+    else {
+        // save_cst_local(&logger);
+        // save_cfg_local(&logger);
     }
     cleanup_cst(logger.cst);
     sequitur_cleanup(&logger.cfg);

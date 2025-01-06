@@ -12,24 +12,21 @@ typedef struct RuleConfidence_t {
 } RuleConfidence;
 
 typedef struct Knowledge_t {
+    int timestep;
     int collective;
     int transfer_size;
-    hid_t faplID; 
-    hid_t dcpl_id; 
+    long int file_size;
+    hid_t fapl_ID; 
+    hid_t dcpl_ID; 
     char operation[100];
     char spatial_locality[100];
     char file_name[512];
     char file_operation[100];
+    UT_hash_handle hh;
 } Knowledge;
 
-typedef struct HDF5Optimizations_t {
-    bool alignment;
-    bool chunking;
-    bool metadata_cache;
-    bool collective_transfer;
-} HDF5Optimizations;
 
-int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, Knowledge* knowledge, HDF5Optimizations* hdf5_optimizations);
+int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry);
 
 static const char* collective_func_list[] = {
     // MPI 16 functions

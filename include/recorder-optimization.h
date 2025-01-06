@@ -5,6 +5,6 @@
 #include "uthash.h"
 #include "recorder-analysis.h"
 
-int apply_optimizations(Knowledge* knowledge,  hid_t dcplID, hid_t faplID, int nprocs);
+int apply_optimizations(RecorderLogger* logger, Knowledge* knowledge, Record* record, const char * func_name, int timestep, char file_name[512]);
 
 #endif
