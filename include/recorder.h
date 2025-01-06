@@ -98,7 +98,21 @@
 #define RECORDER_INTERCEPTOR_EPILOGUE(record_arg_count, record_args)                \
     record->arg_count = record_arg_count;                                           \
     record->args = record_args;                                                     \
-    logger_record_exit(record);                                                     \
+    logger_record_exit(record, 0, NULL);                                            \
+    return res;
+
+
+/*
+ * This is a variation of the epilogue implementation,
+ * where we also pass in the original arguments used to
+ * invoke the intercepted call. These "real args" are
+ * usefull for online analysis and online tuning.
+ *
+ */
+#define RECORDER_INTERCEPTOR_EPILOGUE_WITH_REAL_ARGS(record_arg_count, record_args, real_arg_count, real_args)  \
+    record->arg_count = record_arg_count;                                                                       \
+    record->args = record_args;                                                                                 \
+    logger_record_exit(record, real_arg_count, real_args);                                                                      \
     return res;
 
 #endif /* __RECORDER_H */

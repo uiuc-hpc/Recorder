@@ -136,7 +136,7 @@ void logger_record_enter(Record* record) {
     record->record_stack = rs;
 }
 
-void logger_record_exit(Record* record) {
+void logger_record_exit(Record* record, int real_arg_count, void** real_args) {
     struct RecordStack *rs = record->record_stack;
     rs->call_depth--;
 
@@ -146,12 +146,18 @@ void logger_record_exit(Record* record) {
         Record *current, *tmp;
         DL_FOREACH_SAFE(rs->records, current, tmp) {
             DL_DELETE(rs->records, current);
+
             write_record(current);
+
+            // perform online anlysis/tuning here?
+            // e.g., for MPI_File_open(), you can get
+            // MPI_File* fh = (MPI_File*) real_args[0];
+            //online_tuning(record, real_arg_count, real_args)
+
             free_record(current);
         }
     }
 }
-
 
 bool logger_initialized() {
     return initialized;
