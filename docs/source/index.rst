@@ -11,8 +11,8 @@ Publications
 Recorder has undergone significant changes since the last
 "Recorder 2.0" paper. We have incorporated a new pattern-based
 compression algorithm, along with many new features.
-We are preparing a new paper that will describe all these
-changes in detail.
+We have submitted a journal paper describing all these
+changes in detail. The draft version is available on `arXiv <https://arxiv.org/abs/2501.04654>`__.
 
 `Wang, Chen, Jinghan Sun, Marc Snir, Kathryn Mohror, and Elsa
 Gonsiorowski. “Recorder 2.0: Efficient Parallel I/O Tracing and
@@ -43,6 +43,7 @@ Symposium on High-Performance Parallel and Distributed Computing (HPDC).
 
 
 .. toctree::
+   :hidden
    quickstart
    build
    usage

@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <alloca.h>
 #include "recorder.h"
+#include "recorder-analysis.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
 #endif
@@ -30,7 +31,6 @@ struct RecordStack {
     UT_hash_handle hh;
 };
 static struct RecordStack *g_record_stack = NULL;
-
 
 bool logger_intraprocess_pattern_recognition() {
     return logger.intraprocess_pattern_recognition;
@@ -97,6 +97,8 @@ void write_record(Record *record) {
     }
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
+    // Analysis Point!
+    // recorder_analysis(&logger, record, entry);
 
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
@@ -217,20 +219,20 @@ void logger_set_mpi_info(int mpi_rank, int mpi_size) {
     int mpi_initialized;
     PMPI_Initialized(&mpi_initialized);      // MPI_Initialized() is not intercepted
     if(mpi_initialized)
-        recorder_bcast(&logger.start_ts, sizeof(logger.start_ts), 0, MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Bcast) (&logger.start_ts, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Create traces directory
     create_traces_dir();
 
     // Rank 0 broadcasts the trace direcotry path
     if(mpi_initialized)
-        recorder_bcast(logger.traces_dir, sizeof(logger.traces_dir), 0, MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Bcast) (logger.traces_dir, sizeof(logger.traces_dir), MPI_BYTE, 0, MPI_COMM_WORLD);
 
     sprintf(logger.cst_path, "%s/%d.cst", logger.traces_dir, mpi_rank);
     sprintf(logger.cfg_path, "%s/%d.cfg", logger.traces_dir, mpi_rank);
 
     if(mpi_initialized)
-        recorder_barrier(MPI_COMM_WORLD);
+        GOTCHA_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
 
     char perprocess_ts_filename[1024];
     ts_get_filename(&logger, perprocess_ts_filename);
@@ -251,6 +253,8 @@ void logger_init() {
     GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(remove, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(MPI_Bcast, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Barrier, RECORDER_MPI);
 
     double global_tstart = recorder_wtime();
 
@@ -268,6 +272,7 @@ void logger_init() {
     logger.cst = NULL;
     sequitur_init(&logger.cfg);
     logger.current_cfg_terminal = 0;
+    logger.pattern_id = 0;    
     logger.directory_created = false;
     logger.store_tid   = false;
     logger.store_call_depth = true;
@@ -312,8 +317,23 @@ void logger_init() {
         logger.interprocess_pattern_recognition = false;
         logger.interprocess_compression = false;
     }
-
     initialized = true;
+    analysis_init();
+}
+
+void analysis_init(){
+    // rank_knowledge = (Knowledge*)recorder_malloc(sizeof(Knowledge));
+    // sprintf(rank_knowledge->file_name, "");
+    // rank_knowledge->dcpl_ID = 0;
+
+    GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
+    GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pget_mdc_config, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pset_mdc_config, RECORDER_HDF5);
 }
 
 void cleanup_record_stack() {
@@ -382,7 +402,6 @@ void logger_finalize() {
     cuda_profiler_exit();
     #endif
 
-
     // Write out timestamps
     // and merge per-process ts files into a single one
     if(logger.ts_index > 0)
@@ -394,7 +413,6 @@ void logger_finalize() {
     char perprocess_ts_filename[1024];
     ts_get_filename(&logger, perprocess_ts_filename);
     GOTCHA_REAL_CALL(remove)(perprocess_ts_filename);
-
 
     // interprocess I/O pattern recognition
     if (logger.interprocess_pattern_recognition) {
@@ -410,9 +428,10 @@ void logger_finalize() {
         double t2 = recorder_wtime();
         if(logger.rank == 0)
             RECORDER_LOGINFO("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
-    } else {
-        save_cst_local(&logger);
-        save_cfg_local(&logger);
+    }
+    else {
+        // save_cst_local(&logger);
+        // save_cfg_local(&logger);
     }
     cleanup_cst(logger.cst);
     sequitur_cleanup(&logger.cfg);
@@ -421,6 +440,5 @@ void logger_finalize() {
         save_global_metadata();
         RECORDER_LOGINFO("[Recorder] trace files have been written to %s\n", logger.traces_dir);
     }
-
 }
 

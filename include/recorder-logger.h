@@ -96,7 +96,8 @@ typedef struct RecorderLogger_t {
     bool directory_created;
 
     int current_cfg_terminal;
-
+    int pattern_id;
+       
     Grammar        cfg;
     CallSignature* cst;
 
@@ -126,6 +127,7 @@ typedef struct RecorderLogger_t {
 
 /* recorder-logger.c */
 void logger_init();
+void analysis_init();
 void logger_set_mpi_info(int mpi_rank, int mpi_size);
 void logger_finalize();
 bool logger_initialized();
