@@ -99,7 +99,7 @@ void write_record(Record *record) {
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
     // Analysis Point!
-    recorder_analysis(&logger, record, entry);
+    // recorder_analysis(&logger, record, entry);
 
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
