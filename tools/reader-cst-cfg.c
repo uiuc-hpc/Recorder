@@ -35,14 +35,14 @@ void reader_decode_cst_2_3(RecorderReader *reader, int rank, CST *cst) {
     cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
-            fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
-            fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
-    
-            cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
-            fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
-    
-            assert(cst->cs_list[i].terminal_id < cst->entries);
-        }
+        fread(&cst->cs_list[i].terminal_id, sizeof(int), 1, f);
+        fread(&cst->cs_list[i].key_len, sizeof(int), 1, f);
+
+        cst->cs_list[i].key = malloc(cst->cs_list[i].key_len);
+        fread(cst->cs_list[i].key, 1, cst->cs_list[i].key_len, f);
+
+        assert(cst->cs_list[i].terminal_id < cst->entries);
+    }
     fclose(f);
 }
 
@@ -58,7 +58,7 @@ void reader_decode_cfg_2_3(RecorderReader *reader, int rank, CFG* cfg) {
     cfg->cfg_head = NULL;
     for(int i = 0; i < cfg->rules; i++) {
         RuleHash *rule = malloc(sizeof(RuleHash));
-    
+
         fread(&(rule->rule_id), sizeof(int), 1, f);
         fread(&(rule->symbols), sizeof(int), 1, f);
 
@@ -75,18 +75,18 @@ void reader_decode_cst(int rank, void* buf, CST* cst) {
     memcpy(&cst->entries, buf, sizeof(int));
     buf += sizeof(int);
 
-	// cst->cs_list will be stored in the terminal_id order.
+    // cst->cs_list will be stored in the terminal_id order.
     cst->cs_list = malloc(cst->entries * sizeof(CallSignature));
 
     for(int i = 0; i < cst->entries; i++) {
 
-		int terminal_id;
+        int terminal_id;
         memcpy(&terminal_id, buf, sizeof(int));
         buf += sizeof(int);
-		assert(terminal_id < cst->entries);
+        assert(terminal_id < cst->entries);
 
-		CallSignature* cs = &(cst->cs_list[terminal_id]);
-		cs->terminal_id = terminal_id;
+        CallSignature* cs = &(cst->cs_list[terminal_id]);
+        cs->terminal_id = terminal_id;
 
         memcpy(&cs->rank, buf, sizeof(int));
         buf += sizeof(int);
@@ -125,14 +125,14 @@ void reader_decode_cfg(int rank, void* buf, CFG* cfg) {
 }
 
 CST* reader_get_cst(RecorderReader* reader, int rank) {
-	CST* cst = reader->csts[rank];
+    CST* cst = reader->csts[rank];
     return cst;
 }
 
 CFG* reader_get_cfg(RecorderReader* reader, int rank) {
     CFG* cfg;
     if (reader->metadata.interprocess_compression)
-	    cfg = reader->cfgs[reader->ug_ids[rank]];
+        cfg = reader->cfgs[reader->ug_ids[rank]];
     else
         cfg = reader->cfgs[rank];
     return cfg;

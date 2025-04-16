@@ -7,7 +7,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 #------------------------------------------------------------------------------
 # FLAGS for building
 #------------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result -std=c++11")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result -std=c++17")
 
 find_package(MPI REQUIRED)
 if(MPI_FOUND)
@@ -59,6 +60,10 @@ add_executable(recorder-summary recorder-summary.c)
 target_link_libraries(recorder-summary reader)
 add_dependencies(recorder-summary reader)
 
+add_executable(recorder-filter recorder-filter.cpp)
+target_link_libraries(recorder-filter reader recorder)
+add_dependencies(recorder-filter reader recorder)
+
 
 if(RECORDER_ENABLE_PARQUET)
     message("-- " "Configuring Parquet tool: TRUE")
@@ -102,7 +107,7 @@ endif()
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
 #set(targets reader recorder2text metaops_checker conflict_detector)
-set(targets reader recorder2text recorder2timeline conflict-detector recorder-summary)
+set(targets reader recorder2text recorder2timeline conflict-detector recorder-summary recorder-filter)
 foreach(target ${targets})
     install(
         TARGETS

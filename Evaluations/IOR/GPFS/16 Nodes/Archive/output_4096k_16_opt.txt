@@ -1,0 +1,980 @@
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:20:43 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:20:43 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4642       1164.88    0.439500    131072     4096       0.048323   14.06      0.005508   14.12      0   
+read      163355     44828      0.011386    131072     4096       0.020180   0.365489   0.017130   0.401187   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     44621      11484      0.043634    131072     4096       0.064150   1.43       0.008561   1.47       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      560804     176320     0.001832    131072     4096       0.020571   0.092922   0.053541   0.116861   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     50040      12884      0.039248    131072     4096       0.044427   1.27       0.009576   1.31       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      592427     197659     0.001859    131072     4096       0.020356   0.082890   0.044475   0.110623   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45149      11673      0.043372    131072     4096       0.056959   1.40       0.006944   1.45       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      568780     196173     0.001912    131072     4096       0.023294   0.083518   0.044441   0.115222   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     54802      14211      0.035553    131072     4096       0.041991   1.15       0.016455   1.20       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      621211     198731     0.001750    131072     4096       0.019597   0.082443   0.042465   0.105497   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     42102      10867      0.046640    131072     4096       0.043568   1.51       0.020822   1.56       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      592303     190898     0.001851    131072     4096       0.019265   0.085826   0.044838   0.110646   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       54802.12    4642.20   40225.94   16442.06   13700.53    1160.55   10056.49    4110.51    3.51665         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       621211.26  163355.17  516480.16  159103.14  155302.82   40838.79  129120.04   39775.78    0.16001         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.059 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082041.790-lassen197-ather1-ior-16328/
+[Recorder] elapsed time: 26.50
+Finished            : Fri Feb 28 08:21:05 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:21:27 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:21:27 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5336       1339.30    0.382257    131072     4096       0.044898   12.23      0.006041   12.28      0   
+read      167378     47805      0.010697    131072     4096       0.031611   0.342727   0.019917   0.391544   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     46071      11936      0.042086    131072     4096       0.069074   1.37       0.006938   1.42       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      584464     185726     0.001758    131072     4096       0.020728   0.088216   0.050859   0.112130   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     43790      11187      0.045306    131072     4096       0.040412   1.46       0.006660   1.50       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      597362     190416     0.001682    131072     4096       0.020195   0.086043   0.042631   0.109709   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     57312      14750      0.034287    131072     4096       0.038439   1.11       0.008131   1.14       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      596579     189084     0.001699    131072     4096       0.019556   0.086649   0.047324   0.109853   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40144      10264      0.049448    131072     4096       0.043621   1.60       0.006836   1.63       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      599224     194328     0.001794    131072     4096       0.033983   0.084311   0.046289   0.109368   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     48029      12312      0.041153    131072     4096       0.040522   1.33       0.007356   1.36       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      546917     178636     0.001816    131072     4096       0.019486   0.091717   0.059616   0.119828   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       57312.07    5335.61   40113.55   16416.23   14328.02    1333.90   10028.39    4104.06    3.22373         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       599224.17  167378.44  515320.73  156639.91  149806.04   41844.61  128830.18   39159.98    0.15874         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.085 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082125.697-lassen197-ather1-ior-16524/
+[Recorder] elapsed time: 24.35
+Finished            : Fri Feb 28 08:21:47 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:22:08 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:22:08 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5324       1336.88    0.382948    131072     4096       0.049204   12.26      0.005541   12.31      0   
+read      229822     63089      0.008090    131072     4096       0.019076   0.259698   0.008675   0.285160   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     42601      10946      0.046045    131072     4096       0.057874   1.50       0.007314   1.54       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      618160     199499     0.001663    131072     4096       0.021498   0.082126   0.035986   0.106018   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40028      10401      0.048670    131072     4096       0.054648   1.58       0.025420   1.64       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      539680     182378     0.001677    131072     4096       0.020946   0.089835   0.055002   0.121435   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45832      11716      0.043264    131072     4096       0.039801   1.40       0.005931   1.43       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      576663     181382     0.001852    131072     4096       0.019806   0.090329   0.050002   0.113647   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     43843      11249      0.045037    131072     4096       0.048008   1.46       0.005854   1.49       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      494955     184311     0.001815    131072     4096       0.030292   0.088893   0.068349   0.132408   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     39975      10197      0.049769    131072     4096       0.040325   1.61       0.006757   1.64       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      539511     185844     0.001446    131072     4096       0.019513   0.088160   0.057460   0.121473   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       45832.23    5324.33   36267.38   13990.23   11458.06    1331.08    9066.85    3497.56    3.34142         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       618160.18  229821.99  499798.49  126488.45  154540.05   57455.50  124949.62   31622.11    0.14669         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.046 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082207.607-lassen197-ather1-ior-16711/
+[Recorder] elapsed time: 25.23
+Finished            : Fri Feb 28 08:22:30 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:22:51 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:22:51 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5281       1326.09    0.386067    131072     4096       0.049615   12.36      0.005595   12.41      0   
+read      213216     58344      0.008752    131072     4096       0.019374   0.280815   0.009826   0.307369   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40260      10405      0.048411    131072     4096       0.071297   1.57       0.007659   1.63       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      549748     194434     0.001796    131072     4096       0.019919   0.084265   0.054326   0.119211   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45406      11628      0.043540    131072     4096       0.042966   1.41       0.007353   1.44       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      548235     179692     0.001700    131072     4096       0.036062   0.091178   0.050128   0.119540   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40092      10306      0.049222    131072     4096       0.042243   1.59       0.017554   1.63       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      609706     192366     0.001810    131072     4096       0.019758   0.085171   0.042549   0.107488   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     44929      11561      0.043837    131072     4096       0.048565   1.42       0.007590   1.46       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      595603     189944     0.001779    131072     4096       0.018802   0.086257   0.043662   0.110033   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45740      11771      0.043020    131072     4096       0.041024   1.39       0.015396   1.43       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      591433     190947     0.001850    131072     4096       0.020183   0.085804   0.045865   0.110809   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       45740.45    5281.40   36951.35   14353.62   11435.11    1320.35    9237.84    3588.40    3.33435         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       609705.74  213216.04  517990.13  138226.81  152426.44   53304.01  129497.53   34556.70    0.14574         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.063 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082250.459-lassen197-ather1-ior-16901/
+[Recorder] elapsed time: 25.08
+Finished            : Fri Feb 28 08:23:12 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:23:34 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:23:34 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4747       1191.28    0.429761    131072     4096       0.047485   13.75      0.005520   13.80      0   
+read      214511     58473      0.008723    131072     4096       0.019064   0.280199   0.008670   0.305513   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45609      11741      0.042983    131072     4096       0.054012   1.40       0.007706   1.44       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      523835     167471     0.001607    131072     4096       0.020282   0.097832   0.058176   0.125108   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     53133      13709      0.036874    131072     4096       0.043191   1.20       0.010547   1.23       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      620201     202554     0.001812    131072     4096       0.027222   0.080887   0.040997   0.105669   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40096      10263      0.049398    131072     4096       0.046043   1.60       0.007958   1.63       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      575518     184866     0.001842    131072     4096       0.020080   0.088626   0.049441   0.113873   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     48213      12370      0.040940    131072     4096       0.041966   1.32       0.007505   1.36       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      509976     185123     0.001828    131072     4096       0.019092   0.088503   0.059512   0.128508   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     50353      13088      0.038686    131072     4096       0.043394   1.25       0.020437   1.30       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      602629     193674     0.001913    131072     4096       0.018576   0.084596   0.045644   0.108750   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       53132.88    4747.30   40358.49   16434.49   13283.22    1186.82   10089.62    4108.62    3.46176         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       620200.69  214511.40  507778.46  136925.98  155050.17   53627.85  126944.62   34231.50    0.14790         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.065 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082333.136-lassen197-ather1-ior-17100/
+[Recorder] elapsed time: 25.97
+Finished            : Fri Feb 28 08:23:56 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:24:17 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:24:17 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4512       1132.37    0.452120    131072     4096       0.051893   14.47      0.005585   14.52      0   
+read      213342     61218      0.008326    131072     4096       0.019434   0.267635   0.021894   0.307187   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     44441      11511      0.043726    131072     4096       0.069437   1.42       0.006283   1.47       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      568075     193433     0.001919    131072     4096       0.028725   0.084701   0.042689   0.115365   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     50033      12847      0.039422    131072     4096       0.041418   1.28       0.007196   1.31       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      543501     191626     0.001681    131072     4096       0.020872   0.085500   0.053756   0.120581   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45016      11643      0.043495    131072     4096       0.042094   1.41       0.022163   1.46       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      602657     190025     0.001728    131072     4096       0.019076   0.086220   0.043488   0.108745   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     50450      12957      0.039072    131072     4096       0.041190   1.26       0.007783   1.30       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      618060     194494     0.001825    131072     4096       0.019128   0.084239   0.041115   0.106035   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     43841      11209      0.045222    131072     4096       0.040825   1.46       0.007177   1.49       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      523706     184007     0.001614    131072     4096       0.028787   0.089040   0.053514   0.125139   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       50449.80    4511.98   39715.46   15960.40   12612.45    1128.00    9928.86    3990.10    3.59319         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       618060.11  213342.31  511556.90  137196.00  154515.03   53335.58  127889.23   34299.00    0.14718         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.041 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082416.668-lassen197-ather1-ior-17411/
+[Recorder] elapsed time: 26.74
+Finished            : Fri Feb 28 08:24:40 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:25:02 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:25:02 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5439       1365.41    0.374954    131072     4096       0.046752   12.00      0.005633   12.05      0   
+read      228537     62968      0.008109    131072     4096       0.019212   0.260197   0.009912   0.286763   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     44798      11551      0.043756    131072     4096       0.055489   1.42       0.007487   1.46       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      561735     189439     0.001761    131072     4096       0.025361   0.086487   0.050526   0.116667   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     44417      11444      0.044280    131072     4096       0.051715   1.43       0.007074   1.48       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      600884     187282     0.001834    131072     4096       0.019018   0.087483   0.048027   0.109066   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     39971      10301      0.049253    131072     4096       0.042076   1.59       0.021635   1.64       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      596378     190430     0.001869    131072     4096       0.019895   0.086037   0.043326   0.109890   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     43053      11023      0.046029    131072     4096       0.040447   1.49       0.009086   1.52       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      610711     194118     0.001796    131072     4096       0.019629   0.084402   0.048629   0.107311   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     38764      9972       0.050851    131072     4096       0.056719   1.64       0.006957   1.69       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      593494     187854     0.001908    131072     4096       0.020410   0.087217   0.051273   0.110424   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       44797.52    5438.56   36073.41   13876.58   11199.38    1359.64    9018.35    3469.14    3.30685         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       610710.87  228537.19  531956.58  136528.57  152677.72   57134.30  132989.15   34132.14    0.14002         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.076 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082500.923-lassen197-ather1-ior-17614/
+[Recorder] elapsed time: 25.07
+Finished            : Fri Feb 28 08:25:23 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:25:45 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:25:45 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4677       1174.69    0.435834    131072     4096       0.060992   13.95      0.005466   14.01      0   
+read      226968     61640      0.008254    131072     4096       0.018943   0.265800   0.006195   0.288746   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     35090      8951       0.056388    131072     4096       0.057747   1.83       0.005716   1.87       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      511584     191940     0.001710    131072     4096       0.019986   0.085360   0.058930   0.128104   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     48552      12437      0.040678    131072     4096       0.041502   1.32       0.006840   1.35       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      566960     190952     0.001656    131072     4096       0.019261   0.085802   0.047322   0.115592   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     46541      11992      0.042235    131072     4096       0.048939   1.37       0.007921   1.41       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      559654     177861     0.001872    131072     4096       0.019472   0.092117   0.050162   0.117101   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     46973      12043      0.042053    131072     4096       0.042513   1.36       0.007221   1.40       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      624437     198096     0.001749    131072     4096       0.019612   0.082707   0.040415   0.104952   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     41925      10867      0.046640    131072     4096       0.056471   1.51       0.014437   1.56       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      584829     197205     0.001687    131072     4096       0.019526   0.083081   0.043943   0.112060   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       48551.84    4676.86   37292.89   15253.97   12137.96    1169.22    9323.22    3813.49    3.59946         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       624437.26  226967.74  512405.36  131959.75  156109.32   56741.94  128101.34   32989.94    0.14443         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.072 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082543.738-lassen197-ather1-ior-17812/
+[Recorder] elapsed time: 26.83
+Finished            : Fri Feb 28 08:26:07 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:26:29 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:26:29 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4486       1125.61    0.454834    131072     4096       0.049845   14.56      0.005450   14.61      0   
+read      214886     58881      0.008649    131072     4096       0.020196   0.278254   0.008574   0.304981   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     49789      12854      0.039276    131072     4096       0.052681   1.27       0.006980   1.32       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      589973     190727     0.001768    131072     4096       0.040606   0.085903   0.047682   0.111083   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     43754      11199      0.045241    131072     4096       0.043263   1.46       0.007099   1.50       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      551813     170266     0.001707    131072     4096       0.019295   0.096226   0.049935   0.118765   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     54841      14102      0.035810    131072     4096       0.042343   1.16       0.006998   1.20       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      597824     188278     0.001853    131072     4096       0.019069   0.087020   0.045593   0.109624   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40834      10424      0.048666    131072     4096       0.041657   1.57       0.006215   1.60       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      611800     194730     0.001749    131072     4096       0.019889   0.084137   0.040659   0.107120   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45691      11795      0.042935    131072     4096       0.043120   1.39       0.017504   1.43       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      556645     174647     0.001956    131072     4096       0.018273   0.093812   0.057022   0.117734   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       54840.78    4485.83   39899.15   16454.21   13710.20    1121.46    9974.79    4113.55    3.60966         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       611799.64  214885.52  520490.10  138340.39  152949.91   53721.38  130122.52   34585.10    0.14488         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.055 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082628.205-lassen197-ather1-ior-18015/
+[Recorder] elapsed time: 26.61
+Finished            : Fri Feb 28 08:26:52 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Fri Feb 28 08:27:13 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 6 -t 4096k -c -e -m
+Machine             : Linux lassen197
+TestID              : 0
+StartTime           : Fri Feb 28 08:27:13 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 89.9%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 6
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4302       1079.10    0.474440    131072     4096       0.046109   15.18      0.005452   15.23      0   
+read      210758     57869      0.008798    131072     4096       0.018510   0.283122   0.011383   0.310953   0   
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     49403      12942      0.038713    131072     4096       0.072506   1.27       0.015473   1.33       1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      599959     188448     0.001570    131072     4096       0.034938   0.086942   0.041264   0.109234   1   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     42066      10781      0.047003    131072     4096       0.047663   1.52       0.006396   1.56       2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      572212     188708     0.001762    131072     4096       0.030716   0.086822   0.051835   0.114531   2   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     45974      11872      0.042693    131072     4096       0.052133   1.38       0.007430   1.43       3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      587750     191994     0.001866    131072     4096       0.019012   0.085336   0.047689   0.111503   3   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     50087      13019      0.038873    131072     4096       0.056389   1.26       0.008355   1.31       4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      576465     183010     0.001789    131072     4096       0.019339   0.089525   0.048654   0.113686   4   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed alignment to 1MB
+* Changed cache size to 8000000
+No Lustre file system detected.
+* Changed data transfer mode to independent
+write     40682      10441      0.048609    131072     4096       0.048409   1.57       0.007257   1.61       5   
+* Changed romio_cb_write to disable
+* Changed cb_config_list to *:8
+* Changed data transfer mode to independent
+read      605638     194376     0.001783    131072     4096       0.032967   0.084290   0.038960   0.108210   5   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       50086.59    4302.15   38752.20   15787.99   12521.65    1075.54    9688.05    3947.00    3.74379         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       605638.04  210758.44  525463.71  141234.43  151409.51   52689.61  131365.93   35308.61    0.14469         NA            NA     0    512  40    6   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 1.044 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250228/082712.435-lassen197-ather1-ior-18199/
+[Recorder] elapsed time: 27.43
+Finished            : Fri Feb 28 08:27:37 2025

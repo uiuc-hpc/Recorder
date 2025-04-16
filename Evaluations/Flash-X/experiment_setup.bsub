@@ -1,0 +1,24 @@
+#!/bin/bash
+#SBATCH -N 16
+#SBATCH -p pbatch
+#SBATCH -t 180
+USERNAME=ather1
+
+export HDF5_HOME=/p/lustre2/ather1/hdf5-1.14.4-3/install
+export LD_LIBRARY_PATH=/p/lustre2/ather1/hdf5-1.14.4-3/install/lib:$LD_LIBRARY_PATH
+export RECORDER_INTRAPROCESS_PATTERN_RECOGNITION=1
+module load gcc/11.2.1
+
+for j in 1 2 3 4 5; do	
+	srun -n 896 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install_changes/lib/librecorder.so flashx
+	ls -lh >> output.txt
+	rm sedov_* 
+	rm sedov.dat LargestSummary.out amr_runtime_parameters.dump
+done
+
+for j in 1 2 3 4 5; do	
+	srun -n 896 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so flashx
+	ls -lh >> output.txt
+	rm sedov_*
+	rm sedov.dat LargestSummary.out amr_runtime_parameters.dump
+done

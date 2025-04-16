@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH -N 8
+#SBATCH -p pbatch
+#SBATCH -t 120
+USERNAME=ather1
+
+export HDF5_HOME=/p/lustre2/ather1/hdf5-1.14.4-3/install
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/p/lustre2/ather1/hdf5-1.14.4-3/install/lib
+export RECORDER_INTRAPROCESS_PATTERN_RECOGNITION=1
+export ROMIO_PRINT_HINTS=1
+module load gcc/11.2.1
+
+case="romio_cb_read"
+
+for i in 4096; do
+	# With Recorder
+	for j in 1 2 3 4 5; do	
+		srun -n 400 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 5 -t ${i}k -e -m -c &>> output_${i}k_8_base_${case}.txt
+	done	
+	export ROMIO_HINTS=/p/lustre3/ather1/final_experiments/IOR/romio_hints1
+	for j in 1 2 3 4 5; do	
+		srun -n 400 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 5 -t ${i}k -e -m -c &>> output_${i}k_8_first_${case}.txt
+	done	
+
+	export ROMIO_HINTS=/p/lustre3/ather1/final_experiments/IOR/romio_hints2
+	for j in 1 2 3 4 5; do	
+		srun -n 400 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 5 -t ${i}k -e -m -c &>> output_${i}k_8_second_${case}.txt
+	done	
+
+	# export ROMIO_HINTS=/p/lustre3/ather1/final_experiments/IOR/romio_hints3
+	# for j in 1 2 3 4 5; do	
+	# 	srun -n 400 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 5 -t ${i}k -e -m &>> output_${i}k_8_third_${case}.txt
+	# done	
+
+	# export ROMIO_HINTS=/p/lustre3/ather1/final_experiments/IOR/romio_hints4
+	# for j in 1 2 3 4 5; do	
+	# 	srun -n 400 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 5 -t ${i}k -e -m &>> output_${i}k_8_fourth_${case}.txt
+	# done
+done
+

@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH -N 8 
+#SBATCH -p pbatch
+#SBATCH -t 30
+USERNAME=ather1
+
+export HDF5_HOME=/p/lustre2/ather1/hdf5-1.14.4-3/install
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/p/lustre2/ather1/hdf5-1.14.4-3/install/lib
+export RECORDER_INTRAPROCESS_PATTERN_RECOGNITION=1
+# export ROMIO_PRINT_HINTS=1
+module load gcc/11.2.1
+
+nodes="test"
+
+for i in 4; do
+	# With Optimizations
+	for j in 1 2 3; do
+		srun -n 256 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install_changes/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t ${i}m -c -e -m &>> output_${i}k_${nodes}_opt_romio.txt
+	done
+	
+	# With Recorderz
+	for j in 1 2 3; do	
+		srun -n 256 --export=ALL,LD_PRELOAD=/usr/workspace/ather1/Recorder_analysis/Recorder/install/lib/librecorder.so /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t ${i}m -c -e -m &>> output_${i}k_${nodes}_base_romio.txt
+	done	
+done

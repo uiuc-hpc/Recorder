@@ -15,18 +15,18 @@ typedef struct Knowledge_t {
     int timestep;
     int collective;
     int transfer_size;
+    int spatial_locality;
     long int file_size;
     hid_t fapl_ID; 
     hid_t dcpl_ID; 
     char operation[100];
-    char spatial_locality[100];
     char file_name[512];
     char file_operation[100];
     UT_hash_handle hh;
 } Knowledge;
 
 
-int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry);
+int recorder_analysis(RecorderLogger* logger, Record* record, CallSignature* entry, bool* do_prediction, MPI_Info info, double *prediction_time, double *optimization_time);
 
 static const char* collective_func_list[] = {
     // MPI 16 functions

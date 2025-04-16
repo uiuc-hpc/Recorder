@@ -8,14 +8,21 @@
 #include <alloca.h>
 #include "recorder.h"
 #include "recorder-analysis.h"
+
+#include "mpi.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
 #endif
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool initialized = false;
+static bool do_prediction = true;
+static double prediction_time = 0;
+static double optimization_time = 0;
 
 static RecorderLogger logger;
+
+MPI_Info info;
 
 /**
  * Per-thread FIFO record stack
@@ -98,7 +105,7 @@ void write_record(Record *record) {
 
     append_terminal(&logger.cfg, entry->terminal_id, 1);
     // Analysis Point!
-    // recorder_analysis(&logger, record, entry);
+    recorder_analysis(&logger, record, entry, &do_prediction, info, &prediction_time, &optimization_time);
 
     // store timestamps, only write out at finalize time
     uint32_t delta_tstart = (record->tstart-logger.prev_tstart) / logger.ts_resolution;
@@ -121,7 +128,13 @@ void write_record(Record *record) {
     pthread_mutex_unlock(&g_mutex);
 }
 
-void logger_record_enter(Record* record) {
+void logger_record_enter(Record* record, void** real_args) {
+    const char* func_name = get_function_name_by_id(record->func_id);
+    if (strcmp(func_name, "H5Pset_fapl_mpio") == 0 && do_prediction == false){
+        info = *(MPI_Info *) real_args[0];
+        recorder_analysis(&logger, record, NULL, &do_prediction, info,  &prediction_time, &optimization_time);
+    }
+
     struct RecordStack *rs;
     HASH_FIND(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
     if(!rs) {
@@ -325,12 +338,13 @@ void analysis_init(){
     // rank_knowledge = (Knowledge*)recorder_malloc(sizeof(Knowledge));
     // sprintf(rank_knowledge->file_name, "");
     // rank_knowledge->dcpl_ID = 0;
-
+    GOTCHA_SET_REAL_CALL(MPI_File_open, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(MPI_Gatherv, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(MPI_Gather, RECORDER_MPI);
     GOTCHA_SET_REAL_CALL(ftell, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(getcwd, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(H5Pset_alignment, RECORDER_HDF5);
+    GOTCHA_SET_REAL_CALL(H5Pget_alignment, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pset_chunk, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pget_mdc_config, RECORDER_HDF5);
     GOTCHA_SET_REAL_CALL(H5Pset_mdc_config, RECORDER_HDF5);
@@ -430,8 +444,8 @@ void logger_finalize() {
             RECORDER_LOGINFO("[Recorder] interprocess compression time: %.3f secs\n", (t2-t1));
     }
     else {
-        // save_cst_local(&logger);
-        // save_cfg_local(&logger);
+        save_cst_local(&logger);
+        save_cfg_local(&logger);
     }
     cleanup_cst(logger.cst);
     sequitur_cleanup(&logger.cfg);
@@ -440,5 +454,39 @@ void logger_finalize() {
         save_global_metadata();
         RECORDER_LOGINFO("[Recorder] trace files have been written to %s\n", logger.traces_dir);
     }
+
+    double* recvcounts1 = NULL;
+    if (logger.rank == 0){
+        recvcounts1 = (double *) recorder_malloc(logger.nprocs*sizeof(double)); 
+    }
+
+    GOTCHA_REAL_CALL(MPI_Gather)(&prediction_time,1,MPI_DOUBLE,recvcounts1,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    
+    if (logger.rank == 0){
+        double max_pred_time = 0.0;
+        for (int i = 0; i < logger.nprocs; i++){
+            if (recvcounts1[i] > max_pred_time){
+                max_pred_time = recvcounts1[i];
+            }
+        }
+        printf("Prediction Time %f\n", max_pred_time);
+    } 
+
+    recvcounts1 = NULL;
+    if (logger.rank == 0){
+        recvcounts1 = (double *) recorder_malloc(logger.nprocs*sizeof(double)); 
+    }
+
+    GOTCHA_REAL_CALL(MPI_Gather)(&optimization_time,1,MPI_DOUBLE,recvcounts1,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    
+    if (logger.rank == 0){
+        double max_opt_time = 0.0;
+        for (int i = 0; i < logger.nprocs; i++){
+            if (recvcounts1[i] > max_opt_time){
+                max_opt_time = recvcounts1[i];
+            }
+        }
+        printf("Optimization Time %f\n", max_opt_time);
+    } 
 }
 

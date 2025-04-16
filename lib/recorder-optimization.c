@@ -1,20 +1,23 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <H5ACpublic.h>
 #include "recorder-optimization.h"
 
 #define H5AC__CURR_CACHE_CONFIG_VERSION   1
 
-int apply_optimizations(RecorderLogger* logger, Knowledge* knowledge, Record* record, const char * func_name, int timestep, char file_name[512]){
+static bool romio = false;
+
+int apply_optimizations(RecorderLogger* logger, Knowledge* knowledge, Record* record, const char * func_name, int timestep, char file_name[512], int romioOptimized, MPI_Info info){
 
     if ((strcmp(func_name, "H5Fcreate") == 0)){
-        // printf("Knowledge for rank %d, Operation %s, Transfer Size %d, Collective I/O %d, File Operation %s, File Name %s, File Size %lu, fapl_id %lu, dcpl_id %lu\n", 
-        // logger->rank, knowledge->operation, knowledge->transfer_size, knowledge->collective, knowledge->file_operation, knowledge->file_name, knowledge->file_size, knowledge->fapl_ID, knowledge->dcpl_ID);
-
-        if (strcmp(knowledge->operation, "write") == 0){
+        if (strcmp(knowledge->operation, "write") == 0 || strcmp(knowledge->operation, "read") == 0){
             if (knowledge->transfer_size < 16777216){
+                hsize_t alignment;
+                hsize_t threshold; 
+                GOTCHA_REAL_CALL(H5Pget_alignment)(knowledge->fapl_ID, &threshold, &alignment);
                 if (logger->rank == 0)
-                    printf("Changing alignment to 1MB\n");
+                    printf("* Changed alignment to 1MB\n");
                 GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->fapl_ID, 1, 1000000);
 
                 H5AC_cache_config_t temp;
@@ -22,57 +25,89 @@ int apply_optimizations(RecorderLogger* logger, Knowledge* knowledge, Record* re
                 GOTCHA_REAL_CALL(H5Pget_mdc_config)(knowledge->fapl_ID, &temp);  
                 temp.initial_size = 8000000;
                 if (logger->rank == 0)
-                    printf("Changing cache size to %d\n", temp.initial_size);
+                    printf("* Changed cache size to %d\n", temp.initial_size);
                 GOTCHA_REAL_CALL(H5Pset_mdc_config)(knowledge->fapl_ID, &temp);
             }
             else {
+                hsize_t alignment;
+                hsize_t threshold; 
+                H5Pget_alignment(knowledge->fapl_ID, &threshold, &alignment);
                 if (logger->rank == 0)
-                    printf("Changing alignment to 16MB\n");
+                    printf("* Changed alignment to 16MB\n");
                 GOTCHA_REAL_CALL(H5Pset_alignment)(knowledge->fapl_ID, 1, 1600000);
 
                 H5AC_cache_config_t temp;
                 temp.version = 1;
                 GOTCHA_REAL_CALL(H5Pget_mdc_config)(knowledge->fapl_ID, &temp);  
-
                 temp.initial_size = 16777216;
                 if (logger->rank == 0)
-                    printf("Changing cache size to %d\n", temp.initial_size);
+                    printf("* Changed cache size to %d\n", temp.initial_size);
                 GOTCHA_REAL_CALL(H5Pset_mdc_config)(knowledge->fapl_ID, &temp);
+            }
+        }
+
+
+        char file_path[PATH_MAX];
+
+        GOTCHA_REAL_CALL(getcwd)(file_path, sizeof(file_path));
+        strcat(file_path, "/"); 
+        strcat(file_path, file_name); 
+
+        char checkpoint = file_name[strlen(file_name) - 1];
+        int digit_chk = checkpoint - '0';
+        digit_chk = digit_chk + 1;
+        checkpoint = digit_chk +'0';
+        file_path[strlen(file_path) - 1] = checkpoint;
+        char command[50];
+        int error = 0;
+
+        if (strcmp(knowledge->file_operation, "shared_file") == 0 && logger->rank == 0){
+
+            int ret = system("lfs df > /dev/null 2>&1");  // Redirect both stdout and stderr to /dev/null
+
+            if (ret == 0) {
+                FILE *fp; 
+                char buffer[128];
+                char version[32];
+
+                fp = popen("rpm -qi lustre-tests | grep Version", "r");
+                if (fp == NULL) {
+                    perror("popen failed");
+                    return EXIT_FAILURE;
+                }
+
+                char *token;
+                if (fgets(buffer, sizeof(buffer), fp) != NULL) {
+                    token = strstr(buffer, "Version     :");
+                    if (token) {
+                        token += strlen("Version     :"); 
+                        while (*token == ' ') token++;
+                        token = strtok(token, "_");
+                    }
+                }
+                pclose(fp);
+
+                if (strcmp(token, "2.10") > 0){
+                    sprintf(command, "lfs setstripe -E 256M -c 1 -E 4G -c 4 -E -1 -c -1 %s", file_path);
+                }
+                else{
+                    sprintf(command, "lfs setstripe -c -1 %s", file_path);
+                }
+                
+                system(command);
+                printf("* Changed stripe count of %s to %s\n", file_path, command);
+                } 
+            else {
+                printf("No Lustre file system detected.\n");
             }
         }
     }
     else if ((strcmp(func_name, "H5open") == 0)){
-        // char *temp_ID = (char*) record->args[5];
-        // int ID = strtol(temp_ID, NULL, 10);
-        // // knowledge->dcpl_ID = *(hid_t*) record->res;
-        if ((strcmp(knowledge->file_operation, "shared_file") == 0) && knowledge->collective == 1 && knowledge->dcpl_ID != 0){ 
+        if ((strcmp(knowledge->file_operation, "shared_file") == 0) && knowledge->collective == 1 && knowledge->spatial_locality == 1 && knowledge->dcpl_ID != 0){ 
             if (logger->rank == 0)
-                printf("Changed data transfer mode to independent\n");
+                printf("* Changed data transfer mode to independent\n");
             H5Pset_dxpl_mpio(knowledge->dcpl_ID, H5FD_MPIO_INDEPENDENT);
             knowledge->dcpl_ID = 0;    
         }
-    }
-
-    // else if ((strcmp(func_name, "MPI_File_open") == 0)){
-    //     fileOpenCount += 1;
-    //     printf("Count %d, rank %d\n", fileOpenCount, logger->rank);
-    //     if (fileOpenCount == 1){
-    //         MPI_Info romio_cb_config_list;
-    //         MPI_Info_create(&romio_cb_config_list);
-            
-    //         MPI_Info_set(romio_cb_config_list, "cb_nodes", "4" );
-    //         MPI_Info_set(romio_cb_config_list, "cb_config_list", "*:16" );
-    //         printf("Handle %s, rank %d\n", record->args[4], logger->rank);
-    //         // GOTCHA_REAL_CALL(MPI_Barrier) (MPI_COMM_WORLD);
-    //         MPI_File_set_info((MPI_File)record->args[4], romio_cb_config_list);
-    //         MPI_File_get_info((MPI_File)record->args[4], &romio_cb_config_list);
-    //         char value[MPI_MAX_INFO_VAL];
-    //         int flag = 1;
-    //         MPI_Info_get( romio_cb_config_list, "cb_nodes", MPI_MAX_INFO_VAL, value, &flag);
-    //         // printf("CB NODES %s, rank %d\n", value,  logger->rank);
-    //         // MPI_Info_free( &romio_cb_config_list );
-    //     }
-    // }
-
-
+    } 
 }

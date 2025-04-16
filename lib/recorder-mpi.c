@@ -355,11 +355,8 @@ int RECORDER_MPI_IMP(MPI_File_open) (MPI_Comm comm, CONST char *filename, int am
     add_mpi_file(comm, fh, filename);
     // TODO incorporate FILTER_MPIIO_CALL here
     char **args = assemble_args_list(5, comm2name(&comm), realrealpath(filename), itoa(amode), ptoa(&info), file2id(fh));
+    RECORDER_INTERCEPTOR_EPILOGUE(5, args);
 
-    int real_arg_count = 1;
-    void** real_args = alloca(sizeof(void*)*real_arg_count);
-    real_args[0] = (void*) fh;
-    RECORDER_INTERCEPTOR_EPILOGUE_WITH_REAL_ARGS(5, args, real_arg_count, real_args);
 }
 
 int RECORDER_MPI_IMP(MPI_File_close) (MPI_File *fh, MPI_Fint* ierr) {
