@@ -1,0 +1,404 @@
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 12:12 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 131K Mar  4 12:31 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 12:32 LargestSummary.out
+-rw-------  1 ather1 ather1    0 Mar  4 12:32 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 13 ather1 ather1  26K Mar  4 12:12 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 12:31 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 12:32 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:16 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:19 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:22 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 12:24 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 12:27 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 12:29 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 12:32 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1    0 Mar  4 12:32 sedov_hdf5_chk_0007
+-rw-rw----  1 ather1 ather1  18G Mar  4 12:16 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1  47K Mar  4 12:32 sedov.log
+-rw-------  1 ather1 ather1 796K Mar  4 12:32 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.3K Mar  4 12:31 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 12:32 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 12:53 LargestSummary.out
+-rw-------  1 ather1 ather1 2.4K Mar  4 12:32 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 14 ather1 ather1  26K Mar  4 12:32 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 12:52 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 12:53 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:37 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:40 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:42 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 12:45 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 12:47 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 12:50 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 12:53 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1    0 Mar  4 12:52 sedov_hdf5_chk_0007
+-rw-rw----  1 ather1 ather1  18G Mar  4 12:37 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1  94K Mar  4 12:53 sedov.log
+-rw-------  1 ather1 ather1 1.6M Mar  4 12:53 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 12:53 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 13:13 LargestSummary.out
+-rw-------  1 ather1 ather1 4.9K Mar  4 12:53 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 15 ather1 ather1  26K Mar  4 12:53 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 13:13 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 13:13 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 12:57 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:00 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:03 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 13:05 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 13:08 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:11 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:13 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1    0 Mar  4 13:13 sedov_hdf5_chk_0007
+-rw-rw----  1 ather1 ather1  18G Mar  4 12:58 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 141K Mar  4 13:13 sedov.log
+-rw-------  1 ather1 ather1 2.4M Mar  4 13:13 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 13:14 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 13:34 LargestSummary.out
+-rw-------  1 ather1 ather1 7.4K Mar  4 13:13 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 16 ather1 ather1  26K Mar  4 13:14 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 13:33 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 13:34 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:18 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:21 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:24 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 13:26 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 13:29 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:31 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:34 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1    0 Mar  4 13:34 sedov_hdf5_chk_0007
+-rw-rw----  1 ather1 ather1  18G Mar  4 13:18 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 188K Mar  4 13:34 sedov.log
+-rw-------  1 ather1 ather1 3.2M Mar  4 13:34 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 13:34 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 13:55 LargestSummary.out
+-rw-------  1 ather1 ather1 9.8K Mar  4 13:34 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 17 ather1 ather1  26K Mar  4 13:34 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 13:54 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 13:55 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:39 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:42 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:44 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 13:47 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 13:49 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:52 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 13:54 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1    0 Mar  4 13:54 sedov_hdf5_chk_0007
+-rw-rw----  1 ather1 ather1  18G Mar  4 13:39 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 235K Mar  4 13:55 sedov.log
+-rw-------  1 ather1 ather1 3.9M Mar  4 13:55 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 13:55 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 14:17 LargestSummary.out
+-rw-------  1 ather1 ather1  13K Mar  4 13:55 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 18 ather1 ather1  26K Mar  4 13:55 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 14:16 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 14:17 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 13:59 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:02 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:05 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 14:08 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 14:11 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 14:14 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 14:17 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1  18G Mar  4 13:59 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 282K Mar  4 14:17 sedov.log
+-rw-------  1 ather1 ather1 4.1M Mar  4 14:17 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 14:18 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 14:40 LargestSummary.out
+-rw-------  1 ather1 ather1  15K Mar  4 14:17 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 19 ather1 ather1  26K Mar  4 14:17 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 14:39 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 14:40 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:22 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:25 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:28 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 14:31 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 14:34 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 14:36 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 14:39 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1  18G Mar  4 14:22 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 329K Mar  4 14:40 sedov.log
+-rw-------  1 ather1 ather1 4.2M Mar  4 14:40 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 14:40 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 15:02 LargestSummary.out
+-rw-------  1 ather1 ather1  18K Mar  4 14:40 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 20 ather1 ather1  26K Mar  4 14:40 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 15:01 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 15:02 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:44 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:47 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 14:50 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 14:53 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 14:56 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 14:59 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 15:02 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1  18G Mar  4 14:44 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 376K Mar  4 15:02 sedov.log
+-rw-------  1 ather1 ather1 4.3M Mar  4 15:02 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 15:03 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 15:25 LargestSummary.out
+-rw-------  1 ather1 ather1  20K Mar  4 15:02 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 21 ather1 ather1  26K Mar  4 15:03 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 15:24 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 15:25 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:07 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:10 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:13 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 15:16 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 15:19 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 15:22 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 15:25 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1  18G Mar  4 15:07 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 423K Mar  4 15:25 sedov.log
+-rw-------  1 ather1 ather1 4.4M Mar  4 15:25 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 10:18 time.py
+total 54G
+drwx------  2 ather1 ather1  26K Feb 28 13:55 16 Nodes
+drwx------  2 ather1 ather1  26K Mar  4 10:22 1st Test
+drwx------  2 ather1 ather1  26K Feb 28 18:26 32 Nodes
+drwx------  2 ather1 ather1  26K Mar  2 09:43 64 Nodes
+drwx------  2 ather1 ather1  26K Feb 28 12:31 8 Nodes
+-rw-rw----  1 ather1 ather1 1.1K Mar  4 15:25 amr_runtime_parameters.dump
+-rw-------  1 ather1 ather1 103K Mar  4 11:21 Bandwidths1.png
+-rw-------  1 ather1 ather1 439K Mar  4 11:21 Bandwidths.png
+-rw-------  1 ather1 ather1 263K Mar  4 12:50 Execution_Breakdown_HighQuality.png
+-rw-------  1 ather1 ather1 109K Mar  4 12:42 Execution_Breakdown.png
+-rw-------  1 ather1 ather1  792 Mar  4 10:23 experiment_setup.bsub
+-rw-------  1 ather1 ather1 4.0K Mar  3 21:35 flash.par
+-rwx------  1 ather1 ather1 6.5M Feb 14 20:56 flashx
+-rw-rw----  1 ather1 ather1 6.1K Mar  4 15:47 LargestSummary.out
+-rw-------  1 ather1 ather1  22K Mar  4 15:25 output.txt
+-rw-------  1 ather1 ather1  13K Mar  4 11:44 parser_chk.py
+drwx------ 22 ather1 ather1  34K Feb 25 16:19 recorder-20250225
+drwx------ 12 ather1 ather1  26K Feb 26 11:51 recorder-20250226
+drwx------ 16 ather1 ather1  26K Feb 27 12:17 recorder-20250227
+drwx------ 38 ather1 ather1  34K Feb 28 18:27 recorder-20250228
+drwx------  7 ather1 ather1  26K Mar  1 22:33 recorder-20250301
+drwx------  7 ather1 ather1  26K Mar  2 06:55 recorder-20250302
+drwx------  7 ather1 ather1  26K Mar  3 21:33 recorder-20250303
+drwx------ 22 ather1 ather1  34K Mar  4 15:25 recorder-20250304
+-rw-rw----  1 ather1 ather1  13K Mar  4 15:46 sedov.dat
+-rw-rw----  1 ather1 ather1  19G Mar  4 15:47 sedov_forced_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:29 sedov_hdf5_chk_0000
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:32 sedov_hdf5_chk_0001
+-rw-rw----  1 ather1 ather1 215G Mar  4 15:35 sedov_hdf5_chk_0002
+-rw-rw----  1 ather1 ather1 217G Mar  4 15:38 sedov_hdf5_chk_0003
+-rw-rw----  1 ather1 ather1 220G Mar  4 15:41 sedov_hdf5_chk_0004
+-rw-rw----  1 ather1 ather1 223G Mar  4 15:44 sedov_hdf5_chk_0005
+-rw-rw----  1 ather1 ather1 223G Mar  4 15:47 sedov_hdf5_chk_0006
+-rw-rw----  1 ather1 ather1  18G Mar  4 15:30 sedov_hdf5_plt_cnt_0000
+-rw-rw----  1 ather1 ather1 470K Mar  4 15:47 sedov.log
+-rw-------  1 ather1 ather1 4.6M Mar  4 15:47 slurm-4206582.out
+-rw-------  1 ather1 ather1 2.9K Mar  4 12:50 stacked_chart.py
+-rw-------  1 ather1 ather1  30K Mar  4 10:29 Test.png
+-rw-------  1 ather1 ather1  752 Mar  4 15:47 time.py

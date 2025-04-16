@@ -54,7 +54,7 @@
     Record *record = recorder_malloc(sizeof(Record));                               \
     record->func_id = get_function_id_by_name(#func);                               \
     record->tid = recorder_gettid();                                                \
-    logger_record_enter(record);                                                    \
+    logger_record_enter(record, NULL);                                                    \
     record->tstart = recorder_wtime();                                              \
     GOTCHA_SET_REAL_CALL_NOCHECK(func);                                             \
     ret res = GOTCHA_REAL_CALL(func) real_args ;                                    \
@@ -87,6 +87,33 @@
     }                                                                               \
     RECORDER_INTERCEPTOR_PROLOGUE_CORE(ret, func, real_args)
 
+#define RECORDER_INTERCEPTOR_PROLOGUE_CORE_WITH_MPI_INFO(ret, func, real_args, info)                    \
+    Record *record = recorder_malloc(sizeof(Record));                               \
+    record->func_id = get_function_id_by_name(#func);                               \
+    record->tid = recorder_gettid();                                                \
+    int real_arg_count = 1;                                                         \
+    void** mpi_info = alloca(sizeof(void*)*real_arg_count);                         \
+    mpi_info[0] = (void*) &info;                                                    \
+    logger_record_enter(record, mpi_info);                                          \
+    record->tstart = recorder_wtime();                                              \
+    GOTCHA_SET_REAL_CALL_NOCHECK(func);                                             \
+    ret res = GOTCHA_REAL_CALL(func) real_args ;                                    \
+    record->tend = recorder_wtime();                                                \
+    record->res = NULL;                                                             \
+    if (sizeof(ret)) {                                                              \
+        record->res = malloc(sizeof(ret));                                          \
+        memcpy(record->res, &res, sizeof(ret));                                     \
+    }
+
+// C wrappers call this
+#define RECORDER_INTERCEPTOR_PROLOGUE_WITH_MPI_INFO(ret, func, real_args, info)                         \
+    /*RECORDER_LOGINFO("[Recorder] intercept %s\n", #func);*/                       \
+    if(!logger_initialized()) {                                                     \
+        GOTCHA_SET_REAL_CALL_NOCHECK(func);                                         \
+        ret res = GOTCHA_REAL_CALL(func) real_args ;                                \
+        return res;                                                                 \
+    }                                                                               \
+    RECORDER_INTERCEPTOR_PROLOGUE_CORE_WITH_MPI_INFO(ret, func, real_args, info)
 /**
  * I/O Interceptor
  * Phase 2:

@@ -1,0 +1,570 @@
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:24:13 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:24:13 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4811       1208.42    0.423685    131072     4096       0.060490   13.56      0.005237   13.62      0   
+read      207947     57009      0.008970    131072     4096       0.019473   0.287391   0.010951   0.315158   0   
+write     4761       1193.46    0.428995    131072     4096       0.033747   13.73      0.005821   13.77      1   
+read      231353     64391      0.007940    131072     4096       0.019488   0.254444   0.011182   0.283273   1   
+write     4667       1169.82    0.437652    131072     4096       0.034570   14.01      0.004945   14.04      2   
+read      224357     61806      0.008260    131072     4096       0.019376   0.265088   0.009545   0.292106   2   
+write     5107       1280.44    0.399853    131072     4096       0.033318   12.80      0.005064   12.83      3   
+read      231175     63744      0.008021    131072     4096       0.019529   0.257028   0.009342   0.283491   3   
+write     4321       1082.63    0.472915    131072     4096       0.031749   15.13      0.004957   15.17      4   
+read      221926     60970      0.008385    131072     4096       0.020372   0.268723   0.008489   0.295305   4   
+write     4697       1177.28    0.434892    131072     4096       0.032239   13.92      0.004913   13.95      5   
+read      228461     62978      0.008111    131072     4096       0.019616   0.260153   0.009230   0.286858   5   
+write     4812       1205.75    0.424623    131072     4096       0.027507   13.59      0.005077   13.62      6   
+read      178679     48201      0.010593    131072     4096       0.019874   0.339908   0.008420   0.366780   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5107.35    4320.57    4739.45     216.74    1276.84    1080.14    1184.86      54.18   13.85732         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       231352.81  178679.30  217699.78   17581.26   57838.20   44669.82   54424.95    4395.32    0.30328         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.722 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/162412.427-lassen119-ather1-ior-156696/
+[Recorder] elapsed time: 106.40
+Finished            : Mon Mar 10 16:25:53 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:26:17 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:26:17 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5128       1286.87    0.397856    131072     4096       0.045576   12.73      0.005488   12.78      0   
+read      235118     64366      0.007943    131072     4096       0.019286   0.254543   0.007066   0.278736   0   
+write     4952       1241.23    0.412483    131072     4096       0.031384   13.20      0.004948   13.23      1   
+read      227131     62663      0.008113    131072     4096       0.019115   0.261461   0.011419   0.288539   1   
+write     4953       1241.84    0.412259    131072     4096       0.034331   13.19      0.004874   13.23      2   
+read      232405     64391      0.007942    131072     4096       0.020066   0.254447   0.009639   0.281991   2   
+write     4840       1213.33    0.421972    131072     4096       0.033280   13.50      0.004957   13.54      3   
+read      229617     63503      0.008024    131072     4096       0.019831   0.258003   0.009505   0.285414   3   
+write     4420       1107.70    0.462210    131072     4096       0.034020   14.79      0.004868   14.83      4   
+read      174799     47141      0.010841    131072     4096       0.019978   0.347552   0.009842   0.374922   4   
+write     4503       1128.68    0.453614    131072     4096       0.034282   14.52      0.005130   14.55      5   
+read      224280     61482      0.008314    131072     4096       0.018876   0.266484   0.009156   0.292206   5   
+write     4585       1149.22    0.445495    131072     4096       0.033181   14.26      0.006808   14.29      6   
+read      231781     63918      0.007995    131072     4096       0.019162   0.256327   0.009441   0.282750   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5127.82    4419.79    4768.74     247.25    1281.95    1104.95    1192.18      61.81   13.78009         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       235118.44  174799.01  222161.54   19615.25   58779.61   43699.75   55540.39    4903.81    0.29779         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.718 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/162616.33-lassen119-ather1-ior-157000/
+[Recorder] elapsed time: 105.58
+Finished            : Mon Mar 10 16:27:56 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:28:20 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:28:20 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5182       1300.64    0.393642    131072     4096       0.045808   12.60      0.005633   12.65      0   
+read      182046     48943      0.010446    131072     4096       0.019270   0.334760   0.008501   0.359997   0   
+write     5464       1369.92    0.373735    131072     4096       0.031807   11.96      0.004774   11.99      1   
+read      223101     62366      0.008176    131072     4096       0.019112   0.262707   0.013349   0.293751   1   
+write     5348       1340.72    0.381863    131072     4096       0.032002   12.22      0.004853   12.26      2   
+read      228430     62955      0.008115    131072     4096       0.018499   0.260249   0.009367   0.286898   2   
+write     4515       1131.62    0.452440    131072     4096       0.033038   14.48      0.004702   14.51      3   
+read      211010     57714      0.008860    131072     4096       0.019015   0.283885   0.009703   0.310582   3   
+write     4850       1215.69    0.421152    131072     4096       0.032160   13.48      0.004770   13.51      4   
+read      191820     51974      0.009840    131072     4096       0.019335   0.315236   0.009235   0.341653   4   
+write     4598       1152.79    0.444132    131072     4096       0.036831   14.21      0.005095   14.25      5   
+read      223814     60908      0.008388    131072     4096       0.019681   0.268997   0.006326   0.292815   5   
+write     4436       1111.63    0.460577    131072     4096       0.032295   14.74      0.005435   14.77      6   
+read      173132     47052      0.010861    131072     4096       0.018793   0.348212   0.013256   0.378532   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5463.91    4435.78    4913.32     388.02    1365.98    1108.94    1228.33      97.01   13.42128         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       228429.70  173132.02  204764.66   20641.25   57107.42   43283.01   51191.17    5160.31    0.32346         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.740 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/162819.43-lassen119-ather1-ior-157293/
+[Recorder] elapsed time: 103.04
+Finished            : Mon Mar 10 16:29:56 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:30:20 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:30:20 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4827       1211.26    0.422690    131072     4096       0.046666   13.53      0.005340   13.58      0   
+read      240187     65241      0.007829    131072     4096       0.018724   0.251131   0.005078   0.272854   0   
+write     4340       1087.32    0.470863    131072     4096       0.030836   15.07      0.004863   15.10      1   
+read      224571     62188      0.008209    131072     4096       0.019851   0.263461   0.009842   0.291827   1   
+write     5249       1316.20    0.388990    131072     4096       0.035297   12.45      0.004703   12.49      2   
+read      183946     49642      0.010304    131072     4096       0.019939   0.330044   0.008403   0.356279   2   
+write     4261       1067.71    0.479507    131072     4096       0.033418   15.35      0.005251   15.38      3   
+read      220018     60283      0.008484    131072     4096       0.019813   0.271787   0.008449   0.297866   3   
+write     4929       1235.51    0.414396    131072     4096       0.032944   13.26      0.004876   13.30      4   
+read      228493     63053      0.008109    131072     4096       0.018616   0.259845   0.010525   0.286819   4   
+write     4604       1154.00    0.443652    131072     4096       0.035200   14.20      0.004790   14.24      5   
+read      218080     59526      0.008582    131072     4096       0.019414   0.275243   0.008059   0.300513   5   
+write     4766       1194.71    0.428544    131072     4096       0.033928   13.71      0.005138   13.75      6   
+read      223480     62080      0.008233    131072     4096       0.018989   0.263919   0.012512   0.293252   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5248.87    4260.54    4710.67     317.51    1312.22    1065.14    1177.67      79.38   13.97557         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       240186.98  183945.66  219825.04   16106.93   60046.75   45986.41   54956.26    4026.73    0.29992         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.788 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/163019.471-lassen119-ather1-ior-157718/
+[Recorder] elapsed time: 106.88
+Finished            : Mon Mar 10 16:32:00 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:32:24 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:32:24 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5453       1368.59    0.374080    131072     4096       0.044546   11.97      0.005363   12.02      0   
+read      197406     54151      0.009443    131072     4096       0.021193   0.302560   0.010391   0.331986   0   
+write     4945       1239.47    0.413073    131072     4096       0.031835   13.22      0.005121   13.25      1   
+read      229272     63757      0.008009    131072     4096       0.018591   0.256976   0.011716   0.285844   1   
+write     5122       1284.02    0.398737    131072     4096       0.031821   12.76      0.005030   12.79      2   
+read      229653     63517      0.008050    131072     4096       0.020195   0.257948   0.009411   0.285369   2   
+write     5358       1343.46    0.381066    131072     4096       0.033221   12.20      0.005197   12.23      3   
+read      168276     45174      0.011304    131072     4096       0.018864   0.362684   0.009345   0.389456   3   
+write     5085       1274.92    0.401585    131072     4096       0.033270   12.85      0.004794   12.89      4   
+read      223287     61607      0.008280    131072     4096       0.019229   0.265946   0.009662   0.293506   4   
+write     5043       1264.37    0.404930    131072     4096       0.032973   12.96      0.004905   12.99      5   
+read      216337     59934      0.008528    131072     4096       0.022609   0.273367   0.009328   0.302935   5   
+write     5222       1309.16    0.391081    131072     4096       0.032515   12.51      0.005206   12.55      6   
+read      186742     50941      0.010018    131072     4096       0.019644   0.321630   0.010954   0.350945   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5452.53    4944.86    5175.42     166.34    1363.13    1236.22    1293.85      41.58   12.67589         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       229653.41  168275.73  207281.74   21919.06   57413.35   42068.93   51820.44    5479.76    0.32001         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.770 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/163223.693-lassen119-ather1-ior-158014/
+[Recorder] elapsed time: 97.58
+Finished            : Mon Mar 10 16:33:56 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:34:20 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:34:20 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5217       1309.41    0.391009    131072     4096       0.046144   12.51      0.005549   12.56      0   
+read      214809     58937      0.008676    131072     4096       0.019239   0.277990   0.009893   0.305089   0   
+write     5245       1314.78    0.389410    131072     4096       0.031117   12.46      0.004958   12.50      1   
+read      220627     60998      0.008384    131072     4096       0.019093   0.268598   0.011473   0.297045   1   
+write     5579       1399.32    0.365884    131072     4096       0.034886   11.71      0.004916   11.75      2   
+read      233720     64173      0.007965    131072     4096       0.018572   0.255309   0.008319   0.280404   2   
+write     5061       1268.73    0.403546    131072     4096       0.033594   12.91      0.004819   12.95      3   
+read      218223     59816      0.008530    131072     4096       0.019216   0.273905   0.009817   0.300316   3   
+write     3914       980.59     0.522125    131072     4096       0.033569   16.71      0.004974   16.74      4   
+read      220465     61578      0.008305    131072     4096       0.021461   0.266067   0.011750   0.297263   4   
+write     2709.30    678.34     0.754762    131072     4096       0.032307   24.15      0.005059   24.19      5   
+read      217854     59544      0.008585    131072     4096       0.019377   0.275160   0.008530   0.300826   5   
+write     5221       1309.10    0.391088    131072     4096       0.033717   12.52      0.004850   12.55      6   
+read      233462     63573      0.008044    131072     4096       0.018997   0.257719   0.006125   0.280714   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5579.45    2709.30    4706.57     950.17    1394.86     677.33    1176.64     237.54   14.74857         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       233719.84  214809.45  222737.06    7094.53   58429.96   53702.36   55684.26    1773.63    0.29452         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.715 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/163418.673-lassen119-ather1-ior-158417/
+[Recorder] elapsed time: 112.28
+Finished            : Mon Mar 10 16:36:05 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:36:29 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:36:29 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5445       1366.89    0.374544    131072     4096       0.046309   11.99      0.005334   12.04      0   
+read      233388     64028      0.007986    131072     4096       0.018860   0.255888   0.008570   0.280803   0   
+write     4675       1171.69    0.436954    131072     4096       0.033167   13.98      0.004751   14.02      1   
+read      228329     63732      0.008023    131072     4096       0.018502   0.257076   0.013164   0.287025   1   
+write     5501       1379.43    0.371160    131072     4096       0.034081   11.88      0.004872   11.91      2   
+read      229214     63592      0.008010    131072     4096       0.019788   0.257642   0.010347   0.285916   2   
+write     4482       1123.14    0.455851    131072     4096       0.031393   14.59      0.005169   14.62      3   
+read      221185     61560      0.008307    131072     4096       0.021035   0.266146   0.011192   0.296295   3   
+write     5319       1333.61    0.383915    131072     4096       0.033616   12.29      0.004957   12.32      4   
+read      184338     49933      0.010232    131072     4096       0.019535   0.328122   0.009628   0.355521   4   
+write     5548       1391.38    0.367972    131072     4096       0.033222   11.78      0.007198   11.81      5   
+read      223220     61563      0.008288    131072     4096       0.020132   0.266133   0.008680   0.293594   5   
+write     5270       1321.35    0.387476    131072     4096       0.033143   12.40      0.005128   12.44      6   
+read      224974     62091      0.008237    131072     4096       0.018859   0.263870   0.010568   0.291305   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5547.51    4481.92    5176.88     392.31    1386.88    1120.48    1294.22      98.08   12.73762         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       233387.65  184337.93  220663.85   15300.34   58346.91   46084.48   55165.96    3825.08    0.29864         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.708 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/163628.373-lassen119-ather1-ior-158714/
+[Recorder] elapsed time: 97.96
+Finished            : Mon Mar 10 16:38:01 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:38:24 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:38:24 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4925       1235.58    0.414373    131072     4096       0.044021   13.26      0.005616   13.31      0   
+read      226547     62543      0.008176    131072     4096       0.019219   0.261963   0.010242   0.289282   0   
+write     4822       1208.67    0.423598    131072     4096       0.031849   13.56      0.004836   13.59      1   
+read      229338     63375      0.008068    131072     4096       0.019231   0.258524   0.010173   0.285762   1   
+write     4765       1194.56    0.428602    131072     4096       0.034632   13.72      0.004949   13.75      2   
+read      166187     44128      0.011592    131072     4096       0.018695   0.371281   0.006667   0.394352   2   
+write     4414       1106.64    0.462656    131072     4096       0.036682   14.81      0.006326   14.85      3   
+read      221414     60953      0.008379    131072     4096       0.020509   0.268799   0.008824   0.295989   3   
+write     4814       1206.50    0.424361    131072     4096       0.031677   13.58      0.004685   13.61      4   
+read      218919     60425      0.008450    131072     4096       0.020022   0.271147   0.009452   0.299362   4   
+write     4586       1149.54    0.445389    131072     4096       0.032258   14.25      0.006260   14.29      5   
+read      218344     60792      0.008404    131072     4096       0.020979   0.269509   0.011232   0.300150   5   
+write     4614       1156.17    0.442832    131072     4096       0.031233   14.17      0.004851   14.20      6   
+read      208008     56768      0.008985    131072     4096       0.019281   0.288614   0.008973   0.315065   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        4924.75    4414.38    4705.79     162.31    1231.19    1103.59    1176.45      40.58   13.94355         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       229337.83  166186.57  212679.45   20001.89   57334.46   41546.64   53169.86    5000.47    0.31142         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.698 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/163823.694-lassen119-ather1-ior-159003/
+[Recorder] elapsed time: 106.58
+Finished            : Mon Mar 10 16:40:05 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:40:29 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:40:29 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4996       1253.79    0.408356    131072     4096       0.045993   13.07      0.005489   13.12      0   
+read      221827     61433      0.008292    131072     4096       0.019544   0.266697   0.010838   0.295437   0   
+write     4637       1162.19    0.440541    131072     4096       0.033938   14.10      0.004877   14.13      1   
+read      231029     63439      0.008047    131072     4096       0.019467   0.258263   0.007780   0.283670   1   
+write     4671       1170.86    0.437281    131072     4096       0.034047   13.99      0.004658   14.03      2   
+read      226683     63263      0.008077    131072     4096       0.019506   0.258984   0.012546   0.289109   2   
+write     4463       1118.56    0.457724    131072     4096       0.032088   14.65      0.006275   14.68      3   
+read      173674     46855      0.010919    131072     4096       0.020282   0.349678   0.009324   0.377351   3   
+write     4577       1147.29    0.446265    131072     4096       0.034003   14.28      0.004864   14.32      4   
+read      226705     63090      0.008091    131072     4096       0.020106   0.259694   0.010574   0.289080   4   
+write     4220       1057.43    0.484185    131072     4096       0.033343   15.49      0.004907   15.53      5   
+read      203389     55277      0.009170    131072     4096       0.018517   0.296399   0.012036   0.322220   5   
+write     4609       1155.61    0.443033    131072     4096       0.035977   14.18      0.007441   14.22      6   
+read      180569     48633      0.010504    131072     4096       0.019630   0.336892   0.008635   0.362941   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        4996.25    4219.90    4596.20     216.17    1249.06    1054.97    1149.05      54.04   14.29029         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       231029.05  173673.83  209125.24   21920.64   57757.26   43418.46   52281.31    5480.16    0.31712         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.851 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/164027.886-lassen119-ather1-ior-159424/
+[Recorder] elapsed time: 109.30
+Finished            : Mon Mar 10 16:42:11 2025
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Mon Mar 10 16:42:35 2025
+Command line        : /p/gpfs1/ather1/ior/install/bin/ior -a HDF5 -b 128m -i 7 -t 4096k -c -e -m
+Machine             : Linux lassen119
+TestID              : 0
+StartTime           : Mon Mar 10 16:42:35 2025
+Path                : testFile
+FS                  : 20656.5 TiB   Used FS: 90.3%   Inodes: 1536.0 Mi   Used Inodes: 68.7%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : collective
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 13
+tasks               : 512
+clients per node    : 40
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 7
+xfersize            : 4 MiB
+blocksize           : 128 MiB
+aggregate filesize  : 64 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     4889       1226.74    0.417353    131072     4096       0.046102   13.36      0.005412   13.41      0   
+read      231431     63744      0.008023    131072     4096       0.019886   0.257027   0.008530   0.283177   0   
+write     5241       1314.24    0.389574    131072     4096       0.034900   12.47      0.005087   12.50      1   
+read      175395     47453      0.010781    131072     4096       0.020949   0.345266   0.009459   0.373649   1   
+write     4703       1178.83    0.434324    131072     4096       0.032597   13.90      0.005062   13.93      2   
+read      223925     62057      0.008217    131072     4096       0.019402   0.264014   0.010761   0.292669   2   
+write     4812       1206.29    0.424438    131072     4096       0.033866   13.58      0.004867   13.62      3   
+read      226150     62437      0.008188    131072     4096       0.019315   0.262409   0.010144   0.289790   3   
+write     4994       1251.75    0.409021    131072     4096       0.032403   13.09      0.004846   13.12      4   
+read      213771     58298      0.008730    131072     4096       0.019024   0.281037   0.010206   0.306571   4   
+write     4472       1120.65    0.456851    131072     4096       0.032622   14.62      0.004898   14.66      5   
+read      229668     63804      0.007998    131072     4096       0.019009   0.256786   0.010865   0.285351   5   
+write     4997       1252.93    0.408636    131072     4096       0.034831   13.08      0.004947   13.11      6   
+read      226531     63281      0.008072    131072     4096       0.021105   0.258910   0.011365   0.289303   6   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5240.98    4471.78    4872.55     226.50    1310.24    1117.95    1218.14      56.63   13.47953         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+read       231431.31  175394.61  218124.41   18220.24   57857.83   43848.65   54531.10    4555.06    0.30293         NA            NA     0    512  40    7   0     0        1         0    0      1 134217728  4194304   65536.0 HDF5      0
+[Recorder] unique grammars: 512
+[Recorder] interprocess compression time: 3.732 secs
+[Recorder] trace files have been written to /p/gpfs1/ather1/final_experiments/IOR/recorder-20250310/164234.588-lassen119-ather1-ior-159740/
+[Recorder] elapsed time: 103.03
+Finished            : Mon Mar 10 16:44:12 2025

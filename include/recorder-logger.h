@@ -131,7 +131,7 @@ void analysis_init();
 void logger_set_mpi_info(int mpi_rank, int mpi_size);
 void logger_finalize();
 bool logger_initialized();
-void logger_record_enter(Record *record);
+void logger_record_enter(Record *record, void** real_args);
 void logger_record_exit(Record *record, int real_arg_count, void** real_args);
 bool logger_intraprocess_pattern_recognition();
 bool logger_interprocess_pattern_recognition();

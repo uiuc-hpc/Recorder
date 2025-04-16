@@ -1,0 +1,235 @@
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Tue Feb 18 21:48:26 2025
+Command line        : /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 256m -i 5 -w -t 4m -e -m
+Machine             : Linux ruby39
+TestID              : 0
+StartTime           : Tue Feb 18 21:48:26 2025
+Path                : testFile
+FS                  : 8119.0 TiB   Used FS: 22.7%   Inodes: 4945.7 Mi   Used Inodes: 13.2%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 32
+tasks               : 1024
+clients per node    : 32
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 5
+xfersize            : 4 MiB
+blocksize           : 256 MiB
+aggregate filesize  : 256 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5948       1501.96    0.681697    262144     4096       0.199043   43.63      1.60       44.07      0   
+write     6367       1597.53    0.640936    262144     4096       0.211122   41.02      0.384832   41.17      1   
+write     5692       1426.11    0.717745    262144     4096       0.099004   45.95      0.219189   46.05      2   
+write     5784       1449.59    0.705402    262144     4096       0.111765   45.21      0.686383   45.32      3   
+write     5898       1478.00    0.692242    262144     4096       0.104015   44.34      0.544047   44.45      4   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        6367.16    5692.07    5937.83     232.41    1591.79    1423.02    1484.46      58.10   44.21344         NA            NA     0   1024  32    5   0     0        1         0    0      1 268435456  4194304  262144.0 HDF5      0
+Finished            : Tue Feb 18 21:52:15 2025
+[Recorder] unique grammars: 1024
+[Recorder] interprocess compression time: 0.168 secs
+[Recorder] trace files have been written to /p/lustre3/ather1/final_experiments/IOR_Lustre/recorder-20250218/214826.949-ruby39-ather1-ior-399406/
+[Recorder] elapsed time: 228.51
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Tue Feb 18 21:52:16 2025
+Command line        : /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 256m -i 5 -w -t 4m -e -m
+Machine             : Linux ruby39
+TestID              : 0
+StartTime           : Tue Feb 18 21:52:16 2025
+Path                : testFile
+FS                  : 8119.0 TiB   Used FS: 22.7%   Inodes: 4945.7 Mi   Used Inodes: 13.2%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 32
+tasks               : 1024
+clients per node    : 32
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 5
+xfersize            : 4 MiB
+blocksize           : 256 MiB
+aggregate filesize  : 256 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     28687      7250       0.138761    262144     4096       0.106510   9.04       0.608831   9.14       0   
+write     5943       1491.21    0.686648    262144     4096       0.161271   43.95      0.339379   44.11      1   
+write     6034       1511.97    0.677222    262144     4096       0.102137   43.34      0.289458   43.45      2   
+write     6228       1561.24    0.654494    262144     4096       0.116469   41.98      0.196876   42.09      3   
+write     31143      7890       0.128696    262144     4096       0.110175   8.31       0.323303   8.42       4   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       31142.52    5942.86   15606.66   11708.59    7785.63    1485.72    3901.66    2927.15   29.44171         NA            NA     0   1024  32    5   0     0        1         0    0      1 268435456  4194304  262144.0 HDF5      0
+Finished            : Tue Feb 18 21:54:50 2025
+[Recorder] unique grammars: 1024
+[Recorder] interprocess compression time: 0.171 secs
+[Recorder] trace files have been written to /p/lustre3/ather1/final_experiments/IOR_Lustre/recorder-20250218/215216.444-ruby39-ather1-ior-399670/
+[Recorder] elapsed time: 154.84
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Tue Feb 18 21:54:53 2025
+Command line        : /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 256m -i 5 -w -t 4m -e -m
+Machine             : Linux ruby39
+TestID              : 0
+StartTime           : Tue Feb 18 21:54:53 2025
+Path                : testFile
+FS                  : 8119.0 TiB   Used FS: 22.7%   Inodes: 4945.7 Mi   Used Inodes: 13.2%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 32
+tasks               : 1024
+clients per node    : 32
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 5
+xfersize            : 4 MiB
+blocksize           : 256 MiB
+aggregate filesize  : 256 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     6176       1575.13    0.649102    262144     4096       0.842883   41.61      2.13       42.45      0   
+write     5868       1470.38    0.695856    262144     4096       0.099205   44.57      0.643241   44.67      1   
+write     27086      7565       0.134800    262144     4096       1.01       8.66       0.258551   9.68       2   
+write     5788       1450.32    0.705450    262144     4096       0.099271   45.19      0.395486   45.29      3   
+write     6237       1562.96    0.654965    262144     4096       0.098769   41.93      0.330596   42.03      4   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write       27085.57    5788.45   10231.00    8429.04    6771.39    1447.11    2557.75    2107.26   36.82306         NA            NA     0   1024  32    5   0     0        1         0    0      1 268435456  4194304  262144.0 HDF5      0
+Finished            : Tue Feb 18 21:58:06 2025
+[Recorder] unique grammars: 1024
+[Recorder] interprocess compression time: 0.172 secs
+[Recorder] trace files have been written to /p/lustre3/ather1/final_experiments/IOR_Lustre/recorder-20250218/215453.606-ruby39-ather1-ior-399930/
+[Recorder] elapsed time: 193.19
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Tue Feb 18 21:58:07 2025
+Command line        : /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 256m -i 5 -w -t 4m -e -m
+Machine             : Linux ruby39
+TestID              : 0
+StartTime           : Tue Feb 18 21:58:07 2025
+Path                : testFile
+FS                  : 8119.0 TiB   Used FS: 22.7%   Inodes: 4945.7 Mi   Used Inodes: 13.2%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 32
+tasks               : 1024
+clients per node    : 32
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 5
+xfersize            : 4 MiB
+blocksize           : 256 MiB
+aggregate filesize  : 256 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5869       1469.69    0.696048    262144     4096       0.076153   44.59      0.538258   44.67      0   
+write     5954       1492.04    0.684777    262144     4096       0.103331   43.92      0.913150   44.03      1   
+write     6424       1610.05    0.635653    262144     4096       0.099394   40.70      0.324643   40.80      2   
+write     6033       1511.74    0.674479    262144     4096       0.102968   43.35      1.52       43.45      3   
+write     5946       1489.86    0.687257    262144     4096       0.098351   43.99      0.253514   44.09      4   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        6424.37    5868.79    6045.17     196.56    1606.09    1467.20    1511.29      49.14   43.40833         NA            NA     0   1024  32    5   0     0        1         0    0      1 268435456  4194304  262144.0 HDF5      0
+Finished            : Tue Feb 18 22:01:51 2025
+[Recorder] unique grammars: 1024
+[Recorder] interprocess compression time: 0.172 secs
+[Recorder] trace files have been written to /p/lustre3/ather1/final_experiments/IOR_Lustre/recorder-20250218/215807.705-ruby39-ather1-ior-400216/
+[Recorder] elapsed time: 224.40
+IOR-4.1.0+dev: MPI Coordinated Test of Parallel I/O
+Began               : Tue Feb 18 22:01:53 2025
+Command line        : /p/lustre3/ather1/ior/install/bin/ior -a HDF5 -b 256m -i 5 -w -t 4m -e -m
+Machine             : Linux ruby39
+TestID              : 0
+StartTime           : Tue Feb 18 22:01:53 2025
+Path                : testFile
+FS                  : 8119.0 TiB   Used FS: 22.7%   Inodes: 4945.7 Mi   Used Inodes: 13.2%
+
+Options: 
+api                 : HDF5
+apiVersion          : 1.14.4 (Parallel)
+test filename       : testFile
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 32
+tasks               : 1024
+clients per node    : 32
+memoryBuffer        : CPU
+dataAccess          : CPU
+GPUDirect           : 0
+repetitions         : 5
+xfersize            : 4 MiB
+blocksize           : 256 MiB
+aggregate filesize  : 256 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     5949       1489.88    0.685620    262144     4096       0.078337   43.99      0.339527   44.06      0   
+write     5811       1457.33    0.702652    262144     4096       0.143310   44.97      1.15       45.11      1   
+write     5626       1438.77    0.711658    262144     4096       1.04       45.55      0.449350   46.59      2   
+write     5736       1437.09    0.712525    262144     4096       0.094305   45.60      0.209348   45.70      3   
+write     5811       1456.45    0.703070    262144     4096       0.107022   45.00      1.21       45.11      4   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write        5949.08    5626.12    5786.72     105.70    1487.27    1406.53    1446.68      26.42   45.31605         NA            NA     0   1024  32    5   0     0        1         0    0      1 268435456  4194304  262144.0 HDF5      0
+Finished            : Tue Feb 18 22:05:47 2025
+[Recorder] unique grammars: 1024
+[Recorder] interprocess compression time: 0.181 secs
+[Recorder] trace files have been written to /p/lustre3/ather1/final_experiments/IOR_Lustre/recorder-20250218/220153.41-ruby39-ather1-ior-400489/
+[Recorder] elapsed time: 234.54

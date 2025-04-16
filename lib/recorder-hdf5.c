@@ -13,6 +13,7 @@
 
 #define SMALL_BUF_SIZE 128
 #define LARGE_BUF_SIZE 1024
+static int count = 0;
 
 void get_datatype_name(int class_id, int type, char *string) {
   char *tmp = (char *)malloc(sizeof(char) * SMALL_BUF_SIZE);
@@ -3673,9 +3674,38 @@ herr_t WRAPPER_NAME(H5Pset_sizes)(hid_t plist_id, size_t sizeof_addr, size_t siz
 }
 
 herr_t WRAPPER_NAME(H5Pset_fapl_mpio)(hid_t fapl_id, MPI_Comm comm, MPI_Info info) {
-	RECORDER_INTERCEPTOR_PROLOGUE(herr_t, H5Pset_fapl_mpio, (fapl_id, comm, info));
+	// if (info != MPI_INFO_NULL){
+    //     int nkeys;
+    //     MPI_Info_get_nkeys(info, &nkeys);  // Get the number of keys in the MPI_Info object
+
+    //     printf("MPI_Info contains %d key(s):\n", nkeys);
+
+    //     for (int i = 0; i < nkeys; i++) {
+    //         char key[MPI_MAX_INFO_KEY];
+    //         char value[MPI_MAX_INFO_VAL];
+    //         int flag;
+
+    //         // Get the i-th key
+    //         MPI_Info_get_nthkey(info, i, key);
+
+    //         // Get the value associated with the key
+    //         MPI_Info_get(info, key, MPI_MAX_INFO_VAL, value, &flag);
+
+    //         if (flag) {
+    //             printf("  Key: %s, Value: %s\n", key, value);
+    //         } else {
+    //             printf("  Key: %s has no associated value.\n", key);
+    //         }
+    //     }
+    // }
+	RECORDER_INTERCEPTOR_PROLOGUE_WITH_MPI_INFO(herr_t, H5Pset_fapl_mpio, (fapl_id, comm, info), info);
 	char **args = assemble_args_list(3, itoa(fapl_id),ptoa(&comm),ptoa(&info));
 	RECORDER_INTERCEPTOR_EPILOGUE(3, args);
+
+	// int real_arg_count = 1;
+    // void** real_args = alloca(sizeof(void*)*real_arg_count);
+    // real_args[0] = (void*) &info;
+    // RECORDER_INTERCEPTOR_EPILOGUE_WITH_REAL_ARGS(3, args, real_arg_count, real_args);
 }
 
 herr_t WRAPPER_NAME(H5Pget_all_coll_metadata_ops)(hid_t plist_id, hbool_t *is_collective) {
