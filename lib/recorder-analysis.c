@@ -27,7 +27,6 @@ static off_t *prev_offset_read;
 static int locality_threshold_read = 0;
 static int locality_threshold_write = 0;
 
-
 void push(int x, int stack[])
 {
     if (top != SIZE - 1)
@@ -87,9 +86,6 @@ void extract_io_behavior(RecorderLogger* logger, int stack[]){
                 if (s->terminal_id == terminal_id){
                     Record * record = cs_to_record(s);
                     const char * func_name = get_function_name_by_id(record->func_id);
-                    // if (logger->rank == 0){
-                    //     printf("func name %s\n", func_name);
-                    // }
                     if (strcmp(func_name, "MPI_File_write_at_all") == 0 || strcmp(func_name, "MPI_File_read_at_all") == 0){
                         entry->collective = 1;
                         if (strcmp(func_name, "MPI_File_write_at_all") == 0)
@@ -121,7 +117,6 @@ void extract_io_behavior(RecorderLogger* logger, int stack[]){
                                 entry->spatial_locality = 1;
                         }
                         prev_offset_write = offset;
-
                     }
                     else if (strcmp(func_name, "read") == 0){
                         char *transfer_size = (char*) record->args[2];

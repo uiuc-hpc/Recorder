@@ -8,6 +8,7 @@
 #include <alloca.h>
 #include "recorder.h"
 #include "recorder-analysis.h"
+
 #include "mpi.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
@@ -160,7 +161,14 @@ void logger_record_exit(Record* record, int real_arg_count, void** real_args) {
         Record *current, *tmp;
         DL_FOREACH_SAFE(rs->records, current, tmp) {
             DL_DELETE(rs->records, current);
+
             write_record(current);
+
+            // perform online anlysis/tuning here?
+            // e.g., for MPI_File_open(), you can get
+            // MPI_File* fh = (MPI_File*) real_args[0];
+            //online_tuning(record, real_arg_count, real_args)
+
             free_record(current);
         }
     }

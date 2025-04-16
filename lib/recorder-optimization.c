@@ -5,6 +5,7 @@
 #include "recorder-optimization.h"
 
 #define H5AC__CURR_CACHE_CONFIG_VERSION   1
+
 static bool romio = false;
 
 int apply_optimizations(RecorderLogger* logger, Knowledge* knowledge, Record* record, const char * func_name, int timestep, char file_name[512], int romioOptimized, MPI_Info info){
