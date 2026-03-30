@@ -226,7 +226,7 @@ if(CMAKE_PROJECT_NAME STREQUAL RECORDER)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL RECORDER AND BUILD_TESTING)
-    # include test sub directory
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 endif()
 
 #-----------------------------------------------------------------------------
