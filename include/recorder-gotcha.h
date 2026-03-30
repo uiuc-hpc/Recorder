@@ -7,8 +7,10 @@
 #include <stdbool.h>
 #include "mpi.h"
 
+#ifdef RECORDER_WITH_HDF5
 #include "hdf5.h"
 #include "hdf5_hl.h"
+#endif
 
 #ifdef RECORDER_WITH_PNETCDF
 #include "pnetcdf.h"
@@ -29,6 +31,7 @@
 #define CONST
 #endif
 
+#ifdef RECORDER_WITH_HDF5
 #if H5_VERS_MAJOR <= 1
 
 #if H5_VERS_MINOR < 10
@@ -77,6 +80,7 @@
 #endif
 
 #endif  /* H5_VERS_MAJOR <= 1 */
+#endif  /* RECORDER_WITH_HDF5 */
 
 #ifdef NC_VERSION_MAJOR
 #ifdef NC_VERSION_MINOR
@@ -373,6 +377,7 @@ GOTCHA_WRAP(MPI_Comm_split_type, int, (MPI_Comm comm, int split_type, int key, M
 
 
 // HDF5
+#ifdef RECORDER_WITH_HDF5
 GOTCHA_WRAP(H5Dread, herr_t, (hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id, hid_t file_space_id, hid_t dxpl_id, void *buf));
 GOTCHA_WRAP(H5Adelete_by_idx, herr_t, (hid_t loc_id, const char *obj_name, H5_index_t idx_type, H5_iter_order_t order, hsize_t n, hid_t lapl_id));
 GOTCHA_WRAP(H5Fflush, herr_t, (hid_t object_id, H5F_scope_t scope));
@@ -1122,6 +1127,7 @@ GOTCHA_WRAP(H5ESregister_insert_func, herr_t, (hid_t es_id, H5ES_event_insert_fu
 GOTCHA_WRAP(H5Iregister_future, hid_t, (H5I_type_t type, const void *object, H5I_future_realize_func_t realize_cb, H5I_future_discard_func_t discard_cb));
 GOTCHA_WRAP(H5ESfree_err_info, herr_t, (size_t num_err_info, H5ES_err_info_t err_info[]));
 GOTCHA_WRAP(H5ESregister_complete_func, herr_t, (hid_t es_id, H5ES_event_complete_func_t func, void *ctx));
+#endif /* RECORDER_WITH_HDF5 */
 
 // PnetCDF functions
 #ifdef RECORDER_WITH_PNETCDF
@@ -2042,6 +2048,7 @@ GOTCHA_WRAP(ncmpi_mget_varm_longlong_all, int, (int ncid, int num, int varids[],
 GOTCHA_WRAP(ncmpi_mget_varm_ulonglong_all, int, (int ncid, int num, int varids[], MPI_Offset* const starts[], MPI_Offset* const counts[], MPI_Offset* const strides[], MPI_Offset* const imaps[], unsigned long long *bufs[]));
 #endif /* RECORDER_WITH_PNETCDF */
 
+// NETCDF
 #ifdef RECORDER_WITH_NETCDF
 GOTCHA_WRAP(nc__create, int, (const char *path, int cmode, size_t initialsz, size_t *chunksizehintp, int *ncidp));
 GOTCHA_WRAP(nc__enddef, int, (int ncid, size_t h_minfree, size_t v_align, size_t v_minfree, size_t r_align));

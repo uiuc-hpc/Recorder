@@ -12,7 +12,6 @@ include_directories(${CMAKE_SOURCE_DIR}/deps/GOTCHA/include)
 set(RECORDER_SRCS
         ${CMAKE_SOURCE_DIR}/include/recorder.h
         ${CMAKE_SOURCE_DIR}/include/recorder-sequitur.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-cst-cfg.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-mpi.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-init-finalize.c
@@ -34,15 +33,20 @@ set(RECORDER_SRCS
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
-find_package(HDF5 REQUIRED)
+find_package(HDF5)
 if(HDF5_FOUND)
+    message("-- " "Found HDF5:" ${HDF5_INCLUDE_DIRS})
+    set(RECORDER_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-hdf5.c
+        ${RECORDER_SRCS}
+    )
     include_directories(${HDF5_INCLUDE_DIRS})
     set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${HDF5_INCLUDE_DIRS}
             ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${HDF5_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message(STATUS, "HDF5 not found")
+    message("-- " "HDF5 not found. Will build Recorder without it.")
 endif()
 
 # PnetCDF is not a CMAKE project, we use find_path() to locate it
@@ -170,6 +174,7 @@ target_compile_definitions(recorder
         PRIVATE $<$<BOOL:${HAVE___LXSTAT64}>:HAVE___LXSTAT64>
         PRIVATE $<$<BOOL:${HAVE___FXSTAT}>:HAVE___FXSTAT>
         PRIVATE $<$<BOOL:${HAVE___FXSTAT64}>:HAVE___FXSTAT64>
+        PRIVATE $<$<BOOL:${HDF5_FOUND}>:RECORDER_WITH_HDF5>
         PRIVATE $<$<AND:$<BOOL:${PNETCDF_INCLUDE_DIRS}>,$<BOOL:${PNETCDF_LIBRARY_FOUND}>>:RECORDER_WITH_PNETCDF>
         PRIVATE $<$<AND:$<BOOL:${NETCDF_INCLUDE_DIRS}>,$<BOOL:${NETCDF_LIBRARY_FOUND}>>:RECORDER_WITH_NETCDF>
         PRIVATE $<$<BOOL:${RECORDER_ENABLE_FCNTL_TRACE}>:RECORDER_ENABLE_FCNTL_TRACE>

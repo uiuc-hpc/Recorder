@@ -4,7 +4,11 @@
 static bool posix_tracing    = true;
 static bool mpi_tracing      = false;
 static bool mpiio_tracing    = true;
+#ifdef RECORDER_WITH_HDF5
 static bool hdf5_tracing     = true;
+#else
+static bool hdf5_tracing     = false;
+#endif
 static bool pnetcdf_tracing  = true;
 static bool netcdf_tracing   = true;
 
@@ -187,6 +191,7 @@ struct gotcha_binding_t mpi_wrap_actions [] = {
 };
 
 struct gotcha_binding_t hdf5_wrap_actions [] = {
+#ifdef RECORDER_WITH_HDF5
     GOTCHA_WRAP_ACTION(H5Dread),
     GOTCHA_WRAP_ACTION(H5Adelete_by_idx),
     GOTCHA_WRAP_ACTION(H5Fflush),
@@ -936,6 +941,7 @@ struct gotcha_binding_t hdf5_wrap_actions [] = {
     GOTCHA_WRAP_ACTION(H5Iregister_future),
     GOTCHA_WRAP_ACTION(H5ESfree_err_info),
     GOTCHA_WRAP_ACTION(H5ESregister_complete_func),
+#endif /* RECORDER_WITH_HDF5 */
 };
 
 
@@ -2171,13 +2177,11 @@ void gotcha_register_functions() {
     char* posix_tracing_env   = getenv(RECORDER_POSIX_TRACING);
     char* mpi_tracing_env     = getenv(RECORDER_MPI_TRACING);
     char* mpiio_tracing_env   = getenv(RECORDER_MPIIO_TRACING);
-    char* hdf5_tracing_env    = getenv(RECORDER_HDF5_TRACING);
     char* pnetcdf_tracing_env = getenv(RECORDER_PNETCDF_TRACING);
     char* netcdf_tracing_env  = getenv(RECORDER_NETCDF_TRACING);
     if (posix_tracing_env) posix_tracing = atoi(posix_tracing_env);
     if (mpi_tracing_env) mpi_tracing = atoi(mpi_tracing_env);
     if (mpiio_tracing_env) mpiio_tracing = atoi(mpiio_tracing_env);
-    if (hdf5_tracing_env) hdf5_tracing = atoi(hdf5_tracing_env);
     if (pnetcdf_tracing_env) pnetcdf_tracing = atoi(pnetcdf_tracing_env);
     if (netcdf_tracing_env) netcdf_tracing = atoi(netcdf_tracing_env);
 
@@ -2193,10 +2197,14 @@ void gotcha_register_functions() {
         gotcha_wrap(mpiio_wrap_actions,
                     sizeof(mpiio_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_mpiio_actions");
+#ifdef RECORDER_WITH_HDF5
+    char* hdf5_tracing_env = getenv(RECORDER_HDF5_TRACING);
+    if (hdf5_tracing_env) hdf5_tracing = atoi(hdf5_tracing_env);
     if (hdf5_tracing)
         gotcha_wrap(hdf5_wrap_actions,
                     sizeof(hdf5_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_hdf5_actions");
+#endif /* RECORDER_WITH_HDF5 */
     if (pnetcdf_tracing)
         gotcha_wrap(pnetcdf_wrap_actions,
                     sizeof(pnetcdf_wrap_actions)/sizeof(struct gotcha_binding_t),
