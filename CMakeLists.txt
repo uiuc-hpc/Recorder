@@ -16,11 +16,6 @@ set(RECORDER_PACKAGE_STRING "${RECORDER_PACKAGE_NAME} ${RECORDER_PACKAGE_VERSION
 set(RECORDER_PACKAGE_TARNAME "${RECORDER_PACKAGE}")
 
 
-# ignore warning message
-if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 OLD)
-endif()
-
 
 #------------------------------------------------------------------------------
 # Setup install and output Directories
