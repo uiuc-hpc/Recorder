@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -322,11 +323,17 @@ void cleanup_record_stack() {
 void save_global_metadata() {
     if (logger.rank != 0) return;
 
+    int num_funcs = sizeof(func_list)/sizeof(char*);
+
     char metadata_filename[1024] = {0};
     sprintf(metadata_filename, "%s/recorder.mt", logger.traces_dir);
     FILE* metafh = GOTCHA_REAL_CALL(fopen) (metadata_filename, "wb");
     RecorderMetadata metadata = {
+        .version_major       = RECORDER_VERSION_MAJOR,
+        .version_minor       = RECORDER_VERSION_MINOR,
+        .version_patch       = RECORDER_VERSION_PATCH,
         .total_ranks         = logger.nprocs,
+        .num_funcs           = num_funcs,
         .posix_tracing       = gotcha_posix_tracing(),
         .mpi_tracing         = gotcha_mpi_tracing(),
         .mpiio_tracing       = gotcha_mpiio_tracing(),
@@ -344,26 +351,21 @@ void save_global_metadata() {
         .intraprocess_pattern_recognition = logger.intraprocess_pattern_recognition,
     };
     GOTCHA_REAL_CALL(fwrite)(&metadata, sizeof(RecorderMetadata), 1, metafh);
-    // reserve the first 1024 bytes to store the metadata block
-    GOTCHA_REAL_CALL(fseek)(metafh, 1024, SEEK_SET);
-    // then write out the supported functions line by line
-    for(int i = 0; i < sizeof(func_list)/sizeof(char*); i++) {
-        const char *funcname = get_function_name_by_id(i);
-        GOTCHA_REAL_CALL(fwrite)(funcname, strlen(funcname), 1, metafh);
-        GOTCHA_REAL_CALL(fwrite)("\n", sizeof(char), 1, metafh);
+
+    // write function names as fixed-size null-padded binary entries
+    char funcname_buf[RECORDER_FUNC_NAME_LEN];
+    for(int i = 0; i < num_funcs; i++) {
+        memset(funcname_buf, 0, RECORDER_FUNC_NAME_LEN);
+        strncpy(funcname_buf, get_function_name_by_id(i), RECORDER_FUNC_NAME_LEN - 1);
+        GOTCHA_REAL_CALL(fwrite)(funcname_buf, RECORDER_FUNC_NAME_LEN, 1, metafh);
     }
     GOTCHA_REAL_CALL(fflush)(metafh);
     GOTCHA_REAL_CALL(fclose)(metafh);
 
-    char version_str[20] = {0};
+    // Remove any legacy VERSION file that may exist from an older run in the same directory
     char version_filename[1024] = {0};
     sprintf(version_filename, "%s/VERSION", logger.traces_dir);
-    FILE* version_file = GOTCHA_REAL_CALL(fopen) (version_filename, "w");
-    sprintf(version_str, "%d.%d.%d", RECORDER_VERSION_MAJOR,
-            RECORDER_VERSION_MINOR, RECORDER_VERSION_PATCH);
-    GOTCHA_REAL_CALL(fwrite) (version_str, strlen(version_str), 1, version_file);
-    GOTCHA_REAL_CALL(fflush)(version_file);
-    GOTCHA_REAL_CALL(fclose)(version_file);
+    GOTCHA_REAL_CALL(remove)(version_filename);
 }
 
 void logger_finalize() {
