@@ -375,41 +375,26 @@ void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
 }
 
 void save_updated_metadata(RecorderReader* reader) {
-    char old_metadata_filename[2048] = {0};
     char new_metadata_filename[2048] = {0};
-    FILE* srcfh;
-    FILE* dstfh;
-    void* fhdata;
-
-    sprintf(old_metadata_filename, "%s/recorder.mt", reader->logs_dir);
     sprintf(new_metadata_filename, "%s/recorder.mt", filtered_trace_dir);
 
-    srcfh = fopen(old_metadata_filename, "rb");
-    dstfh = fopen(new_metadata_filename, "wb");
+    FILE* dstfh = fopen(new_metadata_filename, "wb");
 
-    // first copy the entire old meatdata file to the new metadata file
-    size_t res = 0;
-    fseek(srcfh, 0, SEEK_END);
-    long metafh_size = ftell(srcfh);
-    fhdata = malloc(metafh_size);
-    fseek(srcfh, 0, SEEK_SET);
-    res = fread(fhdata , 1, metafh_size, srcfh);
-    if (ferror(srcfh)) {
-        perror("Error reading metadata file\n");
-        exit(1);
-    }
-    res = fwrite(fhdata, 1, metafh_size, dstfh);
-
-    // then update the inter-process compression flag.
+    // update the inter-process compression flag and write the struct
     int oldval = reader->metadata.interprocess_compression;
     reader->metadata.interprocess_compression = 0;
-    fseek(dstfh, 0, SEEK_SET);
     fwrite(&reader->metadata, sizeof(RecorderMetadata), 1, dstfh);
     reader->metadata.interprocess_compression = oldval;
 
-    fclose(srcfh);
+    // write function list in new binary format
+    char funcname_buf[RECORDER_FUNC_NAME_LEN];
+    for (int i = 0; i < reader->supported_funcs; i++) {
+        memset(funcname_buf, 0, RECORDER_FUNC_NAME_LEN);
+        strncpy(funcname_buf, reader->func_list[i], RECORDER_FUNC_NAME_LEN - 1);
+        fwrite(funcname_buf, RECORDER_FUNC_NAME_LEN, 1, dstfh);
+    }
+
     fclose(dstfh);
-    free(fhdata);
 }
 
 void save_filtered_trace(RecorderReader* reader, IterArg* iter_args) {
@@ -447,10 +432,6 @@ void save_filtered_trace(RecorderReader* reader, IterArg* iter_args) {
     sprintf(cmd, "cp %s/recorder.ts %s/recorder.ts", reader->logs_dir, filtered_trace_dir);
     system(cmd);
 
-    // Similarly, simply copy the version file from the
-    // original trace folder.
-    sprintf(cmd, "cp %s/VERSION %s/VERSION", reader->logs_dir, filtered_trace_dir);
-    system(cmd);
 }
 
 /**

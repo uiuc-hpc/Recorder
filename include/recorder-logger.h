@@ -65,8 +65,15 @@ typedef struct CallSignature_t {
 } CallSignature;
 
 
+/* Maximum length (including null terminator) of a traced function name stored in recorder.mt */
+#define RECORDER_FUNC_NAME_LEN  64
+
 typedef struct RecorderMetadata_t {
+    int    version_major;
+    int    version_minor;
+    int    version_patch;
     int    total_ranks;
+    int    num_funcs;                           // number of function names stored after the struct
     bool   posix_tracing;
     bool   mpi_tracing;
     bool   mpiio_tracing;

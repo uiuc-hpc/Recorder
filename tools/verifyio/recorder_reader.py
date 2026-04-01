@@ -73,20 +73,67 @@ class RecorderReader:
         for rank in range(self.nprocs):
             self.num_records[rank] = num_records[rank]
 
-    # We dont need the entire RecorderMetadata
-    # we only need to read the first integer, which
-    # is the number of processes
+    # Mirror of RecorderMetadata from include/recorder-logger.h (new format).
+    # Must stay in sync with the C struct layout.
+    class _RecorderMetadata(Structure):
+        _fields_ = [
+            ("version_major",                    c_int),
+            ("version_minor",                    c_int),
+            ("version_patch",                    c_int),
+            ("total_ranks",                      c_int),
+            ("num_funcs",                        c_int),
+            ("posix_tracing",                    c_bool),
+            ("mpi_tracing",                      c_bool),
+            ("mpiio_tracing",                    c_bool),
+            ("hdf5_tracing",                     c_bool),
+            ("pnetcdf_tracing",                  c_bool),
+            ("netcdf_tracing",                   c_bool),
+            ("store_tid",                        c_bool),
+            ("store_call_depth",                 c_bool),
+            ("start_ts",                         c_double),
+            ("time_resolution",                  c_double),
+            ("ts_buffer_elements",               c_int),
+            ("ts_compression",                   c_bool),
+            ("interprocess_compression",         c_bool),
+            ("interprocess_pattern_recognition", c_bool),
+            ("intraprocess_pattern_recognition", c_bool),
+        ]
+
+    RECORDER_FUNC_NAME_LEN = 64
+
     def __read_num_procs(self, metadata_file):
+        legacy = os.path.exists(os.path.join(self.logs_dir, "VERSION"))
         with open(metadata_file, 'rb') as f:
-            self.nprocs = struct.unpack('i', f.read(4))[0]
+            if legacy:
+                # old format: total_ranks is the first int
+                self.nprocs = struct.unpack('i', f.read(4))[0]
+            else:
+                # new format: version_major, version_minor, version_patch, total_ranks
+                _, _, _, total_ranks = struct.unpack('iiii', f.read(16))
+                self.nprocs = total_ranks
 
     # read supported list of functions from the metadata file
     # invoked in __init__() only
     def __load_func_list(self, metadata_file):
+        legacy = os.path.exists(os.path.join(self.logs_dir, "VERSION"))
         with open(metadata_file, 'rb') as f:
-            f.seek(1024, 0)   # skip the reserved metadata block (fixed 1024 bytes)
-            self.funcs = f.read().splitlines()
-            self.funcs = [func.decode('utf-8') for func in self.funcs]
+            if legacy:
+                f.seek(1024, 0)   # skip the reserved metadata block (fixed 1024 bytes)
+                self.funcs = f.read().splitlines()
+                self.funcs = [func.decode('utf-8') for func in self.funcs]
+            else:
+                # new format: fixed RECORDER_FUNC_NAME_LEN-byte entries after the struct
+                meta_size = sizeof(RecorderReader._RecorderMetadata)
+                f.seek(meta_size, 0)
+                num_funcs = self.nprocs  # already read; re-read num_funcs from struct
+                f.seek(16, 0)            # offset of num_funcs: 4 ints * 4 bytes
+                num_funcs = struct.unpack('i', f.read(4))[0]
+                f.seek(meta_size, 0)
+                self.funcs = []
+                for _ in range(num_funcs):
+                    raw = f.read(RecorderReader.RECORDER_FUNC_NAME_LEN)
+                    name = raw.rstrip(b'\x00').decode('utf-8')
+                    self.funcs.append(name)
 
 
 
