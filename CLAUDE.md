@@ -13,6 +13,7 @@ Recorder is a parallel I/O tracing library that intercepts I/O calls at multiple
 cmake -B build -S . -DCMAKE_INSTALL_PREFIX=$PREFIX
 
 # Optional configure flags
+-DRECORDER_WITH_HDF5=/path/to/hdf5
 -DRECORDER_WITH_PNETCDF=/path/to/pnetcdf
 -DRECORDER_WITH_NETCDF=/path/to/netcdf
 -DRECORDER_ENABLE_CUDA_TRACE=ON

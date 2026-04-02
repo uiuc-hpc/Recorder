@@ -146,10 +146,12 @@ if(HDF5_FOUND)
     target_include_directories(test_hdf5 PRIVATE ${HDF5_INCLUDE_DIRS})
     target_link_libraries(test_hdf5 PRIVATE ${HDF5_LIBRARIES} MPI::MPI_C)
     recorder_add_test(test_hdf5 1)
+    recorder_add_check_tests(test_hdf5)
 
     # test_phdf5: parallel HDF5 — collective write and attribute operations
     add_executable(test_phdf5 test_phdf5.c)
     target_include_directories(test_phdf5 PRIVATE ${HDF5_INCLUDE_DIRS})
     target_link_libraries(test_phdf5 PRIVATE ${HDF5_LIBRARIES} MPI::MPI_C)
     recorder_add_test(test_phdf5 2)
+    recorder_add_check_tests(test_phdf5)
 endif()

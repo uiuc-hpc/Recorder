@@ -33,7 +33,18 @@ set(RECORDER_SRCS
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
-find_package(HDF5)
+# HDF5: use -DRECORDER_WITH_HDF5=/path/to/hdf5/install (consistent with PnetCDF/NetCDF)
+# Falls back to find_package(HDF5) if RECORDER_WITH_HDF5 is not set.
+if(RECORDER_WITH_HDF5)
+    find_path(HDF5_INCLUDE_DIRS hdf5.h ${RECORDER_WITH_HDF5}/include)
+    find_path(HDF5_LIBRARY_FOUND libhdf5.so ${RECORDER_WITH_HDF5}/lib)
+    if(HDF5_INCLUDE_DIRS AND HDF5_LIBRARY_FOUND)
+        set(HDF5_FOUND TRUE)
+        set(HDF5_LIBRARIES ${RECORDER_WITH_HDF5}/lib/libhdf5.so)
+    endif()
+else()
+    find_package(HDF5)
+endif()
 if(HDF5_FOUND)
     message("-- " "Found HDF5:" ${HDF5_INCLUDE_DIRS})
     set(RECORDER_SRCS
@@ -46,7 +57,7 @@ if(HDF5_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${HDF5_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "HDF5 not found. Will build Recorder without it.")
+    message("-- " "HDF5 not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_HDF5=/path/to/hdf5")
 endif()
 
 # PnetCDF is not a CMAKE project, we use find_path() to locate it
@@ -66,7 +77,7 @@ if(PNETCDF_INCLUDE_DIRS AND PNETCDF_LIBRARY_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${PNETCDF_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "PnetCDF not found. Will build Recorder without it.")
+    message("-- " "PnetCDF not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_PNETCDF=/path/to/pnetcdf")
 endif()
 
 # Look for NetCDF
@@ -86,7 +97,7 @@ if(NETCDF_INCLUDE_DIRS AND NETCDF_LIBRARY_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${NETCDF_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "NetCDF not found. Will build Recorder without it.")
+    message("-- " "NetCDF not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_NETCDF=/path/to/netcdf")
 endif()
 
 
@@ -259,3 +270,9 @@ set(RECORDER_INCLUDES_INSTALL_TIME
         ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
         PARENT_SCOPE
         )
+
+# Propagate optional library detection results so test/CMakeLists.txt can
+# conditionally register HDF5 tests.
+set(HDF5_FOUND    ${HDF5_FOUND}    PARENT_SCOPE)
+set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} PARENT_SCOPE)
+set(HDF5_LIBRARIES    ${HDF5_LIBRARIES}    PARENT_SCOPE)
