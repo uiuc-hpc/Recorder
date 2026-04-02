@@ -270,3 +270,9 @@ set(RECORDER_INCLUDES_INSTALL_TIME
         ${RECORDER_EXT_INCLUDE_DEPENDENCIES}
         PARENT_SCOPE
         )
+
+# Propagate optional library detection results so test/CMakeLists.txt can
+# conditionally register HDF5 tests.
+set(HDF5_FOUND    ${HDF5_FOUND}    PARENT_SCOPE)
+set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} PARENT_SCOPE)
+set(HDF5_LIBRARIES    ${HDF5_LIBRARIES}    PARENT_SCOPE)
