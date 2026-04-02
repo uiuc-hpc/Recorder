@@ -58,9 +58,14 @@ class RecorderReader:
             print(msg)
             exit(1);
 
+        # Accept either a directory or a direct path to recorder.dat
+        if os.path.basename(logs_dir) == "recorder.dat":
+            self.logs_dir = os.path.dirname(os.path.abspath(logs_dir)) or "."
+        else:
+            self.logs_dir = logs_dir
+
         # Load function list and the number of processes
-        self.logs_dir = logs_dir
-        combined = os.path.join(logs_dir, "recorder.dat")
+        combined = os.path.join(self.logs_dir, "recorder.dat")
         if os.path.exists(combined):
             self.__read_combined(combined)
         else:

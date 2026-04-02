@@ -50,7 +50,7 @@ macro(recorder_add_check_tests name)
 
     # -- reader API validation --
     add_test(NAME check_reader_${name}
-        COMMAND $<TARGET_FILE:test_reader> ${_trace_dir}
+        COMMAND $<TARGET_FILE:test_reader> ${_trace_dir}/recorder.dat
     )
     set_tests_properties(check_reader_${name} PROPERTIES
         FIXTURES_REQUIRED ${name}_traces
@@ -58,7 +58,7 @@ macro(recorder_add_check_tests name)
 
     # -- recorder-summary: verify it exits 0 and prints expected header --
     add_test(NAME check_summary_${name}
-        COMMAND $<TARGET_FILE:recorder-summary> ${_trace_dir}
+        COMMAND $<TARGET_FILE:recorder-summary> ${_trace_dir}/recorder.dat
     )
     set_tests_properties(check_summary_${name} PROPERTIES
         FIXTURES_REQUIRED ${name}_traces
@@ -68,7 +68,7 @@ macro(recorder_add_check_tests name)
     # -- recorder2text: run, then verify _text/0.txt was created --
     add_test(NAME run_text_${name}
         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1
-                $<TARGET_FILE:recorder2text> ${_trace_dir}
+                $<TARGET_FILE:recorder2text> ${_trace_dir}/recorder.dat
     )
     set_tests_properties(run_text_${name} PROPERTIES
         FIXTURES_REQUIRED ${name}_traces

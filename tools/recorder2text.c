@@ -46,20 +46,26 @@ int max(int a, int b) { return a > b ? a : b; }
 
 int main(int argc, char **argv) {
 
+    if (argc < 2) {
+        fprintf(stderr, "Usage: recorder2text <recorder.dat>\n");
+        return 1;
+    }
+
     char textfile_dir[512];
     char textfile_path[1024];
-    snprintf(textfile_dir, sizeof(textfile_dir), "%s/_text", argv[1]);
 
     int mpi_size, mpi_rank;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+    recorder_init_reader(argv[1], &reader);
+
+    snprintf(textfile_dir, sizeof(textfile_dir), "%s/_text", reader.logs_dir);
+
     if(mpi_rank == 0)
         mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     MPI_Barrier(MPI_COMM_WORLD);
-
-    recorder_init_reader(argv[1], &reader);
 
     int decimal =  log10(1 / reader.metadata.time_resolution);
     sprintf(formatting_record, "%%.%df %%.%df %%s %%d %%d (", decimal, decimal);

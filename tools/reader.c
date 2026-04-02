@@ -324,7 +324,18 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     assert(reader);
 
     memset(reader, 0, sizeof(*reader));
-    strcpy(reader->logs_dir, logs_dir);
+
+    /* Accept either a path to recorder.dat directly or its parent directory */
+    const char* base = strrchr(logs_dir, '/');
+    if (base && strcmp(base + 1, "recorder.dat") == 0) {
+        /* Strip the filename: copy everything up to the last '/' */
+        size_t dir_len = (size_t)(base - logs_dir);
+        if (dir_len == 0) dir_len = 1; /* root '/' edge case */
+        strncpy(reader->logs_dir, logs_dir, dir_len);
+        reader->logs_dir[dir_len] = '\0';
+    } else {
+        strcpy(reader->logs_dir, logs_dir);
+    }
     reader->mpi_start_idx = -1;
     reader->hdf5_start_idx = -1;
     reader->pnetcdf_start_idx = -1;
