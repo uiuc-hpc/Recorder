@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
     int i, num_files;
     IntervalsMap *IM = build_offset_intervals(&reader, &num_files);
 
-    detect_conflicts(IM, num_files, argv[1]);
+    detect_conflicts(IM, num_files, reader.logs_dir);
 
     // Free IM
     for(i = 0; i < num_files; i++) {

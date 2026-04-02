@@ -107,14 +107,14 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
+    recorder_init_reader(argv[1], &reader);
+
     char textfile_dir[256];
-    sprintf(textfile_dir, "%s/_chrome", argv[1]);
+    sprintf(textfile_dir, "%s/_chrome", reader.logs_dir);
 
     if(mpi_rank == 0)
         mkdir(textfile_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     MPI_Barrier(MPI_COMM_WORLD);
-
-    recorder_init_reader(argv[1], &reader);
 
     // Each rank will process n files (n ranks traces)
     int n = max(reader.metadata.total_ranks/mpi_size, 1);

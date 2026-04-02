@@ -7,6 +7,9 @@
 #include <errno.h>
 #include <libgen.h>
 #include <alloca.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "recorder.h"
 #ifdef RECORDER_ENABLE_CUDA_TRACE
 #include "recorder-cuda-profiler.h"
@@ -205,7 +208,6 @@ void create_traces_dir() {
 
 
 void logger_set_mpi_info(int mpi_rank, int mpi_size) {
-
     logger.rank   = mpi_rank;
     logger.nprocs = mpi_size;
 
@@ -241,8 +243,10 @@ void logger_init() {
     GOTCHA_SET_REAL_CALL(fopen,  RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(fflush, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(fclose, RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(fread,  RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(fwrite, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(fseek,  RECORDER_POSIX);
+    GOTCHA_SET_REAL_CALL(ftell,  RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(rmdir,  RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(remove, RECORDER_POSIX);
     GOTCHA_SET_REAL_CALL(access, RECORDER_POSIX);
@@ -368,6 +372,156 @@ void save_global_metadata() {
     GOTCHA_REAL_CALL(remove)(version_filename);
 }
 
+/*
+ * Write the RecorderMetadata + function-name table directly into out_fd
+ * as a section entry.  This avoids the recorder.mt temp file entirely,
+ * preventing races when multiple processes all believe they are rank 0.
+ */
+static void write_metadata_section_fd(int out_fd, RecorderSectionEntry* entry) {
+    entry->type   = (uint32_t)RECORDER_SECTION_METADATA;
+    entry->rank   = -1;
+    entry->offset = (uint64_t)lseek(out_fd, 0, SEEK_CUR);
+    entry->size   = 0;
+
+    int num_funcs = (int)(sizeof(func_list) / sizeof(char*));
+    RecorderMetadata metadata = {
+        .version_major       = RECORDER_VERSION_MAJOR,
+        .version_minor       = RECORDER_VERSION_MINOR,
+        .version_patch       = RECORDER_VERSION_PATCH,
+        .total_ranks         = logger.nprocs,
+        .num_funcs           = num_funcs,
+        .posix_tracing       = gotcha_posix_tracing(),
+        .mpi_tracing         = gotcha_mpi_tracing(),
+        .mpiio_tracing       = gotcha_mpiio_tracing(),
+        .hdf5_tracing        = gotcha_hdf5_tracing(),
+        .pnetcdf_tracing     = gotcha_pnetcdf_tracing(),
+        .netcdf_tracing      = gotcha_netcdf_tracing(),
+        .store_tid           = logger.store_tid,
+        .store_call_depth    = logger.store_call_depth,
+        .start_ts            = logger.start_ts,
+        .time_resolution     = logger.ts_resolution,
+        .ts_buffer_elements  = logger.ts_max_elements,
+        .ts_compression      = logger.ts_compression,
+        .interprocess_compression          = logger.interprocess_compression,
+        .interprocess_pattern_recognition  = logger.interprocess_pattern_recognition,
+        .intraprocess_pattern_recognition  = logger.intraprocess_pattern_recognition,
+    };
+    write(out_fd, &metadata, sizeof(RecorderMetadata));
+    entry->size += sizeof(RecorderMetadata);
+
+    char funcname_buf[RECORDER_FUNC_NAME_LEN];
+    for (int i = 0; i < num_funcs; i++) {
+        memset(funcname_buf, 0, RECORDER_FUNC_NAME_LEN);
+        strncpy(funcname_buf, get_function_name_by_id(i), RECORDER_FUNC_NAME_LEN - 1);
+        write(out_fd, funcname_buf, RECORDER_FUNC_NAME_LEN);
+        entry->size += RECORDER_FUNC_NAME_LEN;
+    }
+}
+
+/*
+ * Copy the contents of 'filepath' as one section into the fd 'out_fd'.
+ * Fills in *entry with type, rank, offset, and size.
+ * The source file is removed after being written.
+ * If the file does not exist, entry->size is set to 0 (empty section).
+ *
+ * Uses POSIX file descriptors (open/read/write/lseek/unlink) to
+ * completely bypass any GOTCHA/FILE* interception.
+ */
+static void write_file_as_section_fd(int out_fd, RecorderSectionEntry* entry,
+                                     int type, int32_t rank, const char* filepath) {
+    entry->type   = (uint32_t)type;
+    entry->rank   = rank;
+    entry->offset = (uint64_t)lseek(out_fd, 0, SEEK_CUR);
+    entry->size   = 0;
+
+    int src = open(filepath, O_RDONLY);
+    if (src < 0) return;
+
+    char buf[65536];
+    ssize_t n;
+    while ((n = read(src, buf, sizeof(buf))) > 0) {
+        write(out_fd, buf, (size_t)n);
+        entry->size += (uint64_t)n;
+    }
+    close(src);
+    unlink(filepath);
+}
+
+/*
+ * Combine all intermediate trace files produced during finalization into a
+ * single recorder.dat file, then remove the intermediate files.
+ * Only rank 0 executes this function.
+ *
+ * Uses raw POSIX file descriptors to bypass any GOTCHA/FILE* interception.
+ */
+static void combine_output_files() {
+    if (logger.rank != 0) return;
+
+    bool ic     = logger.interprocess_compression;
+    int  nprocs = logger.nprocs;
+    int  nsects = ic ? 5 : (2 + 2 * nprocs);
+
+    char combined_path[1024];
+    sprintf(combined_path, "%s/recorder.dat", logger.traces_dir);
+    /* O_EXCL ensures only the first process to arrive creates the file.
+     * All temp files are still available at that moment.  Later processes
+     * see EEXIST and skip, avoiding overwriting a complete recorder.dat. */
+    int out_fd = open(combined_path, O_WRONLY | O_CREAT | O_EXCL, 0644);
+    if (out_fd < 0) return;
+
+    /* Write placeholder file header */
+    RecorderFileHeader hdr;
+    memcpy(hdr.magic, "RECORDER", 8);
+    hdr.format_version = 1;
+    hdr.num_sections   = (uint32_t)nsects;
+    write(out_fd, &hdr, sizeof(hdr));
+
+    /* Write placeholder section table; we will patch it at the end */
+    RecorderSectionEntry* entries = calloc(nsects, sizeof(RecorderSectionEntry));
+    off_t table_pos = lseek(out_fd, 0, SEEK_CUR);
+    write(out_fd, entries, sizeof(RecorderSectionEntry) * (size_t)nsects);
+
+    char path[1024];
+    int  s = 0;
+
+    /* Write metadata directly — avoids the recorder.mt race when multiple
+     * processes all believe they are rank 0 on this system. */
+    write_metadata_section_fd(out_fd, &entries[s++]);
+
+    /* Remove any stale recorder.mt that save_global_metadata may have left */
+    sprintf(path, "%s/recorder.mt", logger.traces_dir);
+    unlink(path);
+
+    sprintf(path, "%s/recorder.ts", logger.traces_dir);
+    write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_TIMESTAMPS, -1, path);
+
+    if (ic) {
+        sprintf(path, "%s/recorder.cst", logger.traces_dir);
+        write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_GLOBAL_CST, -1, path);
+
+        sprintf(path, "%s/ug.cfg", logger.traces_dir);
+        write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_GLOBAL_CFG, -1, path);
+
+        sprintf(path, "%s/ug.mt", logger.traces_dir);
+        write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_CFG_META, -1, path);
+    } else {
+        for (int r = 0; r < nprocs; r++) {
+            sprintf(path, "%s/%d.cst", logger.traces_dir, r);
+            write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_RANK_CST, r, path);
+
+            sprintf(path, "%s/%d.cfg", logger.traces_dir, r);
+            write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_RANK_CFG, r, path);
+        }
+    }
+
+    /* Patch the section table with actual offsets and sizes */
+    lseek(out_fd, table_pos, SEEK_SET);
+    write(out_fd, entries, sizeof(RecorderSectionEntry) * (size_t)nsects);
+
+    free(entries);
+    close(out_fd);
+}
+
 void logger_finalize() {
     if(!logger.directory_created)
         logger_set_mpi_info(0, 1);
@@ -414,8 +568,8 @@ void logger_finalize() {
     sequitur_cleanup(&logger.cfg);
 
     if(logger.rank == 0) {
-        save_global_metadata();
-        RECORDER_LOGINFO("[Recorder] trace files have been written to %s\n", logger.traces_dir);
+        combine_output_files();
+        RECORDER_LOGINFO("[Recorder] trace written to %s/recorder.dat\n", logger.traces_dir);
     }
 
 }

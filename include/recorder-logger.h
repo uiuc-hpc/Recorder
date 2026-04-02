@@ -65,8 +65,39 @@ typedef struct CallSignature_t {
 } CallSignature;
 
 
-/* Maximum length (including null terminator) of a traced function name stored in recorder.mt */
+/* Maximum length (including null terminator) of a traced function name stored in recorder.dat */
 #define RECORDER_FUNC_NAME_LEN  64
+
+/*
+ * Section type identifiers used in the combined recorder.dat file.
+ *
+ * recorder.dat layout:
+ *   [RecorderFileHeader]                 16 bytes
+ *   [RecorderSectionEntry * num_sections] 24 bytes each
+ *   [section data ...]
+ */
+typedef enum {
+    RECORDER_SECTION_METADATA   = 0,  /* RecorderMetadata struct + function name table      */
+    RECORDER_SECTION_TIMESTAMPS = 1,  /* merged timestamp data (same layout as recorder.ts) */
+    RECORDER_SECTION_GLOBAL_CST = 2,  /* merged CST  (interprocess_compression = true)      */
+    RECORDER_SECTION_GLOBAL_CFG = 3,  /* unique grammars (interprocess_compression = true)  */
+    RECORDER_SECTION_CFG_META   = 4,  /* grammar metadata (interprocess_compression = true) */
+    RECORDER_SECTION_RANK_CST   = 5,  /* per-rank CST (interprocess_compression = false)    */
+    RECORDER_SECTION_RANK_CFG   = 6,  /* per-rank CFG (interprocess_compression = false)    */
+} RecorderSectionType;
+
+typedef struct RecorderFileHeader_t {
+    char     magic[8];        /* "RECORDER" */
+    uint32_t format_version;  /* 1          */
+    uint32_t num_sections;
+} RecorderFileHeader;
+
+typedef struct RecorderSectionEntry_t {
+    uint32_t type;    /* RecorderSectionType                              */
+    int32_t  rank;    /* -1 for global sections, rank index for per-rank  */
+    uint64_t offset;  /* byte offset of section data from start of file   */
+    uint64_t size;    /* byte size of section data                        */
+} RecorderSectionEntry;
 
 typedef struct RecorderMetadata_t {
     int    version_major;

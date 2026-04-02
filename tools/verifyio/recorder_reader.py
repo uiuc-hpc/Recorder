@@ -58,10 +58,19 @@ class RecorderReader:
             print(msg)
             exit(1);
 
+        # Accept either a directory or a direct path to recorder.dat
+        if os.path.basename(logs_dir) == "recorder.dat":
+            self.logs_dir = os.path.dirname(os.path.abspath(logs_dir)) or "."
+        else:
+            self.logs_dir = logs_dir
+
         # Load function list and the number of processes
-        self.logs_dir = logs_dir
-        self.__read_num_procs(self.logs_dir + "/recorder.mt")
-        self.__load_func_list(self.logs_dir + "/recorder.mt")
+        combined = os.path.join(self.logs_dir, "recorder.dat")
+        if os.path.exists(combined):
+            self.__read_combined(combined)
+        else:
+            self.__read_num_procs(self.logs_dir + "/recorder.mt")
+            self.__load_func_list(self.logs_dir + "/recorder.mt")
 
         # Set up C reader library
         # Read all VerifyIORecord
@@ -101,6 +110,50 @@ class RecorderReader:
 
     RECORDER_FUNC_NAME_LEN = 64
 
+    # recorder.dat section type constants (must match RecorderSectionType in recorder-logger.h)
+    SECTION_METADATA   = 0
+    SECTION_TIMESTAMPS = 1
+    SECTION_GLOBAL_CST = 2
+    SECTION_GLOBAL_CFG = 3
+    SECTION_CFG_META   = 4
+    SECTION_RANK_CST   = 5
+    SECTION_RANK_CFG   = 6
+
+    def __read_combined(self, combined_path):
+        """Parse recorder.dat: read header, section index, then extract METADATA."""
+        HEADER_FMT  = '8sII'   # magic(8) + format_version(4) + num_sections(4)
+        SECTION_FMT = 'IiQQ'   # type(4) + rank(4) + offset(8) + size(8)
+        HEADER_SIZE  = struct.calcsize(HEADER_FMT)
+        SECTION_SIZE = struct.calcsize(SECTION_FMT)
+
+        with open(combined_path, 'rb') as f:
+            magic, fmt_ver, num_sections = struct.unpack(HEADER_FMT, f.read(HEADER_SIZE))
+            assert magic == b'RECORDER', "Not a recorder.dat file"
+
+            sections = []
+            for _ in range(num_sections):
+                sec_type, sec_rank, sec_offset, sec_size = struct.unpack(SECTION_FMT, f.read(SECTION_SIZE))
+                sections.append((sec_type, sec_rank, sec_offset, sec_size))
+
+            # Find and read the METADATA section
+            for sec_type, sec_rank, sec_offset, sec_size in sections:
+                if sec_type == RecorderReader.SECTION_METADATA and sec_rank == -1:
+                    f.seek(sec_offset)
+                    self.__parse_metadata_bytes(f)
+                    break
+
+    def __parse_metadata_bytes(self, f):
+        """Parse RecorderMetadata struct + function names from an open file at current position."""
+        meta_size = sizeof(RecorderReader._RecorderMetadata)
+        meta_bytes = f.read(meta_size)
+        meta = RecorderReader._RecorderMetadata.from_buffer_copy(meta_bytes)
+        self.nprocs = meta.total_ranks
+        self.funcs = []
+        for _ in range(meta.num_funcs):
+            raw = f.read(RecorderReader.RECORDER_FUNC_NAME_LEN)
+            name = raw.rstrip(b'\x00').decode('utf-8')
+            self.funcs.append(name)
+
     def __read_num_procs(self, metadata_file):
         legacy = os.path.exists(os.path.join(self.logs_dir, "VERSION"))
         with open(metadata_file, 'rb') as f:
@@ -124,8 +177,6 @@ class RecorderReader:
             else:
                 # new format: fixed RECORDER_FUNC_NAME_LEN-byte entries after the struct
                 meta_size = sizeof(RecorderReader._RecorderMetadata)
-                f.seek(meta_size, 0)
-                num_funcs = self.nprocs  # already read; re-read num_funcs from struct
                 f.seek(16, 0)            # offset of num_funcs: 4 ints * 4 bytes
                 num_funcs = struct.unpack('i', f.read(4))[0]
                 f.seek(meta_size, 0)
