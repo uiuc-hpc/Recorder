@@ -68,6 +68,17 @@ void* read_zlib(FILE* source) {
 }
 
 /*
+ * Returns true if the trace directory contains a combined recorder.dat file.
+ */
+static bool is_combined_format(const char* logs_dir) {
+    char path[1096] = {0};
+    sprintf(path, "%s/recorder.dat", logs_dir);
+    FILE* fp = fopen(path, "rb");
+    if (fp) { fclose(fp); return true; }
+    return false;
+}
+
+/*
  * Returns true if the trace directory uses the legacy format (VERSION file present).
  * Legacy format: RecorderMetadata (old struct without version/num_funcs) at offset 0,
  *                1024-byte reserved block, then newline-delimited function names.
@@ -82,8 +93,58 @@ static bool is_legacy_format(const char* logs_dir) {
     return false;
 }
 
+/*
+ * Load the section index from recorder.dat into reader->sections.
+ * Sets reader->combined_path and reader->num_sections.
+ */
+static void load_combined_sections(RecorderReader* reader) {
+    sprintf(reader->combined_path, "%s/recorder.dat", reader->logs_dir);
+    FILE* fp = fopen(reader->combined_path, "rb");
+    assert(fp != NULL);
+
+    RecorderFileHeader hdr;
+    fread(&hdr, sizeof(hdr), 1, fp);
+    assert(memcmp(hdr.magic, "RECORDER", 8) == 0);
+
+    reader->num_sections = (int)hdr.num_sections;
+    reader->sections = malloc(sizeof(RecorderSectionEntry) * reader->num_sections);
+    fread(reader->sections, sizeof(RecorderSectionEntry), reader->num_sections, fp);
+    fclose(fp);
+}
+
+/*
+ * Open the combined recorder.dat positioned at the start of section (type, rank).
+ * *size_out receives the section byte size (may be NULL).
+ * Returns NULL if the section is not found.
+ * Caller must fclose() the returned FILE*.
+ */
+static FILE* open_section(RecorderReader* reader, int type, int rank, uint64_t* size_out) {
+    for (int i = 0; i < reader->num_sections; i++) {
+        if ((int)reader->sections[i].type == type &&
+            reader->sections[i].rank      == rank) {
+            FILE* fp = fopen(reader->combined_path, "rb");
+            if (!fp) return NULL;
+            fseek(fp, (long)reader->sections[i].offset, SEEK_SET);
+            if (size_out) *size_out = reader->sections[i].size;
+            return fp;
+        }
+    }
+    return NULL;
+}
+
 void check_version(RecorderReader* reader, int* v_major, int* v_minor) {
-    if (is_legacy_format(reader->logs_dir)) {
+    if (is_combined_format(reader->logs_dir)) {
+        load_combined_sections(reader);
+        /* METADATA section starts with the RecorderMetadata struct whose first
+           three fields are version_major, version_minor, version_patch. */
+        FILE* fp = open_section(reader, RECORDER_SECTION_METADATA, -1, NULL);
+        assert(fp != NULL);
+        int version[3];
+        fread(version, sizeof(int), 3, fp);
+        fclose(fp);
+        *v_major = version[0];
+        *v_minor = version[1];
+    } else if (is_legacy_format(reader->logs_dir)) {
         char version_file[1096] = {0};
         sprintf(version_file, "%s/VERSION", reader->logs_dir);
         FILE* fp = fopen(version_file, "r");
@@ -93,7 +154,7 @@ void check_version(RecorderReader* reader, int* v_major, int* v_minor) {
         *v_major = major;
         *v_minor = minor;
     } else {
-        // New format: version fields are the first three ints in recorder.mt
+        // Multi-file new format: version fields are the first three ints in recorder.mt
         char metadata_file[1096] = {0};
         sprintf(metadata_file, "%s/recorder.mt", reader->logs_dir);
         FILE* fp = fopen(metadata_file, "rb");
@@ -128,10 +189,14 @@ static void index_func_list(RecorderReader* reader) {
 }
 
 void read_metadata(RecorderReader* reader) {
-    char metadata_file[1096] = {0};
-    sprintf(metadata_file, "%s/recorder.mt", reader->logs_dir);
-
-    FILE* fp = fopen(metadata_file, "rb");
+    FILE* fp;
+    if (reader->num_sections > 0) {
+        fp = open_section(reader, RECORDER_SECTION_METADATA, -1, NULL);
+    } else {
+        char metadata_file[1096] = {0};
+        sprintf(metadata_file, "%s/recorder.mt", reader->logs_dir);
+        fp = fopen(metadata_file, "rb");
+    }
     assert(fp != NULL);
 
     if (reader->trace_version_major == 2 && reader->trace_version_minor == 3) {
@@ -278,31 +343,43 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     reader->cfgs   = malloc(sizeof(CFG*) * nprocs);
 
     if(reader->metadata.interprocess_compression) {
-        // a single file for merged csts
-        // and a single for unique cfgs
         void* buf_cst;
         void* buf_cfg;
 
-        // Read and parse the cst file
-        char cst_fname[1096] = {0};
-        sprintf(cst_fname, "%s/recorder.cst", reader->logs_dir);
-        FILE* cst_file = fopen(cst_fname, "rb");
+        FILE* cst_file;
+        if (reader->num_sections > 0)
+            cst_file = open_section(reader, RECORDER_SECTION_GLOBAL_CST, -1, NULL);
+        else {
+            char cst_fname[1096] = {0};
+            sprintf(cst_fname, "%s/recorder.cst", reader->logs_dir);
+            cst_file = fopen(cst_fname, "rb");
+        }
         buf_cst = read_zlib(cst_file);
         reader->csts[0] = (CST*) malloc(sizeof(CST));
         reader_decode_cst(0, buf_cst, reader->csts[0]);
         fclose(cst_file);
         free(buf_cst);
 
-        char ug_metadata_fname[1096] = {0};
-        sprintf(ug_metadata_fname, "%s/ug.mt", reader->logs_dir);
-        FILE* f = fopen(ug_metadata_fname, "rb");
+        FILE* f;
+        if (reader->num_sections > 0)
+            f = open_section(reader, RECORDER_SECTION_CFG_META, -1, NULL);
+        else {
+            char ug_metadata_fname[1096] = {0};
+            sprintf(ug_metadata_fname, "%s/ug.mt", reader->logs_dir);
+            f = fopen(ug_metadata_fname, "rb");
+        }
         fread(reader->ug_ids, sizeof(int), nprocs, f);
         fread(&reader->num_ugs, sizeof(int), 1, f);
         fclose(f);
 
-        char cfg_fname[1096] = {0};
-        sprintf(cfg_fname, "%s/ug.cfg", reader->logs_dir);
-        FILE* cfg_file = fopen(cfg_fname, "rb");
+        FILE* cfg_file;
+        if (reader->num_sections > 0)
+            cfg_file = open_section(reader, RECORDER_SECTION_GLOBAL_CFG, -1, NULL);
+        else {
+            char cfg_fname[1096] = {0};
+            sprintf(cfg_fname, "%s/ug.cfg", reader->logs_dir);
+            cfg_file = fopen(cfg_fname, "rb");
+        }
         for(int i = 0; i < reader->num_ugs; i++) {
             buf_cfg = read_zlib(cfg_file);
             reader->ugs[i] = (CFG*) malloc(sizeof(CFG));
@@ -322,9 +399,14 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
                 reader->csts[rank] = (CST*) malloc(sizeof(CST));
                 reader_decode_cst_2_3(reader, rank, reader->csts[rank]);
             } else {
-                char cst_fname[1096] = {0};
-                sprintf(cst_fname, "%s/%d.cst", reader->logs_dir, rank);
-                FILE* cst_file = fopen(cst_fname, "rb");
+                FILE* cst_file;
+                if (reader->num_sections > 0)
+                    cst_file = open_section(reader, RECORDER_SECTION_RANK_CST, rank, NULL);
+                else {
+                    char cst_fname[1096] = {0};
+                    sprintf(cst_fname, "%s/%d.cst", reader->logs_dir, rank);
+                    cst_file = fopen(cst_fname, "rb");
+                }
                 void* buf_cst = read_zlib(cst_file);
                 reader->csts[rank] = (CST*) malloc(sizeof(CST));
                 reader_decode_cst(rank, buf_cst, reader->csts[rank]);
@@ -336,9 +418,14 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
                 reader->cfgs[rank] = (CFG*) malloc(sizeof(CFG));
                 reader_decode_cfg_2_3(reader, rank, reader->cfgs[rank]);
             } else {
-                char cfg_fname[1096] = {0};
-                sprintf(cfg_fname, "%s/%d.cfg", reader->logs_dir, rank);
-                FILE* cfg_file = fopen(cfg_fname, "rb");
+                FILE* cfg_file;
+                if (reader->num_sections > 0)
+                    cfg_file = open_section(reader, RECORDER_SECTION_RANK_CFG, rank, NULL);
+                else {
+                    char cfg_fname[1096] = {0};
+                    sprintf(cfg_fname, "%s/%d.cfg", reader->logs_dir, rank);
+                    cfg_file = fopen(cfg_fname, "rb");
+                }
                 void* buf_cfg = read_zlib(cfg_file);
                 reader->cfgs[rank] = (CFG*) malloc(sizeof(CFG));
                 reader_decode_cfg(rank, buf_cfg, reader->cfgs[rank]);
@@ -373,6 +460,9 @@ void recorder_free_reader(RecorderReader *reader) {
     for(int i = 0; i < reader->supported_funcs; i++)
         free(reader->func_list[i]);
     free(reader->func_list);
+
+    if (reader->sections)
+        free(reader->sections);
 
     memset(reader, 0, sizeof(*reader));
 }
@@ -468,8 +558,13 @@ uint32_t* read_timestamp_file(RecorderReader* reader, int rank) {
 
     int nprocs = reader->metadata.total_ranks;
 
-    sprintf(ts_fname, "%s/recorder.ts", reader->logs_dir);
-    FILE* ts_file = fopen(ts_fname, "rb");
+    FILE* ts_file;
+    if (reader->num_sections > 0)
+        ts_file = open_section(reader, RECORDER_SECTION_TIMESTAMPS, -1, NULL);
+    else {
+        sprintf(ts_fname, "%s/recorder.ts", reader->logs_dir);
+        ts_file = fopen(ts_fname, "rb");
+    }
 
     // the first nprocs size_t store the buf size 
     // of timestamps of each rank

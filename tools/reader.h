@@ -62,6 +62,11 @@ typedef struct RecorderReader_t {
 
     int trace_version_major;
     int trace_version_minor;
+
+    /* combined recorder.dat format; num_sections == 0 means multi-file format */
+    char combined_path[2048];
+    int  num_sections;
+    RecorderSectionEntry* sections;
 } RecorderReader;
 
 
