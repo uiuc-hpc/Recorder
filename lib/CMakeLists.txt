@@ -57,7 +57,7 @@ if(HDF5_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${HDF5_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "HDF5 not found. Will build Recorder without it.")
+    message("-- " "HDF5 not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_HDF5=/path/to/hdf5")
 endif()
 
 # PnetCDF is not a CMAKE project, we use find_path() to locate it
@@ -77,7 +77,7 @@ if(PNETCDF_INCLUDE_DIRS AND PNETCDF_LIBRARY_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${PNETCDF_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "PnetCDF not found. Will build Recorder without it.")
+    message("-- " "PnetCDF not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_PNETCDF=/path/to/pnetcdf")
 endif()
 
 # Look for NetCDF
@@ -97,7 +97,7 @@ if(NETCDF_INCLUDE_DIRS AND NETCDF_LIBRARY_FOUND)
     set(RECORDER_EXT_LIB_DEPENDENCIES
             ${NETCDF_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
 else()
-    message("-- " "NetCDF not found. Will build Recorder without it.")
+    message("-- " "NetCDF not found. Will build Recorder without it. To use a local installation, set -DRECORDER_WITH_NETCDF=/path/to/netcdf")
 endif()
 
 
