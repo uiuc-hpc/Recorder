@@ -33,7 +33,18 @@ set(RECORDER_SRCS
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
-find_package(HDF5)
+# HDF5: use -DRECORDER_WITH_HDF5=/path/to/hdf5/install (consistent with PnetCDF/NetCDF)
+# Falls back to find_package(HDF5) if RECORDER_WITH_HDF5 is not set.
+if(RECORDER_WITH_HDF5)
+    find_path(HDF5_INCLUDE_DIRS hdf5.h ${RECORDER_WITH_HDF5}/include)
+    find_path(HDF5_LIBRARY_FOUND libhdf5.so ${RECORDER_WITH_HDF5}/lib)
+    if(HDF5_INCLUDE_DIRS AND HDF5_LIBRARY_FOUND)
+        set(HDF5_FOUND TRUE)
+        set(HDF5_LIBRARIES ${RECORDER_WITH_HDF5}/lib/libhdf5.so)
+    endif()
+else()
+    find_package(HDF5)
+endif()
 if(HDF5_FOUND)
     message("-- " "Found HDF5:" ${HDF5_INCLUDE_DIRS})
     set(RECORDER_SRCS
