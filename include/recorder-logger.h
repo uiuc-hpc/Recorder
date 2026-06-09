@@ -29,6 +29,7 @@
 #define RECORDER_FTRACE         4
 #define RECORDER_PNETCDF        5
 #define RECORDER_NETCDF         6
+#define RECORDER_DAOS           7
 
 #define RECORDER_USER_FUNCTION  255
 
@@ -73,6 +74,7 @@ typedef struct RecorderMetadata_t {
     bool   hdf5_tracing;
     bool   pnetcdf_tracing;
     bool   netcdf_tracing;
+    bool   daos_tracing;
     bool   store_tid;            // Wether to store thread id
     bool   store_call_depth;     // Wether to store the call depth
     double start_ts;
@@ -890,6 +892,25 @@ static const char* func_list[] = {
     "nc_inq_enum", "nc_inq_enum_member", "nc_inq_enum_ident",
     "nc_free_vlen", "nc_free_vlens", "nc_def_vlen",
     "nc_inq_vlen", "nc_def_opaque", "nc_inq_opaque",
+
+    // DAOS - DFS API and native DAOS API
+    "dfs_mount",            "dfs_umount",           "dfs_global2local",
+    "dfs_lookup",           "dfs_lookup_rel",       "dfs_open",
+    "dfs_dup",              "dfs_obj_global2local", "dfs_release",
+    "dfs_read",             "dfs_readx",            "dfs_write",
+    "dfs_writex",           "dfs_get_size",         "dfs_punch",
+    "dfs_remove",           "dfs_ostat",            "dfs_osetattr",
+    "daos_cont_open2",      "daos_cont_global2local", "daos_cont_close",
+    "daos_obj_open",        "daos_obj_fetch",       "daos_obj_update",
+    "daos_obj_punch",       "daos_obj_punch_dkeys", "daos_obj_punch_akeys",
+    "daos_obj_list_dkey",   "daos_obj_list_akey",   "daos_obj_list_recx",
+    "daos_obj_close",       "daos_array_create",    "daos_array_open",
+    "daos_array_open_with_attr", "daos_array_read",  "daos_array_write",
+    "daos_array_get_size",  "daos_array_set_size",  "daos_array_stat",
+    "daos_array_punch",     "daos_array_destroy",   "daos_array_close",
+    "daos_kv_open",         "daos_kv_get",          "daos_kv_put",
+    "daos_kv_remove",       "daos_kv_list",         "daos_kv_destroy",
+    "daos_kv_close",
 };
 
 #endif /* __RECORDER_LOGGER_H */

@@ -19,6 +19,11 @@
 #include "netcdf_meta.h"
 #endif
 
+#ifdef RECORDER_WITH_DAOS
+#include "daos.h"
+#include "daos_fs.h"
+#endif
+
 #include "gotcha/gotcha.h"
 #include "recorder-logger.h"
 
@@ -103,6 +108,7 @@ bool gotcha_mpiio_tracing();
 bool gotcha_hdf5_tracing();
 bool gotcha_pnetcdf_tracing();
 bool gotcha_netcdf_tracing();
+bool gotcha_daos_tracing();
 
 
 /**
@@ -167,6 +173,8 @@ bool gotcha_netcdf_tracing();
             intercept = gotcha_pnetcdf_tracing();                       \
         if (func_type == RECORDER_NETCDF)                               \
             intercept = gotcha_netcdf_tracing();                        \
+        if (func_type == RECORDER_DAOS)                                 \
+            intercept = gotcha_daos_tracing();                          \
         if (intercept) {                                                \
             void* funcptr = gotcha_get_wrappee(WRAPPEE_HANDLE(func));   \
             GOTCHA_REAL_CALL(func) = (WRAPPER_TYPE(func)) (funcptr);    \
@@ -2347,5 +2355,64 @@ GOTCHA_WRAP(nc_inq_vlen, int, (int ncid, nc_type xtype, char *name, size_t *datu
 GOTCHA_WRAP(nc_def_opaque, int, (int ncid, size_t size, const char *name, nc_type *xtypep));
 GOTCHA_WRAP(nc_inq_opaque, int, (int ncid, nc_type xtype, char *name, size_t *sizep));
 #endif /* RECORDER_WITH_NETCDF */
+
+
+/* DAOS Function Calls */
+#ifdef RECORDER_WITH_DAOS
+/* DFS API */
+GOTCHA_WRAP(dfs_mount, int, (daos_handle_t poh, daos_handle_t coh, int flags, dfs_t **dfs));
+GOTCHA_WRAP(dfs_umount, int, (dfs_t *dfs));
+GOTCHA_WRAP(dfs_global2local, int, (daos_handle_t poh, daos_handle_t coh, int flags, d_iov_t glob, dfs_t **dfs));
+GOTCHA_WRAP(dfs_lookup, int, (dfs_t *dfs, const char *path, int flags, dfs_obj_t **obj, mode_t *mode, struct stat *stbuf));
+GOTCHA_WRAP(dfs_lookup_rel, int, (dfs_t *dfs, dfs_obj_t *parent, const char *name, int flags, dfs_obj_t **obj, mode_t *mode, struct stat *stbuf));
+GOTCHA_WRAP(dfs_open, int, (dfs_t *dfs, dfs_obj_t *parent, const char *name, mode_t mode, int flags, daos_oclass_id_t cid, daos_size_t chunk_size, const char *value, dfs_obj_t **obj));
+GOTCHA_WRAP(dfs_dup, int, (dfs_t *dfs, dfs_obj_t *obj, int flags, dfs_obj_t **new_obj));
+GOTCHA_WRAP(dfs_obj_global2local, int, (dfs_t *dfs, int flags, d_iov_t glob, dfs_obj_t **obj));
+GOTCHA_WRAP(dfs_release, int, (dfs_obj_t *obj));
+GOTCHA_WRAP(dfs_read, int, (dfs_t *dfs, dfs_obj_t *obj, d_sg_list_t *sgl, daos_off_t off, daos_size_t *read_size, daos_event_t *ev));
+GOTCHA_WRAP(dfs_readx, int, (dfs_t *dfs, dfs_obj_t *obj, dfs_iod_t *iod, d_sg_list_t *sgl, daos_size_t *read_size, daos_event_t *ev));
+GOTCHA_WRAP(dfs_write, int, (dfs_t *dfs, dfs_obj_t *obj, d_sg_list_t *sgl, daos_off_t off, daos_event_t *ev));
+GOTCHA_WRAP(dfs_writex, int, (dfs_t *dfs, dfs_obj_t *obj, dfs_iod_t *iod, d_sg_list_t *sgl, daos_event_t *ev));
+GOTCHA_WRAP(dfs_get_size, int, (dfs_t *dfs, dfs_obj_t *obj, daos_size_t *size));
+GOTCHA_WRAP(dfs_punch, int, (dfs_t *dfs, dfs_obj_t *obj, daos_off_t offset, daos_size_t len));
+GOTCHA_WRAP(dfs_remove, int, (dfs_t *dfs, dfs_obj_t *parent, const char *name, bool force, daos_obj_id_t *oid));
+GOTCHA_WRAP(dfs_ostat, int, (dfs_t *dfs, dfs_obj_t *obj, struct stat *stbuf));
+GOTCHA_WRAP(dfs_osetattr, int, (dfs_t *dfs, dfs_obj_t *obj, struct stat *stbuf, int flags));
+/* Native DAOS API - Container */
+GOTCHA_WRAP(daos_cont_open2, int, (daos_handle_t poh, const char *cont, unsigned int flags, daos_handle_t *coh, daos_cont_info_t *info, daos_event_t *ev));
+GOTCHA_WRAP(daos_cont_global2local, int, (daos_handle_t poh, d_iov_t glob, daos_handle_t *coh));
+GOTCHA_WRAP(daos_cont_close, int, (daos_handle_t coh, daos_event_t *ev));
+/* Native DAOS API - Object */
+GOTCHA_WRAP(daos_obj_open, int, (daos_handle_t coh, daos_obj_id_t oid, unsigned int mode, daos_handle_t *oh, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_fetch, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, daos_key_t *dkey, unsigned int nr, daos_iod_t *iods, d_sg_list_t *sgls, daos_iom_t *ioms, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_update, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, daos_key_t *dkey, unsigned int nr, daos_iod_t *iods, d_sg_list_t *sgls, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_punch, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_punch_dkeys, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, unsigned int nr, daos_key_t *dkeys, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_punch_akeys, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, daos_key_t *dkey, unsigned int nr, daos_key_t *akeys, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_list_dkey, int, (daos_handle_t oh, daos_handle_t th, uint32_t *nr, daos_key_desc_t *kds, d_sg_list_t *sgl, daos_anchor_t *anchor, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_list_akey, int, (daos_handle_t oh, daos_handle_t th, daos_key_t *dkey, uint32_t *nr, daos_key_desc_t *kds, d_sg_list_t *sgl, daos_anchor_t *anchor, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_list_recx, int, (daos_handle_t oh, daos_handle_t th, daos_key_t *dkey, daos_key_t *akey, daos_size_t *size, uint32_t *nr, daos_recx_t *recxs, daos_epoch_range_t *eprs, daos_anchor_t *anchor, bool incr_order, daos_event_t *ev));
+GOTCHA_WRAP(daos_obj_close, int, (daos_handle_t oh, daos_event_t *ev));
+/* Native DAOS API - Array */
+GOTCHA_WRAP(daos_array_create, int, (daos_handle_t coh, daos_obj_id_t oid, daos_handle_t th, daos_size_t cell_size, daos_size_t chunk_size, daos_handle_t *oh, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_open, int, (daos_handle_t coh, daos_obj_id_t oid, daos_handle_t th, unsigned int mode, daos_size_t *cell_size, daos_size_t *chunk_size, daos_handle_t *oh, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_open_with_attr, int, (daos_handle_t coh, daos_obj_id_t oid, daos_handle_t th, unsigned int mode, daos_size_t cell_size, daos_size_t chunk_size, daos_handle_t *oh, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_read, int, (daos_handle_t oh, daos_handle_t th, daos_array_iod_t *iod, d_sg_list_t *sgl, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_write, int, (daos_handle_t oh, daos_handle_t th, daos_array_iod_t *iod, d_sg_list_t *sgl, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_get_size, int, (daos_handle_t oh, daos_handle_t th, daos_size_t *size, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_set_size, int, (daos_handle_t oh, daos_handle_t th, daos_size_t size, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_stat, int, (daos_handle_t oh, daos_handle_t th, daos_array_stbuf_t *stbuf, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_punch, int, (daos_handle_t oh, daos_handle_t th, daos_array_iod_t *iod, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_destroy, int, (daos_handle_t oh, daos_handle_t th, daos_event_t *ev));
+GOTCHA_WRAP(daos_array_close, int, (daos_handle_t oh, daos_event_t *ev));
+/* Native DAOS API - Key-Value */
+GOTCHA_WRAP(daos_kv_open, int, (daos_handle_t coh, daos_obj_id_t oid, unsigned int mode, daos_handle_t *oh, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_get, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, const char *key, daos_size_t *size, void *buf, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_put, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, const char *key, daos_size_t size, const void *buf, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_remove, int, (daos_handle_t oh, daos_handle_t th, uint64_t flags, const char *key, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_list, int, (daos_handle_t oh, daos_handle_t th, uint32_t *nr, daos_key_desc_t *kds, d_sg_list_t *sgl, daos_anchor_t *anchor, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_destroy, int, (daos_handle_t oh, daos_handle_t th, daos_event_t *ev));
+GOTCHA_WRAP(daos_kv_close, int, (daos_handle_t oh, daos_event_t *ev));
+#endif /* RECORDER_WITH_DAOS */
 
 #endif /* __RECORDER_GOTCHA_H */

@@ -10,6 +10,7 @@ Building Recorder with CMake
 -  HDF5 (required)
 -  NetCDF (optional) - Needed for NetCDF tracing
 -  PnetCDF (optional) - Needed for PnetCDF tracing
+-  DAOS (optional) - Needed for DAOS (DFS and native DAOS API) tracing
 -  Arrow (optional) > 5.0.0 - Needed for building Parquet convertor.
 -  CUDA (optional) - Needed for CUDA kernels interception.
 
@@ -45,6 +46,13 @@ need to use ``-DCMAKE_PREFIX_PATH`` to indicate their locations:
 
 Recorder can also be built with PnetCDF to trace PnetCDF calls, use `-DRECORDER_WITH_PNETCDF=/path/to/pnetcdf/install`
 to build Recorder with the specified PnetCDF.
+
+Recorder can also be built with DAOS to trace the DAOS File System (DFS) API and the
+native DAOS API. Use `-DRECORDER_WITH_DAOS=/path/to/daos/install` to build Recorder with
+the specified DAOS installation. The given path must contain ``include/daos.h`` and
+``include/daos_fs.h`` as well as ``lib`` (or ``lib64``) with ``libdaos.so`` and ``libdfs.so``.
+When DAOS is not found, Recorder is built without DAOS tracing and all other layers are
+unaffected.
 
 (2) Intercepting ``fcntl()`` call:
 

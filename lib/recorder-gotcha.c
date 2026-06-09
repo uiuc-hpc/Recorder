@@ -7,6 +7,11 @@ static bool mpiio_tracing    = true;
 static bool hdf5_tracing     = true;
 static bool pnetcdf_tracing  = true;
 static bool netcdf_tracing   = true;
+#ifdef RECORDER_WITH_DAOS
+static bool daos_tracing     = true;
+#else
+static bool daos_tracing     = false;
+#endif
 
 struct gotcha_binding_t posix_wrap_actions [] = {
     GOTCHA_WRAP_ACTION(creat),
@@ -2167,6 +2172,65 @@ struct gotcha_binding_t netcdf_wrap_actions [] = {
 #endif /* RECORDER_WITH_NETCDF */
 };
 
+#ifdef RECORDER_WITH_DAOS
+struct gotcha_binding_t daos_wrap_actions [] = {
+    /* DFS API */
+    GOTCHA_WRAP_ACTION(dfs_mount),
+    GOTCHA_WRAP_ACTION(dfs_umount),
+    GOTCHA_WRAP_ACTION(dfs_global2local),
+    GOTCHA_WRAP_ACTION(dfs_lookup),
+    GOTCHA_WRAP_ACTION(dfs_lookup_rel),
+    GOTCHA_WRAP_ACTION(dfs_open),
+    GOTCHA_WRAP_ACTION(dfs_dup),
+    GOTCHA_WRAP_ACTION(dfs_obj_global2local),
+    GOTCHA_WRAP_ACTION(dfs_release),
+    GOTCHA_WRAP_ACTION(dfs_read),
+    GOTCHA_WRAP_ACTION(dfs_readx),
+    GOTCHA_WRAP_ACTION(dfs_write),
+    GOTCHA_WRAP_ACTION(dfs_writex),
+    GOTCHA_WRAP_ACTION(dfs_get_size),
+    GOTCHA_WRAP_ACTION(dfs_punch),
+    GOTCHA_WRAP_ACTION(dfs_remove),
+    GOTCHA_WRAP_ACTION(dfs_ostat),
+    GOTCHA_WRAP_ACTION(dfs_osetattr),
+    /* Native DAOS API - Container */
+    GOTCHA_WRAP_ACTION(daos_cont_open2),
+    GOTCHA_WRAP_ACTION(daos_cont_global2local),
+    GOTCHA_WRAP_ACTION(daos_cont_close),
+    /* Native DAOS API - Object */
+    GOTCHA_WRAP_ACTION(daos_obj_open),
+    GOTCHA_WRAP_ACTION(daos_obj_fetch),
+    GOTCHA_WRAP_ACTION(daos_obj_update),
+    GOTCHA_WRAP_ACTION(daos_obj_punch),
+    GOTCHA_WRAP_ACTION(daos_obj_punch_dkeys),
+    GOTCHA_WRAP_ACTION(daos_obj_punch_akeys),
+    GOTCHA_WRAP_ACTION(daos_obj_list_dkey),
+    GOTCHA_WRAP_ACTION(daos_obj_list_akey),
+    GOTCHA_WRAP_ACTION(daos_obj_list_recx),
+    GOTCHA_WRAP_ACTION(daos_obj_close),
+    /* Native DAOS API - Array */
+    GOTCHA_WRAP_ACTION(daos_array_create),
+    GOTCHA_WRAP_ACTION(daos_array_open),
+    GOTCHA_WRAP_ACTION(daos_array_open_with_attr),
+    GOTCHA_WRAP_ACTION(daos_array_read),
+    GOTCHA_WRAP_ACTION(daos_array_write),
+    GOTCHA_WRAP_ACTION(daos_array_get_size),
+    GOTCHA_WRAP_ACTION(daos_array_set_size),
+    GOTCHA_WRAP_ACTION(daos_array_stat),
+    GOTCHA_WRAP_ACTION(daos_array_punch),
+    GOTCHA_WRAP_ACTION(daos_array_destroy),
+    GOTCHA_WRAP_ACTION(daos_array_close),
+    /* Native DAOS API - Key-Value */
+    GOTCHA_WRAP_ACTION(daos_kv_open),
+    GOTCHA_WRAP_ACTION(daos_kv_get),
+    GOTCHA_WRAP_ACTION(daos_kv_put),
+    GOTCHA_WRAP_ACTION(daos_kv_remove),
+    GOTCHA_WRAP_ACTION(daos_kv_list),
+    GOTCHA_WRAP_ACTION(daos_kv_destroy),
+    GOTCHA_WRAP_ACTION(daos_kv_close),
+};
+#endif /* RECORDER_WITH_DAOS */
+
 void gotcha_register_functions() {
     char* posix_tracing_env   = getenv(RECORDER_POSIX_TRACING);
     char* mpi_tracing_env     = getenv(RECORDER_MPI_TRACING);
@@ -2174,12 +2238,14 @@ void gotcha_register_functions() {
     char* hdf5_tracing_env    = getenv(RECORDER_HDF5_TRACING);
     char* pnetcdf_tracing_env = getenv(RECORDER_PNETCDF_TRACING);
     char* netcdf_tracing_env  = getenv(RECORDER_NETCDF_TRACING);
+    char* daos_tracing_env    = getenv(RECORDER_DAOS_TRACING);
     if (posix_tracing_env) posix_tracing = atoi(posix_tracing_env);
     if (mpi_tracing_env) mpi_tracing = atoi(mpi_tracing_env);
     if (mpiio_tracing_env) mpiio_tracing = atoi(mpiio_tracing_env);
     if (hdf5_tracing_env) hdf5_tracing = atoi(hdf5_tracing_env);
     if (pnetcdf_tracing_env) pnetcdf_tracing = atoi(pnetcdf_tracing_env);
     if (netcdf_tracing_env) netcdf_tracing = atoi(netcdf_tracing_env);
+    if (daos_tracing_env) daos_tracing = atoi(daos_tracing_env);
 
     if (posix_tracing)
         gotcha_wrap(posix_wrap_actions,
@@ -2205,6 +2271,12 @@ void gotcha_register_functions() {
         gotcha_wrap(netcdf_wrap_actions,
                     sizeof(netcdf_wrap_actions)/sizeof(struct gotcha_binding_t),
                     "recorder_netcdf_actions");
+#ifdef RECORDER_WITH_DAOS
+    if (daos_tracing)
+        gotcha_wrap(daos_wrap_actions,
+                    sizeof(daos_wrap_actions)/sizeof(struct gotcha_binding_t),
+                    "recorder_daos_actions");
+#endif
 }
 
 bool gotcha_posix_tracing() {
@@ -2224,6 +2296,9 @@ bool gotcha_pnetcdf_tracing() {
 }
 bool gotcha_netcdf_tracing() {
     return netcdf_tracing;
+}
+bool gotcha_daos_tracing() {
+    return daos_tracing;
 }
 
 void gotcha_init() {

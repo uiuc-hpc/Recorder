@@ -43,6 +43,7 @@ typedef struct RecorderReader_t {
     int hdf5_start_idx;
     int pnetcdf_start_idx;
     int netcdf_start_idx;
+    int daos_start_idx;
 
     double prev_tstart;
 
