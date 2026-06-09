@@ -185,6 +185,9 @@ static void index_func_list(RecorderReader* reader) {
             reader->pnetcdf_start_idx = i;
         if (reader->netcdf_start_idx == -1 && strstr(reader->func_list[i], "nc_"))
             reader->netcdf_start_idx = i;
+        if (reader->daos_start_idx == -1 &&
+            (strstr(reader->func_list[i], "dfs_") || strstr(reader->func_list[i], "daos_")))
+            reader->daos_start_idx = i;
     }
 }
 
@@ -339,6 +342,7 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     reader->mpi_start_idx = -1;
     reader->hdf5_start_idx = -1;
     reader->pnetcdf_start_idx = -1;
+    reader->daos_start_idx = -1;
     reader->netcdf_start_idx = -1;
     reader->prev_tstart = 0.0;
 
@@ -502,7 +506,9 @@ int recorder_get_func_type(RecorderReader* reader, Record* record) {
         return RECORDER_PNETCDF;
     if(record->func_id == RECORDER_USER_FUNCTION)
         return RECORDER_FTRACE;
-    return RECORDER_NETCDF;
+    if(record->func_id < reader->daos_start_idx)
+        return RECORDER_NETCDF;
+    return RECORDER_DAOS;
 }
 
 void recorder_free_record(Record* r) {
