@@ -43,6 +43,7 @@ typedef struct RecorderReader_t {
     int hdf5_start_idx;
     int pnetcdf_start_idx;
     int netcdf_start_idx;
+    int daos_start_idx;
 
     double prev_tstart;
 
@@ -125,6 +126,9 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record);
  *  - RECORDER_MPIIO
  *  - RECORDER_MPI
  *  - RECORDER_HDF5
+ *  - RECORDER_PNETCDF
+ *  - RECORDER_NETCDF
+ *  - RECORDER_DAOS
  *  - RECORDER_FTRACE
  */
 int recorder_get_func_type(RecorderReader* reader, Record* record);

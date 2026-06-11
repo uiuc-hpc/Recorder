@@ -41,7 +41,7 @@ void print_statistics(RecorderReader* reader, CST* cst) {
     memset(call_count, 0, sizeof(int)*reader->supported_funcs);
 
     int mpi_count = 0, mpiio_count = 0, netcdf_count = 0;
-    int pnetcdf_count = 0, hdf5_count = 0, posix_count = 0;
+    int pnetcdf_count = 0, hdf5_count = 0, posix_count = 0, daos_count = 0;
 
     for(int i = 0; i < cst->entries; i++) {
         Record* record = reader_cs_to_record(&cst->cs_list[i]);
@@ -60,15 +60,17 @@ void print_statistics(RecorderReader* reader, CST* cst) {
             netcdf_count += cst->cs_list[i].count;
         if(type == RECORDER_POSIX)
             posix_count += cst->cs_list[i].count;
+        if(type == RECORDER_DAOS)
+            daos_count += cst->cs_list[i].count;
 
         unique_signature[record->func_id]++;
         call_count[record->func_id] += cst->cs_list[i].count;
 
         recorder_free_record(record);
     }
-    long int total = posix_count + mpi_count + mpiio_count + hdf5_count + pnetcdf_count;
-    printf("Total: %ld\nPOSIX: %d\nMPI: %d\nMPI-IO: %d\nHDF5: %d\nPnetCDF: %d\nNetCDF: %d\n",
-           total, posix_count, mpi_count, mpiio_count, hdf5_count, pnetcdf_count, netcdf_count);
+    long int total = posix_count + mpi_count + mpiio_count + hdf5_count + pnetcdf_count + netcdf_count + daos_count;
+    printf("Total: %ld\nPOSIX: %d\nMPI: %d\nMPI-IO: %d\nHDF5: %d\nPnetCDF: %d\nNetCDF: %d\nDAOS: %d\n",
+           total, posix_count, mpi_count, mpiio_count, hdf5_count, pnetcdf_count, netcdf_count, daos_count);
 
     printf("\n%-25s %18s %18s\n", "Func", "Unique Signature", "Total Call Count");
     for(int i = 0; i < reader->supported_funcs; i++) {
@@ -98,6 +100,7 @@ void print_metadata(RecorderReader* reader) {
     printf("HDF5 tracing: %s\n", meta->hdf5_tracing?"Enabled":"Disabled");
     printf("PnetCDF tracing: %s\n", meta->pnetcdf_tracing?"Enabled":"Disabled");
     printf("NetCDF tracing: %s\n", meta->netcdf_tracing?"Enabled":"Disabled");
+    printf("DAOS tracing: %s\n", meta->daos_tracing?"Enabled":"Disabled");
     printf("Store thread id: %s\n", meta->store_tid?"True":"False");
     printf("Store call depth: %s\n", meta->store_call_depth?"True":"False");
     printf("Timestamp compression: %s\n", meta->ts_compression?"True":"False");

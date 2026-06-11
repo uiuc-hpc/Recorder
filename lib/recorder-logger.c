@@ -333,6 +333,7 @@ void save_global_metadata() {
         .hdf5_tracing        = gotcha_hdf5_tracing(),
         .pnetcdf_tracing     = gotcha_pnetcdf_tracing(),
         .netcdf_tracing      = gotcha_netcdf_tracing(),
+        .daos_tracing        = gotcha_daos_tracing(),
         .store_tid           = logger.store_tid,
         .store_call_depth    = logger.store_call_depth,
         .start_ts            = logger.start_ts,

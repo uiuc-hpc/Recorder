@@ -112,6 +112,7 @@ void read_metadata(RecorderReader* reader) {
         reader->metadata.hdf5_tracing = 1;
         reader->metadata.pnetcdf_tracing = 0;
         reader->metadata.netcdf_tracing = 0;
+        reader->metadata.daos_tracing = 0;
         reader->metadata.store_tid = 1;
         reader->metadata.store_call_depth = 1;
         reader->metadata.start_ts = metadata_2_3.start_ts;
@@ -171,6 +172,11 @@ void read_metadata(RecorderReader* reader) {
                     (NULL!=strstr(reader->func_list[func_id], "nc_")))
                 reader->netcdf_start_idx = func_id;
 
+            if((reader->daos_start_idx==-1) &&
+                    ((NULL!=strstr(reader->func_list[func_id], "dfs_")) ||
+                     (NULL!=strstr(reader->func_list[func_id], "daos_"))))
+                reader->daos_start_idx = func_id;
+
             func_id++;
         }
     }
@@ -187,6 +193,7 @@ void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
     reader->mpi_start_idx = -1;
     reader->hdf5_start_idx = -1;
     reader->pnetcdf_start_idx = -1;
+    reader->daos_start_idx = -1;
     reader->netcdf_start_idx = -1;
     reader->prev_tstart = 0.0;
 
@@ -325,7 +332,9 @@ int recorder_get_func_type(RecorderReader* reader, Record* record) {
         return RECORDER_PNETCDF;
     if(record->func_id == RECORDER_USER_FUNCTION)
         return RECORDER_FTRACE;
-    return RECORDER_NETCDF;
+    if(record->func_id < reader->daos_start_idx)
+        return RECORDER_NETCDF;
+    return RECORDER_DAOS;
 }
 
 void recorder_free_record(Record* r) {

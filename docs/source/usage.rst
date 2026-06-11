@@ -32,7 +32,10 @@ library (use ldd to check).*
 Configure tracing layers
 ------------------------
 
-Currently, Recorder is capable of tracing POSIX, MPI, MPI-IO, HDF5, NetCDF and PnetCDF calls.
+Currently, Recorder is capable of tracing POSIX, MPI, MPI-IO, HDF5, NetCDF, PnetCDF and
+DAOS calls. DAOS tracing covers both the DAOS File System (DFS) API and the native DAOS
+API (container, object, array and key-value), and is only available when Recorder was
+built with DAOS (see the build instructions).
 By default, all supported I/O layers are enabled.
 At runtime (generally before running your application), you can set
 the following environment variables to dynamically enable/disable
@@ -49,6 +52,8 @@ the tracing of certain layers.
 * export RECORDER_NETCDF_TRACING=[1|0] (default: 1)
 
 * export RECORDER_PNETCDF_TRACING=[1|0] (default: 1)
+
+* export RECORDER_DAOS_TRACING=[1|0] (default: 1)
 
 * export RECORDER_MPI_TRACING=[1|0] (default: 0)
 

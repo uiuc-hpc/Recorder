@@ -85,6 +85,29 @@ else()
     message("-- " "NetCDF not found. Will build Recorder without it.")
 endif()
 
+# Look for DAOS (DFS + native DAOS API)
+# DAOS is not a CMAKE project, we use find_path() to locate it
+# this requires users to set -DRECORDER_WITH_DAOS=/xx/xx/
+find_path(DAOS_INCLUDE_DIRS daos.h ${RECORDER_WITH_DAOS}/include)
+find_path(DAOS_FS_INCLUDE_DIRS daos_fs.h ${RECORDER_WITH_DAOS}/include)
+find_path(DAOS_LIBRARY_FOUND libdaos.so ${RECORDER_WITH_DAOS}/lib ${RECORDER_WITH_DAOS}/lib64)
+find_path(DFS_LIBRARY_FOUND libdfs.so ${RECORDER_WITH_DAOS}/lib ${RECORDER_WITH_DAOS}/lib64)
+if(DAOS_INCLUDE_DIRS AND DAOS_FS_INCLUDE_DIRS AND DAOS_LIBRARY_FOUND AND DFS_LIBRARY_FOUND)
+    message("-- " "Found DAOS:" ${RECORDER_WITH_DAOS})
+    set(RECORDER_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-daos.c
+        ${RECORDER_SRCS}
+    )
+    include_directories(${DAOS_INCLUDE_DIRS})
+    set(DAOS_LIBRARIES ${DAOS_LIBRARY_FOUND}/libdaos.so ${DFS_LIBRARY_FOUND}/libdfs.so)
+    set(RECORDER_EXT_INCLUDE_DEPENDENCIES ${DAOS_INCLUDE_DIRS}
+            ${RECORDER_EXT_INCLUDE_DEPENDENCIES})
+    set(RECORDER_EXT_LIB_DEPENDENCIES
+            ${DAOS_LIBRARIES} ${RECORDER_EXT_LIB_DEPENDENCIES})
+else()
+    message("-- " "DAOS not found. Will build Recorder without it.")
+endif()
+
 
 find_package(MPI REQUIRED)
 if(MPI_FOUND)
@@ -172,6 +195,7 @@ target_compile_definitions(recorder
         PRIVATE $<$<BOOL:${HAVE___FXSTAT64}>:HAVE___FXSTAT64>
         PRIVATE $<$<AND:$<BOOL:${PNETCDF_INCLUDE_DIRS}>,$<BOOL:${PNETCDF_LIBRARY_FOUND}>>:RECORDER_WITH_PNETCDF>
         PRIVATE $<$<AND:$<BOOL:${NETCDF_INCLUDE_DIRS}>,$<BOOL:${NETCDF_LIBRARY_FOUND}>>:RECORDER_WITH_NETCDF>
+        PRIVATE $<$<AND:$<BOOL:${DAOS_INCLUDE_DIRS}>,$<BOOL:${DAOS_FS_INCLUDE_DIRS}>,$<BOOL:${DAOS_LIBRARY_FOUND}>,$<BOOL:${DFS_LIBRARY_FOUND}>>:RECORDER_WITH_DAOS>
         PRIVATE $<$<BOOL:${RECORDER_ENABLE_FCNTL_TRACE}>:RECORDER_ENABLE_FCNTL_TRACE>
         PRIVATE $<$<BOOL:${RECORDER_ENABLE_CUDA_TRACE}>:RECORDER_ENABLE_CUDA_TRACE>
         )
