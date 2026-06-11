@@ -112,6 +112,7 @@ void read_metadata(RecorderReader* reader) {
         reader->metadata.hdf5_tracing = 1;
         reader->metadata.pnetcdf_tracing = 0;
         reader->metadata.netcdf_tracing = 0;
+        reader->metadata.daos_tracing = 0;
         reader->metadata.store_tid = 1;
         reader->metadata.store_call_depth = 1;
         reader->metadata.start_ts = metadata_2_3.start_ts;

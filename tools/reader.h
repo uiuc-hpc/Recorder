@@ -126,6 +126,9 @@ const char* recorder_get_func_name(RecorderReader* reader, Record* record);
  *  - RECORDER_MPIIO
  *  - RECORDER_MPI
  *  - RECORDER_HDF5
+ *  - RECORDER_PNETCDF
+ *  - RECORDER_NETCDF
+ *  - RECORDER_DAOS
  *  - RECORDER_FTRACE
  */
 int recorder_get_func_type(RecorderReader* reader, Record* record);

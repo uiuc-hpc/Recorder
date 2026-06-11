@@ -30,6 +30,12 @@ static const char* type_name(int type) {
             return "MPI";
         case RECORDER_HDF5:
             return "HDF5";
+        case RECORDER_PNETCDF:
+            return "PnetCDF";
+        case RECORDER_NETCDF:
+            return "NetCDF";
+        case RECORDER_DAOS:
+            return "DAOS";
         case RECORDER_FTRACE:
             return "USER";
         default:
@@ -59,7 +65,8 @@ operator<<( std::ostream&      out,
 void write_to_json(Record *record, void* arg) {
 
    int cat = recorder_get_func_type(&reader, record);
-   if (record->call_depth == 0 || (cat == 0 || cat == 1 || cat == 3)) {
+   // posix, mpiio, hdf5, pnetcdf, netcdf, daos
+   if (record->call_depth == 0 || (cat == 0 || cat == 1 || cat == 3 || cat == 5 || cat == 6 || cat == 7)) {
         Writer *writer = (Writer *) arg;
         bool user_func = (record->func_id == RECORDER_USER_FUNCTION);
         const char *func_name = recorder_get_func_name(&reader, record);
