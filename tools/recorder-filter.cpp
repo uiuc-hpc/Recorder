@@ -374,51 +374,37 @@ void recorder_write_zlib(unsigned char* buf, size_t buf_size, FILE* out_file) {
     fseek(out_file, compressed_size, SEEK_CUR);
 }
 
-void save_updated_metadata(RecorderReader* reader) {
-    char old_metadata_filename[2048] = {0};
-    char new_metadata_filename[2048] = {0};
-    FILE* srcfh;
-    FILE* dstfh;
-    void* fhdata;
-
-    sprintf(old_metadata_filename, "%s/recorder.mt", reader->logs_dir);
-    sprintf(new_metadata_filename, "%s/recorder.mt", filtered_trace_dir);
-
-    srcfh = fopen(old_metadata_filename, "rb");
-    dstfh = fopen(new_metadata_filename, "wb");
-
-    // first copy the entire old meatdata file to the new metadata file
-    size_t res = 0;
-    fseek(srcfh, 0, SEEK_END);
-    long metafh_size = ftell(srcfh);
-    fhdata = malloc(metafh_size);
-    fseek(srcfh, 0, SEEK_SET);
-    res = fread(fhdata , 1, metafh_size, srcfh);
-    if (ferror(srcfh)) {
-        perror("Error reading metadata file\n");
-        exit(1);
+/* Copy src_path as one section into out; fills in *entry. */
+static void filter_write_file_as_section(FILE* out, RecorderSectionEntry* entry,
+                                         int type, int rank, const char* src_path) {
+    entry->type   = (uint32_t)type;
+    entry->rank   = rank;
+    entry->offset = (uint64_t)ftell(out);
+    entry->size   = 0;
+    FILE* src = fopen(src_path, "rb");
+    if (!src) return;
+    char buf[65536];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), src)) > 0) {
+        fwrite(buf, 1, n, out);
+        entry->size += n;
     }
-    res = fwrite(fhdata, 1, metafh_size, dstfh);
-
-    // then update the inter-process compression flag.
-    int oldval = reader->metadata.interprocess_compression;
-    reader->metadata.interprocess_compression = 0;
-    fseek(dstfh, 0, SEEK_SET);
-    fwrite(&reader->metadata, sizeof(RecorderMetadata), 1, dstfh);
-    reader->metadata.interprocess_compression = oldval;
-
-    fclose(srcfh);
-    fclose(dstfh);
-    free(fhdata);
+    fclose(src);
 }
 
 void save_filtered_trace(RecorderReader* reader, IterArg* iter_args) {
 
+    int nprocs = reader->metadata.total_ranks;
+    // filtered output always uses per-rank (non-interprocess-compressed) layout
+    int nsects = 2 + 2 * nprocs;   // METADATA + TIMESTAMPS + nprocs*(RANK_CST + RANK_CFG)
+
+    // --- write per-rank CST and CFG to temp files ---
     size_t cst_data_len;
     char* cst_data = serialize_cst(global_cst, &cst_data_len);
 
-    for(int rank = 0; rank < reader->metadata.total_ranks; rank++) {
+    for(int rank = 0; rank < nprocs; rank++) {
         char filename[1024] = {0};
+
         sprintf(filename, "%s/%d.cfg", filtered_trace_dir, rank);
         FILE* f = fopen(filename, "wb");
         int integers;
@@ -427,30 +413,74 @@ void save_filtered_trace(RecorderReader* reader, IterArg* iter_args) {
         fclose(f);
         free(cfg_data);
 
-        // write out global cst, all ranks have the same copy
         sprintf(filename, "%s/%d.cst", filtered_trace_dir, rank);
         f = fopen(filename, "wb");
         recorder_write_zlib((unsigned char*)cst_data, cst_data_len, f);
         fclose(f);
     }
-
     free(cst_data);
 
-    // Update metadata and write out
-    save_updated_metadata(reader);
+    // --- write metadata to a temp file ---
+    char mt_path[2048] = {0};
+    sprintf(mt_path, "%s/recorder.mt", filtered_trace_dir);
+    FILE* mt = fopen(mt_path, "wb");
+    int oldval = reader->metadata.interprocess_compression;
+    reader->metadata.interprocess_compression = 0;
+    fwrite(&reader->metadata, sizeof(RecorderMetadata), 1, mt);
+    reader->metadata.interprocess_compression = oldval;
+    char funcname_buf[RECORDER_FUNC_NAME_LEN];
+    for (int i = 0; i < reader->supported_funcs; i++) {
+        memset(funcname_buf, 0, RECORDER_FUNC_NAME_LEN);
+        strncpy(funcname_buf, reader->func_list[i], RECORDER_FUNC_NAME_LEN - 1);
+        fwrite(funcname_buf, RECORDER_FUNC_NAME_LEN, 1, mt);
+    }
+    fclose(mt);
 
-    // Save timestamps
-    // for now, we simply copy the timestamp files from
-    // the original trace folder, if we want to cut some
-    // records, we also need to cut timestamps
-    char cmd[1024];
-    sprintf(cmd, "cp %s/recorder.ts %s/recorder.ts", reader->logs_dir, filtered_trace_dir);
+    // --- copy timestamps to temp file in filtered dir ---
+    char ts_dst[2048] = {0};
+    sprintf(ts_dst, "%s/recorder.ts", filtered_trace_dir);
+    char cmd[4096];
+    sprintf(cmd, "cp %s/recorder.ts %s", reader->logs_dir, ts_dst);
     system(cmd);
 
-    // Similarly, simply copy the version file from the
-    // original trace folder.
-    sprintf(cmd, "cp %s/VERSION %s/VERSION", reader->logs_dir, filtered_trace_dir);
-    system(cmd);
+    // --- combine everything into a single recorder.dat ---
+    char combined_path[2048] = {0};
+    sprintf(combined_path, "%s/recorder.dat", filtered_trace_dir);
+    FILE* out = fopen(combined_path, "wb");
+
+    RecorderFileHeader hdr;
+    memcpy(hdr.magic, "RECORDER", 8);
+    hdr.format_version = 1;
+    hdr.num_sections   = (uint32_t)nsects;
+    fwrite(&hdr, sizeof(hdr), 1, out);
+
+    RecorderSectionEntry* entries = (RecorderSectionEntry*)calloc(nsects, sizeof(RecorderSectionEntry));
+    long table_pos = ftell(out);
+    fwrite(entries, sizeof(RecorderSectionEntry), nsects, out);
+
+    char path[2048];
+    int s = 0;
+
+    filter_write_file_as_section(out, &entries[s++], RECORDER_SECTION_METADATA, -1, mt_path);
+    remove(mt_path);
+
+    filter_write_file_as_section(out, &entries[s++], RECORDER_SECTION_TIMESTAMPS, -1, ts_dst);
+    remove(ts_dst);
+
+    for (int rank = 0; rank < nprocs; rank++) {
+        sprintf(path, "%s/%d.cst", filtered_trace_dir, rank);
+        filter_write_file_as_section(out, &entries[s++], RECORDER_SECTION_RANK_CST, rank, path);
+        remove(path);
+
+        sprintf(path, "%s/%d.cfg", filtered_trace_dir, rank);
+        filter_write_file_as_section(out, &entries[s++], RECORDER_SECTION_RANK_CFG, rank, path);
+        remove(path);
+    }
+
+    fseek(out, table_pos, SEEK_SET);
+    fwrite(entries, sizeof(RecorderSectionEntry), nsects, out);
+    free(entries);
+    fclose(out);
 }
 
 /**

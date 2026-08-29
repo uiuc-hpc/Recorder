@@ -16,11 +16,6 @@ set(RECORDER_PACKAGE_STRING "${RECORDER_PACKAGE_NAME} ${RECORDER_PACKAGE_VERSION
 set(RECORDER_PACKAGE_TARNAME "${RECORDER_PACKAGE}")
 
 
-# ignore warning message
-if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 OLD)
-endif()
-
 
 #------------------------------------------------------------------------------
 # Setup install and output Directories
@@ -231,7 +226,7 @@ if(CMAKE_PROJECT_NAME STREQUAL RECORDER)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL RECORDER AND BUILD_TESTING)
-    # include test sub directory
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 endif()
 
 #-----------------------------------------------------------------------------

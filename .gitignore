@@ -106,5 +106,8 @@ install
 .idea/
 /cmake-build-debug/
 
+# Claude Code
+.claude/
+
 # clangd database
 compile_commands.json
