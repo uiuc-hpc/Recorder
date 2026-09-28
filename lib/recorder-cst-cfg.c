@@ -12,7 +12,7 @@
  *   thread id:     sizeof(pthread_t)
  *   func id:       sizeof(record->func_id)
  *   call_depth:    sizeof(record->call_depth)
- *   call_site:     sizeof(record->call_site)
+ *   call_site:     sizeof(record->call_site)   (only with FULL_TRACING)
  *   arg count:     sizeof(record->arg_count)
  *   arg strlen:    sizeof(int)
  *   args:          arg_strlen
@@ -22,7 +22,10 @@
 int cs_key_args_start() {
     Record r;
     size_t args_start = sizeof(pthread_t) + sizeof(r.func_id) +
-                  sizeof(r.call_depth) + sizeof(r.call_site) +
+                  sizeof(r.call_depth) +
+#ifdef RECORDER_ENABLE_FULL_TRACING
+                  sizeof(r.call_site) +
+#endif
                   sizeof(r.arg_count) + sizeof(int);
     return ((int)args_start);
 }
@@ -71,8 +74,10 @@ char* compose_cs_key(Record* record, int* key_len) {
     pos += sizeof(record->func_id);
     memcpy(key+pos, &record->call_depth, sizeof(record->call_depth));
     pos += sizeof(record->call_depth);
+#ifdef RECORDER_ENABLE_FULL_TRACING
     memcpy(key+pos, &record->call_site, sizeof(record->call_site));
     pos += sizeof(record->call_site);
+#endif
     memcpy(key+pos, &record->arg_count, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
     memcpy(key+pos, &args_strlen, sizeof(int));
@@ -109,8 +114,11 @@ Record* cs_to_record(CallSignature *cs) {
     pos += sizeof(record->func_id);
     memcpy(&record->call_depth, key+pos, sizeof(record->call_depth));
     pos += sizeof(record->call_depth);
+    record->call_site = 0;
+#ifdef RECORDER_ENABLE_FULL_TRACING
     memcpy(&record->call_site, key+pos, sizeof(record->call_site));
     pos += sizeof(record->call_site);
+#endif
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 

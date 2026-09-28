@@ -18,7 +18,6 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-callsite.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-gotcha.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-pattern-recognition.c
@@ -148,6 +147,19 @@ if(RECORDER_ENABLE_CUDA_TRACE)
 endif()
 
 
+if(RECORDER_ENABLE_FULL_TRACING)
+    set(RECORDER_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-callsite.c
+        ${RECORDER_SRCS}
+    )
+    # libunwind is only needed to step out of our own MPI forwarders
+    set(RECORDER_EXT_LIB_DEPENDENCIES unwind ${RECORDER_EXT_LIB_DEPENDENCIES})
+    message("-- " "Full tracing: ON (source locations are recorded)")
+else()
+    message("-- " "Full tracing: OFF (use -DRECORDER_ENABLE_FULL_TRACING=ON to record source locations)")
+endif()
+
+
 INCLUDE(CheckFunctionExists)
 CHECK_FUNCTION_EXISTS(__xstat    HAVE___XSTAT)
 CHECK_FUNCTION_EXISTS(__xstat64  HAVE___XSTAT64)
@@ -175,7 +187,6 @@ target_link_libraries(recorder
         PUBLIC gotcha   # this must match add_library(target) in GOTCHA project,
         PUBLIC ${RECORDER_EXT_LIB_DEPENDENCIES}
         PUBLIC pthread
-        PUBLIC unwind      # call site fallback behind our own MPI forwarders
         )
 
 target_compile_definitions(recorder
@@ -192,6 +203,7 @@ target_compile_definitions(recorder
         PRIVATE $<$<AND:$<BOOL:${NETCDF_INCLUDE_DIRS}>,$<BOOL:${NETCDF_LIBRARY_FOUND}>>:RECORDER_WITH_NETCDF>
         PRIVATE $<$<BOOL:${RECORDER_ENABLE_FCNTL_TRACE}>:RECORDER_ENABLE_FCNTL_TRACE>
         PRIVATE $<$<BOOL:${RECORDER_ENABLE_CUDA_TRACE}>:RECORDER_ENABLE_CUDA_TRACE>
+        PUBLIC  $<$<BOOL:${RECORDER_ENABLE_FULL_TRACING}>:RECORDER_ENABLE_FULL_TRACING>
         )
 
 recorder_set_lib_options(recorder "recorder" ${RECORDER_LIBTYPE})

@@ -85,12 +85,14 @@ typedef enum {
     RECORDER_SECTION_CFG_META   = 4,  /* grammar metadata (interprocess_compression = true) */
     RECORDER_SECTION_RANK_CST   = 5,  /* per-rank CST (interprocess_compression = false)    */
     RECORDER_SECTION_RANK_CFG   = 6,  /* per-rank CFG (interprocess_compression = false)    */
-    RECORDER_SECTION_CALLSITES  = 7,  /* per-rank call site table (store_call_site = true)  */
+    RECORDER_SECTION_CALLSITES  = 7,  /* per-rank call site table (FULL_TRACING only)      */
 } RecorderSectionType;
 
-/* Call site table (RECORDER_SECTION_CALLSITES), one per rank:
+/* Call site table (RECORDER_SECTION_CALLSITES), one per rank. Written only by
+ * builds configured with -DRECORDER_ENABLE_FULL_TRACING=ON, which also makes
+ * the CST key carry call_site and bumps format_version to 2.
  *   [CallSiteSectionHeader][module paths, NUL-separated][CallSiteEntry * n]
- * Resolve with: addr2line -f -i -e <module> <offset> */
+ * Resolve with: addr2line -a -f -i -C -e <module> <offset> */
 typedef struct CallSiteSectionHeader_t {
     uint32_t version;           /* 1 */
     uint32_t num_modules;
@@ -170,7 +172,7 @@ typedef struct RecorderLogger_t {
 
     bool      store_tid;            // Wether to store thread id
     bool      store_call_depth;     // Wether to store the call depth
-    bool      store_call_site;      // Wether to store the caller's return address
+    bool      store_call_site;      // Caller's return address; false unless built with FULL_TRACING
     bool      interprocess_compression; // Wether to perform interprocess compression of cst/cfg
     bool      interprocess_pattern_recognition; 
     bool      intraprocess_pattern_recognition; 

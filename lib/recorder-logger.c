@@ -279,7 +279,11 @@ void logger_init() {
     logger.directory_created = false;
     logger.store_tid   = false;
     logger.store_call_depth = true;
+#ifdef RECORDER_ENABLE_FULL_TRACING
     logger.store_call_site  = true;
+#else
+    logger.store_call_site  = false;   /* not configured: nothing to store */
+#endif
     logger.interprocess_compression = true;
     logger.intraprocess_pattern_recognition = false;
     logger.interprocess_pattern_recognition = false;
@@ -305,10 +309,12 @@ void logger_init() {
     const char* store_call_depth_str = getenv(RECORDER_STORE_CALL_DEPTH);
     if(store_call_depth_str)
         logger.store_call_depth = atoi(store_call_depth_str);
+#ifdef RECORDER_ENABLE_FULL_TRACING
     const char* store_call_site_str = getenv(RECORDER_STORE_CALL_SITE);
     if(store_call_site_str)
         logger.store_call_site = atoi(store_call_site_str);
     callsite_set_enabled(logger.store_call_site);
+#endif
     const char* interprocess_compression_env = getenv(RECORDER_INTERPROCESS_COMPRESSION);
     if(interprocess_compression_env)
         logger.interprocess_compression = atoi(interprocess_compression_env);
@@ -488,7 +494,11 @@ static void combine_output_files() {
     /* Write placeholder file header */
     RecorderFileHeader hdr;
     memcpy(hdr.magic, "RECORDER", 8);
+#ifdef RECORDER_ENABLE_FULL_TRACING
     hdr.format_version = 2;   /* 2: the CST key carries call_site */
+#else
+    hdr.format_version = 1;
+#endif
     hdr.num_sections   = (uint32_t)nsects;
     write(out_fd, &hdr, sizeof(hdr));
 
@@ -577,8 +587,10 @@ void logger_finalize() {
     }
 
     // Before the collective cst/cfg phase, which also acts as the barrier.
+#ifdef RECORDER_ENABLE_FULL_TRACING
     if(logger.store_call_site)
         callsite_save_local(logger.rank, logger.traces_dir);
+#endif
 
     // interprocess cst and cfg compression
     cleanup_record_stack();
