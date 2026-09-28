@@ -18,6 +18,7 @@ set(RECORDER_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-posix.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-logger.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/recorder-callsite.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-gotcha.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-function-profiler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/recorder-pattern-recognition.c
@@ -174,6 +175,7 @@ target_link_libraries(recorder
         PUBLIC gotcha   # this must match add_library(target) in GOTCHA project,
         PUBLIC ${RECORDER_EXT_LIB_DEPENDENCIES}
         PUBLIC pthread
+        PUBLIC unwind      # call site fallback behind our own MPI forwarders
         )
 
 target_compile_definitions(recorder

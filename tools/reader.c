@@ -105,6 +105,7 @@ static void load_combined_sections(RecorderReader* reader) {
     RecorderFileHeader hdr;
     fread(&hdr, sizeof(hdr), 1, fp);
     assert(memcmp(hdr.magic, "RECORDER", 8) == 0);
+    reader_set_key_has_call_site(hdr.format_version >= 2);
 
     reader->num_sections = (int)hdr.num_sections;
     reader->sections = malloc(sizeof(RecorderSectionEntry) * reader->num_sections);
@@ -320,6 +321,7 @@ void read_metadata(RecorderReader* reader) {
 }
 
 void recorder_init_reader(const char* logs_dir, RecorderReader *reader) {
+    reader_set_key_has_call_site(0);   /* multi-file traces predate call sites */
     assert(logs_dir);
     assert(reader);
 

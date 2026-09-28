@@ -41,6 +41,7 @@ typedef struct Record_t {
     double tstart;
     double tend;
     unsigned char call_depth;
+    uint32_t call_site;         // index into the per-rank call site table
     int func_id;
     unsigned char arg_count;
     char **args;                // Store all arguments in array
@@ -84,11 +85,27 @@ typedef enum {
     RECORDER_SECTION_CFG_META   = 4,  /* grammar metadata (interprocess_compression = true) */
     RECORDER_SECTION_RANK_CST   = 5,  /* per-rank CST (interprocess_compression = false)    */
     RECORDER_SECTION_RANK_CFG   = 6,  /* per-rank CFG (interprocess_compression = false)    */
+    RECORDER_SECTION_CALLSITES  = 7,  /* per-rank call site table (store_call_site = true)  */
 } RecorderSectionType;
+
+/* Call site table (RECORDER_SECTION_CALLSITES), one per rank:
+ *   [CallSiteSectionHeader][module paths, NUL-separated][CallSiteEntry * n]
+ * Resolve with: addr2line -f -i -e <module> <offset> */
+typedef struct CallSiteSectionHeader_t {
+    uint32_t version;           /* 1 */
+    uint32_t num_modules;
+    uint32_t num_sites;
+    uint32_t strtab_bytes;      /* size of the module path string table */
+} CallSiteSectionHeader;
+
+typedef struct CallSiteEntry_t {
+    uint32_t module_id;         /* index into the module string table */
+    uint64_t offset;            /* address - module load base, already ip-1 */
+} __attribute__((packed)) CallSiteEntry;
 
 typedef struct RecorderFileHeader_t {
     char     magic[8];        /* "RECORDER" */
-    uint32_t format_version;  /* 1          */
+    uint32_t format_version;  /* 2 since the CST key carries call_site */
     uint32_t num_sections;
 } RecorderFileHeader;
 
@@ -153,6 +170,7 @@ typedef struct RecorderLogger_t {
 
     bool      store_tid;            // Wether to store thread id
     bool      store_call_depth;     // Wether to store the call depth
+    bool      store_call_site;      // Wether to store the caller's return address
     bool      interprocess_compression; // Wether to perform interprocess compression of cst/cfg
     bool      interprocess_pattern_recognition; 
     bool      intraprocess_pattern_recognition; 
@@ -167,6 +185,12 @@ void logger_init();
 void logger_set_mpi_info(int mpi_rank, int mpi_size);
 void logger_finalize();
 bool logger_initialized();
+/* Call site tracking -- recorder-callsite.c */
+void     callsite_set_enabled(bool enabled);
+uint32_t callsite_intern(void* return_address);
+void     callsite_save_local(int rank, const char* traces_dir);
+void     callsite_cleanup();
+
 void logger_record_enter(Record *record);
 void logger_record_exit(Record *record);
 bool logger_intraprocess_pattern_recognition();

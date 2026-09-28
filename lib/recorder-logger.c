@@ -79,6 +79,8 @@ void write_record(Record *record) {
         record->tid   = 0;
     if(!logger.store_call_depth)
         record->call_depth = 0;
+    if(!logger.store_call_site)
+        record->call_site = 0;
 
     int key_len;
     char* key = compose_cs_key(record, &key_len);
@@ -123,15 +125,22 @@ void write_record(Record *record) {
     pthread_mutex_unlock(&g_mutex);
 }
 
+/* The per-thread stack is reached through TLS, so the hot path needs no lock.
+ * g_record_stack only keeps them for cleanup and is touched once per thread. */
+static __thread struct RecordStack* tls_record_stack = NULL;
+static pthread_mutex_t g_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void logger_record_enter(Record* record) {
-    struct RecordStack *rs;
-    HASH_FIND(hh, g_record_stack, &record->tid, sizeof(pthread_t), rs);
+    struct RecordStack *rs = tls_record_stack;
     if(!rs) {
         rs = recorder_malloc(sizeof(struct RecordStack));
         rs->records = NULL;
         rs->call_depth  = 0;
         rs->tid = record->tid;
+        pthread_mutex_lock(&g_stack_mutex);
         HASH_ADD(hh, g_record_stack, tid, sizeof(pthread_t), rs);
+        pthread_mutex_unlock(&g_stack_mutex);
+        tls_record_stack = rs;
     }
 
     DL_APPEND(rs->records, record);
@@ -270,6 +279,7 @@ void logger_init() {
     logger.directory_created = false;
     logger.store_tid   = false;
     logger.store_call_depth = true;
+    logger.store_call_site  = true;
     logger.interprocess_compression = true;
     logger.intraprocess_pattern_recognition = false;
     logger.interprocess_pattern_recognition = false;
@@ -295,6 +305,10 @@ void logger_init() {
     const char* store_call_depth_str = getenv(RECORDER_STORE_CALL_DEPTH);
     if(store_call_depth_str)
         logger.store_call_depth = atoi(store_call_depth_str);
+    const char* store_call_site_str = getenv(RECORDER_STORE_CALL_SITE);
+    if(store_call_site_str)
+        logger.store_call_site = atoi(store_call_site_str);
+    callsite_set_enabled(logger.store_call_site);
     const char* interprocess_compression_env = getenv(RECORDER_INTERPROCESS_COMPRESSION);
     if(interprocess_compression_env)
         logger.interprocess_compression = atoi(interprocess_compression_env);
@@ -316,6 +330,7 @@ void logger_init() {
 }
 
 void cleanup_record_stack() {
+    tls_record_stack = NULL;
     struct RecordStack *rs, *tmp;
     HASH_ITER(hh, g_record_stack, rs, tmp) {
         HASH_DEL(g_record_stack, rs);
@@ -460,6 +475,7 @@ static void combine_output_files() {
     bool ic     = logger.interprocess_compression;
     int  nprocs = logger.nprocs;
     int  nsects = ic ? 5 : (2 + 2 * nprocs);
+    if (logger.store_call_site) nsects += nprocs;
 
     char combined_path[1024];
     sprintf(combined_path, "%s/recorder.dat", logger.traces_dir);
@@ -472,7 +488,7 @@ static void combine_output_files() {
     /* Write placeholder file header */
     RecorderFileHeader hdr;
     memcpy(hdr.magic, "RECORDER", 8);
-    hdr.format_version = 1;
+    hdr.format_version = 2;   /* 2: the CST key carries call_site */
     hdr.num_sections   = (uint32_t)nsects;
     write(out_fd, &hdr, sizeof(hdr));
 
@@ -494,6 +510,15 @@ static void combine_output_files() {
 
     sprintf(path, "%s/recorder.ts", logger.traces_dir);
     write_file_as_section_fd(out_fd, &entries[s++], RECORDER_SECTION_TIMESTAMPS, -1, path);
+
+    /* one call site table per rank; ids are per-rank */
+    if (logger.store_call_site) {
+        for (int r = 0; r < nprocs; r++) {
+            sprintf(path, "%s/%d.callsites", logger.traces_dir, r);
+            write_file_as_section_fd(out_fd, &entries[s++],
+                                     RECORDER_SECTION_CALLSITES, r, path);
+        }
+    }
 
     if (ic) {
         sprintf(path, "%s/recorder.cst", logger.traces_dir);
@@ -551,6 +576,10 @@ void logger_finalize() {
         iopr_interprocess(&logger);
     }
 
+    // Before the collective cst/cfg phase, which also acts as the barrier.
+    if(logger.store_call_site)
+        callsite_save_local(logger.rank, logger.traces_dir);
+
     // interprocess cst and cfg compression
     cleanup_record_stack();
     if(logger.interprocess_compression) {
@@ -569,6 +598,13 @@ void logger_finalize() {
 
     if(logger.rank == 0) {
         combine_output_files();
+        if(logger.store_call_site) {
+            char cspath[1280];
+            for(int r = 0; r < logger.nprocs; r++) {
+                sprintf(cspath, "%s/%d.callsites", logger.traces_dir, r);
+                GOTCHA_REAL_CALL(remove)(cspath);
+            }
+        }
         RECORDER_LOGINFO("[Recorder] trace written to %s/recorder.dat\n", logger.traces_dir);
     }
 

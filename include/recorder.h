@@ -15,6 +15,7 @@
 #define RECORDER_STORE_POINTER        		        "RECORDER_STORE_POINTER"
 #define RECORDER_STORE_TID            		        "RECORDER_STORE_TID"
 #define RECORDER_STORE_CALL_DEPTH          		    "RECORDER_STORE_CALL_DEPTH"
+#define RECORDER_STORE_CALL_SITE           		    "RECORDER_STORE_CALL_SITE"
 #define RECORDER_INTERPROCESS_COMPRESSION	        "RECORDER_INTERPROCESS_COMPRESSION"
 #define RECORDER_INTERPROCESS_PATTERN_RECOGNITION   "RECORDER_INTERPROCESS_PATTERN_RECOGNITION"
 #define RECORDER_INTRAPROCESS_PATTERN_RECOGNITION   "RECORDER_INTRAPROCESS_PATTERN_RECOGNITION"
@@ -52,6 +53,7 @@
  */
 #define RECORDER_INTERCEPTOR_PROLOGUE_CORE(ret, func, real_args)                    \
     Record *record = recorder_malloc(sizeof(Record));                               \
+    record->call_site = callsite_intern(__builtin_return_address(0));               \
     record->func_id = get_function_id_by_name(#func);                               \
     record->tid = recorder_gettid();                                                \
     logger_record_enter(record);                                                    \
