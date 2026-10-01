@@ -124,6 +124,11 @@ option(BUILD_SHARED_LIBS "Build with shared libraries." ON)
 option(RECORDER_ENABLE_PARQUET "Build Parquet format converter." OFF)
 option(RECORDER_ENABLE_CUDA_TRACE "Enable tracing of CUDA kernels." OFF)
 option(RECORDER_ENABLE_FCNTL_TRACE "Enable tracing of fcntl()." ON)
+option(RECORDER_ENABLE_FULL_TRACING "Record the source code location of every traced call." OFF)
+# -DFULL_TRACING=ON is accepted as a shorthand.
+if(FULL_TRACING)
+    set(RECORDER_ENABLE_FULL_TRACING ON)
+endif()
 option(RECORDER_INSTALL_TESTS "Enable installation of tests." OFF)
 
 

@@ -31,6 +31,16 @@ typedef struct CFG_t {
     RuleHash* cfg_head;
 } CFG;
 
+/* Call site resolution -- reader-callsite.c */
+typedef struct CallSiteTable_t {
+    uint32_t num_sites;
+    char**   loc;               /* resolved "file:line", or "module+0xoff" */
+} CallSiteTable;
+
+CallSiteTable* callsite_table_load(const char* combined_path, int rank);
+const char*    callsite_table_get(CallSiteTable* t, uint32_t id);
+void           callsite_table_free(CallSiteTable* t);
+
 typedef struct RecorderReader_t {
 
     RecorderMetadata metadata;

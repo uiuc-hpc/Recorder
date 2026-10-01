@@ -22,6 +22,9 @@ int digits_count(int n) {
     return digits;
 }
 
+/* table of the rank being written */
+static CallSiteTable* cs_table = NULL;
+
 void write_to_textfile(Record *record, void* arg) {
     FILE* f = (FILE*) arg;
 
@@ -37,7 +40,13 @@ void write_to_textfile(Record *record, void* arg) {
         fprintf(f, " %s", arg);
     }
 
-    fprintf(f, " )\n");
+    fprintf(f, " )");
+
+    /* empty if call site tracking was off */
+    const char* loc = callsite_table_get(cs_table, record->call_site);
+    if (loc) fprintf(f, " @ %s", loc);
+
+    fprintf(f, "\n");
 }
 
 
@@ -80,7 +89,14 @@ int main(int argc, char **argv) {
         sprintf(textfile_path, formatting_fname, textfile_dir, rank);
         FILE* fout = fopen(textfile_path, "w");
 
+        char combined[1200];
+        snprintf(combined, sizeof(combined), "%s/recorder.dat", argv[1]);
+        cs_table = callsite_table_load(combined, rank);
+
         recorder_decode_records(&reader, rank, write_to_textfile, fout);
+
+        callsite_table_free(cs_table);
+        cs_table = NULL;
 
         fclose(fout);
 

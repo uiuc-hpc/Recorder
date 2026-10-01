@@ -140,6 +140,10 @@ CFG* reader_get_cfg(RecorderReader* reader, int rank) {
 
 // Caller needs to free the record after use
 // by using recorder_free_record() call.
+/* Traces before format version 2 have no call_site in the key. */
+static int key_has_call_site = 1;
+void reader_set_key_has_call_site(int has) { key_has_call_site = has; }
+
 Record* reader_cs_to_record(CallSignature *cs) {
 
     Record *record = malloc(sizeof(Record));
@@ -153,6 +157,11 @@ Record* reader_cs_to_record(CallSignature *cs) {
     pos += sizeof(record->func_id);
     memcpy(&record->call_depth, key+pos, sizeof(record->call_depth));
     pos += sizeof(record->call_depth);
+    record->call_site = 0;
+    if (key_has_call_site) {
+        memcpy(&record->call_site, key+pos, sizeof(record->call_site));
+        pos += sizeof(record->call_site);
+    }
     memcpy(&record->arg_count, key+pos, sizeof(record->arg_count));
     pos += sizeof(record->arg_count);
 

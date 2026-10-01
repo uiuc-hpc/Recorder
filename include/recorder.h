@@ -15,6 +15,7 @@
 #define RECORDER_STORE_POINTER        		        "RECORDER_STORE_POINTER"
 #define RECORDER_STORE_TID            		        "RECORDER_STORE_TID"
 #define RECORDER_STORE_CALL_DEPTH          		    "RECORDER_STORE_CALL_DEPTH"
+#define RECORDER_STORE_CALL_SITE           		    "RECORDER_STORE_CALL_SITE"
 #define RECORDER_INTERPROCESS_COMPRESSION	        "RECORDER_INTERPROCESS_COMPRESSION"
 #define RECORDER_INTERPROCESS_PATTERN_RECOGNITION   "RECORDER_INTERPROCESS_PATTERN_RECOGNITION"
 #define RECORDER_INTRAPROCESS_PATTERN_RECOGNITION   "RECORDER_INTRAPROCESS_PATTERN_RECOGNITION"
@@ -51,8 +52,17 @@
  * can change the fields, e.g., fopen will convert the FILE* to an integer res.
  *
  */
+/* Only configured builds pay for the caller's return address.
+ * A preprocessor directive cannot live inside a macro body, hence this. */
+#ifdef RECORDER_ENABLE_FULL_TRACING
+#define RECORDER_CAPTURE_CALL_SITE(rec) (rec)->call_site = callsite_intern(__builtin_return_address(0))
+#else
+#define RECORDER_CAPTURE_CALL_SITE(rec) (rec)->call_site = 0
+#endif
+
 #define RECORDER_INTERCEPTOR_PROLOGUE_CORE(ret, func, real_args)                    \
     Record *record = recorder_malloc(sizeof(Record));                               \
+    RECORDER_CAPTURE_CALL_SITE(record);                                             \
     record->func_id = get_function_id_by_name(#func);                               \
     record->tid = recorder_gettid();                                                \
     logger_record_enter(record);                                                    \

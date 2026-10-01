@@ -58,6 +58,7 @@ CST* reader_get_cst(RecorderReader* reader, int rank);
 CFG* reader_get_cfg(RecorderReader* reader, int rank);
 
 Record* reader_cs_to_record(CallSignature *cs);
+void reader_set_key_has_call_site(int has);
 
 IntervalsMap* build_offset_intervals(RecorderReader *reader, int *num_files);
 

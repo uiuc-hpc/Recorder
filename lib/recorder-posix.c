@@ -36,21 +36,25 @@ typedef struct fd_map {
 
 static stream_map_t* stream2name_map;
 static fd_map_t*     fd2name_map;
+/* Both maps are global and touched by every open/close from every thread. */
+static pthread_mutex_t map_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static inline char* fd2name(int fd) {
     fd_map_t *entry = NULL;
+    pthread_mutex_lock(&map_mutex);
     HASH_FIND_INT(fd2name_map, &fd, entry);
-    if(entry)
-        return strdup(entry->filename);     // duplicate the filename as it will be release in free_record()
-    return NULL;
+    char* name = entry ? strdup(entry->filename) : NULL;   // freed in free_record()
+    pthread_mutex_unlock(&map_mutex);
+    return name;
 }
 
 static inline char* stream2name(FILE* stream) {
     stream_map_t *entry = NULL;
+    pthread_mutex_lock(&map_mutex);
     HASH_FIND_PTR(stream2name_map, &stream, entry);
-    if(entry)
-        return strdup(entry->filename);
-    return NULL;
+    char* name = entry ? strdup(entry->filename) : NULL;
+    pthread_mutex_unlock(&map_mutex);
+    return name;
 }
 
 
@@ -92,18 +96,23 @@ static inline void add_to_map(char* filename, void* arg, int arg_type) {
     if(arg_type == ARG_TYPE_STREAM) {        // FILE* stream
         stream_map_t *entry = malloc(sizeof(stream_map_t));
         entry->stream = (FILE*) arg;
-        entry->filename = realrealpath(filename);
+        entry->filename = realrealpath(filename);   // outside the lock, may do I/O
+        pthread_mutex_lock(&map_mutex);
         HASH_ADD_PTR(stream2name_map, stream, entry);
+        pthread_mutex_unlock(&map_mutex);
     }
     if(arg_type == ARG_TYPE_FD) {
         fd_map_t *entry = malloc(sizeof(fd_map_t));
         entry->fd = *((int*) arg);
         entry->filename = realrealpath(filename);
+        pthread_mutex_lock(&map_mutex);
         HASH_ADD_INT(fd2name_map, fd, entry);
+        pthread_mutex_unlock(&map_mutex);
     }
 }
 
 static inline void remove_from_map(void* arg, int arg_type) {
+    pthread_mutex_lock(&map_mutex);
     if(arg_type == ARG_TYPE_FD) {
         int fd = (*(int*) arg);
         fd_map_t *entry = NULL;
@@ -123,7 +132,7 @@ static inline void remove_from_map(void* arg, int arg_type) {
             free(entry->filename);
             free(entry);
         }
-    }
+    }    pthread_mutex_unlock(&map_mutex);
 }
 
 

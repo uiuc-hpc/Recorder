@@ -28,7 +28,7 @@ endif()
 # Tools
 #------------------------------------------------------------------------------
 
-add_library(reader reader.c reader-cst-cfg.c)
+add_library(reader reader.c reader-cst-cfg.c reader-callsite.c)
 target_link_libraries(reader
                         PUBLIC ${ZLIB_LIBRARIES}
                     )
